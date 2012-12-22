@@ -35,7 +35,6 @@ then
 	do
 		make_link $alt_rcdir/$file $HOME/.$file
 	done
-	cd -
 fi
 
 # for bin, what we really want is for the whole directory to be symlinked
