@@ -1,0 +1,94 @@
+unset localize_vctools
+if ( $?localize_vctools ) then
+	set vctoolsdir=`vctools-config --working`/VCtools
+	setenv PERL5LIB `addpath -fB PERL5LIB $vctoolsdir/lib`
+
+	alias vmv $vctoolsdir/vmv
+	alias vrel $vctoolsdir/vrel
+	alias vdel $vctoolsdir/vdel
+	alias vget $vctoolsdir/vget
+	alias vnew $vctoolsdir/vnew
+	alias vlog $vctoolsdir/vlog
+	alias vtag $vctoolsdir/vtag
+	alias vdiff $vctoolsdir/vdiff
+	alias vstat $vctoolsdir/vstat
+	alias vfind $vctoolsdir/vfind
+	alias vsync $vctoolsdir/vsync -vr
+	alias vmerge $vctoolsdir/vmerge
+	alias vunget $vctoolsdir/vunget
+	alias vcommit $vctoolsdir/vcommit
+	alias vbranch $vctoolsdir/vbranch
+	alias vunbranch $vctoolsdir/vunbranch
+	alias vconfig_directive $vctoolsdir/vconfig_directive
+else
+	unset vctoolsdir
+	unalias vmv
+	unalias vrel
+	unalias vdel
+	unalias vget
+	unalias vnew
+	unalias vlog
+	unalias vtag
+	unalias vdiff
+	unalias vfind
+	unalias vstat
+	unalias vmerge
+	unalias vunget
+	unalias vcommit
+	unalias vbranch
+	unalias vunbranch
+endif
+
+which vctools-config >& /dev/null && complete vcshell "p@*@F:"`vctools-config --working`"@ @"
+if ( $?VCTOOLS_SHELL ) then
+	if ( $VCTOOLS_SHELL == "git" ) then
+		alias vcd 'cd `vctools-config --working | perl -MCwd -le '"'"'$d=<>;chomp $d;cwd=~m{$d/.*?/};print $&||q{.}'"'"'`'
+		alias st 'echo "" ; git status ; echo "" ; git stash list ; echo ""'
+		alias sync git pull
+		alias commit git commit -v
+		alias vd git diff
+		alias vnew git add
+		alias vdel git rm
+		alias vg 'echo "\n\n\n\n\n\n\n\n\n" ; grep -Pr \!* * | perl -pe "s/:.{512,}/:<<LINE TOO LONG!>>/"'
+		alias vgl vgl-git
+		alias vlog git-helper-log
+		alias unget 'git checkout --'
+		alias vbranch git-helper-branch
+		alias vunbranch 'git-helper-branch -u'
+		alias vmerge 'vpull ; git merge origin/master'
+		alias stg 'vcpatchws `git status -s | awk "{print $2}"` ; git add .'
+		alias istg 'vcpatchws `git status -s | awk "{print $2}"` ; git add -i .'
+		alias vpush 'git pull ; git push'
+		alias stash 'git stash save -u \!* ; st'
+		alias unstash 'git stash pop ; up'
+		alias testclean 'git stash save ; t ; git stash pop'
+	else
+		alias vbuild vbuild -v
+		alias vsync vsync -vr
+		alias statr vstat -r
+		alias st statr -B
+
+		alias vd vdiff
+		alias vg 'echo "\n\n\n\n\n\n\n\n\n" ; vfind -i -nolonglines -grep'
+		alias vgl 'vg \!^ -codeonly \!:2*'
+		alias vff vfind -c -i -file
+
+		alias commit_all 'vcommit `vstat -ro modified`'
+
+		#alias mv vmv -nIv
+	endif
+else
+	alias vbuild `vctools-config --bin`/vcshell -b -- -v
+endif
+
+alias branch vbranch
+alias unbranch vunbranch
+
+# shortcut for releasing new stuff
+alias relit 'setenv RELIT_CONTINUE 1 ; vcshell'
+complete relit "p@*@F:$HOME/proj@ @"
+if ( $?RELIT_CONTINUE ) then
+	sync
+	rel -d
+	unsetenv RELIT_CONTINUE
+endif

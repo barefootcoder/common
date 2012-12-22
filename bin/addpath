@@ -1,0 +1,72 @@
+#! /usr/bin/perl
+
+use Getopt::Std;
+use File::Basename;
+
+
+getopts('fsB:h');
+
+if ($opt_h)
+{
+	print STDERR "usage: ", basename($0), " [-h] [-s] [[-f] -B env_var] dir [...]\n";
+	print STDERR "       -s : return dirs separated by space (default: colon)\n";
+	print STDERR "       -B : use this env_var's value as the base list to add to\n";
+	print STDERR "       -f : add dir(s) to front of list instead of back\n";
+	print STDERR "            (this means that multiple dirs get reversed in the final list)\n";
+	print STDERR "       -h : this help message\n";
+	exit;
+}
+
+if ($opt_B and $ENV{$opt_B})
+{
+	@dirs = split(':', $ENV{$opt_B});
+	%dirs = map { $_ => 1 } @dirs;
+}
+
+foreach $dir (@ARGV)
+{
+	if ($dir and not exists $dirs{$dir} and -d $dir)
+	{
+		if ($opt_f)
+		{
+			unshift @dirs, $dir;
+		}
+		else
+		{
+			push @dirs, $dir;
+		}
+		$dirs{$dir} = 1;
+	}
+}
+
+print join($opt_s ? ' ' : ':', @dirs);
+
+
+__END__
+
+
+#! /bin/bash
+
+base="$1"
+shift
+
+for dir in "$@"
+do
+	if [[ -n $dir ]]
+	then
+		if ! echo "$base" | /bin/grep -Eq '(^|:)'"$dir"'(:|$)'
+		then
+			if [[ -d $dir ]]
+			then
+				if [[ -z $base ]]
+				then
+					base="$dir"
+				else
+					base="$base:$dir"
+				fi
+			fi
+		fi
+	fi
+done
+
+echo "$base"

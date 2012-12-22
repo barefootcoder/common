@@ -1,0 +1,47 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use GTop ();
+use Memory::Usage;
+
+
+my $exporter_overhead = <<END;
+	package Dummy;
+
+	use base qw<Exporter>;
+
+	1;
+END
+if ($ARGV[0] eq '-e')
+{
+	eval $exporter_overhead or die $@;
+	shift;
+}
+
+
+my $gtop = GTop->new;
+my $mu = Memory::Usage->new;
+my $before = $gtop->proc_mem($$)->size;
+$mu->record('before loading');
+
+for (@ARGV)
+{
+	if (eval "require $_")
+	{
+		#warn($INC{'Debuggit.pm'});
+		eval { $_->import; };
+	}
+	else
+	{
+		eval $_;
+		die $@ if $@;
+	}
+}
+
+my $after = $gtop->proc_mem($$)->size;
+$mu->record('after loading');
+print "@ARGV added " . GTop::size_string($after - $before) . "\n";
+$mu->dump();
+

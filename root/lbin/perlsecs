@@ -1,0 +1,46 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use Date::Parse;
+use File::Basename;
+use Time::ParseDate;
+
+
+my $opts = {};
+getopts('gqh', $opts);
+my $quiet = defined $opts->{q};
+my $gmtime = defined $opts->{g};
+my $me = basename($0);
+print <<USAGE and exit if $opts->{h};
+usage: $me [-h] [-g | -q] date args
+	-h: this help message
+	-g: print verification as GMT (default: local time)
+	-q: quiet (including no verification)
+USAGE
+
+
+s{(?:^| )(\d+)[.:/-](\d+)$}{$1:$2} foreach @ARGV;
+s{(?:^| )(\d+)[.:/-](\d+)([ap])m?}{$1:$2$3m} foreach @ARGV;
+
+my $perlsecs = @ARGV ? parsedate("@ARGV") : time();
+$perlsecs = str2time("@ARGV") unless $perlsecs;
+if ($perlsecs)
+{
+	if ($quiet)
+	{
+		print "$perlsecs\n";
+	}
+	else
+	{
+		print "number is: $perlsecs\n";
+		print "(your original date was ", scalar($gmtime ? gmtime $perlsecs : localtime $perlsecs), ")\n";
+	}
+}
+else
+{
+	print STDERR "unknown date: @ARGV\n" unless $quiet;
+	exit 2
+}

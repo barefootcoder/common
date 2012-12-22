@@ -1,0 +1,113 @@
+#! /bin/bash
+
+
+dir=.dropbox-dist
+
+
+remote=$1
+if [[ $remote == *: ]]
+then
+	remote=${remote%:}
+	check="ssh $remote"
+
+	if [[ $($check echo $SHELL) != /bin/tcsh ]]
+	then
+		echo "can't install to machine until you change your shell" >&2
+		exit 1
+	fi
+
+	if [[ -n $($check ls $dir 2>/dev/null) ]]
+	then
+		echo "won't install to a machine that already has Dropbox on it" >&2
+		exit 1
+	fi
+
+	arch=$($check uname -i)
+	case $arch in
+		*86_64)	arch=x86_64
+				;;
+		*86)	arch=x86
+				;;
+		*)		echo "don't what kind of architecture your machine has ($arch)"
+				exit 1
+				;;
+	esac
+
+	echo "will install Dropbox $arch version"
+	echo -n "is this okay?  [y/N] "
+	read yn
+	if [[ $yn != [yY]* ]]
+	then
+		exit
+	fi
+
+	scp ~/common/new_dropbox ~/bin/dropbox $remote:
+	ssh $remote echo ~/$(basename $0) $arch \> .login
+
+	exec ssh $remote
+fi
+
+
+
+if [[ -d ~/$dir ]]
+then
+	echo "Dropbox already installed; won't reinstall" >&2
+	exit 1
+fi
+
+arch=$1
+case $arch in
+	x86)	;;
+	x86_64)	;;
+	*)		echo "usage: $0 [x86|x86_64]" >&2
+			exit 2
+			;;
+esac
+
+cd ~
+tarfile=dropbox.tar.gz
+wget -O$tarfile "http://www.dropbox.com/download/?plat=lnx.$arch"
+tar xvpzf $tarfile
+
+mkdir $dir/lock
+mkdir $dir/run
+mkdir $dir/sysconfig
+echo "DROPBOX_USERS=buddy" >$dir/sysconfig/dropbox
+
+ln -s Dropbox/common common
+rm $tarfile
+
+
+if [[ -x ./dropbox ]]
+then
+	./dropbox start
+	/bin/rm -f ./dropbox
+else
+	/bin/sh -c "/home/$USER/.dropbox-dist/dropboxd &"
+fi
+
+if [[ -r .login ]]
+then
+	/bin/rm -f .login
+fi
+
+makeln=~/common/makeln
+fix_perms=~/common/fix_perms
+fortune=~/common/fortunes/buddy
+until [[ -r $makeln && -r $fix_perms && -r $fortune ]]
+do
+	echo "Waiting for makeln et al ..."
+	sleep 10
+done
+
+if [[ ! -x makeln ]]
+then
+	source $fix_perms
+fi
+
+mkdir -p ~/local/fortunes ~/local/bin
+cd ~/common
+./makeln
+
+
+/bin/rm -f $0

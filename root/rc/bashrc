@@ -1,0 +1,65 @@
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+unalias -a
+alias ls='ls -AF'
+alias ll='ls -l'
+alias lln='ll -htr'
+alias lls='ls -lhSr'
+alias dux='du -xh --max-depth=1 | grep -v "^0	" | sortk'
+alias sql='mysql thinkgeek'
+alias resrc='. ~/.bashrc'
+alias psync='/root/common/psync'
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+if grep -q buddy /etc/passwd
+then
+	buddy=/home/buddy
+elif grep -q bburden /etc/passwd
+then
+	buddy=/home/bburden
+fi
+
+if [[ -n $buddy && -d $buddy && -d $buddy/bin ]]
+then
+	addpath=$buddy/bin/addpath
+	if [[ -x $addpath ]]
+	then
+		PATH=$($addpath /root/bin /usr/lib/ccache/bin /usr/lib64/ccache /bin /sbin /usr/bin /usr/sbin /usr/local/bin /opt/bin /usr/local/sbin /usr/lib64/qt-3.3/bin /usr/i686-pc-linux-gnu/gcc-bin/3.3.5-20050130)
+	else
+		echo "can't execute addpath; not adjusting path ..." >&2
+	fi
+else
+	echo "can't find Buddy's home dir; not adjusting path ..." >&2
+fi
+
+# as per which man page
+which ()
+{
+  (alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
+}
+export -f which
+
+export EDITOR=vim
+
+export PS1="\[\e[31;1m\]\h \[\e[34;1m\]\w # \[\e[0m\]"
+
+if [[ -e ~/.bashrc.local ]]
+then
+	source ~/.bashrc.local
+fi
+
+function dep
+{
+	/usr/bin/dep --colour=yes "$@" | grep -v '^!!! ebuild_dep_to_edb'
+}
+
+function ff
+{
+	find . -name /proc -prune -o -iname "*$@*" -print 2>/dev/null
+}

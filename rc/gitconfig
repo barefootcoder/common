@@ -1,0 +1,10 @@
+[user]
+	name = Buddy Burden
+	email = barefootcoder@gmail.com
+[github]
+	user = barefootcoder
+[push]
+	default = tracking
+[core]
+	excludesfile = /home/buddy/.gitignore
+	preloadindex = true

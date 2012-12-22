@@ -1,0 +1,209 @@
+#!/usr/bin/env perl
+
+# Based on an original script from schwern.
+
+use myperl;
+
+use Cwd;
+use File::Copy;
+use Const::Fast;
+use Date::Parse;
+use Date::Format;
+use File::Basename;
+use List::Util qw< first >;
+
+# Run it when you're ready to make a release.  It will make and commit changes for you.
+# I tend to bump the versions but leave them uncommitted and let release commit them
+# all in one shot.
+
+const my $VERSION => qr/[\d._]+/;										# what a module version looks like
+
+my $Remote_Store;  														# place to scp the new tarball
+my $Local_Store;            											# local place to copy the new tarball
+
+my %Is;
+
+my $builder;
+my $build_file;
+my @build_args;
+
+my $version;
+
+# Requires cpan-upload
+# http://search.cpan.org/dist/CPAN-Uploader
+die("must CPAN install CPAN::Uploader") unless `cpan-upload --version`;
+
+
+sub run
+{
+	if (DEBUG)
+	{
+		say "would run: @_";
+	}
+	else
+	{
+		system(@_) == 0 or exit $? >> 8;
+	}
+}
+
+
+# Check the current branch is master and pause to correct if not
+sub check_branch {
+    return 1 unless $Is{git};
+    return 1 if slurp("$Is{git}/HEAD") =~ m{^ref: refs/heads/master\n};
+
+    print STDERR "\a\a";
+    warn "Releasing non-master branch!\n";
+    sleep 2;
+
+    return;
+}
+
+
+# Check that version was bumped, and that it matches $VERSION
+sub check_version
+{
+	my @Changes = slurp 'Changes';
+	my ($version, $date) = (first { /^$VERSION/ } @Changes) =~ /^ ($VERSION) \s+ (?: - \s+ )? (.*) $/x;
+	debuggit(2 => "version:", $version, "date:", $date);
+	if (time - str2time($date) > 24*60*60)
+	{
+		say STDERR "Changes file not updated with latest version info";
+		print STDERR "Add a line? [y/N] ";
+		if ( <STDIN> =~ /^y/i )
+		{
+			open(OUT, '>Changes') or die("can't open Changes for writing");
+			say OUT (time2str('%Y%m%d.%H%M_001', time), "\t", `date`);
+			print OUT @Changes;
+			close(OUT);
+		}
+
+		exit;
+	}
+
+	no warnings 'uninitialized';
+	my ($main_module) = (first { /all_from/ } slurp $build_file) =~ /'(.*?)'/;
+	($main_module) = (first { /version_from/i } slurp $build_file) =~ /=.*'(.*?)'/ unless $main_module;
+	unless ($main_module)
+	{
+		# try alternate method
+		$main_module = basename getcwd;
+		$main_module =~ s/(\w+)/\u$1/g;
+		$main_module =~ s{-}{/}g;
+		$main_module = "lib/$main_module.pm";
+	}
+	die("can't figure out main module") unless -e $main_module;
+	debuggit(2 => "main module is:", $main_module);
+
+	my ($mod_version) = (first { /VERSION.*=/ } slurp $main_module) =~ /= \s* ['"] ($VERSION) ['"]/x;
+	unless ($mod_version eq $version)
+	{
+		my $found = 0;
+		print "Found in:\n",
+				reverse map { if (/^Changes:/ && !$found){ $found = 1; () }else{ $_ } } reverse `fgrep -r $mod_version *`;
+		die("version in module doesn't match Changes ($mod_version vs $version)");
+	}
+
+	return $version;
+}
+
+
+# Give our human a chance to verify everything is committed that needs to be committed
+sub check_mods
+{
+	for (qw< status diff >)
+	{
+		# not using run() here because we don't want to skip the commands in DEBUG mode
+		system("git $_");
+		print "\n\nDoes this look okay? ";
+		die("aborted") unless <STDIN> =~ /^y/i;
+	}
+}
+
+
+# Answer MakeMaker prompts with their defaults
+$ENV{PERL_MM_USE_DEFAULT} = 1;
+
+# Used by some of my modules to indiciate this is a release
+$ENV{PERL_RELEASING}      = 1;
+
+# Used by tests to indicate running the full author tests
+$ENV{AUTHOR_TESTING}      = 'BAREFOOT';
+
+
+# Look for git
+my @gits = qw(.git ../.git ../../.git);
+$Is{git}        = first { -d $_ } @gits;
+
+# Use MB or EUMM?
+-e "Build.PL" ? $Is{'Module::Build'} = 1 
+              : $Is{'MakeMaker'}     = 1;
+
+# Build with signatures
+if( $Is{'Module::Build'} ) {
+    $builder    = './Build';
+    $build_file = 'Build.PL';
+    @build_args = ();
+}
+else {
+    $builder    = 'make';
+    $build_file = 'Makefile.PL';
+    @build_args = ();
+}
+
+check_branch();
+$version = check_version();
+check_mods();
+
+# Fixup whitespace, build it, rebuild the manifest, test a clean distribution, build a dist
+# *IMPORTANT!* you absolutely must run fix whitespace before building the Makefile
+#run('vcpatchws `git status -s | awk "{print $2}"`');
+run("$^X $build_file @build_args");
+run("$builder manifest");
+run("$builder disttest");
+run("$builder dist");
+
+# Find the release tarball
+my @tarballs = glob("*.tar.gz");
+die "More than one tarball" if @tarballs > 1;
+die "No tarball?" if @tarballs == 0 and not DEBUG;
+
+my $dist = DEBUG ? "TARBALL_FILE" : $tarballs[0];
+
+# Sanity check version against tarball name
+my ($tver) = $dist =~ m{-v?($VERSION)\.tar\.gz};
+die("Version mismatch! ($version vs $tver)") unless DEBUG or $tver eq $version;
+
+# Last chance to jump ship ...
+my $delay = 3;
+print STDERR "\n\nReleasing $version in $delay seconds ";
+sleep 1 and print STDERR "." for 1..$delay;
+print "\n\n";
+
+
+# Upload to CPAN
+run("cpan-upload -v $dist");
+
+# Commit, tag and push changes
+if( $Is{git} )
+{
+    run("git commit -a -m 'packaging for CPAN: $version'");
+
+    my $tag = "v$version";
+    run("git tag $tag -a -m 'version $version for CPAN'");
+
+	run("git push origin");
+	run("git push origin $tag");
+}
+
+# Store a copy of the tarball remotely and locally
+run("scp $dist $Remote_Store") if $Remote_Store and not DEBUG;
+move($dist,    $Local_Store)   if $Local_Store and not DEBUG;
+unlink $dist                   if !$Local_Store and not DEBUG;
+
+# Clean up
+run("$builder distclean");
+foreach (qw< META.json >, glob("*.tar.gz"))
+{
+	unlink $_ if -e $_ and not `git log $_`;
+}

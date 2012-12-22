@@ -1,0 +1,225 @@
+#! /bin/bash
+
+source ./functions
+
+
+###########################
+# MAIN
+###########################
+
+
+if [[ $PWD != $mydir ]]
+then
+	echo "sorry; must run from ~/common" >&2
+	exit 1
+fi
+
+# make sure we have the dirs we need (useful for a brand-spanking-new homedir)
+[[ -d ~/.ssh ]] || mkdir ~/.ssh
+[[ -d ~/.unison ]] || mkdir ~/.unison
+
+# do rc's first; they're moderately straightforward except for having to add
+# . in front of the name ... these all go in ~
+cd $mydir/rc
+for file in *
+do
+	make_link $mydir/rc/$file $HOME/.$file
+done
+
+# we have a few rc's in a separate place because they have passwords in them
+alt_rcdir=~/Dropbox/sensitive
+if [[ -d $alt_rcdir ]]
+then
+	cd $alt_rcdir
+	for file in *
+	do
+		make_link $alt_rcdir/$file $HOME/.$file
+	done
+	cd -
+fi
+
+# for bin, what we really want is for the whole directory to be symlinked
+# this makes it easy to add new commands
+# if there's already a directory there, though, we dare not just delete it
+dir=~/bin
+if [[ -d $dir && ! -L $dir ]]
+then
+	echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+	echo "$0: please fix that and rerun" >&2
+	exit 1
+fi
+make_link $mydir/bin $dir
+
+# ditto for .cddb, only not as tragic if the dir already exists
+# also not as tragic if we can't find it, since it isn't here in $mydir any more
+dir=~/.cddb
+if [[ -d $dir ]]
+then
+	if [[ ! -L $dir ]]
+	then
+		echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+		echo "$0: please fix that before you rerun" >&2
+	fi
+else
+	srcdir=$(find_dir ~/Dropbox/music/cddb $mydir/cddb)
+	if [[ -d $srcdir ]]
+	then
+		make_link $srcdir $dir
+	fi
+fi
+
+# Unison configuration files
+# just symlink in what we've got
+if [[ -d $mydir/unison ]]
+then
+	cd $mydir/unison
+	for file in *
+	do
+		make_link $mydir/unison/$file $HOME/.unison/$file
+	done
+fi
+
+# THIS IS OBSOLETE
+# part of relates to IceWM, which I don't use any more
+# and the rest is for Gaim, which is now Pidgin, so it doesn't work any more
+#
+## X-windows stuff
+## only do this if this appears to be a machine that we run X on
+## a pretty decent check for that is the existence of a ~/.Xauthority
+#if [[ -e ~/.Xauthority ]]
+#then
+#	cd $mydir/X
+#	for file in *
+#	do
+#		if [[ $file == "gaim" ]]
+#		then	
+#			# gaim dir is a little special: we don't want a symlink
+#			# for the dir itself, just for some files in it
+#			if [[ ! -d ~/.gaim ]]
+#			then
+#				mkdir ~/.gaim
+#			fi
+#			cd gaim
+#			for file in *
+#			do
+#				if [[ ! -e $HOME/.gaim/$file ]]
+#				then
+#					make_link $mydir/X/gaim/$file $HOME/.gaim/$file
+#				fi
+#			done
+#			cd ..
+#		elif [[ $file == "Xclients" ]]
+#		then
+#			# can't set up IceWM on Ubuntu/Fedora machine
+#			if [[ ! -d $HOME/Desktop ]]
+#			then
+#				make_link $mydir/X/$file $HOME/.file
+#				# we use .Xclients as the base and symlink .xinitrc and .xsessions to that
+#				make_link $HOME/.Xclients $HOME/.xinitrc
+#				make_link $HOME/.Xclients $HOME/.xsession
+#			fi
+#		else
+#			make_link $mydir/X/$file $HOME/.$file
+#		fi
+#	done
+#fi
+
+# we're going to take this opportunity to build the index files that fortune needs, but there's
+# always the possibility that we can't find strfile, so let's make a guess as to that too
+strfile=$(which strfile 2>/dev/null)
+if [[ -z $strfile ]]
+then
+	if [[ -x /usr/sbin/strfile ]]
+	then
+		strfile=/usr/sbin/strfile
+	fi
+fi
+# if we couldn't find strfile at this point, there isn't much point in doing
+# the fortune files, so we'll just skip it
+if [[ -n $strfile ]]
+then
+	# fortune files will occasionally sit in /usr/local/fortunes
+	# however, these days it's more likely in ~/local/fortunes instead
+	dir=$(find_dir ~/local/fortunes /usr/local/fortunes)
+	if [[ -d $dir ]]
+	then
+		cd $mydir/fortunes
+		for file in *
+		do
+			make_link $mydir/fortunes/$file $dir/$file
+			cd $dir
+			if [[ -L $file.dat ]]
+			then
+				/bin/rm -f $file.dat
+			fi
+			if [[ ! -e $file.dat || $file -nt $file.dat ]]
+			then
+				$strfile $file
+			fi
+		done
+	fi
+fi
+
+
+# now the special ones:
+
+# 1: .screenrc.local
+# if this file exists, don't mess with it
+# if not, supply a useful default
+if [[ ! -e ~/.screenrc.local ]]
+then
+	cat >~/.screenrc.local <<END
+screen -t base
+screen -t timer
+screen -t man
+	stuff "man screen\015"
+screen -t top top
+screen -t root sudo su -
+END
+fi
+
+# 2: .ssh/config
+# the pieces of this file are in little chunks
+# for each chunk, we need to know if that chunk is already in the config file
+# if it is, do nothing
+# if it isn't, add it
+ssh_config=~/.ssh/config
+cd $mydir
+for file in ssh/config.*
+do
+	host=${file#ssh/config.}
+	if ! egrep -q "Host[ 	]+$host" ~/.ssh/config 2>/dev/null
+	then
+		if [[ -n $(resolve_host $host) ]]
+		then
+			# if we can resolve the host already, don't use the HostName line
+			# this will help with hosts that can be either remote or on the local network
+			grep -v HostName $file >>$ssh_config
+		else
+			cat $file >>$ssh_config
+		fi
+	fi
+done
+
+# 3: .ssh/authorized_keys
+# each public key needs to be put into authorized keys, but not if it's already there
+cd $mydir
+authfile=~/.ssh/authorized_keys
+for file in ssh/*.pub
+do
+	if ! fgrep -q "$(cat $file)" $authfile 2>/dev/null
+	then
+		if fgrep -q $(awk '{print $3}' $file) $authfile 2>/dev/null
+		then
+			# have to put this in a for some reason ... can't seem to make it
+			# not interpolate the @ sign otherwise
+			perl -i -lne '$t=q{'$(awk '{print $3}' $file)'}; print unless /$t$/' $authfile
+		fi
+		cat $file >>$authfile
+	fi
+done
+
+# 4: .ssh/
+# may as well go ahead and fix the perms on this dir since little will
+# actually work unless the perms are correct
+chmod -R go-rwx ~/.ssh

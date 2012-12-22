@@ -1,0 +1,9 @@
+#! /bin/bash
+
+git config --global user.name "Buddy Burden"
+git config --global user.email "barefootcoder@gmail.com"
+git config --global github.user barefootcoder
+
+
+echo "Paste the below at this url: https://github.com/settings/ssh"
+cat ~/.ssh/$LOCALHOSTNAME.pub

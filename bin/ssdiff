@@ -1,0 +1,52 @@
+#! /bin/bash
+
+readonly ME=${0##*/}													# slightly prettier than $0
+
+while getopts ":ibh" opt
+do
+	case $opt in
+		i)	diffopts="i$diffopts"
+			;;
+		b)	diffopts="bB$diffopts"
+			;;
+		h)	echo "usage: $ME [-ibh] 'specialfilename'" >&2
+			echo "    -i : ignore case (i.e. diff -i)" >&2
+			echo "    -b : ignore whitespace (i.e. diff -bB)" >&2
+			echo "    -h : this help message" >&2
+			echo "  specialfilename may contain any number of {} groups" >&2
+			echo "  each group must contain two alternatives separated by a comma" >&2
+			echo "  the first filename to diff is composed of the first set of alternatives" >&2
+			echo "  the second filename to diff is composed of the second set of alternatives" >&2
+			echo "  alternatives may be empty" >&2
+			echo "  if any filename expands to contain a :, it is treated like an arg to scp" >&2
+			echo "    EXAMPLE:" >&2
+			echo "      $ME -i '{,sandbox:}proj/{main,test}/lib/SomeFile.pm'" >&2
+			echo "		would do: diff -i proj/main/lib/SomeFile.pm sandbox:proj/test/lib/SomeFile.pm" >&2
+			echo "      except that it would fetch proj/test/lib/SomeFile.pm from host sandbox" >&2
+			echo "  quoting is necessary to protect {} from brace expansion" >&2
+			exit
+			;;
+		:)	echo "$ME: $OPTARG requires an argument ($ME -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$ME: unknown argument $OPTARG ($ME -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+file="$1"
+
+[[ -n $diffopts ]] && diffopts="-$diffopts"
+
+
+prog='
+	$which=shift;
+	$_=shift;
+	s/\{(.*?)\}/(split(",",$1))[$which-1]/eg;
+	print s{^([^/]+):}{} ? "ssh $1 cat $_" : "cat $_";
+'
+
+
+diff $diffopts <(eval "$(perl -e "$prog" 1 "$file")") <(eval "$(perl -e "$prog" 2 "$file")")

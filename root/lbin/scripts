@@ -1,0 +1,129 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+require 5.8.0;
+
+use File::Find;
+use Getopt::Std;
+use File::Basename;
+
+
+my $ME = basename($0);
+
+
+my $mode = 'long';
+my $pattern;
+my $opt = {};
+my $opt_ok = getopts("bg:tfivpsnrqh", $opt);
+$mode = 'bare' if $opt->{b};
+$mode = 'grep', $pattern = $opt->{g} if $opt->{g};
+my $perlonly = $opt->{p};
+my $shellonly = $opt->{s};
+my $nonex = $opt->{n};
+my $recursive = $opt->{r};
+my $quiet = $opt->{q};
+my $lstime = $opt->{t} ? '-tr' : '-1';
+my $greptype = $opt->{f} ? '-F' : '-G';
+$greptype .= 'i' if $opt->{i};
+my $verbosegrep = $opt->{v} ? '-H' : '-l';
+if ($opt->{h} or not $opt_ok)
+{
+	print STDERR "usage: $ME [-qnpsr] [-t | -b | -[fiv]g 'pattern'] [dir]\n";
+	print STDERR "         -q:  quiet (no progress reports)\n";
+	print STDERR "         -n:  include non-executable files as well\n";
+	print STDERR "         -p:  include only Perl scripts\n";
+	print STDERR "         -s:  include only shell (sh/bash/ksh) scripts\n";
+	print STDERR "         -r:  recurse into subdirs\n";
+	print STDERR "         -t:  sort by time (oldest first; doesn't work for >1,000 scripts)\n";
+	print STDERR "         -b:  bare (show only script names)\n";
+	print STDERR "         -g:  show only scripts containing pattern (as grep)\n";
+	print STDERR "         -f:  fast search with -g (as fgrep instead of grep)\n";
+	print STDERR "         -i:  case insensitive search with -g\n";
+	print STDERR "         -v:  show matching lines of search with -g\n";
+	print STDERR "         searches . if dir not specified\n";
+	exit;
+}
+
+push @ARGV, "." if not @ARGV;
+
+my @scripts;
+foreach my $filespec (@ARGV)
+{
+	if ($recursive)
+	{
+		find( { wanted => \&check_dir, no_chdir => 1 }, $filespec);
+	}
+	else
+	{
+		check_dir($filespec);
+	}
+}
+
+print STDERR "$ME: no scripts found\n" and exit 1 unless @scripts;
+
+$; = " ";
+if ($mode eq 'bare')
+{
+	$, = "\n";
+	print @scripts;
+	print "\n";
+}
+elsif ($mode eq 'long')
+{
+	while (@scripts)
+	{
+		system('ls', '-lF', $lstime, @scripts[0..(@scripts>1000?999:$#scripts)]) == -1 and die("can't execute ls");
+		splice @scripts, 0, 1000;
+	}
+}
+elsif ($mode eq 'grep')
+{
+	while (@scripts)
+	{
+		system('grep', $verbosegrep, $greptype, '-e', $pattern, @scripts[0..(@scripts>1000?999:$#scripts)]) == -1
+				and die("can't execute grep");
+		splice @scripts, 0, 1000;
+	}
+}
+
+
+sub check_dir
+{
+	my $filespec = @_ ? shift : $File::Find::name;
+	if (-d $filespec)
+	{
+		# skip problematic dirs
+		if ($filespec eq '/proc' or $filespec eq '/dev')
+		{
+			print STDERR "skipping $filespec\n";
+			$File::Find::prune = 1;
+			return;
+		}
+
+		my @files = glob("$filespec/*");
+		return unless @files;
+		$filespec .= "/*";
+
+		print STDERR "now checking $filespec\n" unless $quiet;
+		while (@files)
+		{
+			open(FILE, "-|", qw<file -N -->, @files[0..(@files>1000?999:$#files)])
+					or die("can't open pipe to file command");
+			while ( <FILE> )
+			{
+				if ( /:.*commands text/ or /:.*script/ )
+				{
+					next if $perlonly and not /\bperl\b/i;
+					next if $shellonly and not /\b(?:ba|k)?sh\b/i and not /\bshell\b/i;
+
+					my ($script) = /^(.+?):/;
+					push @scripts, $script if $nonex or -x $script;
+				}
+			}
+			close(FILE);
+
+			splice @files, 0, 1000;
+		}
+	}
+}

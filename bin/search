@@ -1,0 +1,17 @@
+#! /bin/bash
+
+pattern=$1
+shift
+
+each "strings {} | grep -i -e '$pattern'" "$@"
+
+exit
+
+# old method
+for file in "$@"
+do
+	if strings $file | grep -qi -e "$pattern"
+	then
+		echo $file
+	fi
+done

@@ -1,0 +1,74 @@
+#! /bin/bash
+
+me=${0##*/}
+while getopts ":p:dh" opt
+do
+	case $opt in
+		p)	pid=$OPTARG
+			;;
+		d)	debug=1
+			;;
+		h)	echo "usage: $me [-h] [ { -p pid | tty } ]" >&2
+			echo "   tty : display process of this tty instead of the current one" >&2
+			echo "    -p : display complete parentage of this process instead of a tty" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+function get_ppid
+{
+	/bin/ps h -o ppid -p $1
+}
+
+function get_childpids
+{
+	children=$(/bin/ps h -o pid --ppid ${*// /,})
+	echo ${children// /,}
+}
+
+
+tty=$1
+if [[ -z $tty ]]
+then
+	tty=$(tty)
+fi
+
+if [[ -n $tty ]]
+then
+	echo TTY is $tty
+fi
+
+ps_out="-o pid -o ppid -o user -o stat=S -o stime -o cputime -o tty -o command"
+if [[ -z $pid ]]
+then
+	exec /bin/ps ft$tty $ps_out
+else
+	orig_pid=$pid
+	all_pids=$pid
+	while [[ $pid -ne 1 ]]
+	do
+		ppid=$(get_ppid $pid)
+		if [[ -z $ppid ]]
+		then
+			echo "$me: no such process $pid" >&2
+			exit 1
+		fi
+		all_pids="$all_pids,$ppid"
+		pid=$ppid
+	done
+	#all_pids="$all_pids,$(get_childpids $orig_pid)"
+	all_pids=${all_pids// /}
+
+	[[ $debug == 1 ]] && echo DEBUG: /bin/ps f -p $all_pids -g $orig_pid $ps_out >&2
+	exec /bin/ps f -p $all_pids -g $orig_pid $ps_out
+fi

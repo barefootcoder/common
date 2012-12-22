@@ -1,0 +1,7 @@
+
+# preserve as much as possible
+owner = true
+group = true
+perms = -1
+times = true
+

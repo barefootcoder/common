@@ -1,0 +1,29 @@
+#! /bin/bash
+
+search="$1"
+shift
+
+for file in $(find "${@:-.}" -type f 2>/dev/null)
+do
+	if [[ $file == *$search* ]]
+	then
+		echo $file
+	else
+		type="$(file $file)"
+		if [[ $type == *"tar archive"* ]]
+		then
+			command=tf
+		elif [[ $type == *"gzip compressed data"* ]]
+		then
+			command=tzf
+		elif [[ $type == *"bzip2 compressed data"* ]]
+		then
+			command=tjf
+		fi
+		if [[ -n $command ]]
+		then
+			tar $command $file 2>/dev/null | fgrep $search					\
+					| sed "s$ \[$file]"
+		fi
+	fi
+done

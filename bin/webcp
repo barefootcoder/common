@@ -1,0 +1,69 @@
+#! /bin/bash
+
+me=${0##*/}
+
+function usage
+{
+	echo "usage: $me [-pnh] [-w#] http://web_url dir" >&2
+	echo "           -p: partial: copy only files that don't already exist" >&2
+	echo "           -n: copy only files which are newer than existing" >&2
+    echo "           -w: wait # seconds between files (default 1)" >&2
+	echo "           -h: this help message" >&2
+}
+
+
+extra_opts=-fa
+wait_secs=1
+while getopts ":pnw:h" opt
+do
+	case $opt in
+		p)	extra_opts=-fs
+			;;
+		n)	extra_opts=
+			;;
+		w)	wait_secs=$OPTARG
+			;;
+		h)	usage
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+if [[ $# != 2 ]]
+then
+	usage
+	exit 2
+fi
+
+url=$1
+dir=$2
+
+if [[ ! -d $dir ]]
+then
+	echo "$me: $dir is not a directory" >&2
+	usage
+	exit 2
+fi
+
+if [[ $extra_opts = -fa ]]						# i.e., if not -p and not -n
+then
+	for f in $dir/*
+	do
+		if [[ -e $f ]]
+		then
+			echo "$me: $dir is not empty" >&2
+			exit 1
+		fi
+	done
+fi
+
+cd $dir
+w3mir -r $extra_opts -p $wait_secs -drr $url

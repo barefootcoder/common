@@ -1,0 +1,133 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+require 5.8.0;
+
+use File::Find;
+use Getopt::Std;
+use Data::Dumper;
+use File::Basename;
+use File::Stat::Ls;
+
+
+use constant DEBUG => 0;
+use constant BUNDLE => 50;
+
+my $ME = basename($0);
+
+$| = 1;
+
+
+my $mode = 'dir';
+my @fileopts = ('-nNF', $;);
+my $opt = {};
+getopts("rlwxLzh", $opt);
+debug(2 => Dumper($opt));
+$mode = 'list' if $opt->{l};
+my $recursive = $opt->{r};
+my $writable = $opt->{w};
+my $executable = $opt->{x};
+push @fileopts, '-L' if $opt->{L};
+push @fileopts, '-z' if $opt->{z};
+if ($opt->{h})
+{
+	print STDERR "usage: $ME [-rlwxLz] pattern [dir]\n";
+	print STDERR "       finds all regular files whose type (as returned by file(1)) contains pattern\n";
+	print STDERR "       files must be readable to be considered\n";
+	print STDERR "         -r:  recurse into subdirs\n";
+	print STDERR "         -l:  only list filenames (default: ls -l output)\n";
+	print STDERR "         -w:  only consider file if writeable\n";
+	print STDERR "         -x:  only consider file if executable\n";
+	print STDERR "         -L:  dereference symbolic links (may cause dups)\n";
+	print STDERR "         -z:  consider uncompressed version of file if file is compressed\n";
+	exit;
+}
+
+my $pattern = shift or die("$ME: incorrect usage ($ME -h for help)\n");
+push @ARGV, "." if not @ARGV;
+my %args = map { $_ => 1 } @ARGV;
+
+my @files;
+my $found_some = 0;
+foreach my $filespec (@ARGV)
+{
+	find( { wanted => \&winnow_and_bundle, no_chdir => 1 }, $filespec);
+}
+
+output() if @files;
+exit !!$found_some;														# because program return of 0 indicates success
+
+
+sub winnow_and_bundle
+{
+	my $filespec = $File::Find::name;
+	debug(4 => "checking file $filespec");
+	if (-d $filespec)
+	{
+		# don't bother looking at directories that are in our arg list
+		# otherwise we'll never check any files at all when -r isn't specified
+		return if exists $args{$filespec};
+
+		# handle non-recursive and skip problematic dirs
+		if (not $recursive or $filespec eq '/proc' or $filespec eq '/dev')
+		{
+			$File::Find::prune = 1;
+			return;
+		}
+	}
+	elsif (-f _)
+	{
+		return unless -r _;
+		return if $writable and not -w _;
+		return if $executable and not -x _;
+
+		push @files, $filespec;
+		if (@files >= BUNDLE)
+		{
+			output();
+			@files = ();
+		}
+	}
+}
+
+
+sub output
+{
+	open(FILE, "-|", 'file', @fileopts, '--', @files) or die("can't open pipe to file command");
+	while ( <FILE> )
+	{
+		debug(4 => "file: $_");
+		if ( /$pattern/o )
+		{
+			$found_some = 1;
+			my ($found) = /^(.+?)$;/o;
+
+			if ($mode eq 'list')
+			{
+				print "$found\n";
+			}
+			elsif ($mode eq 'dir')
+			{
+				print ls_stat($found);
+			}
+			else
+			{
+				die("$ME: internal error--unknown mode\n");
+			}
+		}
+	}
+	close(FILE);
+}
+
+
+sub debug
+{
+	my ($level, $msg) = @_;
+
+	if (DEBUG >= $level)
+	{
+		print STDERR $msg;
+		print "\n" unless $msg =~ /\n$/;
+	}
+}

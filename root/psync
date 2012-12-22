@@ -1,0 +1,83 @@
+#! /bin/bash
+
+if [[ $1 == -i ]]
+then
+	interactive=-i
+	shift
+fi
+
+if grep -q buddy /etc/passwd
+then
+	buddy=/home/buddy
+elif grep -q bburden /etc/passwd
+then
+	buddy=/home/bburden
+else
+	echo "psync: cannot find Buddy's home directory" >&2
+	exit 1
+fi
+
+function resolve_host
+{
+	host="$1"
+	combined=$buddy/.ssh/config
+	individual=$buddy/common/ssh/config.$host
+
+	if [[ -e $combined ]]
+	then
+		newhost=$(perl -MPerl6::Slurp -e '
+			$f = slurp shift;
+			%h = map { /^(\w+)\n.*Hostname\s+(\S+)/s } split(/^Host\s+/m, $f);
+			print $h{'$host'};
+		' $combined)
+	fi
+
+	if [[ -z $newhost && -e $individual ]]
+	then
+		newhost=$(perl -lne '
+			s/^\s+//;
+			@f=split(q{ });
+			print $f[1] if $f[0] eq "HostName";
+		' $individual)
+	fi
+
+	echo $newhost
+}
+
+if [[ $1 == "-h" || $1 == "--help" ]]
+then
+	echo "usage: ./psync [host]" >&2
+	exit 2
+fi
+
+if [[ ! -d ~/common ]]
+then
+	mkdir ~/common
+fi
+
+src_dir=$buddy/common/root
+if [[ -d $src_dir ]]
+then
+	functions=common/functions
+	[[ -L ~/$functions ]] && /bin/rm ~/$functions						# we'll put this back later
+
+	rsync -az --exclude '.*.sw[po]' $src_dir/ ~/common
+	rsync -rvn --delete $src_dir/ ~/common | sed -n '/^deleting/{s/deleting/extraneous file:/;p}'
+
+	# now put the functions softlink back
+	ln -s $buddy/$functions ~/$functions
+	# and fix the file ownerships
+	chown -R root ~/common
+	find ~/common -not -group wheel | xargs chgrp root
+fi
+
+if [[ -n $1 ]]
+then
+	host=$(resolve_host "$1")
+	if [[ -z $host ]]
+	then
+		host="$1"
+	fi
+
+	$buddy/common/bin/psync $interactive $host
+fi

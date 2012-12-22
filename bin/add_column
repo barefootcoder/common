@@ -1,0 +1,58 @@
+#! /bin/bash
+
+me=${0##*/}									# slightly prettier than $0
+readonly me
+
+field_sep=''
+get_num='{num=$XXX}'											# after we read column arg, we substitute it for "XXX"
+output='END { print total }'
+while getopts ":aHr:F:tpvh" opt
+do
+	case $opt in
+		a)	output='END { print total / NR }'
+			;;
+		H)	get_num="$get_num "'{gsub("[\"$%, ]", "", num)}'
+			;;
+		r)	output="$(echo "$output" | sed 's@print \(.*\) }@print int((\1)/'$OPTARG'+.5)*'$OPTARG' }@')"
+			;;
+		F)  field_sep="BEGIN { FS=\"$OPTARG\" }"
+			;;
+		t)  field_sep='BEGIN { FS="\t" }'
+			;;
+		p)	verbose='{ print $0 }'
+			;;
+		v)	verbose='{ print NR "(" num "):" total }'
+			;;
+		h)  echo "usage: $me -h | [-aH] [-p | -v] [-t | -F sep] [-r num] colnum [file ...]" >&2
+			echo "    -a : output average (default: output sum)" >&2
+			echo "    -H : try hard to find numbers (ignores quotes, whitespace, $, %, etc)" >&2
+			echo "    -p : preserve input lines (cancels out -v)" >&2
+			echo "    -v : print running totals for each line of input (good for debugging; cancels out -p)" >&2
+			echo "    -F : use sep as a field separator (default: use any whitespace)" >&2
+			echo "    -t : use tab as a field separator (short for -F'\t')" >&2
+			echo "    -r : round output to this number" >&2
+			echo "    -h : this help message" >&2
+			echo "    colnum : column of numbers to add (non-numeric values in this col treated as 0)" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+column=$1
+if [[ -z $column ]]
+then
+	echo "$me: must supply column number to total ($me -h for help)" >&2
+	exit 2
+fi
+shift
+get_num="$(echo "$get_num" | sed 's@XXX@'$column'@')"
+
+#awk $field_arg 'NR % 10000 == 0 { printf "." } $'$column' ~ /^[0-9.]+$/ { total += $'$column' } END { print total }' "$@"
+awk 'BEGIN { CONVFMT="%.6f" } '"$field_sep $get_num"' num ~ /^-?[0-9.]+$/ { total += num } '"$verbose $output" "$@"

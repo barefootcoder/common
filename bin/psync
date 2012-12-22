@@ -1,0 +1,113 @@
+#! /bin/bash
+
+function local_and_remote
+{
+	# $1 == command
+	# $2 == reomte host
+
+	cd ~/common
+	if [[ -e $1 ]]
+	then
+		./$1
+		remote_out=$(ssh $2 "cd common ; ./$1" 2>&1)
+		if [[ ! -z $remote_out ]]
+		then
+			echo "trying to remotely run $1:"
+			echo "$remote_out" | sed 's/^/-- /'
+		fi
+	fi
+}
+
+
+me=${0##*/}
+ask_or_not=-auto
+while getopts ":imh" opt
+do
+	case $opt in
+		i)	ask_or_not=
+			;;
+		m)	minimal=1
+			;;
+		h)	echo "usage: $me [-i] hostname" >&2
+			echo "           -i : interactive (ask about syncing decisions)" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+if [[ -z $1 ]]
+then
+	echo "$me: must supply host to sync ($me -h for help)" >&2
+	exit 2
+fi
+
+
+# minimal is the bare necessities we need; typically for a machine with no unison installed
+if [[ -n $minimal ]]
+then
+	ssh $1 mkdir common
+	for file in ~/common/*
+	do
+		[[ -f $file ]] && scp -pq $file $1:common/
+	done
+	for dir in bin rc ssh cddb
+	do
+		scp -pqr ~/common/$dir $1:common/
+	done
+	for mod in Toolkit myperl myperl.pm perl5
+	do
+		scp -pqr ~/common/perl/$mod $1:common/perl/
+	done
+	local_and_remote makeln $1
+	exit
+fi
+
+
+# common dir has to exist before this stuff will really work
+if [[ ! -d ~/common ]]
+then
+	mkdir ~/common
+fi
+
+
+unison_ver=$(unison -version | awk '{print $3}')
+
+
+local_and_remote refresh $1
+cd
+if [[ $unison_ver == 2.9.1 ]]
+then
+	unison common ssh://$1/common -ui text $ask_or_not						\
+		-ignore 'Name .*.swp'												\
+		-merge 'diff3 -m CURRENT1 OLD CURRENT2 > NEW'						\
+		-merge2 'sdiff -b -d -s -t --tabsize=4 -o NEW CURRENT1 CURRENT2'	\
+		-backup 'Path *' -ignore 'Name backup'
+elif [[ $unison_ver == 2.12.0 || $unison_ver == 2.13.16 || $unison_ver == 2.27.57 ]]
+then
+	unison common ssh://$1/common -ui text $ask_or_not						\
+		-ignore 'Name .*.swp'												\
+		-merge 'Path * -> diff3 CURRENT1 CURRENTARCH CURRENT2 -m > NEW'		\
+		-backup 'Path *' -ignore 'Name backup'
+else
+	echo "$me: don't recognize unison version $unison_ver" >&2
+	exit 1
+fi
+local_and_remote makeln $1
+
+
+# for brand new machines, we typically copy psync over to the home dir
+# and run it from there.  if that's the case, we should remove ourselves
+# so we don't get confused with the proper psync (in ~/bin)
+if [[ -e ~/psync && -e ~/bin/psync ]]
+then
+	/bin/rm -f ~/psync
+fi
+
+echo "DON'T FORGET TO REHASH!"

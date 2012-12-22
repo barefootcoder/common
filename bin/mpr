@@ -1,0 +1,6 @@
+#! /bin/bash
+
+rank=$(wget -qO- 'http://www.github-meets-cpan.com/' | perl -lne 'print $1 if /(\d+)\..*Buddy Burden/')
+total=$(wget -qO- 'http://www.github-meets-cpan.com/about' | perl -lne 'print $1 if /Currently there are (\d+)/')
+pctg=$(echo -e "scale=4\n($total-$rank+1)/$total*100" | bc)
+echo "$rank out of $total ($pctg%)"

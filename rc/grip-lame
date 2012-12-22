@@ -1,0 +1,4 @@
+GRIP 2
+exe /usr/bin/lame
+cmdline -h -b %b %w %m
+extension mp3

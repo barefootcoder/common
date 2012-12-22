@@ -1,0 +1,104 @@
+#! /usr/bin/perl
+
+use strict;
+
+use Getopt::Std;
+use Text::Wrap;
+use Term::Size;
+
+
+# default values
+# when determining terminal size, Term::Size::chars wants a filestream
+# of course, if we're being used as a filter, say in vim (which is of
+# course a very common use), STDIN, STDOUT, and STDERR will all be
+# redirected.  so we go to a bit of trouble to get a realistic terminal
+# size.  this probably won't work on non-Unix boxen, but that's okay.
+# it'll just fall back to 80-column mode in that case.
+our $COLS;
+open(TTY, "/dev/tty") and $COLS = Term::Size::chars(*TTY{IO}), close(TTY);
+$COLS ||= 80;
+$Text::Wrap::tabstop = 8;
+$Text::Wrap::columns = ($COLS - 5) + 1;	# Text::Wrap actually uses columns - 1
+$Text::Wrap::huge = 'overflow';			# better default than default default
+my $prefix = "";
+
+# now check options
+my $opt = {};
+getopts("t:w:h", $opt);
+$Text::Wrap::tabstop = $opt->{t} if $opt->{t};
+$Text::Wrap::columns = $opt->{w} + 1 if $opt->{w};
+
+# help message
+if ($opt->{h})
+{
+	my $me = $0;
+	$me =~ s@^.*/@@;
+
+	print STDERR "usage: $me -h | [-t #] [-w #] [file ...]\n";
+	print STDERR "       like fmt, but preserves HTML tags on a single line\n";
+	print STDERR "           -h: this help message\n";
+	print STDERR "           -t: specify width of a tab char (default ",
+			"$Text::Wrap::tabstop)\n";
+	print STDERR "           -w: specify width to wrap on (default ",
+			$Text::Wrap::columns - 1, ")\n";
+	exit 2;
+}
+
+# now for the real action
+my @paragraph;
+while ( <> )
+{
+	# ditch leading whitespace, but save it if paragraph is blank,
+	# meaning we're starting a new paragraph
+	if (@paragraph)
+	{
+		s/^\s+//;
+	}
+	else
+	{
+		# draw indent from first line in a paragraph
+		s/^(\s*)//;
+		$prefix = $1;
+	}
+
+	# ditch trailing whitespace too
+	s/\s+$//;
+
+	# blank lines indicate new paragraph, so output old one
+	# and, of course, pass the blank lines through
+	if ( /^$/ )
+	{
+		if (@paragraph)
+		{
+			print_para();
+			@paragraph = ();
+		}
+		print "\n";
+	}
+	# otherwise, just push it into our paragraphs array
+	else
+	{
+		# make non-breaking spaces by replacing with ^D
+		while ( /<.*?>/g )
+		{
+			substr($_, $-[0], $+[0] - $-[0]) =~ s/ /\cD/g;
+		}
+		push @paragraph, $_;
+	}
+}
+
+# and output last paragraph, if any
+print_para();
+
+
+sub print_para
+{
+	foreach (wrap($prefix, $prefix, @paragraph))
+	{
+		s/\cD/ /g;
+		s/\.\t(.)/.  $1/g;		# curb overenthusiastic tendency to turn
+								# the 2 spaces after a period into a tab
+		print;
+	}
+	print "\n";
+}

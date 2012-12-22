@@ -1,0 +1,3 @@
+Host			sigil
+	HostName			ssh.thinkgeek-ffx.com
+	Port				2264

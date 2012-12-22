@@ -1,0 +1,15 @@
+[[ -r makeln ]] || ( echo "must be in common dir!" && exit 2 )
+
+chmod +x makeln
+chmod +x refresh
+chmod +x repl-bottom
+chmod +x repl-top
+chmod +x new_dropbox
+chmod +x bin/*
+
+cd root
+chmod +x psync
+chmod +x makeln
+chmod +x lbin/*
+chmod +x sbin/*
+find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp wheel

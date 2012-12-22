@@ -1,0 +1,20 @@
+set showmode			" want to see insert / replace mode
+set tabstop=4			" standard for Barefoot files
+set shiftwidth=4		" needs to match tabstop
+set undolevels=0		" turn off multiple undo's
+"set yankendofline		" same as map Y y$
+set wm=4				" wrap at 76 (assuming 80 char screen)
+set equalprg=fmt76		" for reformatting paragraphs
+"set insertmode			" start out in insert mode
+set comments=			" we're not writing programs now
+" make g same as G
+map g G
+" make Y same as y$
+map Y y$
+" make sig's easy
+map!  		-- Buddy
+imap  		-- GM
+" for spellchecking
+map  :w!:!ispell %:e!
+" use this for making quotes
+map  <}<}!}fmtrep

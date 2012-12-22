@@ -1,0 +1,6 @@
+#! /bin/bash
+
+lineno=$1
+shift
+
+sed -n "$lineno"p "$@"

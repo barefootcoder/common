@@ -1,0 +1,43 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Debuggit;
+
+use File::Copy;
+use Perl6::Slurp;
+use Text::Tabs; $tabstop = 4;
+
+
+my $force = 0;
+if ($ARGV[0] eq '-f')
+{
+	$force = 1;
+	shift;
+}
+else
+{
+	exit unless `vconfig_directive PatchWhitespace` eq "yes\n";			# don't bother unless cur project is patchable
+}
+
+foreach my $file (@ARGV)
+{
+	next unless -f $file;												# don't try to filter directories, etc
+	next if -B $file;													# don't try to filter binary files!
+	next if $file =~ /^makefile/i;										# messing with tabs in makefiles is doomed to fail
+
+	print STDERR "going to filter $file\n" if DEBUG >= 3;
+
+	move($file, "$file~");
+	open(OUT, ">$file") or die("can't open output file $_");
+	print OUT map { s/\s+$//; "$_\n" } expand(slurp "$file~");
+
+	# force perms and dates to be the same
+	my ($mtime, $atime, $mode) = (stat "$file~")[9,8,2];
+	utime $atime, $mtime, $file;
+	chmod $mode, $file;
+
+	# if the only difference is whitespace, don't bother to save the backup file
+	unlink("$file~") unless `diff -b $file~ $file 2>&1`;
+}

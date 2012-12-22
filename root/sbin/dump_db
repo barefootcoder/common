@@ -1,0 +1,113 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use File::Basename;
+
+$| = 1;
+our $ME = basename($0);
+
+
+# check for switches
+my $opt = {};
+getopts('st:', $opt);
+
+my $separate = $opt->{'s'};
+my @tables = $opt->{'t'} ? split(',', $opt->{'t'}) : ();
+
+sub HELP_MESSAGE
+{
+	print STDERR "usage: $ME [-s] [-t table[,table...]] db dir\n";
+	print STDERR "            -s : save each table dump to a separate file (default: one file per db)\n";
+	print STDERR "            -t : dump only the listed table(s) (default: dump all tables in db)\n";
+	print STDERR "       db must exist\n";
+	print STDERR "       if dir does not exist, it is created\n";
+	print STDERR "       output file name is either db.dump.bz2 or table.dump.bz2 x #tables\n";
+	print STDERR "       if dir is not empty, files will be overwritten if they exist!\n";
+	exit;
+}
+
+
+# check for arguments
+HELP_MESSAGE() unless @ARGV == 2;
+my ($db, $dir) = @ARGV;
+
+if (! -d $dir)
+{
+	die("$ME: $dir is not a directory; can't proceed\n") if -e $dir;
+	mkdir $dir or die("$ME: $dir does not exist and I can't create it\n");
+}
+
+
+# fire up mysqldump
+# for the options, note the following:
+# 	--opt is not technically necessary, since it's the default, but this is more explicit
+# 	--opt implies --add-drop-table, --add-locks, --create-options, --disable-keys, --extended-insert, --quick,
+# 			and --set-charset (it would imply --lock-tables, but that's turned off by --master-data)
+# 	--master-data implies --lock-all-tables
+my $is_master = `echo "show master status" | mysql` =~ /Position/;
+my $master_flag = $is_master && not $separate ? "--master-data=1" : "--lock-all-tables";
+my $tables = @tables ? "@tables" : '';
+open(IN, "mysqldump --opt --skip-quick $master_flag --flush-logs $db $tables |") or die("$ME: can't start up mysqldump\n");
+
+# suck in data differently for separate tables vs one dbfile
+if (not $separate)
+{
+	open(OUT, "| bzip2 -c9 >$dir/$db.dump.bz2") or die("$ME: can't start up bzip2 to compress output\n");
+	print OUT <<EOT;
+		# speed up InnoDB loading
+		SET AUTOCOMMIT = 0;
+		SET FOREIGN_KEY_CHECKS = 0;
+EOT
+
+	while ( <IN> )
+	{
+		print "\nDumping table $1 ... " if /Table structure for table `(.*?)`/;
+		print OUT;
+	}
+
+	print OUT <<EOT;
+		# clean up InnoDB optimizations
+		SET FOREIGN_KEY_CHECKS = 1;
+		COMMIT;
+		SET AUTOCOMMIT = 1;
+EOT
+	close(OUT);
+	print "done\n";
+}
+else
+{
+	my $curtable;
+	my $header = '';
+	local $/ = '';
+	while ( <IN> )
+	{
+		if ( /Table structure for table `(.*?)`/ )
+		{
+			# new table; start a new file
+			$curtable = $1;
+			print "\nDumping table $curtable ...";
+
+			close(OUT);
+			open(OUT, "| bzip2 -c9 >$dir/$curtable.dump.bz2") or die("$ME: can't start up bzip2 to compress output\n");
+			print OUT $header;
+		}
+
+		if (not $curtable)
+		{
+			# the stuff before the first table; stuff that into $header
+			$header .= $_;
+		}
+		else
+		{
+			print OUT;
+		}
+	}
+
+	close(OUT);
+	print "\n";
+}
+
+close(IN);

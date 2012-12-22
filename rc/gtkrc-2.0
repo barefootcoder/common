@@ -1,0 +1,9 @@
+gtk-can-change-accels=1
+binding "pidgin-bindings"
+{
+	# enter inserts a newline
+	bind "Return" { "insert-at-cursor" ("\n") }
+	# ctrl-Enter sends message
+	bind "<ctrl>Return" { "message_send" () }
+}
+widget "*pidgin_conv_entry" binding "pidgin-bindings"

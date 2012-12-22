@@ -1,0 +1,235 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Debuggit(DEBUG => 1);
+
+use Time::Local;
+use List::Util qw<sum>;
+use POSIX qw< ceil floor >;
+use Date::Format qw<time2str>;
+use Time::ParseDate qw<parsedate>;
+
+use constant AVAIL => ':AVAILABILITY';
+
+my $cmd = shift;
+my $arg = shift;
+my ($tname, $today, $prefix);
+if ($cmd eq 'eod' or $cmd eq 'daybreak')
+{
+	$today = $arg || get_date(time());
+}
+elsif ($cmd eq 'review')
+{
+	#$prefix = "$arg-" || '';
+	$prefix = $arg || '';
+}
+else
+{
+	$tname = $arg;
+}
+
+my ($group_found, $timer_found) = (0,0);
+$today = time2str('%Y/%m/%d', parsedate($today)) if $today;
+my (%totals, @daybreak, %review);
+
+while ( <> )
+{
+	if (/^\s*$/)
+	{
+		if ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+		{
+			if ($group_found)
+			{
+				if ($cmd eq 'daybreak')
+				{
+					breakdown(sort @daybreak);
+				}
+				else
+				{
+					my $total = my $lines = 0;
+					$totals{':MINDATE'} ||= 'N/A';
+					$totals{':MAXDATE'} ||= 'N/A';
+					print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
+					foreach (sort keys %totals)
+					{
+						next if /^:/;
+						$total += $totals{$_};
+						++$lines;
+						print_time($_, $totals{$_});
+					}
+					print_time("GRAND TOTAL", $total) if $lines > 1;
+					print_time("AVAILABILITY", $totals{+AVAIL}) if $totals{+AVAIL};
+				}
+				exit;
+			}
+			else
+			{
+				undef %totals;
+			}
+		}
+
+		print unless $cmd eq 'breakdown' or $cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak' or $cmd eq 'review';
+		next;
+	}
+
+	chomp;
+	my ($name, $chunks, @stuff) = split("\t");
+	$chunks ||= '';
+
+	if ($chunks and substr($chunks, -1, 1) eq '-' and ($cmd eq 'start' or $cmd eq 'half' or $cmd eq 'pause'))
+	{
+		$chunks .= time() . ',' unless $name eq AVAIL and $tname ne AVAIL;
+	}
+	if (($cmd eq 'start' or $cmd eq 'half') and ($name eq $tname and !$timer_found or $name eq AVAIL and $chunks !~ /-$/))
+	{
+		$timer_found = $name eq $tname;
+		$chunks .= ($cmd eq 'half' and $name ne AVAIL ? '2/' : '') . time() . '-';
+	}
+
+	if ($cmd eq 'breakdown')
+	{
+		if ($name eq $tname)
+		{
+			breakdown(split(',', $chunks));
+			exit;
+		}
+		next;
+	}
+	elsif ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+	{
+		$group_found = 1 if $cmd eq 'total' and $name eq $tname;
+		my $sub;
+		if (@stuff)
+		{
+			$sub = $stuff[-1];
+		}
+		else
+		{
+			$sub = $name;
+			$sub =~ s/(-nw)+$//;
+		}
+		foreach (split(',', $chunks))
+		{
+			my ($min, $max) = date_range($_);
+			if ($cmd eq 'eod' and $min eq $today)
+			{
+				$group_found = 1;
+				$totals{$sub} += total_chunk($_);
+			}
+			elsif ($cmd eq 'daybreak' and $min eq $today and $name ne AVAIL)
+			{
+				$group_found = 1;
+				push @daybreak, "$_:$name";
+			}
+			elsif ($cmd eq 'total')
+			{
+				$totals{$sub} += total_chunk($_);
+				$totals{':MINDATE'} = $min if not $totals{':MINDATE'} or $min lt $totals{':MINDATE'};
+				$totals{':MAXDATE'} = $min if not $totals{':MAXDATE'} or $min gt $totals{':MAXDATE'};
+			}
+		}
+		next;
+	}
+	elsif ($cmd eq 'review')
+	{
+		if ($name =~ /^$prefix/)
+		{
+			if ($name =~ s/:$//)
+			{
+				$chunks =~ s/\s*\((IB-\d+)\)// and $review{$name}->{ticket} = $1;
+				$review{$name}->{descr} = $chunks;
+			}
+			else
+			{
+				$review{$name}->{total} += sum map { scalar total_chunk($_) } split(',', $chunks) if $chunks;
+			}
+		}
+		next;
+	}
+
+	print join("\t", $name, $chunks, @stuff), "\n";
+}
+
+if ($cmd eq 'review')
+{
+	debuggit(3 => "review hash:", DUMP => \%review);
+	print_time(sprintf("%-7s/%-15s [ %-20s ]", $review{$_}->{ticket}, $_, $review{$_}->{descr}), $review{$_}->{total})
+			foreach
+				sort { $review{$a}->{ticket} cmp $review{$b}->{ticket} }
+				grep { $review{$_}->{total} && $review{$_}->{ticket} }
+				keys %review;
+}
+
+
+sub get_date
+{
+	my ($time) = @_;
+
+	# times before 6am are considered "yesterday", so just subtract 6 hours from the actual time
+	return time2str("%Y/%m/%d", $time - 60 * 60 * 6);
+}
+
+
+sub date_range
+{
+	my ($chunks) = @_;
+
+	$chunks =~ m{^(?:2/)?(\d+)-.*(?:(\d+),?)?$};
+	return (get_date($1), get_date($2 || time()));
+}
+
+
+sub total_chunk
+{
+	my ($chunk) = @_;
+
+	my $half = s{^2/}{};
+	my ($from, $to) = split('-');
+
+	my $mins = (($to || time()) - $from) / 60;
+	$mins /= 2 if $half;
+	$mins = ceil($mins);
+
+	return wantarray ? ($from, $to, $mins, $half) : $mins;
+}
+
+
+sub print_time
+{
+	my ($label, $mins) = @_;
+
+	my $hrs = floor($mins / 60);
+	$mins %= 60;
+	printf("%2d hrs, %2d mins : %s\n", $hrs, $mins, $label);
+}
+
+
+sub breakdown
+{
+	my $total_mins = 0;
+	foreach (@_)
+	{
+		my $tname; s/:([\w-]+)$// and $tname = $1;
+		my ($from, $to, $mins, $half) = total_chunk($_);
+
+		$from = localtime($from);
+		$to = $to ? localtime($to) : 'current (still timing)';
+		my $duration = "$from - $to";
+		$duration .= " (half time)" if $half;
+		$duration .= " [$tname]" if $tname;
+		print_time($duration, $mins);
+		#if ($name eq AVAIL)
+		#{
+		#	print_time($duration, $mins);
+		#}
+		#else
+		#{
+		#	printf("%5d mins : %s\n", $mins, $duration);
+		#}
+		$total_mins += $mins;
+	}
+	#printf("%5d mins : TOTAL\n", $total_mins);
+	print_time("TOTAL", $total_mins);
+}

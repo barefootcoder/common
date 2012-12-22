@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ -z $1 ]]
+then
+	dir="*"
+else
+	if [[ -d $1 ]]
+	then
+		dir="$1/*"
+	else
+		echo "$0: $1 not a directory" >&2
+		exit 2
+	fi
+fi
+
+fgrep -rcI '	' $dir | grep -v ':0$'

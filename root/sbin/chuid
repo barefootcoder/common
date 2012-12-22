@@ -1,0 +1,41 @@
+#! /bin/bash
+
+readonly me=${0##*/}
+
+user="$1"
+newuid="$2"
+
+if [[ -z $user || -z $newuid ]]
+then
+	echo "usage: $me username newuid" >&2
+	exit
+fi
+
+olduid=$(awk -F: '$1 == "'$user'" {print $3}' /etc/passwd)
+if [[ -z $olduid ]]
+then
+	echo "$me: that user doesn't exist, twit" >&2
+	exit 2
+fi
+
+if [[ $newuid < 1001 || $newuid > 1999 ]]
+then
+	echo "$me: bad uid, moron" >&2
+	exit 2
+fi
+
+if [[ -n $(awk -F: '$3 == '$newuid /etc/passwd) ]]
+then
+	echo "$me: hey sunshine! that uid already exists!  you're asking for a world of hurt baby ..." >&2
+	exit 1
+fi
+
+echo "changing user $user from $olduid to $newuid"
+echo -n "you sure? [y/N] "
+read yn
+
+if [[ $yn == [yY]* ]]
+then
+	/usr/sbin/usermod -u $newuid $user
+	/usr/bin/find / -path /proc -prune -o -user $olduid -exec chown $user {} \;
+fi

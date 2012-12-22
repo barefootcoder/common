@@ -1,0 +1,36 @@
+" common to all vim startup files
+set showmode			" want to see insert / replace mode
+set tabstop=4			" standard for Barefoot files
+set shiftwidth=4		" needs to match tabstop
+set undolevels=0		" turn off multiple undo's
+
+" specifically for web stuff
+set autoindent			" handy for programming
+set wrapmargin=5		" keep lines from getting too long
+set equalprg=tfmt\ -t4	" tfmt understands HTML tags; -t4 is for 4-space tabs
+
+" make Y same as y$
+map Y y$
+" make g same as G
+map g G
+" show buffers
+map  :files
+" search for the word under the cursor
+map  /
+
+" web-specific abbreviations
+ab jiva <I>jiva</I>
+ab Jiva <I>Jiva</I>
+ab clitem <P CLASS=item> <B>
+ab fprereq <P> <B> Prerequisite: </B>
+ab fbene <P> <B> Benefit: </B>
+ab fspec <P> <B> Special: </B>
+ab xatts <A HREF="attributes.html"> Attributes</A>
+ab xrace <A HREF="backgrounds.html"> Background</A>
+ab xraces <A HREF="backgrounds.html"> Backgrounds</A>
+ab xclass <A HREF="classes.html"> Class</A>
+ab xclasses <A HREF="classes.html"> Classes</A>
+ab xskill <A HREF="skills.html"> Skill</A>
+ab xskills <A HREF="skills.html"> Skills</A>
+ab xfeat <A HREF="feats.html"> Feat</A>
+ab xfeats <A HREF="feats.html"> Feats</A>

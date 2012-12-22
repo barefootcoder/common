@@ -1,0 +1,304 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+use List::Util qw< first >;
+use Text::Tabs; $tabstop = 4;
+
+use lib "$ENV{'HOME'}/Dropbox/personal";
+use blog::common;
+
+
+my %blog =
+(
+	blogspot	=>	{
+						italic		=>	'span style="font-style: italic;"',
+						bold		=>	'b',
+						big			=>	'span style="font-size: larger;"',
+						small		=>	'span style="font-size: smaller;"',
+						quote		=>	'blockquote',
+						code		=>	'code',
+						collapsed	=>	'',
+						dash		=>	'&mdash;',
+						initial		=>	"\n",
+					},
+	perl		=>	{
+						italic		=>	'em',
+						bold		=>	'strong',
+						big			=>	'big',
+						small		=>	'small',
+						quote		=>	'blockquote',
+						code		=>	'code class="prettyprint"',
+						collapsed	=>	'',
+						dash		=>	'&mdash;',
+						initial		=>	'',
+					},
+	bbcode		=>	{
+						italic		=>	'i',
+						bold		=>	'b',
+						big			=>	'size=4',
+						small		=>	'size=1',
+						quote		=>	'quote',
+						code		=>	'code',
+						collapsed	=>	'spoiler',
+						dash		=>	'--',
+						initial		=>	'',
+					},
+);
+$blog{'html'} = { %{$blog{'blogspot'}} };
+$blog{'html'}->{'para'} = sub { s{^(.*?)\n\n}{<p>$1</p>\n}mg };
+my $blog_type = 'blogspot';												# default blog type
+
+my @blocks;																# for codeblocks et al
+my @footnotes = (undef);												# footnotes (starting at 1)
+my $footnote_style = '*';												# default style for footnotes
+my $me = '';															# URL to self (mostly not needed)
+
+
+my $hash = '#';
+my $front_boundary = qr/(^|\W)/;
+my $back_boundary = qr/(?=\W|$)/;
+my $section_break = <<EOT;
+
+<img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
+EOT
+
+#while ( <> )
+$/ = undef;
+$_ = slurp;
+$footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of footnotes
+{
+	# for backwards compatibility, convert old-style to new
+	s{^>>}{//--};s{<<$}{--//}g;														# old-style blockquotes
+	s[{{(.+?)}}][`$1`]sg;															# old-style inline code
+
+	# temporary conversion so -> and <- aren't considered literal > or <
+	my %align = ( '-><-' => 'CENTER', '->->' => 'RIGHT', '<-<-' => 'LEFT' );
+	s{(->|<-)(.+?)(->|<-)}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}sg;
+
+	s{\A/(\w+)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
+	s{\\?<}{&lt;}g;																	# literal <'s
+	s{\\?>}{&gt;}g;																	# literal >'s
+	s{^\.\n(.+?)^\.\n}{code_block(block => $1)}smeg;								# code block (only works on Perl blog)
+	s{`(.+?)`}{code_block(inline => $1)}eg;											# inline code
+	s{e`}{&eacute;}g;																# generalized e accute
+	s{a`}{&agrave;}g;																# generalized a grave
+	s{u`}{&uacute;}g;																# generalized u accute
+	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
+	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
+	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
+	unless ($blog_type eq 'bbcode')
+	{
+		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
+		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
+		s{(\W)'em\b}{$1&rsquo;em}g;													# ditto
+		s{'$back_boundary}{&rsquo;}g;												# close single quote
+		s{$front_boundary'}{$1&lsquo;}g;											# open single quote
+		s{"$back_boundary}{&rdquo;}g;												# close double quote
+		s{$front_boundary"}{$1&ldquo;}g;											# open double quote
+	}
+	s{^----$}{$section_break}mg;													# section break
+	s{^====$}{<hr/>}mg;																# horizontal rule
+	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1)}mseg;								# quotes
+	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
+	unless ($blog_type eq 'bbcode')
+	{
+		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
+		s{([.?!])  }{$1&nbsp; }g;													# proper end-of-sentence
+		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
+	}
+	s{--}{$blog{$blog_type}->{dash}}eg;												# em dash
+	s{((^\s*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
+	s{((^\s*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
+	s{${front_boundary}_(\w+)_(?=\w)}{$1 . fmt(italic => $2)}seg;					# partial word italics (front)
+	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
+	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
+	s{$front_boundary\*([^\]]+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;			# bold
+	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
+	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
+	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
+	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
+	s{~~CENTER~~(.*?)~~CENTER~~}{<div align=center>$1</div>}msg;					# centered
+	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
+	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
+	s{\^\^\[(.*?)]}{footnote(full => $1)}eg;										# footnote
+	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
+	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
+	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
+	s{\\([\[\]])}{$1}g;																# literal square brackets
+	s{(\d+)c}{$1&cent;}g;															# cents
+
+	# paragraph everything if blog type requires it
+	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
+	# append footnotes
+	if (first { defined } @footnotes)
+	{
+		$_ .= "\n\n";
+		my @notes;
+		foreach my $f (0..$#footnotes)
+		{
+			push @notes, footnote(final => $footnotes[$f], $f) if defined $footnotes[$f];
+		}
+		$_ .= fmt(small => join("<br>\n", @notes)) . "\n";
+	}
+	# now put all blocks back
+	s{\cQ(\d+)}{$blocks[$1]}g;
+	# handle initial whitespace according to blog type
+	s{\A\s*}{$blog{$blog_type}->{'initial'}};
+
+	print;
+}
+
+
+sub change_type
+{
+	my ($type, $extra) = @_;
+
+	die("unknown blog type $type") unless exists $blog{$type};
+	$blog_type = $type;
+
+	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
+
+	return '';															# for substitution
+}
+
+
+sub block_save
+{
+	my ($code) = @_;
+
+	# in case we overzealously converted some ->'s to right justification codes inside code blocks
+	$code =~ s/~~RIGHT~~/->/g;
+
+	push @blocks, $code;
+#warn("$#blocks => [$blocks[-1]]\n");
+	return "\cQ$#blocks";
+}
+
+
+sub url_block
+{
+	my ($url, $alt_text) = @_;
+
+	if ($blog_type eq 'bbcode')
+	{
+		state $bbcodes = [ map { qr{^/?$_\b}i } qw< b i quote list code size font spoiler center color url indent > ];
+		if (($url eq '*' or $url ~~ @$bbcodes) and not $alt_text)
+		{
+			return "[$url]";
+		}
+	}
+
+	if ($url =~ /^(\w+):/)												# external link
+	{
+		given ($1)
+		{
+			when ('cpan')												# shortcut for links to CPAN modules
+			{
+				$url =~ s/^cpan://;
+				$alt_text = $url;
+				$url = 'https://metacpan.org/module/' . $alt_text;
+			}
+			default
+			{
+				# http or some other normal URL thingy
+				# no need to do anything here
+			}
+		}
+		$alt_text ||= $url;												# no alt text
+	}
+	else																# internal link
+	{
+		$alt_text ||= $url;												# no alt text
+		$url = get_blog($url);
+	}
+
+	return block_save(qq{<a href="$url">$alt_text</a>});
+}
+
+
+sub code_block
+{
+	my ($type, $code) = @_;
+
+	$code = fmt(code => expand($code));
+	$code = "<pre>$code</pre>" if $type eq 'block';
+	return block_save($code);
+}
+
+
+sub fmt
+{
+	my ($fmt, $text) = @_;
+	debuggit(3 => "formatting", $text, "in", $fmt);
+
+	my $on = $blog{$blog_type}->{$fmt} or die("unknown formatting $fmt");
+	my $off = (split(' ', $on))[0];
+
+	my $open = $blog_type eq 'bbcode' ? '[' : '<';
+	my $close = $blog_type eq 'bbcode' ? ']' : '>';
+	$on = "$open$on$close";
+	$off = "$open/$off$close";
+	return "$on$text$off";
+}
+
+
+sub list
+{
+	my ($type, $text) = @_;
+
+	if ($blog_type eq 'bbcode')
+	{
+		$type = $type eq 'ordered' ? 'list=1' : 'list';
+		$text =~ s/^\s+//;
+		$text = join("\n", map { s/^\s*[#*]\s*//; "[*]$_" } split("\n", $text));
+		return "\n[$type]$text\n[/list]";
+	}
+	else
+	{
+		$type = $type eq 'ordered' ? 'ol' : 'ul';
+		$text =~ s/^\s+//;
+		$text = join('', map { s/^\s*[#*]\s*//; "<li>$_</li>" } split("\n", $text));
+		return "\n<$type>$text</$type>";
+	}
+}
+
+
+sub footnote_ref
+{
+	my ($num) = @_;
+
+	return $footnote_style eq '1' ? $num : $footnote_style x $num;
+}
+
+sub footnote
+{
+	my ($type, $text, $num) = @_;
+
+	if ($type eq 'ref')
+	{
+		push @footnotes, undef;
+		return qq{<sup><a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a></sup>';
+	}
+	elsif ($type eq 'text')
+	{
+		if (defined $num)
+		{
+			$footnotes[$num] = $text;
+		}
+		else
+		{
+			push @footnotes, $text;
+		}
+		return '';
+	}
+	elsif ($type eq 'full')
+	{
+		push @footnotes, $text;
+		return qq{<sup><a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a></sup>';
+	}
+	elsif ($type eq 'final')
+	{
+		return qq{<a name="note$num">} . footnote_ref($num) . "</a> $text";
+	}
+}

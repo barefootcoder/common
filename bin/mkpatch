@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if [[ -z $3 ]]
+then
+	echo "usage: $0 dir.old/ dir.new/ patchname" >&2
+	exit 2
+fi
+
+LC_ALL=C TZ=UTC0 diff -Naur "$1" "$2" >"$3".patch

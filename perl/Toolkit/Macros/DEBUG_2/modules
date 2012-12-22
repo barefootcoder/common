@@ -1,0 +1,19 @@
+
+# Bascially, what I _want_ to say is just:
+#
+		use Debuggit(DEBUG => 2);
+#
+# but I also want this to be portable even when Debuggit is not installed.
+#
+#BEGIN
+#{
+#	if (eval { require Debuggit })
+#	{
+#		Debuggit->import(DEBUG => 2);
+#	}
+#	else
+#	{
+#		sub DEBUG() { 2 };
+#		sub debuggit { print STDERR "$@\n" };
+#	}
+#}

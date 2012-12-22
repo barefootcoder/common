@@ -1,0 +1,20 @@
+#! /usr/bin/perl -Tw
+
+use strict;
+
+use Net::Telnet;
+
+
+my ($time_server) = shift =~ m/^\s*(\d+\.\d+\.\d+\.\d+)\s*$/;
+die("must specify time server (as IP address) as first arg") unless $time_server;
+
+my $t = new Net::Telnet (Port => 13);
+$t->open($time_server);
+while ($_ = $t->getline())
+{
+	if (/UTC/)
+	{
+		/(\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/;
+		print "$2$3$4$5$1.$6\n";
+	}
+}

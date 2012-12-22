@@ -1,0 +1,15 @@
+#! /bin/bash
+
+if [[ -z $DISPLAY ]]
+then
+	echo "$0: have to do this from a term that knows X windows is running" >&2
+	exit 1
+fi
+
+# this idea comes from:
+# http://askubuntu.com/questions/41363/how-to-disable-visual-effects-and-compiz-100
+metacity --replace &
+
+# could also try:
+# http://askubuntu.com/questions/184530/disable-opengl-for-compiz-from-command-line
+# gconftool-2 --set --type=list --list-type=string /apps/compiz-1/general/screen0/options/active_plugins "[core,composite,decor,imgpng,compiztoolbox,regex,mousepoll,place,session,move]"

@@ -1,0 +1,7 @@
+# maximize speed
+rshargs = -C
+fastcheck = true
+xferbycopying = true
+
+# do the little ones first so we get as immediate progress as we can manage
+sortbysize = true

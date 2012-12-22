@@ -1,0 +1,18 @@
+#! /bin/bash
+
+for infile
+do
+	base="${infile%%.m4a}"
+	if [[ $base == $infile ]]
+	then
+		echo "$0: I only know how to convert m4a files" >&2
+		exit 2
+	fi
+
+	wavfile="$base.wav"
+	outfile="$base.mp3"
+
+	faad -o "$wavfile" "$infile"
+	lame -h -b 192 "$wavfile" "$outfile"
+	rm "$wavfile"
+done

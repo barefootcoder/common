@@ -1,0 +1,23 @@
+<ALL>
+	BackupRotation = 6
+
+	NextWeekMarker = -nw
+</ALL>
+
+<TOTAL>
+
+	mintime = .25
+
+	ignore = timer-fixes
+	ignore = log
+
+</TOTAL>
+
+<AVERAGE>
+	breakout = VAC
+	window = 15
+</AVERAGE>
+
+<LOG>
+	editor = fe_vi
+</LOG>

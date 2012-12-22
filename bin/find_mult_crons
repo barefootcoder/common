@@ -1,0 +1,109 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Debuggit;
+
+use Getopt::Std;
+use Data::Dumper;
+use File::Basename;
+
+
+our $ME = basename($0);
+use constant DEFAULT_THRESHHOLD => 3;
+
+my $opts = {};
+getopts('hit:', $opts);
+HELP_MESSAGE() if $opts->{'h'};
+my $interesting = $opts->{'i'};
+my $threshhold = $opts->{'t'} || $interesting ? 1 : DEFAULT_THRESHHOLD;
+my ($start_hr, $start_min) = split(/[:.]/, shift || '0:0');
+my ($end_hr, $end_min) = split(/[:.]/, shift || '23:59');
+
+sub HELP_MESSAGE
+{
+	print STDERR "usage: $ME [-i] [-t threshhold] [start] [end]\n";
+	print STDERR "            -i : show only 'interesting' cronjobs (defined as jobs that run less often than 1x/hr)\n";
+	print STDERR "            -t : only show times that have more than threshhold jobs running at that time (default: ",
+										DEFAULT_THRESHHOLD, ")\n";
+	print STDERR "       reads list of crons from STDIN (e.g. crontab -l | $ME)\n";
+	print STDERR "       use -t1 to show all cronjbs\n";
+	print STDERR "       -i implies -t1, unless overridden\n";
+	exit;
+}
+
+
+my @crons;
+while ( <> )
+{
+	next if /^\s*#/;
+	next if /^\s*$/;
+	next if /^\S+=\S+$/;
+
+	my $cron = {};
+	@$cron{qw<min hr day mo dow command cmd_args>} = split(' ', $_, 7);
+	push @crons, $cron;
+}
+debuggit(4 => DUMP => \@crons);
+
+foreach my $hr (0..23)
+{
+	next unless $hr >= $start_hr and $hr <= $end_hr;
+
+	foreach my $min (0..59)
+	{
+		next unless ($min >= $start_min or $hr > $start_hr) and ($min <= $end_min or $hr < $end_hr);
+
+		my @now_crons;
+		for (my $x = 0; $x < @crons; ++$x)
+		{
+			my $cron = $crons[$x];
+			next if $interesting and ($cron->{'hr'} eq '*' or $cron->{'hr'} =~ /^\d+-\d+$/);
+			push @now_crons, $x if cron_match($cron->{'hr'}, $hr) and cron_match($cron->{'min'}, $min);
+		}
+		if (@now_crons >= $threshhold)
+		{
+			foreach (@now_crons)
+			{
+				print "$hr:$min => $crons[$_]->{'command'}";
+				print " $crons[$_]->{'cmd_args'}" unless $crons[$_]->{'command'} =~ m{/};
+				print " (only day $crons[$_]->{'day'})" unless $crons[$_]->{'day'} eq '*';
+				print " (only dow $crons[$_]->{'dow'})" unless $crons[$_]->{'dow'} eq '*';
+				print " (only month $crons[$_]->{'mo'})" unless $crons[$_]->{'mo'} eq '*';
+				print "\n";
+			}
+			print "=" x 20, "\n";
+		}
+	}
+}
+
+
+sub cron_match
+{
+	my ($cron_num, $num) = @_;
+
+	foreach (split(',', $cron_num))
+	{
+		if ($_ eq '*')
+		{
+			return 1;
+		}
+		elsif ($_ =~ /^(\d+)-(\d+)$/)
+		{
+			return $1 <= $num && $num <= $2;
+		}
+		elsif ($_ =~ m@^\*/(\d+)$@)
+		{
+			return $num % $1 == 0;
+		}
+		elsif ($_ =~ /^\d+$/)
+		{
+			return $num == $_;
+		}
+		else
+		{
+			die("can't figure out format for cron job! ($_)");
+		}
+	}
+}

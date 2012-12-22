@@ -1,0 +1,11 @@
+#! /usr/bin/perl -l
+
+$dir = shift;
+chomp($vcdir = `vctools-config --working`);
+
+print '-' and exit if $dir eq '-';
+print $dir and exit if -d $dir;
+print join('/', ('..')x(length($dir)-1)) and exit if $dir =~ /\.{3,}/;
+foreach (split(':', $ENV{CDPATH})) { print $dir and exit if -d "$_/$dir" }
+chomp($vfind = `vfind -dirfind \!* .`) and print "$vcdir/$1/$vfind" and exit if $ENV{VCTOOLS_SHELL} =~ /proj:(.*)/;
+exec('cda', $dir);

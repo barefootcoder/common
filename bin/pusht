@@ -1,0 +1,104 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+NO_SERVER_BOUNCE=/tmp/sandbox_server_off 
+
+proj=rent
+batch="-batch"
+while getopts ":d:ih" opt
+do
+	case $opt in
+		d)  dest="$OPTARG"
+			;;
+		i)	batch=
+			;;
+		h)  echo "usage: $me -h | [-d dest] file" >&2
+			echo "    -d : override default destination" >&2
+			echo "    -h : this help message" >&2
+			echo "    file : specific file being worked on (may trigger additonal actions)" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+function send_to_sandbox
+{
+	file="$1"
+
+	config=${dest:-sandbox}
+	if [[ ! -r ~/.unison/$config.prf ]]
+	then
+		echo "$me: no such Unison config: $config.prf" >&2
+		exit 1
+	fi
+
+	# get the name of the sandbox machine from the Unison pref file
+	readonly sandbox_regexp='^root\s*=\s*ssh://(?:\w+\@)?([\w.-]+)//home/\w+/(.*)\s*$'
+	# note that the $1 below is not the $1 of this function ...
+	readonly sandbox=$(perl -lne 'print $1 if m{'$sandbox_regexp'}' ~/.unison/$config.prf)
+	readonly sandbox_dir=$(perl -lne 'print $2 if m{'$sandbox_regexp'}' ~/.unison/$config.prf)
+
+	base_dir="$(vctools-config --working)/$proj"
+
+	if [[ ! -e $NO_SERVER_BOUNCE ]]
+	then
+		fpath="$(realpath "$file")"
+		if [[ -n $file ]]
+		then
+			if [[ $fpath == $base_dir/web/* || $fpath == $base_dir/lib/* && $fpath != */t/* ]]
+			then
+				bounce_apache=1
+				if [[ $fpath == $base_dir/lib/reports/* || $fpath == $base_dir/lib/oracle/* || $fpath == *.html ]]
+				then
+					bounce_apache=0
+				fi
+			fi
+		fi
+	fi
+
+	unison -ui text $batch $config
+	if [[ $bounce_apache == 1 ]]
+	then
+		ssh $sandbox "cd $sandbox_dir ; make restart"
+	fi
+}
+
+
+if [[ $VCTOOLS_SHELL == "proj:$proj" || ( $VCTOOLS_SHELL == "git" && $(pwd) == */proj/rent* ) ]]
+then
+	send_to_sandbox "$1"
+elif [[ -n $1 ]]
+then
+	first_line="$(head -n1 "$1")"
+	if [[ "$first_line" == '==>'* ]]
+	then
+		wikify "$1"
+	elif [[ $(pwd) == *docs/blog || "$first_line" == "/bbcode/" ]]
+	then
+		if blogify "$1" >/tmp/hold.wri
+		then
+			DISPLAY=${DISPLAY:-:0.0} gedit /tmp/hold.wri
+		fi
+	elif [[ $1 == mits-mon ]]
+	then
+		scp -p $1 wdev@pm-01:bin
+		#ssh wdev@pm-01 $1
+	elif [[ -x "$1" ]]
+	then
+		"$1"
+	elif [[ $1 == *.testing.notes || $(realpath "$1") == */C3V/* || $(basename "$1") == github.reply ]]
+	then
+		DISPLAY=${DISPLAY:-:0.0} gedit "$1"
+	else
+		echo "$me: don't know how to push this file to testing" >&2
+		exit 2
+	fi
+fi

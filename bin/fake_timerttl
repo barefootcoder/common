@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+use Getopt::Std;
+
+
+my $opts = {};
+getopts('vb', $opts);
+
+my $ticket = shift;
+die("don't recoginze Jira ticket num: $ticket") unless $ticket =~ /^[[:upper:]]{2}-\d{4,5}$/;
+
+
+my $pipe_opened = 0;
+for my $file (@ARGV)
+{
+	my @file = slurp $file;
+	my @lines = grep { /$ticket/ } @file;
+
+	foreach (@lines)
+	{
+		my ($timer) = /^([\w-]+):/;
+		die("can't determine timer from line: $_") unless $timer;
+
+		unless ($pipe_opened)
+		{
+			open(PIPE, "| fake_timer total $timer") or die("can't fork");
+			$pipe_opened = 1;
+		}
+
+		print "$file: $_" if $opts->{v};
+		print map { "$file: $_" } `fake_timer breakdown $timer $file` if $opts->{b};
+		print PIPE map { s/$/\t$ticket/; $_ } grep { /^$timer\t/ } @file;
+	}
+}
+
+if ($pipe_opened)
+{
+	say PIPE '';
+	close(PIPE);
+}
+else
+{
+	die("no timers matching ticket $ticket found\n");
+}

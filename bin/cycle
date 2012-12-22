@@ -1,0 +1,51 @@
+#! /bin/bash
+
+if [[ "$1" == "-c" ]]
+then
+	cmd="/bin/cp -prf"
+else
+	cmd="/bin/mv -f"
+fi
+
+if [[ ! -d old ]]
+then
+	echo "cycle: cannot cycle this dir (no old dir)" >&2
+	exit 2
+fi
+
+if [[ ! -d older ]]
+then
+	echo "cycle: cannot cycle this dir (no older dir)" >&2
+	exit 2
+fi
+
+if [[ ! -d oldest ]]
+then
+	echo "cycle: cannot cycle this dir (no oldest dir)" >&2
+	exit 2
+fi
+
+files=""
+for file in .* *
+do
+	case $file in
+		.)		;;
+		..)		;;
+		old*)	;;
+		*)		files="$files $file"
+	esac
+done
+if [[ -z $files ]]
+then
+	echo "cycle: no files to cycle!" >&2
+	exit 1
+fi
+
+/bin/rm -rf oldest
+mv -f older oldest
+mv -f old older
+mkdir -m 770 old
+chgrp users old
+$cmd $files old
+
+echo "done"

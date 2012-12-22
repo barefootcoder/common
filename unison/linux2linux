@@ -1,0 +1,11 @@
+# sync as much as we can
+group = true
+perms = 7777
+times = true
+
+# don't copy swap files
+ignore = Name .*.sw[po]
+
+# merge programs
+#merge = 'diff3 -m CURRENT1 OLD CURRENT2 > NEW'
+#merge2 = 'sdiff -b -d -s -t --tabsize=4 -o NEW CURRENT1 CURRENT2'

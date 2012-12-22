@@ -1,0 +1,33 @@
+use strict;
+use warnings;
+#no warnings 'uninitialized';
+
+use MooseX::Declare;
+use Method::Signatures::Modifiers;
+
+# The BEGIN block below is just a portable way of saying:
+#
+#		use feature ':5.10';
+#
+BEGIN
+{
+	# this code mostly cribbed from any::feature, by Marcel Gruenauer <marcel@cpan.org>
+	if (eval { require feature })
+	{
+		feature->import(':5.10');
+	}
+	else
+	{
+		require Perl6::Say;
+		Perl6::Say->import();
+
+		require Switch;
+		Switch->import('Perl6');
+
+		# can't figure out how to make this work yet
+		#require Perl6ish::Syntax::state;
+		#Perl6ish::Syntax::state->import();
+	}
+}
+
+use Perl6::Slurp;

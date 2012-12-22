@@ -1,0 +1,408 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+no warnings 'uninitialized';
+
+sub check_prereqs
+{
+	foreach (qw< Getopt::Std Path::Class List::MoreUtils >)
+	{
+		eval "require $_" or system(qw< cpanm -n >, $_);
+	}
+}
+BEGIN { check_prereqs() }
+
+use Getopt::Std;
+use Path::Class;
+use List::MoreUtils qw< uniq >;
+
+sub print_color(@);
+
+
+my $opt = {};
+getopts("hnTcvsADN:", $opt);
+
+# help message
+if ($opt->{h})
+{
+	my $me = $0;
+	$me =~ s@^.*/@@;
+
+	print "usage: $me -h | [-nTcvsAD] [-Nlrj] [perl_module|t_dir]\n";
+	print "       run tests associated with perl_module\n";
+	print "           -h: this help message\n";
+	print "           -n: only run the newest (most recently modified) test\n";
+	print "           -T: run tests with taint checking on\n";
+	print "           -c: try to run tests under Devel::Cover (and report)\n";
+	print "           -v: run tests in verbose mode\n";
+	print "           -s: show only test summary\n";
+	print "           -A: load Carp::Always to get full stack traces on errors\n";
+	print "           -D: debug mode\n";
+	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
+	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
+	print "                  -Nr: do not run recursively (default: prove -r)\n";
+	print "                  -Nj: do not parallelize tests (default: prove -j5 [unless -c])\n";
+	exit;
+}
+
+
+###########################
+###  QUICK HACKS
+###########################
+
+
+# quick hack: shortcut to spawning dzil test if:
+# 	a) we can find a "dist.ini"
+# 	b) we're called with no args (that includes switches!)
+# alternately, we could call rent if:
+#	a) we're in the packages/ directory, or a subdir thereof
+#	b) we have no args, and only -n and/or -v switches
+# we can't allow switches because there's no reliable way to pass them on to dzil
+# (although rent specifically handles -v and -n, so those are okay)
+$ENV{RELEASE_TESTING} = 1;
+if (-r 'dist.ini')
+{
+	if (dir()->absolute =~  m{/packages/})
+	{
+		if (not @ARGV)
+		{
+			my $opts = '';
+			$opts .= " -v" if delete $opt->{v};
+			$opts .= " -n" if delete $opt->{n};
+			if (%$opt)
+			{
+				die("Sorry! can't figure out how to run `rent' with switches: " . join(', ', keys %$opt));
+			}
+			else
+			{
+				$ENV{'RENT_DEV_YES'} = 1;
+				exec("rent test $opts");
+			}
+		}
+	}
+	else
+	{
+		exec("dzil test && dzil clean") if not @ARGV;
+	}
+}
+
+
+# another quick hack:
+# if we see evidence that we're going to be using blib/lib/ instead of lib/, we probably better run
+# make to make sure the library file is copied to blib/lib/
+system("make") if -d 'blib/lib' and -e 'Makefile';
+
+
+my $precommand;															# will be executed just before main command is run
+my $postcommand;														# executes after command, but *only* if successful
+# slightly less quick hack:
+# if we're in a Dist::Zilla distro and we _do_ get arguments, we _may_ be able to set up an
+# environment where prove will work properly ...
+if (-r "dist.ini" and @ARGV)
+{
+	$precommand = sub
+	{
+		system("dzil build");
+		# the dir we want is the same as the tarfile sans extension
+		(my $dir = glob("*.tar.gz")) =~ s/\.tar\.gz$//;
+		-d $dir or die("can't figure out build directory");
+		chdir $dir;
+		system("$^X Makefile.PL");
+		system("make");
+	};
+
+	$postcommand = sub
+	{
+		chdir '..';
+		system("dzil clean");
+	}
+}
+
+
+###########################
+###  THE MAIN EVENT
+###########################
+
+
+my $coverdb = '/tmp/cover_db';
+my $cover = "cover";
+$cover .= " -silent" unless $opt->{D};
+my $HARNESS = 'HARNESS_PERL_SWITCHES';
+if ($opt->{c})
+{
+	eval { require Devel::Cover } or die("$0: Devel::Cover not found [ $@ ]\n");
+	my $command = "$cover -delete $coverdb";
+	print STDERR "running: $command\n" if $opt->{D};
+	system($command);
+	$ENV{$HARNESS} = "-MDevel::Cover=-db,$coverdb";
+}
+
+
+my ($dir, @files);
+my $arg = shift;
+if ($arg)
+{
+	if ( $arg =~ /\.t$/ )
+	{
+		@files = ($arg);
+	}
+	else
+	{
+		my ($pkg, @possibles);
+		if ( my $file = identify_perl_module($arg) )
+		{
+			$pkg = $arg;
+			$dir = file($file)->dir;
+		}
+		elsif (-f $arg)
+		{
+			$pkg = get_pkgname($arg);
+			print STDERR 'got package: ', defined $pkg ? $pkg : '<<undef>>', "\n" if $opt->{D};
+		}
+		$pkg =~ s/::/-/g if $pkg;
+
+		foreach my $rentdir ($ENV{RENT_HOME}, $ENV{WEBROOT})
+		{
+			next unless defined $rentdir;
+
+			# if we get this far, we're running in Rent.com environment
+			(my $d = $arg) =~ s{::}{/}g;
+			foreach my $t_dir (qw< lib/Test/t lib/Company/t >)
+			{
+				push @possibles, "$rentdir/$t_dir/$d";
+				push @possibles, "$rentdir/$t_dir/$pkg" if $pkg;
+			}
+		}
+
+		push @possibles, "$arg/t", $arg;
+		push @possibles, "t/$arg" if $arg and $arg !~ m@^/@;
+		push @possibles, "t/$pkg" if $pkg;
+		@possibles = uniq @possibles;
+		push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
+
+		$dir = find_dir(@possibles);
+		# used to chdir to $dir here, but I don't think it's truly necessary ...
+	}
+}
+
+# if we haven't found the directory/files yet, better try harder
+if (not $dir and not @files)
+{
+	$dir = find_dir("t", "../t", "../../t", "../../../t");
+}
+die("$0: cannot figure out where test files are\n") unless $dir or @files;
+
+@files = get_files($dir) unless @files;
+
+$ENV{BAIL_ON_FAIL} = 1;
+print "testing @files ...\n";
+
+# use Carp::Always if requested
+$ENV{PERL5OPT} = "-MCarp::Always" if $opt->{A};
+
+
+print "\n" x 10 unless $opt->{s};
+$precommand->() if $precommand;
+
+my @prove_args;
+push @prove_args, '-c' if -t STDOUT;
+push @prove_args, '-v' if $opt->{v};
+push @prove_args, '-Q' if $opt->{s};
+push @prove_args, '-T' if $opt->{T};
+push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
+push @prove_args, '-r' unless $opt->{N} =~ /r/;
+push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c};
+push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
+push @prove_args, @files;
+my $command = "prove @prove_args";
+print STDERR "running: $command\n" if $opt->{D};
+print STDERR "         (with \$HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
+print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and $opt->{A};
+#!system("$command 2>&1 | grep -v '^Devel::Cover' | grep -v '^Can.t find digest for accessor'") or exit 1;
+open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
+while ( <PIPE> )
+{
+	# ignore errors from Devel::Cover
+	next if /^Devel::Cover: Can't open accessor/;
+	next if /^Can't find digest for accessor/;
+	next if /^Deep recursion on subroutine "B::Deparse::deparse".*Devel\/Cover\.pm/;
+	$opt->{compile_error} = $1 if /^Can't load module (\S+)/;
+	print;
+}
+close(PIPE);
+if ($?)
+{
+	system("perl -M$opt->{compile_error} -c") if $opt->{compile_error};
+	print_color red => "\nTEST FAILURE\n";
+	exit 1;
+}
+
+$postcommand->() if $postcommand;
+print_color green => "\nALL TESTS PASSED\n";
+
+
+# Devel::Cover reporting
+
+if ($opt->{c})
+{
+	my $pretty_arg = prettify_dir($arg);
+	#my $base_arg = fileparse($arg, qr/\..*$/);
+	my ($base_arg) = file($arg)->basename =~ /^(.*)\.?/;
+	print "\n\nResults from Devel::Cover for $pretty_arg:\n\n";
+
+	my $command = "$cover -select $arg -report text $coverdb";
+	print STDERR "running: $command\n" if $opt->{D};
+	open(PIPE, "$command 2>&1 |") or die("$0: can't run cover\n");
+	my $section = 0;
+	while ( <PIPE> )
+	{
+		next if /^Devel::Cover: Can't find digest for/;
+		next if /^Devel::Cover: ignoring extra/;
+		#last if /^Run:/;
+
+		++$section if /^\s*-----/ and $section < 4;
+		$section = 4 if /^Run:/;
+		$section = 5 if m@^/@;
+		$section = 6 if /^Covered Subroutines/;
+
+		if ($section == 2)
+		{
+			print if /$base_arg/ and not /\.t\b/;
+			next;
+		}
+
+		next if $section == 4;
+		next if $section == 5;
+		next if $section == 6;
+
+		print;
+	}
+	close(PIPE);
+}
+
+
+###########################
+###  SUBS
+###########################
+
+
+sub get_pkgname
+{
+	if (local $_ = shift)
+	{
+		print STDERR "opening file: $_\n" if $opt->{D};
+		open(IN, $_) or return undef;
+		print STDERR "reading file: $_\n" if $opt->{D};
+		while ( <IN> )
+		{
+			# skip pod
+			next if /^=/../^=cut/;
+
+			if ( /package\s+(.*?);/ )
+			{
+				return $1;
+			}
+		}
+		close(IN);
+	}
+
+	return undef;
+}
+
+
+sub identify_perl_module
+{
+	my ($mod) = @_;
+
+	if (eval "require $mod")
+	{
+		print STDERR "identified as a module: $mod\n" if $opt->{D};
+		$mod =~ s{::}{/}g;
+		return $INC{"$mod.pm"};
+	}
+
+	return undef;
+}
+
+
+sub find_dir
+{
+	foreach (@_)
+	{
+		next unless $_;
+		print STDERR "looking for dir: $_\n" if $opt->{D};
+		if (-d)
+		{
+			return prettify_dir($_);
+		}
+	}
+	return undef;
+}
+
+
+sub prettify_dir
+{
+	local $_ = shift;
+
+	# just makes for a prettier display
+	my $cwd = dir->absolute();
+	if ($_ eq $cwd)
+	{
+		return '.';
+	}
+	else
+	{
+		eval { s@^$cwd//?@@ };
+	}
+
+	return $_;
+}
+
+
+sub get_files
+{
+	local $_ = shift;
+	print STDERR "found directory $_\n" if $opt->{D};
+
+	if (-e "$_/test_manifest" and not $opt->{n})
+	{
+		require Test::Manifest;
+		# Test::Manifest doesn't do recursion or parallelization
+		$opt->{N} .= 'rj';
+		return scalar(Test::Manifest::get_t_files(0));
+	}
+	else
+	{
+		my $glob = $opt->{N} =~ /r/ ? "$_/*.t" : `find $_ -name '*.t'`;
+		$glob =~ s/\n/ /g;
+
+		if ($opt->{n})
+		{
+			my $latest = `/bin/ls -1t $glob | head -n1`;
+			chomp $latest;
+
+			return $latest;
+		}
+		else
+		{
+			return $_;
+		}
+	}
+}
+
+
+sub print_color (@)
+{
+	my ($color, $msg) = @_;
+
+	if (-t STDOUT)
+	{
+		require Term::ANSIColor;
+		print Term::ANSIColor::colored($msg, $color);
+	}
+	else
+	{
+		print $msg;
+	}
+}

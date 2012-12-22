@@ -1,0 +1,4 @@
+:help
+:wincmd j
+:wincmd c
+

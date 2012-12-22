@@ -1,0 +1,53 @@
+#! /bin/bash
+
+readonly ME=${0##*/}													# slightly prettier than $0
+
+get=cat
+stdin=STDIN
+while getopts ":sibch" opt
+do
+	case $opt in
+		s)	sort=1
+			get="sort"
+			stdin="STDIN | sort"
+			;;
+		i)	diffopts="i$diffopts"
+			;;
+		b)	diffopts="bB$diffopts"
+			;;
+		c)	diffopts="u$diffopts"
+			context=1
+			;;
+		h)	echo "usage: somecmd | $ME [-sibch] 'command [args]'" >&2
+			echo "    -s : sort both streams before diff'ing" >&2
+			echo "    -i : ignore case (i.e. diff -i)" >&2
+			echo "    -b : ignore whitespace (i.e. diff -bB)" >&2
+			echo "    -c : context diff (i.e. diff -u)" >&2
+			echo "    -h : this help message" >&2
+			echo "  diffs STDIN (somecmd) against cmd arg ('command [args]')" >&2
+			echo "  STDIN is < (or -), cmd arg is > (or +) in diff output" >&2
+			echo "  cmd arg may include redirections ( < or | )" >&2
+			exit
+			;;
+		:)	echo "$ME: $OPTARG requires an argument ($ME -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$ME: unknown argument $OPTARG ($ME -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+cmd="$1"
+
+[[ -n $diffopts ]] && diffopts="-$diffopts"
+[[ $sort ]] && cmd="$cmd | sort"
+
+
+if [[ ! $context ]]
+then
+	echo "< $stdin"
+	echo "> $cmd"
+fi
+$get | diff $diffopts --label "$stdin" --label "$cmd" - <(eval $cmd)

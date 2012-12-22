@@ -1,0 +1,38 @@
+#! /usr/bin/env perl
+
+# first, install our own prereqs, if necessary
+BEGIN
+{
+	foreach (qw< autodie IPC::System::Simple Term::ANSIColor >)
+	{
+		eval "require $_" or install($_);
+	}
+}
+
+use strict;
+use warnings;
+use autodie qw< :all >;
+
+use Term::ANSIColor;
+
+
+my $cmd = shift;
+$cmd = "$cmd 2>&1";
+
+my $out;
+while ($out = `$cmd` and $out =~ /Can't locate (.*?)\.pm/)
+{
+	my $mod = $1;
+	$mod =~ s{/}{::}g;
+	install($mod);
+}
+print colored("Done.", 'bold', 'green'), "\n";
+
+
+sub install
+{
+	my ($mod) = @_;
+
+	print colored("Installing $mod", 'bold', 'green'), "\n";
+	system(qw< cpanm -n >, $mod);
+}

@@ -1,0 +1,41 @@
+#! /bin/bash
+
+readonly me=${0##*/}
+
+group="$1"
+newgid="$2"
+
+if [[ -z $group || -z $newgid ]]
+then
+	echo "usage: $me groupname newgid" >&2
+	exit
+fi
+
+oldgid=$(awk -F: '$1 == "'$group'" {print $3}' /etc/group)
+if [[ -z $oldgid ]]
+then
+	echo "$me: that group doesn't exist, twit" >&2
+	exit 2
+fi
+
+if [[ $newgid < 1001 || $newgid > 1999 ]]
+then
+	echo "$me: bad gid, moron" >&2
+	exit 2
+fi
+
+if [[ -n $(awk -F: '$3 == '$newgid /etc/group) ]]
+then
+	echo "$me: hey sunshine! that gid already exists!  you're asking for a world of hurt baby ..." >&2
+	exit 1
+fi
+
+echo "changing group $group from $oldgid to $newgid"
+echo -n "you sure? [y/N] "
+read yn
+
+if [[ $yn == [yY]* ]]
+then
+	/usr/sbin/groupmod -g $newgid $group
+	/usr/bin/find / -path /proc -prune -o -group $oldgid -exec chgrp $group {} \;
+fi

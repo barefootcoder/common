@@ -1,0 +1,30 @@
+#! /bin/bash
+
+if [[ -z DISPLAY ]]
+then
+	export DISPLAY=:0.0
+fi
+
+echo -e "Click in a window to get its info:\n"
+win_id=$(xwininfo | perl -lne 'print $1 if /Window id: (0x[\da-f]+)/')
+xwininfo -id $win_id | grep -e -geometry
+xprop -id $win_id | perl -lne '
+
+	if ( /^WM_CLASS\(STRING\) = "(.*?)", "(.*?)"/ )
+	{
+		($class, $name) = ($1, $2);
+	}
+	elsif ( /^WM_WINDOW_ROLE\(STRING\) = "(.*?)"/ )
+	{
+		$role = $1;
+	}
+
+	END
+	{
+		print "class is $class";
+		print "name is $name";
+		print $role ? "role is $role" : "no role defined";
+
+		print "(for winoptions file: $class.$name", $role ? ".$role" : "", ".xxx)";
+	}
+'

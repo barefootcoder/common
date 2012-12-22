@@ -1,0 +1,11 @@
+#! /bin/bash
+
+cur=$(pwd)
+other=${cur/$USER/$1}
+if [[ ! -d $other ]]
+then
+	echo "$0: cannot locate repository $other" >&2
+	exit 2
+fi
+
+diff -r --brief . $other | grep -v '\.svn' | grep -v '.sw[po]'

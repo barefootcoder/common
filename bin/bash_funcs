@@ -1,0 +1,21 @@
+# common bash script stuff
+# just call it like so:
+#
+#		. ~/bin/bash_funcs
+
+
+
+readonly me=${0##*/}													# slightly prettier than $0
+
+
+function die
+{
+	echo "$me: $1" >&2
+	exit 1
+}
+
+function bad_arg
+{
+	echo "$me: $1 ($me -h for help)" >&2
+	exit 2
+}

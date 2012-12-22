@@ -1,0 +1,21 @@
+
+# Bascially, what I _want_ to say is just:
+#
+		use Debuggit;
+#
+# but I also want this to be portable even when Debuggit is not installed.
+# Except this doesn't work.  Because Debuggit doesn't work inside an eval.
+# Sigh.
+#
+#BEGIN
+#{
+#	if (eval { require Debuggit })
+#	{
+#		Debuggit->import;
+#	}
+#	else
+#	{
+#		sub DEBUG() { 0 };
+#		sub debuggit {};
+#	}
+#}

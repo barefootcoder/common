@@ -1,0 +1,9 @@
+include fast
+include linux2linux
+include accurate
+
+root = /export
+root = ssh://root@sedna//export
+
+# trust unison to do the right thing
+auto = true

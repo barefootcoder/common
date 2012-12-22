@@ -1,0 +1,21 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+my ($full, $top) = @ARGV;
+
+my $transition_line = `tail -n1 $top`;
+
+open(FULL, $full) or die("can't open full file");
+while ( <FULL> )
+{
+	last if $_ eq $transition_line;
+}
+
+open(TOP, $top) or die("can't open top part of file");
+print while <TOP>;
+close(TOP);
+
+print while <FULL>;
+close(FULL);

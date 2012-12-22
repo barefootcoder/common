@@ -1,0 +1,78 @@
+#! /bin/bash
+
+me=${0##*/}									# slightly prettier than $0
+readonly me
+
+while getopts ":efh" opt
+do
+	case $opt in
+		e)	edit=1
+			;;
+		f)	plain_file=1
+			;;
+		h)	echo "usage: $me -h | [-e] { command | -f file}" >&2
+			echo "    -e : if file is a script, edit it immediately (else same as no -e)" >&2
+			echo "    -f : don't try to find arg as a command, just look for it as a file" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+arg=$1
+
+
+if [[ $plain_file ]]
+then
+	fullpath="$arg"
+
+	if [[ ! -r $fullpath ]]
+	then
+		echo "$me: $fullpath does not exist or is not readable" >&2
+		exit 2
+	fi
+else
+	# try finding it in the path
+	fullpath=$(which $arg 2>/dev/null)
+
+	if [[ $? > 0 ]]
+	then
+		echo "$me: cannot execute $arg" >&2
+		exit 2
+	fi
+
+	echo "$arg is $fullpath"
+fi
+
+
+/bin/ls -lF $fullpath
+filetype=$(file -L $fullpath)
+echo $filetype
+
+if [[ $edit ]]
+then
+	if [[ $filetype == *script* ]]
+	then
+		vim $fullpath
+		exit
+	else
+		echo "$me: cannot edit; file is binary" >&2
+	fi
+fi
+
+# if it's a command, we might be able to get some further information
+if [[ ! $plain_file ]]
+then
+	if man $arg >/dev/null 2>&1
+	then
+		echo "man page is available"
+	fi
+	# not sure how to check for info page, since info seems to always return success
+fi

@@ -1,0 +1,10 @@
+#! /bin/bash
+
+beep=/usr/sbin/beep
+if [[ -x $beep ]]
+then
+	sudo modprobe pcspkr
+	sudo $beep
+else
+	echo "BEEP!"
+fi

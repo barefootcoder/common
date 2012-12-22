@@ -1,0 +1,39 @@
+#! /bin/bash
+
+me=${0##*/}
+
+function usage
+{
+	echo "usage: cmd1 [opts] | $me cmd2 [opts]" >&2
+	echo "         compare (using diff) the output of two commands" >&2
+	echo "           -h: this help message" >&2
+	echo "           any unrecognized single-char options passed through to diff" >&2
+}
+
+while getopts ":h" opt
+do
+	case $opt in
+		h)	usage
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	diffopts="$diffopts -$OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+tmpfile=/tmp/dc.$$
+trap "/bin/rm -f $tmpfile" EXIT
+/bin/mknod $tmpfile p
+
+if [[ $# -eq 1 ]]
+then
+	eval $1 >$tmpfile &
+else
+	"$@" >$tmpfile &
+fi
+diff $diffopts - $tmpfile

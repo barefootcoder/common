@@ -1,0 +1,33 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+
+my %const =
+(
+	k	=>	1024,
+	m	=>	1024 * 1024,
+	g	=>	1024 * 1024 * 1024,
+);
+
+
+print map { $_->[1] } sort { $a->[0] <=> $b->[0] } map { [ extract_k(), $_ ] } <ARGV>;
+
+sub extract_k
+{
+	if ( /\b(\d+(?:\.\d*)?)([kmg]?)\b/i )
+	{
+		my $size = $1;
+		my $mod = lc $2;
+
+		$size *= $const{$mod} if $mod;
+		# print STDERR "size will be $size\n";
+		return $size;
+	}
+	else
+	{
+		# doesn't appear to have a size in it; let it float to the top
+		return 0;
+	}
+}

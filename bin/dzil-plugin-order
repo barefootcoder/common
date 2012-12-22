@@ -1,0 +1,49 @@
+#! /usr/bin/perl
+
+use Toolkit;
+
+use Dist::Zilla;
+use Data::Dumper;
+use Dist::Zilla::App;
+use Dist::Zilla::Chrome::Term;
+
+
+my $type = shift;
+my $class = "Dist::Zilla::Dist::$type";
+eval qq{ require $class } or die("Don't know how to determine plugins for a $type");
+
+my @phases;
+
+# kinda hacky, but these phases are done inside lazy attribute builders
+# practically impossible to narrow down or assign a proper order to
+my $file = $INC{"Dist/Zilla.pm"} or die('Strange goings-on in $INC');
+open(IN, $file) or die("can't access $file");
+while ( <IN> )
+{
+	push @phases, $1 if /plugins_with\(-(\w+)\)/;
+}
+close(IN);
+
+$file = $INC{"Dist/Zilla/Dist/$type.pm"} or die('Strange goings-on in $INC');
+open(IN, $file) or die("can't access $file");
+while ( <IN> )
+{
+	if (/sub build_in/../^{$/)
+	{
+		push @phases, $1 if /plugins_with\(-(\w+)\)/;
+	}
+}
+close(IN);
+
+if (@ARGV and $ARGV[0] eq 'v')
+{
+	say foreach @phases;
+}
+
+
+my $zilla = $class->from_config({ chrome => Dist::Zilla::Chrome::Term->new });
+print ">>>$_\n" foreach map { eval {$_->plugin_name} ? ($_->plugin_name =~ /^:/ ? $_->plugin_name : ()) : ref $_ } @{$zilla->plugins};
+foreach my $phase (@phases)
+{
+	printf "%-20s :: %s\n", $phase, ref foreach @{ $zilla->plugins_with("-$phase") };
+}

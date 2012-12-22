@@ -1,0 +1,81 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+partial=0
+while getopts ':iph' opt
+do
+	case $opt in
+		p)	partial=1													# partial matches are the default for locate
+			;;
+		i)	ignore_case='-i'
+			;;
+		h)  echo "usage: $me -h | [-ip] dirname" >&2
+			echo "    -i : ignore case when matching dirname" >&2
+			echo "    -p : partial match on dirname" >&2
+			echo "    -h : this help message" >&2
+			echo "    colnum : column of numbers to add (non-numeric values in this col treated as 0)" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+dir="$1"
+rest="${dir#*/}"
+if [[ $rest == $dir ]]
+then
+	base="$dir"
+	rest=""
+else
+	base="${dir%%/*}"
+	if [[ $partial -eq 1 ]]
+	then
+		echo "$me: can't use -p with complex path pattern" >&2
+		exit 2
+	fi
+fi
+
+if [[ $partial -eq 1 ]]
+then
+	pattern_arg="$base"
+else
+	pattern_switch='-r'
+	pattern_arg="^$base$"
+fi
+
+perl_prog="$(sed "$(echo -e "s\a{}\a$rest\a")" <<'ENDP'
+	BEGIN { @exclude = split(':', $ENV{CDA_EXCLUDE}) }					# exclude dirs from $CDA_EXCLUDE env var
+	$line = $_; next if grep { $line =~ m{^$_/} } @exclude;
+	print if -d "$_/{}";
+ENDP
+)"
+
+IFS="
+" dirs=($(locate -b $ignore_case $pattern_switch $pattern_arg | perl -lne "$perl_prog"))
+num_dirs=$(echo "${dirs[*]}" | wc -l)
+
+if [[ ${#dirs} -eq 0 ]]
+then
+	echo "$dir"
+elif [[ $num_dirs -eq 1 ]]												# ${#dirs} doesn't work here because if there's
+then																	# only 1 dir, $dirs isn't an array and so ${#dirs}
+	echo "${dirs[0]}/$rest"												# is the length of the dir instead <sigh>
+else
+	PS3="Choose:"
+	COLUMNS=1
+	select dir in "${dirs[@]}"
+	do
+		if [[ -d "$dir" ]]
+		then
+			break
+		fi
+	done
+
+	echo "$dir"
+fi

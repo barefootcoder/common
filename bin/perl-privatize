@@ -1,0 +1,80 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+
+privatedir=~/common/perl
+
+mode=add
+while getopts ":rdh" opt
+do
+	case $opt in
+		r)	mode=remove
+			;;
+		d)	mode=diff
+			;;
+		h)  echo "usage: $me -h | [-r | -d] Perl::Module" >&2
+			echo "    -r : remove a previously privatized copy" >&2
+			echo "    -d : diff the currently privatized copy (if any)" >&2
+			echo "    -h : this help message" >&2
+			echo "    Perl::Module : Perl module to be privatized" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+module="$(perlfind $1)"
+if [[ -z $module ]]
+then
+	echo "$me: can't find Perl module $1"
+	exit 2
+fi
+
+for dir in $(perl -le 'print "@INC"')
+do
+	base=${module#$dir/}
+	if [[ $base != $module ]]
+	then
+		break
+	fi
+done
+
+newmod=$privatedir/$base
+if [[ $module == $newmod && $mode == 'remove' ]]
+then
+	echo "removing $newmod"
+	/bin/rm $newmod
+	while [[ $newmod != $privatedir ]]
+	do
+		newmod=$(dirname $newmod)
+		if rmdir $newmod 2>/dev/null
+		then
+			echo "cleaning up dir: $newmod"
+		else
+			break
+		fi
+	done
+elif [[ $module == $newmod && $mode == 'diff' ]]
+then
+	oldmod=$(perlfind -f $1 | awk '{print $2}')
+	echo "diffing $newmod against $oldmod"
+	diff $oldmod $newmod
+elif [[ $module == $newmod ]]
+then
+	echo "$me: looks like $1 is already privatized [$newmod]" >&2
+	exit 1
+elif [[ $mode == 'add' ]]
+then
+	mkdir -p $(dirname $newmod) 2>/dev/null
+	cp -pv $module $newmod
+	chmod ug+w $newmod
+else
+	echo "$me: $1 not privatized; can't $mode" >&2
+	exit 1
+fi

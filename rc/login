@@ -1,0 +1,32 @@
+
+#if (stty >& /dev/null)
+#then
+#	exec /usr/local/bin/screen -s -tcsh
+#fi
+
+set term=vt100
+stty erase 
+
+# turn on numlock (hopefully)
+# setleds +num
+
+# I think this fixes weird man/less/perldoc/Eterm interactions
+if ( $?LANG ) then
+	setenv LANGUAGES $LANG
+else
+	setenv LANGUAGES C
+endif
+setenv LC_ALL C
+setenv LESSCHARSET utf-8
+
+which fortune >&/dev/null
+if ( $? == 0 ) then
+	echo ""
+	bfortune
+	echo ""
+endif
+
+# allow local overrides to shared .login
+if ( -e ~/.login.local ) then
+	source ~/.login.local
+endif

@@ -1,0 +1,41 @@
+#! /usr/bin/env perl
+
+use myperl;
+use autodie;
+use myperl::Google;
+
+use Date::Format;
+use Email::Stuff;
+
+
+my $today = time2str("%a", time());
+debuggit(2 => "today is", $today);
+
+my $ssheet = $GOOGLE->spreadsheet({ title => 'Random Chores' });
+my $wsheet = $ssheet->worksheet({ title => "Today's Chores" });
+my @chores = map { $_->content || () } $wsheet->cells({ range => 'B2:B20' });
+debuggit(3 => "chores", DUMP => \@chores);
+
+my $body = <<END;
+Please do the following chores for today:
+
+END
+$body .= join("\n", @chores);
+
+my $dad = 'barefootcoder@gmail.com';
+my $mom = DEBUG ? $dad : 'cmbrunker@gmail.com';
+my $random = DEBUG ? $dad : 'ninjarandom@gmail.com';
+Email::Stuff	->from('no-reply@barefoot.net')
+				->to($random)
+				->cc("$mom,$dad")
+				->subject('Daily Chores for Today')
+				->text_body($body)
+				->send;
+
+
+unless (DEBUG)
+{
+	open(RESCHED, "| at now + 1 day");
+	print RESCHED "$0\n";
+	close(RESCHED);
+}

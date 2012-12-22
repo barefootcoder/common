@@ -1,0 +1,113 @@
+#! /bin/bash
+
+fort=/usr/share/games/fortunes
+if [[ ! -d $fort ]]
+then
+	fort=/usr/share/games/fortune
+fi
+if [[ ! -e $fort/zippy ]]
+then
+	fort=
+fi
+
+bfort=/usr/local/fortunes/buddy
+if [[ ! -e $bfort ]]
+then
+	bfort=~/local/fortunes/buddy
+fi
+if [[ ! -e $bfort ]]
+then
+	echo "$0: can't find local/fortunes/buddy" >&2
+	exit 1
+fi
+
+function build_arg
+{
+	pct="$1"
+	file="$2"
+
+	if [[ -f $fort/$2 ]]
+	then
+		arg="$arg $1% $fort/$2"
+	fi
+}
+
+if [[ -d $fort ]]
+then
+	arg=""
+	build_arg	0	art
+	build_arg	0	ascii-art
+	build_arg	0	bofh-excuses
+	build_arg	2	calvin
+	build_arg	0	cbg
+	build_arg	0	chalkboard
+	build_arg	0	chapterhouse-dune
+	build_arg	0	children-of-dune
+	build_arg	2	computers
+	build_arg	0	cookie
+	build_arg	0	definitions
+	build_arg	0	discworld
+	build_arg	0	drugs
+	build_arg	0	dune
+	build_arg	0	dune-messiah
+	build_arg	0	education
+	build_arg	0	ethnic
+	build_arg	0	fgump
+	build_arg	0	food
+	build_arg	0	fortunes
+	build_arg	1	futurama
+	build_arg	0	god-emperor
+	build_arg	1	goedel
+	build_arg	0	heretics-of-dune
+	build_arg	2	hitchhiker
+	build_arg	0	homer
+	build_arg	0	house-atreides
+	build_arg	0	house-harkonnen
+	build_arg	1	humorists
+	build_arg	0	humorix-misc
+	build_arg	0	humorix-stories
+	build_arg	0	kernelcookies
+	build_arg	0	kernelnewbies
+	build_arg	1	kids
+	build_arg	0	knghtbrd
+	build_arg	0	law
+	build_arg	1	linux
+	build_arg	0	linuxcookie
+	build_arg	2	literature
+	build_arg	0	love
+	build_arg	0	macintosh
+	build_arg	1	magic
+	build_arg	0	medicine
+	build_arg	0	miscellaneous
+	build_arg	0	news
+	build_arg	0	oneliners
+	build_arg	0	osfortune
+	build_arg	0	osho
+	build_arg	1	paradoxum
+	build_arg	0	people
+	build_arg	3	perl
+	build_arg	1	pets
+	build_arg	0	platitudes
+	build_arg	0	politics
+	build_arg	0	powerpuff
+	build_arg	0	prog-style
+	build_arg	0	ralph
+	build_arg	0	riddles
+	build_arg	1	science
+	build_arg	0	songs-poems
+	build_arg	0	sports
+	build_arg	0	startrek
+	build_arg	0	starwars
+	build_arg	2	tao
+	build_arg	0	taow
+	build_arg	0	translate-me
+	build_arg	1	wisdom
+	build_arg	0	work
+	build_arg	0	xfiles
+	build_arg	0	zippy
+	build_arg	0	zippy2
+
+	fortune "$@" -a $bfort $arg
+else
+	fortune "$@" -a $bfort
+fi

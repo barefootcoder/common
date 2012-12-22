@@ -1,0 +1,30 @@
+Host			Myaree
+	HostName			64.70.75.145
+	Port				8822
+	User				buddy
+Host			bahamut
+	HostName			ssh.thinkgeek-ffx.com
+	User				buddy
+Host			fineous
+	HostName			heroscapers.com
+	User				root
+Host			heroscapers
+	HostName			heroscapers.com
+	User				admin
+Host			kimahri
+	HostName			ssh.thinkgeek-ffx.com
+	Port				2212
+Host			sigil
+	HostName			ssh.thinkgeek-ffx.com
+	Port				2264
+Host			tyr
+	HostName			d-smo-bburden.corp.ebay.com
+	User				buddy
+Host			sedna
+	HostName			barefoot.net
+	User				buddy
+Host			qa1
+	HostName			qa-01
+	User				wdev
+Host			sharn
+	User				buddy

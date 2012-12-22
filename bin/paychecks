@@ -1,0 +1,87 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+use Tie::IxHash;
+use Date::Parse;
+use Date::Format;
+
+
+tie my %FAMILY, 'Tie::IxHash' =>
+(
+	Buddy	=>	'11/5/1966',
+	Christy	=>	'8/30/1971',
+	Random	=>	'9/8/1998',
+	Perrin	=>	'3/8/2006',
+	Merrick	=>	'3/31/2012',
+);
+$_ = str2time($_) foreach values %FAMILY;
+
+const my $HOUR => 60 * 60;
+const my $DAY => 24 * $HOUR;
+const my $WEEK => 7 * $DAY;
+const my $YEAR => 365.25 * $DAY;
+
+
+my $last_date = str2time(shift) or die("must supply last paycheck date");
+foreach (keys %FAMILY)
+{
+	my $dow = time2str('%A', $FAMILY{$_});
+	my $age = round(UP => (time - $FAMILY{$_}) / $YEAR);
+	say "$_ : paid on $dow, \$$age per week";
+	my ($prev_payday, $last_payday);
+
+	# figure out when the last birthday was
+	my $last_birthday = str2time(join('/', time2str('%m/%d', $FAMILY{$_}), time2str('%Y', time)));
+	if ($last_birthday > time)
+	{
+		# last birthday is actually is in the future; need to back up a year
+		$last_birthday = str2time(join('/', time2str('%m/%d', $FAMILY{$_}), time2str('%Y', time) - 1));
+	}
+
+	# go backwards till we find the previous payday
+	for ($prev_payday = $last_date; time2str('%A', $prev_payday) ne $dow; $prev_payday -= $DAY)
+	{
+	}
+
+	# calculate birthday bonus if there's a birthday within the time period
+	my $bonus = 0;
+	if ($prev_payday < $last_birthday && $last_birthday < time)
+	{
+		$bonus = ($age - 1) * 25;
+	}
+
+	# now go forwards from previous payday until we hit a point later than about 3 days from now,
+	# and pay attention to if we pass the last birthday
+	my $target = str2time(time2str('%m/%d/%Y', time)) + 3 * $DAY;
+	my ($weeks_owed, $weekly_total) = (0, 0);
+	my $weekly_amount = $prev_payday < $last_birthday ? $age - 1 : $age;
+	# bump it by 2 hours to deal with DST
+	for ($last_payday = $prev_payday + 2 * $HOUR + $WEEK; $last_payday < $target; $last_payday += $WEEK)
+	{
+		++$weeks_owed;
+		if ($prev_payday < $last_birthday)
+		{
+			if (time2str('%m/%d/%Y', $last_payday) eq time2str('%m/%d/%Y', $last_birthday))
+			{
+				# birthday falls on a payday; this week doesn't count
+				--$weeks_owed;
+				# and don't add to the total this week
+				next;
+			}
+			elsif ($last_payday > $last_birthday)
+			{
+				# passed the birthday; up the weekly amount
+				$weekly_amount = $age;
+			}
+		}
+
+		#warn("as of ", time2str('%m/%d/%Y %H:%M:%S', $last_payday), " adding $weekly_amount to total");
+		$weekly_total += $weekly_amount;
+	}
+
+	say "    last paycheck : ", time2str('%m/%d/%Y', $prev_payday);
+	say "    next paycheck : ", time2str('%m/%d/%Y', $last_payday);
+	say "    weekly owed   : $weeks_owed weeks totalling \$$weekly_total"; 
+	say "    bday bonus    : \$$bonus on ", time2str('%m/%d/%Y', $last_birthday) if $bonus;
+}

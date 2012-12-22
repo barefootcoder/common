@@ -1,0 +1,11 @@
+#! /bin/bash
+
+for date
+do
+	[[ ${#date} == 3 ]] && date="last $date"
+	pto=$pto$(perlsecs -q $date noon)-$(perlsecs -q $date 6pm),
+	avail=$avail$(perlsecs -q $date noon)-$(perlsecs -q $date 8pm),
+done
+
+echo pto: $pto
+echo AVAILABILITY: $avail

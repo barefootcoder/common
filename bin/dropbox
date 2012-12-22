@@ -1,0 +1,238 @@
+#! /bin/bash
+
+# chkconfig: 345 85 15
+# description: Startup script for dropbox daemon
+#
+# processname: dropboxd
+# pidfile: ~/.dropbox-dist/run/dropbox.pid
+# config: ~/.dropbox-dist/sysconfig/dropbox
+#
+
+### BEGIN INIT INFO
+# Provides: dropboxd
+# Required-Start: $local_fs $network $syslog
+# Required-Stop: $local_fs $syslog
+# Should-Start: $syslog
+# Should-Stop: $network $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Start up the Dropbox file syncing daemon
+# Description:       Dropbox is a filesyncing sevice provided by dropbox.com
+#                    This service starts up the dropbox daemon.
+### END INIT INFO
+
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+prog=dropboxd
+distdir=~/.dropbox-dist
+piddir=$distdir/run
+pidfile=$piddir/dropbox.pid
+lockdir=$distdir/lock
+lockfile=${LOCKFILE-$lockdir/$prog}
+config=${CONFIG-$distdir/sysconfig/dropbox}
+filter=$distdir/sysconfig/output_filter
+logdir=$distdir/log
+logfile=$logdir/dropbox.log
+RETVAL=0
+
+# To configure, add line with DROPBOX_USERS="user1 user2" to $config
+# Probably should use a dropbox group in /etc/groups instead.
+[ -f $config ] && . $config
+
+start() {
+		if [[ -n $($0 status) ]] ; then
+			exit 1
+		fi
+
+        echo -n $"Starting $prog"
+
+        if [ -z $DROPBOX_USERS ] ; then
+                echo -n ": unconfigured: $config"
+                echo_failure
+                echo
+                rm -f ${lockfile} ${pidfile}
+                RETURN=6
+                return $RETVAL
+        fi
+
+        for dbuser in $DROPBOX_USERS; do
+			if [ $USER = $dbuser ] ; then
+				mkdir -p $logdir 2>/dev/null
+				/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
+			fi
+        done
+
+        RETVAL=$?
+        echo
+        if [ $RETVAL = 0 ] ; then
+			mkdir $lockdir 2>/dev/null
+			touch ${lockfile}
+			mkdir $piddir 2>/dev/null
+			$0 status >${pidfile}
+		fi
+        return $RETVAL
+}
+
+status() {
+	dbpid=`pgrep -u $USER -P 1 dropbox`
+	if [ -t 1 ] ; then
+		if [ -z $dbpid ] ; then
+			echo "$prog for USER $USER: not running."
+		else
+			echo "$prog for USER $USER: running (pid $dbpid)"
+		fi
+	else
+		if [ -n $dbpid ] ; then
+			echo $dbpid
+		fi
+	fi
+}
+
+stop() {
+        echo -n $"Stopping $prog"
+    for dbuser in $DROPBOX_USERS; do
+        killproc $distdir/dropbox
+    done
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+
+install () {
+	remote=$1
+	if [[ $remote == *: ]]
+	then
+		remote=${remote%:}
+		check="ssh $remote"
+
+		if [[ $($check echo $SHELL) != /bin/tcsh ]]
+		then
+			echo "can't install to machine until you change your shell" >&2
+			exit 1
+		fi
+
+		if [[ -n $($check ls $distdir 2>/dev/null) ]]
+		then
+			echo "won't install to a machine that already has Dropbox on it" >&2
+			exit 1
+		fi
+
+		arch=$($check uname -i)
+		case $arch in
+			*86_64)	arch=x86_64
+					;;
+			*86)	arch=x86
+					;;
+			*)		echo "don't know what kind of architecture your machine has ($arch)"
+					exit 1
+					;;
+		esac
+
+		echo "will install Dropbox $arch version"
+		echo -n "is this okay?  [y/N] "
+		read yn
+		if [[ $yn != [yY]* ]]
+		then
+			exit
+		fi
+
+		scp ~/common/new_dropbox ~/bin/dropbox $remote:
+		ssh $remote echo ~/$(basename $0) $arch \> .login
+
+		exec ssh $remote
+	fi
+
+	if [[ -d ~/$distdir ]]
+	then
+		echo "Dropbox already installed; won't reinstall" >&2
+		exit 1
+	fi
+
+	arch=${1:-$(uname -i)}
+	case $arch in
+		x86)	;;
+		x86_64)	;;
+		*)		echo "usage: $0 install [x86|x86_64]" >&2
+				exit 2
+				;;
+	esac
+
+	cd ~
+	tarfile=dropbox.tar.gz
+	wget -O$tarfile "http://www.dropbox.com/download/?plat=lnx.$arch"
+	tar xvpzf $tarfile
+
+	mkdir $distdir/lock
+	mkdir $distdir/run
+	mkdir $distdir/sysconfig
+	echo "DROPBOX_USERS=buddy" >$config
+	echo 'Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion `GDK_IS_WINDOW (window)'"' failed" >$filter
+
+	[[ -L ~/common ]] || ln -s Dropbox/common ~/common
+	rm $tarfile
+
+	if [[ -x ./dropbox ]]
+	then
+		./dropbox start
+	elif [[ -x ~/bin/dropbox ]]
+	then
+		~/bin/dropbox start
+	else
+		/bin/sh -c "/home/$USER/.dropbox-dist/dropboxd &"
+	fi
+
+	if [[ -r .login ]]
+	then
+		/bin/rm -f .login
+	fi
+
+	makeln=~/common/makeln
+	fix_perms=~/common/fix_perms
+	fortune=~/common/fortunes/buddy
+	until [[ -r $makeln && -r $fix_perms && -r $fortune ]]
+	do
+		echo "Waiting for makeln et al ..."
+		sleep 10
+	done
+
+	cd ~/common
+	if [[ ! -x makeln ]]
+	then
+		source $fix_perms
+	fi
+
+	mkdir -p ~/local/fortunes ~/local/bin
+	./makeln
+
+	if [[ -x ./dropbox ]]
+	then
+		/bin/rm -f ./dropbox
+	fi
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  status)
+        status
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        stop
+        start
+        ;;
+  install)
+  		install
+		;;
+  *)
+        echo $"Usage: $0 {start|status|stop|restart|install}"
+        RETVAL=3
+esac
+
+exit $RETVAL

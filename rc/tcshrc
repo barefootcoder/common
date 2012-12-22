@@ -1,0 +1,254 @@
+# this seems to fix an error logging in on Kimahri
+if ( -e /etc/profile.d/tcsh-complete ) then
+	source /etc/profile.d/tcsh-complete
+endif
+
+# make sure fortune index gets updated, symlinks are updated, etc
+cd ~/common
+./makeln
+cd -
+
+# figure out where we are
+if ( -e /etc/localhostname ) then
+	setenv LOCALHOSTNAME `cat /etc/localhostname`
+else
+	setenv LOCALHOSTNAME `/bin/bash -c "hostname -s 2>/dev/null"`
+	if ( $LOCALHOSTNAME == "localhost" || $LOCALHOSTNAME == "" ) then
+		setenv LOCALHOSTNAME `echo $HOST | sed 's/\..*//'`
+	endif
+endif
+
+# internal shell stuff
+bindkey -v
+set autoexpand
+set autolist=ambiguous
+unset autologout
+unset autocorrect
+unset correct
+unset complete
+set notify
+set symlinks=ignore
+set ellipsis
+set prompt="[${LOCALHOSTNAME}:%.04] "
+set term=vt100
+
+set WHOAMI=`/usr/bin/whoami`
+if ( ${WHOAMI} == "root" ) then
+	set prompt="[RT][${LOCALHOSTNAME}:%/] "
+endif
+
+# choose which database will be the primary one
+setenv RDBMS oracle
+
+# Sybase stuff
+if ( -d /opt/sybase ) then
+	setenv SYBASE /opt/sybase
+	setenv LANG C
+	if ( -r /usr/local/dbutils/syrc.csh ) then
+		source /usr/local/dbutils/syrc.csh
+	endif
+	set sybase_bin=$SYBASE/bin
+else
+	set sybase_bin
+endif
+
+# Oracle stuff
+if ( -e ~/.oraenv ) then
+	source ~/.oraenv
+	set oracle_bin=$ORACLE_HOME/bin
+	setenv SQLPATH ~/common/oracle
+
+	setenv LD_LIBRARY_PATH `~/bin/addpath -B LD_LIBRARY_PATH $ORACLE_HOME/lib /lib /usr/lib`
+else
+	set oracle_bin
+endif
+
+# web server stuff
+if ( -e ~/apache-1.3 ) then
+	setenv APACHE "$HOME/proj/Sphorb"
+	setenv APACHE_LOG "$HOME/apache-1.3/logs"
+else
+	if ( $LOCALHOSTNAME == triton ) then
+		setenv APACHE "/home/hosts/barefoot.net"
+		setenv APACHE_LOG "$APACHE/logs"
+	else
+		setenv APACHE "/home/httpd"
+		setenv APACHE_LOG "/var/log/httpd"
+	endif
+endif
+
+set path_dirs = ( /usr/local/bin /bin /usr/bin /usr/X11R6/bin $sybase_bin $oracle_bin /usr/sbin /usr/local/sbin /usr/local/dbutils /usr/local/t3/bin /usr/local/thinkgeek /usr/local/bin/proj /usr/games ~/bin ~/local/bin ~/rpg/bin /sbin /cygdrive/c/WINDOWS/system32 /cygdrive/c/Perl/site/bin . )
+set cdpath_dirs = ( . $APACHE ~ /export/usr/buddy )
+if ( -x ~/bin/addpath ) then
+	setenv PATH `~/bin/addpath $path_dirs`
+	set cdpath = ( `addpath -s $cdpath_dirs` )
+	if ( -d $HOME/man ) then
+		setenv MANPATH `addpath -B MANPATH $HOME/man`
+		echo "MANPATH is $MANPATH"
+		[ -z "$MANPATH" ] && unsetenv MANPATH
+	endif
+else
+	set path=($path_dirs)
+	set cdpath=($cdpath_dirs)
+endif
+
+setenv PAGER "less -raF -x4 -j4"
+setenv EDITOR /home/buddy/bin/fe_vi
+setenv NNTPSERVER amber.barefoot.net
+setenv BSW_CONFIG ~/config.bsw
+#setenv SPHORB_HOME ${HOME}/proj/Sphorb
+setenv PERL5LIB `addpath /usr/barefoot/perl ~/common/perl`
+setenv DATE_MANIP DM5
+setenv BC_ENV_ARGS ~/.bcrc
+setenv PGLIB /usr/local/pgsql/lib
+setenv PGDATA /usr/local/pgsql/data
+setenv LPDEST hp4000
+setenv PRINTER hp4000
+setenv T3_WORKGROUP Barefoot
+setenv T3_USER buddy
+#setenv CVSROOT /usr/local/cvs_root
+setenv CDA_EXCLUDE /usr/src/kernels:/export/arc/laptop/hold
+
+alias pd pushd .
+alias cda 'cd "`$HOME/bin/cda \!*`"'
+alias ls ls -CFL
+alias ll ls -lh
+alias lll /bin/ls -lhF
+alias lln 'ls -lhtr \!* | tail'
+alias lls 'ls -lhSr'
+alias lastf '/bin/ls -1 | tail -n1'
+alias ltail 'tail `lastf`'
+alias rm rm -v
+alias cp cp -piv
+alias mv mv -iv
+alias scp scp -pC
+alias ps 'ps -wwwo user,group,pid,ppid,pgid,stime,tty8,stat,time,cmd'
+alias time /usr/bin/time
+unalias psf #alias psf 'echo TTY is $tty ; /bin/ps ft$tty -o pid -o ppid -o stat=S -o command'
+alias psg 'pgrep -f \!* >/dev/null && ps -p `pgrep -f \!*`'
+alias dfk df -h .
+	set mfawk='{ mem = $2 / 1024; t = "Mb"; if (mem > 1024) { mem = mem / 1024; t = "Gb" } }'
+	set mfawk="$mfawk"'$1 == "MemFree:" { printf "%7.2f %s main\n", mem, t }'
+	set mfawk="$mfawk"' $1 == "SwapFree:" { printf "%7.2f %s swap\n", mem, t }'
+alias mf "cat /proc/meminfo | awk '$mfawk'"
+alias du. 'du -chs "`ls -1 | grep /`"'
+alias dus "du -sh * | sortk | tail"
+alias dux "du -xh --max-depth=1 \!* | grep -v '^0	' | sortk"
+alias cal 'cal -m3'
+	# yes, those 3 *'s in a row are correct (even tho i have no idea why)
+alias ff 'bash -c "find . -name /proc -prune -o -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
+alias ffd 'bash -c "find . -name /proc -prune -o -type d -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
+alias vi "fe_vi"
+alias list "vi -v +'map   '"
+alias less "less -a -x4"
+alias dlocate "locate -be \!^ | each -l '[ -d {} ] && echo x'"
+alias xlocate "locate -be \!^ | each -l '[ -f {} -a -x {} ] && echo x'"
+alias xpath "perl -le 'print foreach split(q/:/, @ENV{qw<PATH>})' | each -q 'ls {}/*\!{^}* 2>/dev/null'"
+alias ed "vim -u ~/.edrc"
+alias wvi "vim -u ~/.viwebrc"
+alias vimhelp "vim -s ~/.vim-help"
+alias perlfunc "perldoc -f"
+alias pdoc perldoc
+alias pfunc perlfunc
+alias pfind perlfind
+alias unison "unison -ui text"
+alias sr "screen -A -x base"
+alias dev 'umask 2 ; newgrp \!^ dev'
+alias cdp 'cd `projdir \!*`'
+alias cpi 'cpanm -n \!*'
+alias weberr "tail $APACHE_LOG/error_log"
+alias timer "cd ~/timer ; vi -u ~/.vim-timer timer-new"
+
+set sys_complete=/etc/profile.d/tcsh-complete
+if ( -e $sys_complete ) then
+	alias resrc "source $sys_complete ; source ~/.tcshrc"
+else
+	alias resrc "source ~/.tcshrc"
+endif
+
+alias pack 'tar --same-owner -cvzpf \!^.tgz \!^'
+alias unpack 'tar --same-owner -xvzpf'
+
+# this should be a list of the hosts that we typically keep sync'ed up
+# with this one.  we'll use it for two things:
+# 1) alias the hostname so it ssh'es into it
+# 2) as a complete list for the psync command
+alias friendly-hosts "strings -n40 ~/.unison/ar* | perl -lne '"'if (/synchronizing roots.*common/) { while (m@\s//(.*?)[./]@g) { print $1 unless $1 eq "'$LOCALHOSTNAME'" } }'"' | sort -u"
+set nonomatch
+if { ls ~/.unison/ar* >&/dev/null } then
+	foreach fhost (`friendly-hosts | fgrep -ve -`)
+		alias $fhost ssh $fhost
+	end
+endif
+unset nonomatch
+
+# programmed completions
+complete cd 'p/1/d/' 'p/*/x/'
+complete setenv 'p/1/e/'
+complete unsetenv 'p/1/e/'
+complete which 'p/*/c/'
+complete inf 'p/*/c/'
+complete man 'p/*/c/'
+complete su 'p/*/u/'
+complete unsetenv 'p/*/e/'
+complete sudo 'p/1/c/' 'n/chown/u/'
+complete rlogin 'p?1?`awk \{print\ \$1\} ~/.rhosts`?' 'n/-l/u/'
+complete tar 'n/*f/f:*{.tar,.tgz,.tbz,[._-]tar.*}/'
+complete unison 'C@*@`/bin/ls -1 ~/.unison/*.prf | each -q "basename {} .prf"`@' 'n/-path/d/'
+
+alias installed-packages 'dep -g "[a-z]" | perl -lne '"'"'m{[^/]+/([^/]+?)(-\d.*)} and print $1'"'"
+complete dep 'C?[^-]*?`installed-packages`?'
+complete equery 'p/1/(belongs changes check depends depgraph files glsa hasuse list size stats uses which)/'			\
+		'C?[^-]*?`installed-packages`?'
+complete ewhich 'C?[^-]*?`installed-packages`?'
+complete edep 'C?[^-]*?`installed-packages`?'
+complete pkprog 'C?[^-]*?`installed-packages`?'
+
+complete word 'p/*/f:*.doc/'
+complete excel 'p/*/f:*.xls/'
+
+complete timer 'n/-*u/u/' 'N/-*u/x/' 'C?[^-]*?`timer -@t`?'
+complete cdp 'n/-u/u/'
+complete svn 'p/1/(add checkout cleanup commit remove diff help log mkdir propdel propedit propget proplist propset		\
+		revert resolved status update)/'
+complete psync 'C?[^-]*?`friendly-hosts`?'
+complete sylogin 'p?1?`grep "^[A-Za-z]" /opt/sybase/interfaces`?'
+complete syfile 'p/1/`syls | tail +3 | awk \{print\ \$1\}`/'
+complete sycat 'p/1/`syls | tail +3 | awk \{print\ \$1\}`/'
+complete sygrep 'p/2/`syls | tail +3 | awk \{print\ \$1\}`/'
+
+# many gentoo systems try to be all clever with a huge list of preprogrammed completions for most common commands
+# but for cp/mv/ln, for instance, they define the 2nd arg as having to be a directory
+# that makes trying to use one of these to overwrite a file using completion impossible
+# that's annoying
+# so get rid of it
+uncomplete mv
+uncomplete cp
+uncomplete ln
+
+# perlbrew setup
+if ( -e ~/perl5/perlbrew/etc/cshrc ) then
+	setenv PERLBREW_PERL perl-5.14.2
+	source ~/perl5/perlbrew/etc/cshrc
+endif
+
+# this will start dropbox if not started, and not do anything if it is
+if ( -d ~/.dropbox-dist ) then
+	$HOME/bin/dropbox start
+endif
+
+if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
+	# debugging
+	#alias vctools-config ~/proj/VCtools/vctools-config
+	#source ~/proj/VCtools/etc/vctools.cshrc
+
+	# production
+	source /usr/local/etc/VCtools/vctools.cshrc
+else if ( $?VCTOOLS_SHELL ) then
+	source ~/.vctoolsrc
+endif
+
+# allow local overrides to shared .tcshrc
+if ( -e ~/.tcshrc.local ) then
+	source ~/.tcshrc.local
+endif

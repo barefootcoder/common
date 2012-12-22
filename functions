@@ -1,0 +1,114 @@
+# common functions and pseudo-global vars
+# used by the psync system
+
+mydir=~/common
+
+
+# find a valid directory from a list of choices
+# args will be a list of potential directories
+# returns the first one that actually exists
+# errs out if none are found
+function find_dir
+{
+	for potential_dir
+	do
+		if [[ -d $potential_dir ]]
+		then
+			echo $potential_dir
+			return
+		fi
+	done
+
+	# if we get here, we couldn't find anything at all
+	echo "$0: can't find any of these directories: $@" >&2
+	exit 1
+}
+
+
+# build the symlink itself
+function make_link
+{
+	# $1 == source file
+	# $2 == destination (will be the symlink)
+
+	if [[ ! -e $1 ]]
+	then
+		# thing we want to link to isn't there
+		echo "$1 doesn't exist; skipping link" >&2
+	elif [[ -L $2 && $1 -ef $2 ]]
+	then
+		# don't bother if it's already pointing at the right place
+		:
+	elif [[ -e $2 || -L $2 ]]
+	then
+		# there's _something_ there, but not the right something
+		# better make sure it's okay to replace it
+		/bin/ls -l $2
+		echo -n "$2 exists; overwrite? " >&2
+		read yn
+		case $yn in
+			[yY]*)
+				ln -sf $1 $2
+				;;
+		esac
+	else
+		ln -s $1 $2
+	fi
+}
+
+
+# turn a hostname into an IP address
+function resolve_host
+{
+	host="$1"
+	( ping -n 1 $host || ping -c 1 $host ) 2>/dev/null																	\
+			| perl -lne 'print $1 if /[([](\d+\.\d+\.\d+\.\d+)[)\]].*bytes of data/'
+}
+
+
+# backup a file when needed
+function backup_file
+{
+	# $1 == original file
+
+	if [[ ! -d $mydir/backup ]]
+	then
+		if ! mkdir $mydir/backup
+		then
+			echo "can't seem to make backup directory" >&2
+			exit 1
+		fi
+	fi
+
+	backup=$mydir/backup/$(basename $1)
+	mv $1 $backup
+
+	echo $backup
+}
+
+
+# find the profie directory for Mozilla
+# Phoenix/Firebird/Firefox/whatever the hell it is this week
+function find_mozilla_profile_dir
+{
+	# first see if we can find the base directory for profiles
+	basedir=$(find_dir ~/.mozilla/firefox ~/.phoenix/default /export/projdata/data/Mozilla/$USER)
+
+	if [[ -n $basedir ]]
+	then
+		# now find the "salt" directory underneath that
+		# WTF use is this thing anyway? just to screw up scripts?
+		saltdir=$(find $basedir -name "*.slt" -type d | head -n1)
+		# firefox 0.9 changes things (again)
+		# and then something or other came along and changed it AGAIN!
+		if [[ -z $saltdir ]]
+		then
+			saltdir=$(ls -1dt $(find $basedir -type d \( -name "default.*" -o -name "buddy.*" -o							\
+					-name "*.default" -o -name "*.buddy" \)) | head -n1)
+		fi
+	fi
+
+	# that should pretty much do it
+	# if saltdir is undefined, we couldn't find it
+	echo $saltdir
+}

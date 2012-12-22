@@ -1,0 +1,39 @@
+" ORIGINAL FILE BY JON
+" ====================
+" set whichwrap+=[
+" set whichwrap+=]
+" set whichwrap+=<
+" set whichwrap+=>
+
+set textwidth=125
+
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+
+" set nowrap
+" set sidescroll=15
+
+set ruler
+set rulerformat=%64(%F,\ %l,%c%)
+
+set background=dark
+
+highlight Comment ctermfg=DarkGreen
+highlight PreProc ctermfg=Black ctermbg=Cyan
+highlight Underlined ctermfg=Cyan term=underline
+highlight Ignore ctermfg=Grey
+
+
+" MODIFICATIONS BY BUDDY
+" ======================
+map g G
+nmap Y y$
+
+set autoindent
+
+" show buffers
+map  :files
+
+set nohlsearch
+set nocindent

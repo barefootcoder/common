@@ -1,0 +1,42 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Debuggit(DEBUG => 1);
+
+
+my $retval = 0;
+
+my %accrued;
+while ( <> )
+{
+	next if /^$/;
+
+	chomp;
+	my ($name, $chunks, @stuff) = split("\t");
+	$chunks ||= '';
+
+	if ($name =~ /^:/)
+	{
+		# special timers don't count
+		next;
+	}
+	elsif ($name =~ s/:$//)
+	{
+		# comments
+		if (delete $accrued{$name} and not $chunks)
+		{
+			$retval = 1;
+			print STDERR "timer $name needs a comment\n";
+		}
+	}
+	else
+	{
+		# regular timers (but don't count timer-fixes timers)
+		$accrued{$name} = 1 if $chunks and $name !~ /^timer-fixes/;
+	}
+}
+
+$retval = 1, print STDERR "timer $_ lacks a description altogether\n" foreach keys %accrued;
+exit $retval;

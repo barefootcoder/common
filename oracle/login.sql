@@ -1,0 +1,2 @@
+SET SQLPROMPT '&_USER.@&_CONNECT_IDENTIFIER.> '
+DEFINE EDITOR=/home/buddy/bin/fe_vi

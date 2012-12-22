@@ -1,0 +1,7 @@
+#!/bin/bash
+
+used=$(du -bs --exclude=.dropbox.cache /home/buddy/Dropbox | awk '{print $1}')
+# not sure what the 66Mb below actually is, but my numbers were consistently 66Mb off of what
+# Dropbox itself was reporting, so this seems to fix it <shrug>
+# (after getting more space, it appears to be 85Mb off now; thus, changed)
+echo $(( (3250 - $used / 1024 / 1024) + 85 ))Mb left

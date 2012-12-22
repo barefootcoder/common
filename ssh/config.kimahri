@@ -1,0 +1,3 @@
+Host			kimahri
+	HostName			ssh.thinkgeek-ffx.com
+	Port				2212

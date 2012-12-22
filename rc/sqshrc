@@ -1,0 +1,279 @@
+# get password for connection to main DB as "root"
+\set password=`dbpasswd lexx sa`
+# tidy up prompt
+\set prompt='$DSQUERY:$PWD $lineno> '
+# and awful default datetime spec
+\set datetime='%D %T'
+
+\alias /=\go
+\alias echo=\echo
+
+\set PWD=/
+\set CUR_DB=master
+\set CUR_SCHEMA=
+
+
+# a couple of utility functions to save and restore the environment
+# before and after our functions execute
+\func save_env
+	\set header_save=$headers
+	\set footer_save=$footers
+	\set datespec_save="$datetime"
+	\set echo_save=$echo
+\done
+
+\func restore_env
+	\set headers=$header_save
+	\set footers=$footer_save
+	\set datetime="$datespec_save"
+	\set echo=$echo_save
+\done
+
+# utility function to set $table
+\func set_table
+	\if [ "$CUR_SCHEMA" != "" ]
+		\set table=$CUR_SCHEMA.${1}
+	\else
+		\set table=${1}
+	\fi
+\done
+
+
+# pretend that database & schema are directories
+\func cdparse
+	\set PWD=${1}
+	\if [ "$PWD" = "" ]
+		\set PWD=/
+	\fi
+	\set CUR_DB=${2}
+	\if [ "$CUR_DB" = "" ]
+		\set CUR_DB=master
+		\set CUR_SCHEMA=
+	\else
+		\set CUR_SCHEMA=${3}
+	\fi
+\done
+\func cd
+	\call cdparse `perl -MFile::VirtualPath -e '$,=" "; $p=File::VirtualPath->new(); $p->path($ARGV[0]); $p->chdir($ARGV[1]); print $p->path_string(), $p->path_element(1), $p->path_element(2)' $PWD ${1}`
+
+	use $CUR_DB
+	\go
+
+	\echo $PWD
+\done
+
+# list relevant objects depending on current location (formerly syls)
+\func lsargs
+	\set long=${1}
+	\set all=${2}
+	\set pattern=${3}
+\done
+\func ls
+	-- parse arguments
+	\call lsargs `perl -MGetopt::Std -e '$,=" "; getopts("la"); print $opt_l?1:0, $opt_a?1:0, $ARGV[0]' -- ${1} ${2} ${3} ${4} ${5}`
+
+	\call save_env
+	\set footers=0
+
+	\if [ $all = 1 ]
+		\set show_types="'S','U'"
+	\else
+		\set show_types="'U'"
+	\fi
+
+	\if [ $long = 1 ]
+		\set display="less -F"
+		\set datetime="%D %I:%M%p"
+
+		\set extra_db_cols=', d.crdate "created", convert(numeric(7, 3), sum(ug.size) / (1048576.0 / spt.low)) "Mb", space(8) "rows", "   D " "type"'
+		\set extra_schema_cols=', space(16) "created", convert(numeric(7, 3), sum(data_pgs(i.id, i.doampg) * (spt.low / 1024.0) / 1024.0)) "Mb", space(8) "rows", "   S " "type"'
+		\set extra_table_cols=', convert(char(8), o.crdate, 1) + substring(convert(char(20), o.crdate, 0), 12, 8) "created", convert(numeric(7, 3), data_pgs(i.id, i.doampg) * (spt.low / 1024.0) / 1024.0) "Mb", right(space(8) + convert(char(8), convert(numeric(8, 0), rowcnt(i.doampg))), 8) "rows", "  " + substring("[T]    T ", (ascii(o.type) - 83) * 3 + 1, 3) "type"'
+	\else
+		\set display="column"
+		\set headers=0
+		\set extra_db_cols=
+		\set extra_schema_cols=
+		\set extra_table_cols=
+	\fi
+
+	\if [ "$pattern" = "" ]
+		\set db_pattern=
+		\set schema_pattern=
+		\set table_pattern=
+	\else
+		\set db_pattern="and d.name like '$pattern'"
+		\set schema_pattern="and u.name like '$pattern'"
+		\set table_pattern="and o.name like '$pattern'"
+	\fi
+
+	\if [ "$CUR_DB" = "master" ]
+		-- master is equivalent of "root" dir
+		-- list available databases (as directories)
+		-- tack on any tables (probably none, unless -a specified)
+		select d.name + '/' "name" $extra_db_cols
+		from sysdatabases d, sysusages ug, spt_values spt
+		where d.dbid = ug.dbid
+		and spt.number = 1
+		and spt.type = 'E'
+		$db_pattern
+		group by d.name + '/', d.crdate, spt.low
+		union
+		select o.name "name" $extra_table_cols
+		from sysobjects o, sysindexes i, master..spt_values spt
+		where o.id *= i.id
+		and i.indid between 0 and 1
+		and spt.number = 1
+		and spt.type = 'E'
+		and o.type in ($show_types)
+		$table_pattern
+		order by name
+		\go | $display
+	\elif [ "$CUR_SCHEMA" = "" ]
+		-- in a database, but no schema yet
+		-- show available schemas, and any tables owned by dbo
+		select u.name + '/' "name" $extra_schema_cols
+		from sysobjects o, sysusers u, sysindexes i, master..spt_values spt
+		where o.uid = u.uid
+		and o.uid <> 1
+		and o.id *= i.id
+		and i.indid between 0 and 1
+		and spt.number = 1
+		and spt.type = 'E'
+		$schema_pattern
+		group by u.name + '/', spt.low
+		union
+		select o.name "name" $extra_table_cols
+		from sysobjects o, sysindexes i, master..spt_values spt
+		where o.uid = 1
+		and o.id *= i.id
+		and i.indid between 0 and 1
+		and spt.number = 1
+		and spt.type = 'E'
+		and o.type in ($show_types)
+		$table_pattern
+		order by name
+		\go | $display
+	\else
+		-- have a schema, show only those tables
+		select o.name "name" $extra_table_cols
+		from sysobjects o, sysusers u, sysindexes i, master..spt_values spt
+		where o.uid = u.uid
+		and u.name = "$CUR_SCHEMA"
+		and o.id *= i.id
+		and i.indid between 0 and 1
+		and spt.number = 1
+		and spt.type = 'E'
+		and o.type in ($show_types)
+		$table_pattern
+		order by name
+		\go | $display
+	\fi
+
+	\call restore_env
+\done
+
+
+# improvment over sp_who (formerly implemented as sywho)
+\func who
+	\call save_env
+	\set footers=0
+
+	select convert(char(12), suser_name(suid)) "login_name", spid,
+			convert(char(15), db_name(dbid)) "dbname", cmd + "  " "command",
+			convert(char(5), blocked) "blk", hostname
+	from master..sysprocesses
+	\go
+
+	\call restore_env
+\done
+
+# more details on a SPID (formerly implemented as syps)
+\func ps
+	\call save_env
+	\set footers=0
+
+	\if [ $# -eq 0 ]
+		\echo "ps: must supply pid"
+		\return 1
+	\fi
+
+	select spid, status, hostprocess, cmd, cpu, physical_io,
+		convert(char(3), blocked) "blk"
+	from master..sysprocesses
+	where spid = ${1}
+	\go
+
+	\echo ""
+
+	select name from master..sysdatabases
+	\do
+		select convert(char(3), spid) "spid",
+				convert(char(10), spt.name) "locktype", o.name "table",
+				convert(char(15), db_name(dbid)) "dbname",
+				convert(char(7), count(*)) "#_locks"
+		from #1..sysobjects o, master..syslocks l, master..spt_values spt
+		where l.type = spt.number
+		and spt.type = 'L'
+		and spid = ${1}
+		and o.id =* l.id
+		and db_name(dbid) = "#1"
+		group by spid, spt.name, o.name, convert(char(15), db_name(dbid))
+		\go
+		-- only print headers the first time through the loop
+		\set headers=0
+	\done
+
+	\call restore_env
+\done
+
+
+# (slight) improvement over sp_syntax
+\func man
+	sp_syntax "${1}"
+	\go | less -F
+\done
+
+
+# shortcut for select * (formerly implemented as sycat)
+\func cat
+	\call set_table ${1}
+
+	select * from $table
+	\go | less -F
+\done
+
+
+# shortcut for select * with a where clause (formerly implemented as sygrep)
+\func grep
+	\set where_clause="${1}"
+	\call set_table ${2}
+
+	select * from $table
+	where $where_clause
+	\go | less -F
+\done
+
+
+# improvement over sp_help (formerly implemented as syfile)
+\func file
+	\call set_table ${1}
+	\echo $table
+
+	select c.name, t.name, c.length, convert(bit, c.status & 8) "N"
+	from syscolumns c, systypes t
+	where c.id = object_id("$table")
+	and c.usertype *= t.usertype
+	\go | less -F
+\done
+
+
+\alias cd='\call cd'
+\alias pwd='\echo $PWD'
+\alias ls='\call ls'
+
+\alias who='\call who'
+\alias ps='\call ps'
+\alias man='\call man'
+\alias cat='\call cat'
+\alias grep='\call grep'
+\alias file='\call file'

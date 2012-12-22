@@ -1,0 +1,31 @@
+#! /bin/bash
+
+# see
+# http://www.loblolly.net/~rddecker/helppages/MiniHOWTOS/systemclock/systemclock-twoclocks.htm
+
+# old server from link above (131.107.1.10) doesn't seem to work any more
+time_server=129.6.15.28
+
+if [[ -x /usr/local/sbin/telnet_time && -x /usr/local/bin/perlfind ]] && /usr/local/bin/perlfind -q Net::Telnet
+then
+	echo "using telnet_time"
+	formatted_time=$(telnet_time $time_server)
+	date -u $formatted_time >/dev/null
+elif [[ -x /usr/bin/telnet ]]
+then
+	echo "using raw telnet"
+	raw_time="$(telnet $time_server 13 2>/dev/null | grep UTC | cut -b7-23)"
+	formatted_time=$(echo $raw_time | perl -lpe 's/(\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/$2$3$4$5$1.$6/')
+	date -u $formatted_time >/dev/null
+elif [[ -x /usr/sbin/ntpdate ]]
+then
+	echo "using ntpdate"
+	ntp_server=$(awk '/^server/ {print $2}' /etc/ntp.conf | tail -n 1)
+	/usr/sbin/ntpdate $ntp_server >/dev/null
+else
+	echo "$0: can't find any way to get real time" >&2
+	exit 1
+fi
+
+hwclock --systohc
+date

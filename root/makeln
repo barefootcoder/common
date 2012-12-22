@@ -1,0 +1,46 @@
+#! /bin/bash
+
+source ./functions
+
+
+###########################
+# MAIN
+###########################
+
+
+if [[ $PWD != $mydir ]]
+then
+	echo "sorry; must run from ~/common" >&2
+	exit 1
+fi
+
+# make sure we have the latest of everything before we start
+./psync
+
+# do rc's first; they're moderately straightforward except for having to add
+# . in front of the name ... these all go in ~
+cd $mydir/rc
+for file in *
+do
+	make_link $mydir/rc/$file $HOME/.$file
+done
+
+# now /usr/local/bin
+cd $mydir/lbin
+for file in *
+do
+	chmod 775 $file
+	make_link $mydir/lbin/$file /usr/local/bin/$file
+done
+
+# now /usr/local/sbin
+cd $mydir/sbin
+for file in *
+do
+	chmod 775 $file
+	make_link $mydir/sbin/$file /usr/local/sbin/$file
+done
+
+# none of the links will work if /root isn't accessible, so fix that
+# (note: it's still not going to be readable, so this isn't a huge security hole)
+chmod o+x /root

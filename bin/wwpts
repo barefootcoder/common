@@ -1,0 +1,72 @@
+#! /usr/bin/perl
+
+use Toolkit;
+use Getopt::Std;
+use File::Basename;
+
+
+my $opts = {};
+getopts('oh', $opts);
+
+if ($opts->{h})
+{
+	print STDERR "usage: ", basename($0), " [-h] [-o]\n";
+	print STDERR "       -o : use the old points (Momentum) (default: use the new points (PointsPlus))\n";
+	print STDERR "       -h : this help message\n";
+	exit;
+}
+
+
+our %nutrition =
+(
+	fiber	=>	'grams of fiber',
+	cals	=>	'calories',
+	fat		=>	'grams of fat',
+	carbs	=>	'total carbs',
+	prot	=>	'grams of protein',
+);
+our %params = map { $_ => { name => $nutrition{$_}, base => 0, total => 0 } } keys %nutrition;
+our @which_params = $opts->{o} ? qw< fiber cals fat > : qw< fat carbs fiber prot >;
+
+FOOD:
+{
+	no warnings 'numeric';
+
+	print "\n";
+	foreach (@which_params)
+	{
+		print "How many $params{$_}->{name}?  ";
+		$params{$_}->{base} = <STDIN> + 0;
+	}
+
+	print "What's the serving size?  ";
+	my $ssize = <STDIN> + 0 || 1;
+	print "How many are *you* going to eat?  ";
+	my $size = <STDIN> + 0 || 1;
+
+	foreach (@which_params)
+	{
+		$params{$_}->{total} += $params{$_}->{base} / $ssize * $size;
+	}
+
+	print "Add another food?  ";
+	redo FOOD if (<STDIN> =~ /^[y1]/i);
+}
+
+print "\n";
+foreach (@which_params)
+{
+	print "Total $params{$_}->{name} is:  $params{$_}->{total}\n";
+}
+
+my $points;
+my %vals = map { $_ => $params{$_}->{total} } @which_params;
+if ($opts->{o})
+{
+	$points = ($vals{cals} - $vals{fiber} * 10) / 50 + $vals{fat} / 12;
+}
+else
+{
+	$points = ($vals{prot} * 16 + $vals{carbs} * 19 + $vals{fat} * 45 - $vals{fiber} * 14) / 175;
+}
+print "\nTotal points are:  $points\n";

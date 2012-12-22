@@ -1,0 +1,24 @@
+#!/bin/bash
+
+for pid in $(pgrep -f "$1")
+do
+	if [[ $pid != $$ ]]
+	then
+		if [[ -n $target_tty ]]
+		then
+			echo "found at least two terminals running $1:" >&2
+			ps -p $target_pid,$pid
+			exit 1
+		fi
+		target_pid=$pid
+		target_tty=$(ps -o tty8= -p $target_pid)
+	fi
+done
+
+if [[ -z $target_tty ]]
+then
+	echo "no terminal found running $1" >&2
+	exit 1
+fi
+
+psf $target_tty

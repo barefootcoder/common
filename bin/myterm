@@ -1,0 +1,115 @@
+#! /bin/bash
+
+me=${0##*/}
+termprog=Eterm
+force=0
+while getopts ":sD:fh" opt
+do
+	case $opt in
+		s)	scaled=1
+			;;
+		D)	desktop=$OPTARG
+			;;
+		f)	force=1
+			;;
+		h)	echo "usage: $me -h | [-s]" >&2
+			echo "    -s : scaled image (default: tiled)" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+title=$1
+pixmap=$2
+geometry=$3
+shift 3
+
+# if a term with the given title already exists, don't create it again
+term_pids="$(pgrep $termprog)"
+if [[ -n $term_pids ]]
+then
+	if ps -wwwo cmd -p $term_pids | egrep "\<$title\>" >/dev/null 2>&1
+	then
+		if [[ ! $force -eq 1 ]]
+		then
+			echo "$me: term $title already exists; won't make another" >&2
+			exit 1
+		fi
+	fi
+fi
+
+function locate_img
+{
+	dir=$1
+	image=$2
+	for file in $(ls $dir/$image.* 2>/dev/null)
+	do
+		:
+	done
+	echo $file
+}
+if [[ $scaled == 1 ]]
+then
+	pixmap=$(locate_img /usr/share/Eterm/pix/scale $pixmap)
+	image="-P $pixmap@155x100:propscaled"
+else
+	pixmap=$(locate_img /usr/share/Eterm/pix/tile $pixmap)
+	image="-P $pixmap@:tiled"
+fi
+if [[ -z $pixmap ]]
+then
+	echo "$me: can't find image file for $pixmap" >&2
+	exit 2
+fi
+
+iconfile=/usr/share/icons/gnome/16x16/apps/gnome-terminal.png
+if [[ -r $iconfile ]]
+then
+	icon="-I $iconfile"
+fi
+
+# figure out geometry/font adjustments
+# get screen size
+scrsize=$(xrandr -q 2>&1 | perl -lne 'if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}')
+# figure proper font size
+case $scrsize in
+	*x768)		fontsize=3
+				;;
+	*x1024)		fontsize=3
+				;;
+	*x1200)		fontsize=4
+				;;
+	*x1050)		fontsize=4
+				;;
+	VNC)		# we've guessed VNC from the error message
+				fontsize=2.5
+				echo "in VNC"
+				;;
+	*)			echo "can't determine proper font size for this screen ($scrsize)" >&2
+				exit 1
+esac
+
+case $termprog in
+	Eterm)			args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off -e"
+					if [[ -n "$desktop" ]]
+					then
+						args="-D $desktop $args"
+					fi
+					font="-F-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
+					font="--default-font-index $fontsize"
+					;;
+	gnome-terminal)	args="--geometry=$geometry"
+					;;
+	*)				echo "myterm: don't know how to start term $termprog" >&2
+					;;
+esac
+
+$termprog $font $args "$@" &

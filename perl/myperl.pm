@@ -1,0 +1,170 @@
+use 5.012;
+use warnings;
+use Devel::Declare 0.006007 ();
+
+package myperl;
+
+use CLASS;
+use Import::Into;
+use Sub::Install;
+use Module::Runtime qw< use_module >;
+
+
+our @Debuggit = qw< Debuggit >;
+
+sub import
+{
+	my $class = shift;
+	push @Debuggit, [ @_ ] if @_;
+	my $calling_package = caller;
+
+	# our own routines, which we have to transfer by hand
+	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round;
+
+	myperl->import_list_into($calling_package,
+
+		strict							=>
+		warnings						=>					[	FATAL => 'all'	],
+		feature							=>					[	':5.12'			],
+		#autodie						=>					[	':all'			],
+		@myperl::Debuggit,
+
+		TryCatch						=>
+		'Const::Fast'					=>
+		'Path::Class'					=>
+		'Perl6::Slurp'					=>
+		'Perl6::Gather'					=>	0.42		=>
+		'myperl::Declare'				=>
+		'Method::Signatures'			=>	20111125	=>
+
+	);
+}
+
+
+sub import_list_into
+{
+	use version 0.99 ();
+	my ($class, $to_pkg, @modules) = @_;
+
+    while (@modules)
+	{
+        my $from_pkg = shift(@modules);
+		my ($version, $arguments);
+        $version = version->parse(shift(@modules))->numify if @modules and version::is_lax($modules[0]);
+        $arguments = shift @modules if @modules and ref($modules[0]) eq 'ARRAY';
+
+#print STDERR "calling use_and_import_into with: $to_pkg, $from_pkg, ", $version || 'undef', ", ", $arguments ? scalar @$arguments : 'undef', " args\n";
+		$class->use_and_import_into($to_pkg, $from_pkg, $version, $arguments);
+    }
+}
+
+sub use_and_import_into
+{
+	my $args = ref $_[-1] eq 'ARRAY' ? pop : undef;
+	my ($class, $to_pkg, $from_pkg, $version) = @_;
+
+	use_module($from_pkg);
+	$from_pkg->import::into($to_pkg, @{ $args || [] }) unless $args and @$args == 0;
+}
+
+
+sub title_case
+{
+	require Text::Capitalize;
+
+	# ought to be able to use local here, but I can't seem to make it work
+	# perhaps you can't localize variables in other packages?
+	my @save = @Text::Capitalize::exceptions;
+	push @Text::Capitalize::exceptions, qw< from into as >;
+	my $t = Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1);
+
+	# preserving all caps seems to let the word "A" stay "A" when it should go to "a"
+	# we'll fix that with an explicit substitution
+	# we use literal spaces rather than \b's to avoid changing it at the beginning or end of the string
+	$t =~ s/ A / a /g;
+
+	@Text::Capitalize::exceptions = @save;
+	return $t;
+}
+
+
+sub round
+{
+	require POSIX;
+	require Math::Round;
+	state $opts = { map { $_ => 1 } qw< OFF UP DOWN > };
+
+	my $how = $opts->{$_[0]} ? shift : 'OFF';
+	my ($num, $to) = @_;
+	$to ||= 1;
+
+	given ($how)
+	{
+		return POSIX::ceil($num / $to) * $to when 'UP';
+		return POSIX::floor($num / $to) * $to when 'DOWN';
+		return Math::Round::nearest($to, $num) when 'OFF';
+	}
+}
+
+
+1;
+
+
+=pod
+
+=head1 INSTALLATION
+
+If you want to make sure you have all the necessary prereqs, try this:
+
+	podselect -section PREREQS `perlfind -f myperl` | grep '^[a-zA-Z]' | cpanm -n
+
+You will probably need the following Fedora packages, which might not be installed already:
+
+	openssl-devel
+	libxml2-devel
+
+=head1 PREREQS
+
+CLASS
+Roman
+parent
+Debuggit
+TryCatch
+Template
+Test::Most
+Term::Size
+File::Stat
+Const::Fast
+Path::Class
+Tie::IxHash
+Date::Parse
+Perl6::Form
+Dist::Zilla
+Math::Round
+Sub::Install
+Perl6::Slurp
+Date::Format
+Carp::Always
+Email::Stuff
+Perl6::Gather
+Test::Command
+Package::Stash
+Mail::Sendmail
+Module::Install
+Config::General
+MooseX::Declare
+Time::ParseDate
+Getopt::Declare
+Text::Unidecode
+Text::Capitalize
+MooseX::NonMoose
+MooseX::Has::Sugar
+Method::Signatures
+IPC::System::Simple
+Test::Pod::Coverage
+Net::Google::Calendar
+Net::Google::Spreadsheets
+Module::Install::JSONMETA
+Net::Google::DocumentsList
+
+=cut

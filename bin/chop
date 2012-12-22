@@ -1,0 +1,22 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Text::Tabs;
+use File::Basename;
+
+my $me=basename $0;
+
+die "$me: must supply line width\n" unless my $width = shift;
+
+while ( <STDIN> )
+{
+	$_ = expand $_;
+	while (length > $width)
+	{
+		print substr($_, 0, $width), "\n";
+		$_ = substr($_, $width);
+	}
+	print;
+}

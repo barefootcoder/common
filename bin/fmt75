@@ -1,0 +1,3 @@
+#! /bin/csh
+
+expand -4 $* | fmt -75 | unexpand -a -4

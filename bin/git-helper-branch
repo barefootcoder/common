@@ -1,0 +1,100 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+
+mode=switch
+local=0
+pretend=0
+while getopts ":c:lusph" opt
+do
+	case $opt in
+		c)	mode=create
+			branch=$OPTARG
+			;;
+		l)	local=1
+			;;
+		s)	mode=show
+			;;
+		u)	mode=switch
+			branch=master
+			break
+			;;
+		p)	pretend=1
+			;;
+		h)  echo "usage: $me -h | [-p] { -c branch [-l] | -s | [branch] }" >&2
+			echo "    -c : create a branch" >&2
+			echo "    -s : show branches" >&2
+			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
+			echo "    -h : this help message" >&2
+			echo "    branch : without -c, switch to that branch (default: master)" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+[[ -z $branch && -n $1 ]] && branch=$1
+
+
+function run
+{
+	if [[ $pretend == 1 ]]
+	then
+		echo "$me: would run"
+		echo -e "\n    $*\n"
+	else
+		"$@"
+	fi
+}
+
+if [[ $mode != "show" ]] && ! git status | fgrep -q "working directory clean"
+then
+	echo "$me: won't branch or create branch with unstashed changes" >&2
+	exit 1
+elif [[ $mode == "create" ]] && git branch | grep -q " $branch$"
+then
+	echo "$me: can't create a branch that already exists" >&2
+	exit 2
+fi
+
+curbranch=$(git branch --contains HEAD | sed 's/^\* //')
+
+case $mode in
+	create)	from_branch=master
+			if [[ $curbranch != "master" ]]
+			then
+				echo -n "$me: current branch is not master; use current ($curbranch) for source branch? "
+				read yn
+				if [[ $yn == [yY]* ]]
+				then
+					from_branch=$curbranch
+				else
+					echo "$me: using master as source branch"
+				fi
+			fi
+			
+			if [[ $(vctools-config --project) == rent* ]]
+			then
+				run $WEBROOT/bin/util/create-branch $branch $from_branch
+			else
+				if [[ $local == 1 ]]
+				then
+					run git branch $branch
+				else
+					run git fetch origin $from_branch
+					run git push origin origin/$from_branch:refs/heads/$branch
+					run git checkout $branch
+				fi
+			fi
+			;;
+	switch)	run git checkout ${branch:-master}
+			;;
+	show)	run git branch
+			;;
+esac

@@ -1,0 +1,49 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use File::Basename;
+
+
+if ($ARGV[0])
+{
+	chdir $ARGV[0] or die("no such directory $ARGV[0]");
+}
+
+open(IN, "du -hx . |") or die("can't execute du");
+my @lines = grep { not m@/@ } map { s@\./@@; $_ } <IN>;
+@lines = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map { s@\.$@$ARGV[0]@ if $ARGV[0]; [ extract_k(), $_ ] } @lines;
+close(IN);
+
+splice @lines, -1, 0, "=" x 20 . "\n";
+print @lines;
+
+sub extract_k
+{
+	if ( /\b(\d+(?:\.\d*)?)([kmg]?)\b/i )
+	{
+		my $size = $1;
+		my $mod = lc $2;
+
+		if ($mod)
+		{
+			$size *= 1024;
+			if ($mod eq 'm' or $mod eq 'g')
+			{
+				$size *= 1024;
+				if ($mod eq 'g')
+				{
+					$size *= 1024;
+				}
+			}
+		}
+		# print STDERR "size will be $size\n";
+		return $size;
+	}
+	else
+	{
+		# doesn't appear to have a size in it; let it float to the top
+		return 0;
+	}
+}

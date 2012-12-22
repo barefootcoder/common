@@ -1,0 +1,93 @@
+#! /bin/bash
+
+readonly me=${0##*/}
+
+while getopts ":h" opt
+do
+	case $opt in
+		h)	echo "usage: $me [-h] | package" >&2
+			echo "    shows programs installed by package" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for usage)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: illegal option $OPTARG ($me -h for usage)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+if [[ -z $1 || -n $2 ]]
+then
+	echo "$me: wrong number of arguments ($me -h for usage)" >&2
+	exit 2
+fi
+
+pkg=$1
+
+
+##############
+##  FEDORA  ##
+##############
+
+if which rpm >/dev/null 2>&1
+then
+	cmd="rpm -ql $pkg"
+fi
+
+
+##############
+##  GENTOO  ##
+##############
+
+if which emerge >/dev/null 2>&1
+then
+	if ! which pkgfullname >/dev/null 2>&1
+	then
+		echo "$me: can't find pkgfullname command"
+		exit 1
+	fi
+
+	if ! which equery >/dev/null 2>&1
+	then
+		echo "$me: can't find equery command"
+		exit 1
+	fi
+
+	fullname=$(pkgfullname -i $pkg)
+	if [[ -z $fullname ]]
+	then
+		echo "$me: $pkg doesn't appear to be an installed package" >&2
+		exit 1
+	fi
+
+	cmd="equery -C -q files $pkg"
+fi
+
+
+###########
+##  ???  ##
+###########
+
+if [[ -z $cmd ]]
+then
+	echo "$me: can't seem to figure out what distro you're using" >&2
+	exit 1
+fi
+
+
+
+# note: contractions in comments don't include apostrophes for a good reason
+# work it out before you decide to get grammatical on my ass
+$cmd | perl -MFile::Basename -lne '
+
+	next if -d;	# directories dont count
+	next unless -x;	# has to be executable
+	# but cant be a library (shared or otherwise)
+	next if basename($_) =~ /^lib.+\.(a|so)$/;
+	print;		# okay, looks good, so print it
+
+'

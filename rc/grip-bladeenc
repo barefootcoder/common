@@ -1,0 +1,4 @@
+GRIP 2
+exe /usr/bin/oggenc
+cmdline -o %m -a %a -l %d -t %n -N %t -G %G -d %y -q 4 %w
+extension mp3

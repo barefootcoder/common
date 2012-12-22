@@ -1,0 +1,40 @@
+:se nocompatible
+:se undolevels=1000
+:nmap Y y$
+:map  :files<CR>
+:map % :w<CR>:!fake_timerchk %<CR>
+:noremap <C-C> :call FindCurrent()<CR>zz<C-L>
+:map <C-T> :w<CR>^:%!fake_timer start <cWORD><CR><C-C>
+:imap <C-T> <Esc><C-T><C-C>
+:map <C-F> :w<CR>^:%!fake_timer half <cWORD><CR>
+:imap <C-F> :w<CR>^:%!fake_timer half <cWORD><CR>
+:map <C-P> :w<CR>^:%!fake_timer pause <cWORD><CR><C-N>
+:imap <C-P> :w<CR>^:%!fake_timer pause <cWORD><CR><C-N>
+:map <C-B> :w<CR>^:!fake_timer breakdown <cWORD> %<CR>
+:map <C-B> :w<CR>^:!fake_timer breakdown <cWORD> %<CR>
+:map <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
+:map <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
+:map <C-D><C-D> :w<CR>^:!fake_timer daybreak today %<CR>
+:map <C-D><C-Y> :w<CR>^:!fake_timer daybreak yesterday %<CR>
+:map <C-D><C-F> :w<CR>^:!fake_timer daybreak 'last friday' #<CR>
+:map <C-D><C-R> :w<CR>^:!fake_timer review <cword> %<CR>
+:map <Esc>c 0/<C-R><C-A><CR>
+:let g:timer="default"
+:function! GetTimer()
+:	call inputsave()
+:	let g:timer=input("Timer to search for:")
+:	call inputrestore()
+:endfunction
+:function! FindCurrent()
+:	let fred=search("-$\\|-\t")
+:endfunction
+:function! FindTimer()
+:	if search(g:timer, "n")
+:		execute "normal" "/".g:timer."\r"
+:	else
+:		call FindCurrent()
+:	endif
+:endfunction
+:map <C-Z> :call GetTimer()<CR>
+:noremap <C-N> 1G:call FindTimer()<CR>/<C-R><C-A><CR>Nzz<C-L>
+:nmap <C-_> <C-Z><C-N>

@@ -1,0 +1,31 @@
+#! /usr/bin/perl
+
+use Toolkit;
+
+
+our @FACTORS = (60, 60, 24);
+
+my @times;
+while ( <> )
+{
+	push @times, [ reverse split(':', (split(' '))[0]) ];
+}
+
+my @totals;
+foreach (@times)
+{
+	my @t = @$_;
+	$totals[$_] += $t[$_] foreach 0..$#t;
+}
+
+my $carry = 0;
+foreach (0..$#totals)
+{
+	my $f = $FACTORS[$_];
+	my $t = $totals[$_] + $carry;
+	$totals[$_] = $t % $f;
+	$carry = int($t / $f);
+}
+push @totals, $carry if $carry;
+
+say join(':', map { sprintf("%02d", $_) } reverse @totals);

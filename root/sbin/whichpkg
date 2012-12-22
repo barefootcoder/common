@@ -1,0 +1,59 @@
+#! /bin/bash
+
+
+file=$(which $1)
+
+
+###############
+##  MANDRAKE ##
+###############
+
+if which urpmf >/dev/null 2>&1
+then
+	identified=1
+
+	urpmf $file
+fi
+
+
+##############
+##  FEDORA  ##
+##############
+
+if which yum >/dev/null 2>&1
+then
+	identified=1
+
+	yum -C --noplugins provides $file | perl -lne 'BEGIN { $/ = "" } /^(\d:)?(.*)$/m and print $2 if /installed/'
+fi
+
+
+##############
+##  GENTOO  ##
+##############
+
+if which emerge >/dev/null 2>&1
+then
+	identified=1
+
+	if [[ -n $file ]]
+	then
+		if which etool >/dev/null 2>&1
+		then
+			etool -f $file
+		else
+			equery belongs $file
+		fi
+	fi
+fi
+
+
+###########
+##  ???  ##
+###########
+
+if [[ ! $identified ]]
+then
+	echo "$me: can't seem to figure out what distro you're using" >&2
+	exit 1
+fi
