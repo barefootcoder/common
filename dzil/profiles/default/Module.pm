@@ -7,3 +7,8 @@ use warnings;
 
 
 1;
+
+# ABSTRACT:
+# COPYRIGHT
+
+__END__
