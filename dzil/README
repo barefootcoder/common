@@ -1,0 +1,4 @@
+This directory is designed to be used in conjunction with bin/cpannew (q.v.).  That script will
+create the .gitignore file in new distros.
+
+The config.ini file is not stored here, because it contains sensitive passwords.

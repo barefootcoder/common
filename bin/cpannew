@@ -1,0 +1,15 @@
+#! /bin/bash
+. ~/bin/bash_funcs
+
+module=$1
+cd ~/Dropbox/proj
+dzil new $1 || die "dzil couldn't make the dir"
+dist=${module//::/-}
+[[ -d $dist ]] || die "can't find the newly minted dir $dist"
+repo=${dist,,}
+mv $dist $repo
+cd $repo
+echo "$module-*" >.gitignore
+git init
+git remote add origin git@github.com:barefootcoder/$repo.git
+git add .

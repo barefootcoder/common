@@ -26,6 +26,20 @@ do
 	make_link $mydir/rc/$file $HOME/.$file
 done
 
+# .dzil dir will be built in three parts:
+#	# the directory itself will be made if it's not there
+#		(it can't be a symlink because it needs to contains files symlinked from
+#		two different places)
+#	# publicly avaiable stuff from $mydir/dzil
+#	# the config.ini, which contains passwords and therefore isn't public-facing
+#		(that will be symlinked by the "sensitive" section, below)
+[[ -d ~/.dzil ]] || mkdir ~/.dzil
+cd $mydir/dzil
+for file in *
+do
+	make_link $mydir/dzil/$file $HOME/.dzil/$file
+done
+
 # we have a few rc's in a separate place because they have passwords in them
 alt_rcdir=~/Dropbox/sensitive
 if [[ -d $alt_rcdir ]]
@@ -33,7 +47,14 @@ then
 	cd $alt_rcdir
 	for file in *
 	do
-		make_link $alt_rcdir/$file $HOME/.$file
+		if [[ ${file/-/} != $file ]]
+		then
+			# there's a dash in it ... that means it goes underneath another dot-dir
+			lnfile=${file//-/\/}
+		else
+			lnfile=$file
+		fi
+		make_link $alt_rcdir/$file $HOME/.$lnfile
 	done
 fi
 
