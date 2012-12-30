@@ -1,0 +1,3 @@
+#! /bin/bash
+
+grep "$@" ~/.cpanm/sources/http%www.cpan.org/02packages.details.txt | awk '{print $3}' | sort -u
