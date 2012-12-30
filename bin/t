@@ -83,7 +83,7 @@ if (-r 'dist.ini')
 	}
 	else
 	{
-		exec("dzil test && dzil clean") if not @ARGV;
+		exec("dzil test && dzil clean") if not %$opt and not @ARGV;
 	}
 }
 
