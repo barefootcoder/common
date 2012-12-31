@@ -6,7 +6,7 @@ no warnings 'uninitialized';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class List::MoreUtils >)
+	foreach (qw< Getopt::Std Path::Class List::MoreUtils Test::Pretty >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -21,7 +21,7 @@ sub print_color(@);
 
 
 my $opt = {};
-getopts("hnTcvsADN:", $opt);
+getopts("hnTcvsAPDN:", $opt);
 
 # help message
 if ($opt->{h})
@@ -34,15 +34,16 @@ if ($opt->{h})
 	print "           -h: this help message\n";
 	print "           -n: only run the newest (most recently modified) test\n";
 	print "           -T: run tests with taint checking on\n";
-	print "           -c: try to run tests under Devel::Cover (and report)\n";
+	print "           -c: try to run tests under Devel::Cover and report (forces -Nj)\n";
 	print "           -v: run tests in verbose mode\n";
 	print "           -s: show only test summary\n";
 	print "           -A: load Carp::Always to get full stack traces on errors\n";
+	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
 	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
-	print "                  -Nj: do not parallelize tests (default: prove -j5 [unless -c])\n";
+	print "                  -Nj: do not parallelize tests (default: prove -j5 [unless -c or -P])\n";
 	exit;
 }
 
@@ -198,8 +199,12 @@ die("$0: cannot figure out where test files are\n") unless $dir or @files;
 $ENV{BAIL_ON_FAIL} = 1;
 print "testing @files ...\n";
 
-# use Carp::Always if requested
-$ENV{PERL5OPT} = "-MCarp::Always" if $opt->{A};
+# use requested modules
+my %req_modules =
+(
+	A	=>	'Carp::Always',
+);
+$ENV{PERL5OPT} = join(' ', map { $opt->{$_} ? "-M$req_modules{$_}" : () } keys %req_modules);
 
 
 print "\n" x 10 unless $opt->{s};
@@ -212,13 +217,14 @@ push @prove_args, '-Q' if $opt->{s};
 push @prove_args, '-T' if $opt->{T};
 push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
 push @prove_args, '-r' unless $opt->{N} =~ /r/;
-push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c};
+push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c} or $opt->{P};
+push @prove_args, '-PPretty' if $opt->{P};
 push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 push @prove_args, @files;
 my $command = "prove @prove_args";
 print STDERR "running: $command\n" if $opt->{D};
 print STDERR "         (with \$HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
-print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and $opt->{A};
+print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and grep { $opt->{$_} } keys %req_modules;
 #!system("$command 2>&1 | grep -v '^Devel::Cover' | grep -v '^Can.t find digest for accessor'") or exit 1;
 open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
 while ( <PIPE> )
