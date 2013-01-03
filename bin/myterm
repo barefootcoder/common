@@ -3,18 +3,28 @@
 me=${0##*/}
 termprog=Eterm
 force=0
-while getopts ":sD:fh" opt
+while getopts ":sfD:h" opt
 do
 	case $opt in
 		s)	scaled=1
 			;;
-		D)	desktop=$OPTARG
+		D)	desktop=$(( $OPTARG - 1 ))									# because desktops really start at 0
 			;;
 		f)	force=1
 			;;
-		h)	echo "usage: $me -h | [-s]" >&2
+		h)	echo "usage: $me -h | [-sf] [-D num] title pixmap geometry [cmd [args]]" >&2
 			echo "    -s : scaled image (default: tiled)" >&2
+			echo "    -f : force (create even if exists)" >&2
+			echo "    -D : start term on this desktop (default: current)" >&2
 			echo "    -h : this help message" >&2
+			echo "  title      : title for term (will not create if exists unless -f)" >&2
+			echo "  pixmap     : background image for term" >&2
+			echo "  geometry   : window size/placement like WxH+Y+X" >&2
+			echo "                where W is width in columns" >&2
+			echo "                  and H is height in lines" >&2
+			echo "                  and Y is pixels from top of screen" >&2
+			echo "                  and X is pixels from left of screen" >&2
+			echo "  cmd [args] : command to run in new term" >&2
 			exit
 			;;
 		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
