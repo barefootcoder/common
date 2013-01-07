@@ -1,0 +1,4 @@
+#! /bin/bash
+
+cd ~/.kde/share/apps/amarok/mysqle/amarok
+myisamchk -r *.MYI
