@@ -25,8 +25,8 @@ foreach my $file (@ARGV)
 {
 	next unless -f $file;												# don't try to filter directories, etc
 	next if -B $file;													# don't try to filter binary files!
-	next if $file =~ /^makefile/i;										# messing with tabs in makefiles is doomed to fail
-
+	next if $file =~ /^makefile/i and $file ne 'Makefile.PL';			# messing with tabs in makefiles is doomed to fail
+																		# (except Makefile.PL isn't really a makefile)
 	print STDERR "going to filter $file\n" if DEBUG >= 3;
 
 	move($file, "$file~");
