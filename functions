@@ -112,3 +112,25 @@ function find_mozilla_profile_dir
 	# if saltdir is undefined, we couldn't find it
 	echo $saltdir
 }
+
+
+# find the root-like admin group
+# on most systems, it's "wheel"
+# but on Linux Mint, it's "sudo"
+function set_admin
+{
+	for group in wheel sudo
+	do
+		if grep -q "^$group:" /etc/group
+		then
+			ADMIN=$group
+			break
+		fi
+	done
+
+	if [[ -z $ADMIN ]]
+	then
+		echo "$0: can't figure out the name of the ADMIN group on this machine" >&2
+		exit 1
+	fi
+}

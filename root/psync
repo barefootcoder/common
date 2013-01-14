@@ -64,11 +64,13 @@ then
 	rsync -az --exclude '.*.sw[po]' $src_dir/ ~/common
 	rsync -rvn --delete $src_dir/ ~/common | sed -n '/^deleting/{s/deleting/extraneous file:/;p}'
 
-	# now put the functions softlink back
+	# now put the functions softlink back and source it
 	ln -s $buddy/$functions ~/$functions
+	source ~/$functions
+	set_admin
 	# and fix the file ownerships
 	chown -R root ~/common
-	find ~/common -not -group wheel | xargs chgrp root
+	find ~/common -not -group $ADMIN | xargs chgrp root
 fi
 
 if [[ -n $1 ]]

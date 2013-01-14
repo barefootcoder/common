@@ -72,6 +72,17 @@ function send_to_sandbox
 }
 
 
+if [[ -z $GUI_EDITOR ]]
+then
+	if which pluma >/dev/null 2>&1
+	then
+		GUI_EDITOR=pluma
+	else
+		GUI_EDITOR=gedit
+	fi
+fi
+
+
 if [[ $VCTOOLS_SHELL == "proj:$proj" || ( $VCTOOLS_SHELL == "git" && $(pwd) == */proj/rent* ) ]]
 then
 	send_to_sandbox "$1"
@@ -85,7 +96,7 @@ then
 	then
 		if blogify "$1" >/tmp/hold.wri
 		then
-			DISPLAY=${DISPLAY:-:0.0} gedit /tmp/hold.wri
+			DISPLAY=${DISPLAY:-:0.0} $GUI_EDITOR /tmp/hold.wri
 		fi
 	elif [[ $1 == mits-mon ]]
 	then
@@ -96,7 +107,7 @@ then
 		"$1"
 	elif [[ $1 == *.testing.notes || $(realpath "$1") == */C3V/* || $(basename "$1") == github.reply ]]
 	then
-		DISPLAY=${DISPLAY:-:0.0} gedit "$1"
+		DISPLAY=${DISPLAY:-:0.0} $GUI_EDITOR "$1"
 	else
 		echo "$me: don't know how to push this file to testing" >&2
 		exit 2

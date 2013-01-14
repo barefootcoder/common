@@ -1,4 +1,6 @@
 [[ -r makeln ]] || ( echo "must be in common dir!" && exit 2 )
+source functions
+set_admin
 
 chmod +x makeln
 chmod +x refresh
@@ -12,5 +14,5 @@ chmod +x psync
 chmod +x makeln
 chmod +x lbin/*
 chmod +x sbin/*
-find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp wheel
+find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp $ADMIN
 find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w
