@@ -37,5 +37,5 @@ read yn
 if [[ $yn == [yY]* ]]
 then
 	/usr/sbin/usermod -u $newuid $user
-	/usr/bin/find / -path /proc -prune -o -user $olduid -exec chown $user {} \;
+	/usr/bin/find / -path /proc -prune -o -user $olduid -exec chown -h $user {} \;
 fi

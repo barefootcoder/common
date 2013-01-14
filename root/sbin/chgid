@@ -37,5 +37,5 @@ read yn
 if [[ $yn == [yY]* ]]
 then
 	/usr/sbin/groupmod -g $newgid $group
-	/usr/bin/find / -path /proc -prune -o -group $oldgid -exec chgrp $group {} \;
+	/usr/bin/find / -path /proc -prune -o -group $oldgid -exec chgrp -h $group {} \;
 fi

@@ -13,3 +13,4 @@ chmod +x makeln
 chmod +x lbin/*
 chmod +x sbin/*
 find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp wheel
+find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w

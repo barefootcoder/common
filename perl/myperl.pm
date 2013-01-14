@@ -128,12 +128,15 @@ You will probably need the following Fedora packages, which might not be install
 CLASS
 Roman
 parent
+version
 Debuggit
 TryCatch
 Template
+MP3::Tag
 Test::Most
 Term::Size
 File::Stat
+IO::Prompt
 Const::Fast
 Path::Class
 Tie::IxHash
@@ -141,6 +144,7 @@ Date::Parse
 Perl6::Form
 Dist::Zilla
 Math::Round
+Import::Into
 Sub::Install
 Perl6::Slurp
 Date::Format
@@ -158,6 +162,7 @@ Getopt::Declare
 Text::Unidecode
 Text::Capitalize
 MooseX::NonMoose
+MooseX::Singleton
 MooseX::Has::Sugar
 Method::Signatures
 IPC::System::Simple

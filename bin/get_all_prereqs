@@ -3,9 +3,11 @@
 # first, install our own prereqs, if necessary
 BEGIN
 {
+	sub proto_install { system(qw< cpanm -n >, shift) }
+
 	foreach (qw< autodie IPC::System::Simple Term::ANSIColor >)
 	{
-		eval "require $_" or install($_);
+		eval "require $_" or proto_install($_);
 	}
 }
 
@@ -20,11 +22,29 @@ my $cmd = shift;
 $cmd = "$cmd 2>&1";
 
 my $out;
+my $last_mod = '';
 while ($out = `$cmd` and $out =~ /Can't locate (.*?)\.pm/)
 {
 	my $mod = $1;
 	$mod =~ s{/}{::}g;
-	install($mod);
+	if ($mod eq $last_mod)
+	{
+		print STDERR <<END;
+We seem to be stuck in a loop.  Most likely one of two things is going on:
+1) While I'm using a perlbrew perl, the command you want me to fix is using
+the system perl.  Thus, all my installing us getting us nowhere.  Either fix
+the command, or do it the hard way.
+2) The cpanm command is failing while installing.  I don't really notice when
+that happens (although perhaps I should).
+Either way, I can't continue here.
+END
+		exit 1;
+	}
+	else
+	{
+		install($mod);
+		$last_mod = $mod;
+	}
 }
 print colored("Done.", 'bold', 'green'), "\n";
 
@@ -34,5 +54,5 @@ sub install
 	my ($mod) = @_;
 
 	print colored("Installing $mod", 'bold', 'green'), "\n";
-	system(qw< cpanm -n >, $mod);
+	proto_install($mod);
 }
