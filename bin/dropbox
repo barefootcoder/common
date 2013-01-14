@@ -170,7 +170,6 @@ install () {
 	echo "DROPBOX_USERS=buddy" >$config
 	echo 'Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion `GDK_IS_WINDOW (window)'"' failed" >$filter
 
-	[[ -L ~/common ]] || ln -s Dropbox/common ~/common
 	rm $tarfile
 
 	if [[ -x ./dropbox ]]
