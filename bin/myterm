@@ -114,7 +114,7 @@ case $termprog in
 						args="-D $desktop $args"
 					fi
 					font="-F-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
-					font="--default-font-index $fontsize"
+					font_idx="--default-font-index $fontsize"
 					;;
 	gnome-terminal)	args="--geometry=$geometry"
 					;;
@@ -122,4 +122,4 @@ case $termprog in
 					;;
 esac
 
-$termprog $font $args "$@" &
+$termprog $font_idx $args "$@" &

@@ -7,3 +7,12 @@ binding "pidgin-bindings"
 	bind "<ctrl>Return" { "message_send" () }
 }
 widget "*pidgin_conv_entry" binding "pidgin-bindings"
+
+
+##########################
+## tried changing panel colors here, but it doesn't seem to work
+## ended up creating my own theme instead
+##
+## after making changes to the panel, don't forget:
+## killall mate-panel
+##########################
