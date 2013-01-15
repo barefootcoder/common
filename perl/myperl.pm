@@ -10,12 +10,37 @@ use Sub::Install;
 use Module::Runtime qw< use_module >;
 
 
-our @Debuggit = qw< Debuggit >;
+our %PASS_THRU =
+(
+	DEBUG	=>	'Debuggit',
+);
+
+our %PASS_UNLESS =
+(
+	NoFatalWarns	=>	[ warnings => [ FATAL => 'all' ] ],
+);
 
 sub import
 {
 	my $class = shift;
-	push @Debuggit, [ @_ ] if @_;
+	my %args = @_;
+	my %mod_args;
+	foreach (keys %args)
+	{
+		if (exists $PASS_THRU{$_})
+		{
+			push @{ $mod_args{$PASS_THRU{$_}} }, [ $_ => $args{$_} ];
+		}
+		else
+		{
+			die("myperl: unknown argument $_") unless exists $PASS_UNLESS{$_};
+		}
+	}
+	foreach (keys %PASS_UNLESS)
+	{
+		my $margs = $PASS_UNLESS{$_};
+		push @{ $mod_args{$margs->[0]} }, $margs->[1] unless $args{$_};
+	}
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
@@ -24,10 +49,10 @@ sub import
 	myperl->import_list_into($calling_package,
 
 		strict							=>
-		warnings						=>					[	FATAL => 'all'	],
+		warnings						=>					@{$mod_args{warnings}},,
 		feature							=>					[	':5.12'			],
 		#autodie						=>					[	':all'			],
-		@myperl::Debuggit,
+		Debuggit						=>					@{$mod_args{Debuggit}},
 
 		TryCatch						=>
 		'Const::Fast'					=>
