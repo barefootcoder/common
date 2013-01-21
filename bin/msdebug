@@ -1,0 +1,4 @@
+#! /bin/bash
+
+export METHOD_SIGNATURES_DEBUG=1
+exec $SHELL

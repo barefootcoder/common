@@ -32,6 +32,10 @@ set ellipsis
 set prompt="[${LOCALHOSTNAME}:%.04] "
 set term=vt100
 
+if ( $?METHOD_SIGNATURES_DEBUG ) then
+	set prompt="[Method::Signatures debugging] "
+endif
+
 set WHOAMI=`/usr/bin/whoami`
 if ( ${WHOAMI} == "root" ) then
 	set prompt="[RT][${LOCALHOSTNAME}:%/] "
