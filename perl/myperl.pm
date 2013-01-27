@@ -168,6 +168,7 @@ Method::Signatures
 IPC::System::Simple
 Test::Pod::Coverage
 Net::Google::Calendar
+Net::Google::PicasaWeb
 Net::Google::Spreadsheets
 Module::Install::JSONMETA
 Net::Google::DocumentsList

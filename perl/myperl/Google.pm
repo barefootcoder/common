@@ -50,6 +50,7 @@ class Calendar::Event extends Net::Google::Calendar::Entry
 class Google::Service
 {
 	use Net::Google::Calendar;
+	use Net::Google::PicasaWeb;
 	use Net::Google::Spreadsheets;
 	use Net::Google::DocumentsList;
 
@@ -60,6 +61,8 @@ class Google::Service
 	has _doclist	=>	( ro, isa => 'Net::Google::DocumentsList', lazy, builder => '_connect_to_documents',
 								handles => { document => 'item' } );
 	has _calendar	=>	( ro, isa => 'Net::Google::Calendar', lazy, builder => '_connect_to_calendar' );
+	has _picasa		=>	( ro, isa => 'Net::Google::PicasaWeb', lazy, builder => '_connect_to_picasa',
+								handles => { photo_albums => 'list_albums' } );
 
 	method _read_config
 	{
@@ -83,6 +86,13 @@ class Google::Service
 		my $cal = Net::Google::Calendar->new;
 		$cal->login( $self->_login_params('list') );
 		return $cal;
+	}
+
+	method _connect_to_picasa
+	{
+		my $picasa = Net::Google::PicasaWeb->new;
+		$picasa->login( $self->_login_params('list') );
+		return $picasa;
 	}
 
 
@@ -172,6 +182,26 @@ class Google::Service
 
 		# and throw it on the calendar
 		$self->_calendar->add_entry($event);
+	}
+
+
+	method photo_album ($album_title)
+	{
+		my @albums = grep { $_->title eq $album_title } $self->photo_albums;
+		return @albums ? $albums[0] : die("no such photo album: $album_title");
+	}
+
+	method photo_url ($photo_title, :$album)
+	{
+		my $list_from = $album ? $self->photo_album($album) : $self->_picasa;
+		my @photos = grep { $_->title =~ /^\Q$photo_title\E\./ } $list_from->list_photos;
+		die("cannot find photo: $photo_title") unless @photos;
+
+		my $photo = $photos[0];
+		my $width = $photo->width;
+		my $url = $photo->photo->thumbnails->[0]->url;
+		$url =~ s{/s\d+/}{/s$width/};
+		return $url;
 	}
 
 }
