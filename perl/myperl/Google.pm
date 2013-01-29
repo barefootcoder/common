@@ -207,14 +207,183 @@ class Google::Service
 }
 
 
+class Google::Worksheet
+{
+
+	has	_sheet		=>	( ro, isa => 'Net::Google::Spreadsheets::Worksheet', lazy, builder => '_read_sheet' );
+	has _headers	=>	( ro, isa => 'HashRef[Int]', lazy, builder => '_read_headers' );
+	has _columns	=>	( ro, isa => 'HashRef[Str]', lazy, default => method { return { reverse %{ $self->_headers } }; } );
+	has _data		=>	( rw, isa => 'ArrayRef[Maybe[ArrayRef]]', lazy, builder => '_get_data',
+							traits => [qw< Array >], handles =>
+							{
+								has_data		=>	'count',
+								rows			=>	'elements',
+							},
+						);
+	has _keymap		=>	( rw, isa => 'HashRef[Int]', lazy, builder => '_build_keymap' );
+
+	method _read_sheet ()
+	{
+		my $ssheet = $myperl::Google::GOOGLE->spreadsheet({ title => $self->doc });
+		die("can't find spreadsheet: " . $self->doc) unless $ssheet;
+		my $wsheet = $ssheet->worksheet({ title => $self->name });
+		die("can't find worksheet " . $self->name . " in requested doc") unless $wsheet;
+		return $wsheet;
+	}
+
+	method _read_headers ()
+	{
+		my @header_cells = $self->_sheet->cells({ row => $self->header_row });
+		return { _row => 0, map { $_->content => $_->col } @header_cells };
+	}
+
+	method _get_data ()
+	{
+		my %rows;
+		foreach ( $self->_sheet->cells({ 'min-row' => $self->header_row + 1 }) )
+		{
+			my ($row, $col) = ($_->row, $_->col);
+			debuggit(4 => "reading row", $row, "col", $col);
+			$rows{$_->row}->[$_->col] = $_;
+		}
+
+		my $data = [];
+		foreach my $row (keys %rows)
+		{
+			my $cellrow = $rows{$row};
+			my $key_cell = $cellrow->[$self->key_col];
+			next unless $key_cell;
+			my $key = $key_cell->content;
+			next unless $key;
+
+			$data->[$row] = [ map { defined() ? $_->content : undef } @$cellrow ];
+			$data->[$row]->[0] = $row;
+		}
+
+		return $data;
+	}
+
+	method _build_keymap ()
+	{
+		return +{ map { my $r = $self->_data->[$_]; defined $r ? ($r->[$self->key_col] => $_) : () } 0..$#{ $self->_data } };
+	}
+
+
+	has doc			=>	( ro, isa => Str, required );
+	has name		=>	( ro, isa => Str, required );
+	has key			=>	( ro, isa => Str, required );
+	has header_row	=>	( ro, isa => Int, default => 1 );
+	has key_col		=>	( ro, isa => Int, lazy, default => method { return $self->_headers->{ $self->key }; } );
+
+
+	method _row ($rowname)
+	{
+		debuggit(3 => "trying to access row", $rowname);
+		die("no such row as $rowname") unless exists $self->_keymap->{$rowname};
+		return $self->_keymap->{$rowname};
+	}
+
+	method _col ($colname)
+	{
+		die("no such col as $colname") unless exists $self->_headers->{$colname};
+		return $self->_headers->{$colname};
+	}
+
+	method _row_col ($rowname, $colname)
+	{
+		my $row = $self->_row($rowname);
+		my $col = $self->_col($colname);
+		return ($row, $col);
+	}
+
+
+	method last_data_row
+	{
+		return $#{ $self->_data };
+	}
+
+	method num_data_rows
+	{
+		return $self->last_data_row - $self->header_row;
+	}
+
+
+	method get ($rowname, $colname)
+	{
+		my ($row, $col) = $self->_row_col($rowname, $colname);
+		debuggit(2 => "accessing row/col", $row, '/', $col);
+		return $self->_data->[$row]->[$col];
+	}
+
+	method put ($rowname, $colname, $value)
+	{
+		my ($row, $col) = $self->_row_col($rowname, $colname);
+		$self->_sheet->batchupdate_cell({ row => $row, col => $col, input_value => $value });
+		return $self->_data->[$row]->[$col] = $value;
+	}
+
+
+	method read_row (Int|Str $rowname)
+	{
+		my $row = $rowname =~ /^\d+$/ ? $rowname : $self->_row($rowname);
+		debuggit(2 => "reading row", $row);
+		foreach ( $self->_sheet->cells({ 'row' => $row }) )
+		{
+			my $col = $_->col;
+			$self->_data->[$row]->[$col] = $_->content;
+		}
+	}
+
+	method update_row (HashRef $hash)
+	{
+		my $key = $hash->{ $self->key };
+		my $row;
+		if ($self->has_data)
+		{
+			try
+			{
+				$row = $self->_row($key);
+			}
+			catch ($e where { /no such row as/ })
+			{
+				$row = $self->last_data_row + 1;
+			}
+		}
+		else
+		{
+			$row = $self->header_row + 1;
+		}
+		debuggit(2 => "updating row", $row, "with header_row", $self->header_row, "and num_data_rows", $self->num_data_rows);
+
+		my @cells = map { +{ row => $row, col => $self->_col($_), input_value => $hash->{$_} } } keys %$hash;
+		$self->_sheet->batchupdate_cell(@cells);
+		$self->read_row($row);
+	}
+
+
+	method foreach_row (CodeRef $doit)
+	{
+		debuggit(4 => "columns has is", DUMP => $self->_columns);
+		foreach my $row ($self->rows)
+		{
+			next unless $row;
+			local $_ = +{ map { $self->_columns->{$_} => $row->[$_] } keys %{ $self->_columns } };
+			$doio->($_);
+		}
+	}
+
+}
+
+
 
 package myperl::Google;
+{
+	use parent 'Exporter';
+	our @EXPORT = qw< $GOOGLE >;
 
-use parent 'Exporter';
-our @EXPORT = qw< $GOOGLE >;
 
-
-our $GOOGLE = Google::Service->new;
+	our $GOOGLE = Google::Service->new;
+};
 
 
 1;
