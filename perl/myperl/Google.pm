@@ -131,6 +131,20 @@ class Google::Service
 
 	method add_cal_event (%params)
 	{
+		state $REMINDER_TYPES =
+		{
+			alert		=>	1,
+			email		=>	1,
+			sms			=>	1,
+		};
+		state $REMINDER_UNITS =
+		{
+			d	=>	'days',
+			h	=>	'hours',
+			m	=>	'minutes',
+		};
+
+		debuggit(4 => "event params:", DUMP => \%params);
 		my $event = Net::Google::Calendar::Entry->new;
 
 		# fixup the when and howlong bits
@@ -140,6 +154,7 @@ class Google::Service
 			my $duration = delete $params{'howlong'};
 			my $allday = !$duration;
 			my $until = $from + DateTime::Duration->new( hours => $duration );
+			debuggit(3 => "going to set when:", $from, $until, $allday);
 			$event->when($from, $until, $allday);
 		}
 		else
@@ -165,6 +180,17 @@ class Google::Service
 			$event->who(@guests);
 		}
 
+		# fixup reminder
+		if ($params{'reminder'})
+		{
+			my $reminder = delete $params{'reminder'};
+			my ($type, $qty, $unit) = $reminder =~ /^(\w+)\s+(\d+)([a-z])$/ or die("bad format for reminder: $reminder");
+			die("unknown reminder type: $type") unless exists $REMINDER_TYPES->{$type};
+			die("unknown reminder unit: $unit") unless exists $REMINDER_UNITS->{$unit};
+
+			$event->reminder($type, $REMINDER_UNITS->{$unit}, $qty);
+		}
+
 		# what we have left should just map directly to mutators
 		foreach (keys %params)
 		{
@@ -172,6 +198,7 @@ class Google::Service
 			$event->$method($params{$_});
 		}
 
+		debuggit(3 => "event:", DUMP => $event);
 		# and throw it on the calendar
 		$self->_calendar->add_entry($event);
 	}
