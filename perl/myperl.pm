@@ -17,19 +17,21 @@ our %PASS_THRU =
 
 our %PASS_UNLESS =
 (
-	NoFatalWarns	=>	[ warnings => [ FATAL => 'all' ] ],
+	NoFatalWarns	=>	[ warnings => [ FATAL => 'all'		] ],
+	DataDumper		=>	[ Debuggit => [ DataPrinter => 1	] ],
 );
 
 sub import
 {
 	my $class = shift;
 	my %args = @_;
+
 	my %mod_args;
 	foreach (keys %args)
 	{
 		if (exists $PASS_THRU{$_})
 		{
-			push @{ $mod_args{$PASS_THRU{$_}} }, [ $_ => $args{$_} ];
+			push @{ $mod_args{$PASS_THRU{$_}}->[0] }, $_ => $args{$_};
 		}
 		else
 		{
@@ -39,8 +41,10 @@ sub import
 	foreach (keys %PASS_UNLESS)
 	{
 		my $margs = $PASS_UNLESS{$_};
-		push @{ $mod_args{$margs->[0]} }, $margs->[1] unless $args{$_};
+		push @{ $mod_args{$margs->[0]}->[0] }, @{ $margs->[1] } unless $args{$_};
 	}
+	#open(TTY, '>/dev/tty'); use Data::Printer output => *TTY; p %mod_args;
+
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
@@ -52,7 +56,7 @@ sub import
 		warnings						=>					@{$mod_args{warnings}},,
 		feature							=>					[	':5.12'			],
 		#autodie						=>					[	':all'			],
-		Debuggit						=>					@{$mod_args{Debuggit}},
+		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
 		TryCatch						=>
 		'Const::Fast'					=>
@@ -78,7 +82,7 @@ sub import_list_into
         $version = version->parse(shift(@modules))->numify if @modules and version::is_lax($modules[0]);
         $arguments = shift @modules if @modules and ref($modules[0]) eq 'ARRAY';
 
-#print STDERR "calling use_and_import_into with: $to_pkg, $from_pkg, ", $version || 'undef', ", ", $arguments ? scalar @$arguments : 'undef', " args\n";
+#warn("calling use_and_import_into with: $to_pkg, $from_pkg, ", $version || 'undef', ", args ", $arguments ? "[ @{$arguments||[]} ]" : '[]');
 		$class->use_and_import_into($to_pkg, $from_pkg, $version, $arguments);
     }
 }
