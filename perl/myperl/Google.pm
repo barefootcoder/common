@@ -112,17 +112,9 @@ class Google::Service
 		use File::Basename;
 
 		my $name = basename($file);
-		my $source;
-		if ($folder)
-		{
-			$source = $self->_doclist->folder({ title => $folder });;
-		}
-		else
-		{
-			$source = $self->_doclist;
-		}
+		my $dest = $folder ? $self->_doclist->folder({ title => $folder }) : $self->_doclist;
 
-		return $source->add_item({ title => $name, file => $file });
+		return $dest->add_item({ title => $name, file => $file });
 	}
 
 
@@ -368,7 +360,7 @@ class Google::Worksheet
 		{
 			next unless $row;
 			local $_ = +{ map { $self->_columns->{$_} => $row->[$_] } keys %{ $self->_columns } };
-			$doio->($_);
+			$doit->($_);
 		}
 	}
 
