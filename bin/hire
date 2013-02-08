@@ -240,8 +240,10 @@ class HiringSheet
 		'Phone Screened'		=>	'in pipeline',
 		'Test Sent'				=>	'in pipeline',
 		'Test Received'			=>	'in pipeline',
+		'Awaiting Scheduling'	=>	'in pipeline',
 		'Awaiting Interview'	=>	'in pipeline',
 		'Interviewed'			=>	'in pipeline',
+		'Offer Underway'		=>	'in pipeline',
 		'Hired'					=>	'out of pipeline',
 		'On Standby'			=>	'on hold',
 		'Refused'				=>	'out of pipeline',
@@ -251,7 +253,8 @@ class HiringSheet
 
 	has _sheet			=>	( ro, isa => 'Net::Google::Spreadsheets::Spreadsheet', lazy, builder => '_get_sheet' );
 	has _headers		=>	( rw, isa => 'ArrayRef[Net::Google::Spreadsheets::Cell]', lazy, builder => '_get_headers' );
-	has _data			=>	( rw, isa => 'ArrayRef[Candidate]', lazy, builder => '_get_data' );
+	has _data			=>	( rw, isa => 'ArrayRef[Candidate]', lazy, builder => '_get_data', predicate => '_has_data' );
+	has _old_data		=>	( rw, isa => 'HashRef', lazy, default => sub { {} } );
 	has _blanks			=>	( rw, isa => ArrayRef, lazy, default => sub { [] } );
 
 	has eng				=>	( ro, isa => 'Net::Google::Spreadsheets::Worksheet', lazy, builder => '_get_eng' );
@@ -308,13 +311,25 @@ class HiringSheet
 		foreach (sort { $a <=> $b } keys %rows)
 		{
 			my $status = $rows{$_}->[1]->content;
-			push @$data, Candidate->new( data => $rows{$_}, sheet => $self )
-					unless $status eq 'Rejected' or $status eq 'Completed';
+			debuggit(4 => "status is", $status);
+			if ( $STATUSES{ $status } eq 'previous round' )
+			{
+				my @cells = map { defined() ? $_->content : undef } @{$rows{$_}};
+				$cells[0] = $_;
+				my $name = lc join(' ', @cells[3,4]);
+				$self->_old_data->{$name} = [ @cells ];
+				debuggit(4 => "set old datarow for", $name, "for status", $status);
+			}
+			else
+			{
+				push @$data, Candidate->new( data => $rows{$_}, sheet => $self );
+			}
 		}
 
 		debuggit(2 => "created", scalar @$data, "candidates, max row", $data->[-1]->row);
 		debuggit(2 => "created", scalar @{$self->_blanks}, "blank rows, from",
 				$self->_blanks->[0], "to", $self->_blanks->[-1]);
+		debuggit(6 => "created old data hash:", DUMP => $self->_old_data);
 		say STDERR "done\n";
 		return $data;
 	}
@@ -331,7 +346,7 @@ class HiringSheet
 
 	method num_header_rows ()
 	{
-		return 76;
+		return 2;
 	}
 
 
@@ -388,6 +403,13 @@ class HiringSheet
 	{
 		$first = lc $first;
 		$last = lc $last;
+		$self->_data;													# have to trigger building of _data and _old_data
+		debuggit(2 => "searching for", $first, $last, "in", scalar keys %{$self->_old_data}, "rows of old data");
+
+		if (my $old = $self->_old_data->{"$first $last"})
+		{
+			return $old;
+		}
 
 		foreach (@{ $self->_data })
 		{
@@ -526,7 +548,7 @@ func dispatch ($code)
 		say STDERR "call died with: $err";
 	}
 }
-# line 531
+# line 562
 
 
 func prompt_for_candidate
@@ -551,6 +573,7 @@ func dump_candidate
 		system('firefox', $cand->resume_url);
 	}
 }
+# line 587
 
 func get_new_candidate
 {
@@ -559,7 +582,15 @@ func get_new_candidate
 	debuggit(2 => "first:", $first, "last:", $last);
 	if (my $cand = $sheet->find_candidate($first, $last))
 	{
-		say "WARNING! candidate found on row ", $cand->row;
+		if (ref $cand eq 'ARRAY')
+		{
+			say "WARNING! candidate found on row ", $cand->[0];
+			say "data: ", join(';', map { defined() ? $_ : () } @$cand[1..8,15,18,21,25]);
+		}
+		else
+		{
+			say "WARNING! candidate found on row ", $cand->row;
+		}
 	}
 	else
 	{
@@ -589,7 +620,7 @@ func take_home_test
 
 	try
 	{
-# line 594
+# line 625
 		#my $cand = existing_candidate();
 		#my $name = $cand->name;
 		my ($first, $last) = prompt_for_candidate;
@@ -610,7 +641,7 @@ func take_home_test
 	}
 	chdir $pwd;
 }
-# line 611
+# line 646
 
 
 func lunch_interview
