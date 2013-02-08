@@ -191,6 +191,7 @@ Getopt::Declare
 Text::Unidecode
 Text::Capitalize
 MooseX::NonMoose
+Term::ANSIScreen
 MooseX::Singleton
 MooseX::Has::Sugar
 Method::Signatures
