@@ -1,0 +1,150 @@
+#!/bin/bash
+
+
+function ask
+{
+	echo -n "$1  " >&2
+	read answer
+	[[ $answer == [Yy]* ]]
+}
+
+function wait_return
+{
+	echo -n "Press <Enter> to continue ... "
+	read
+	echo ""
+}
+
+function fatal
+{
+	echo "$1" >&2
+	echo "Sorry; bailing out." >&2
+	exit 1
+}
+
+function locate_cmd
+{
+	which "$1" >/dev/null 2>&1
+}
+
+function update_perl_mods
+{
+	dir="$1"
+	podselect -section PREREQS $dir/perl/myperl.pm | grep '^[a-zA-Z]' | cpanm -n
+}
+
+
+if [[ ~/common/bin/$(basename $0) -ef $0 ]]								# backdoor for personal use
+then
+	update_perl_mods ~/common
+	exec ~/bin/hire
+fi
+
+echo -e "\n"
+
+# base directory
+perldir=~/perl5
+[[ -d $perldir ]] || mkdir $perldir
+cd $perldir
+
+# Git repo
+gitdir=BuddyStuff
+if [[ -d $gitdir ]]
+then
+	if ask "Update your copy of the repo?"
+	then
+		cd $gitdir
+		git pull
+		cd ..
+	fi
+else
+	if ask "You don't have a copy of the repo.  Clone it?"
+	then
+		git clone https://github.com/barefootcoder/common.git BuddyStuff
+	else
+		echo "Can't continue." >&2
+		exit 2
+	fi
+fi
+echo -e "\n"
+
+# Perlbrew
+if [[ ! -d perlbrew ]]
+then
+	if ask "You don't appear to have perlbrew.  Install it?"
+	then
+		if ! curl -kL http://install.perlbrew.pl | bash
+		then
+			wget --no-check-certificate -O - http://install.perlbrew.pl | bash
+		fi
+	else
+		echo "Trying to continue, but not hopeful." >&2
+	fi
+fi
+source perlbrew/etc/bashrc
+echo -e "\n"
+
+# proper Perl
+if ! perlbrew list | grep -q 5.14.2
+then
+	if ask "You don't appear to have perl 5.14.2.  Build it?"
+	then
+		echo "This should take about 4-5 minutes." >&2
+		perlbrew install -n 5.14.2
+	else
+		echo "Trying to continue, but not hopeful." >&2
+	fi
+fi
+perlbrew use perl-5.14.2
+echo -e "\n"
+
+# cpanm
+if ! locate_cmd cpanm
+then
+	perlbrew install-cpanm
+fi
+
+# library packages
+if locate_cmd rpm
+then
+	# RedHat based (hopefully Fedora)
+	for pkg in openssl-devel libxml2-devel
+	do
+		if ! rpm -q $pkg >/dev/null 2>&1
+		then
+			echo "You need to install $pkg.  Run this (as root) in another terminal:" >&2
+			echo "    yum install $pkg" >&2
+			echo "I'll wait." >&2
+			wait_return
+		fi
+	done
+elif locate_cmd dpkg
+then
+	# Debian based (hopefully Ubuntu or Mint)
+	for pkg in libssl-dev libexpat1-dev
+	do
+		if ! dpkg -l $pkg >/dev/null 2>&1
+		then
+			echo "You need to install $pkg.  Run this (as root) in another terminal:" >&2
+			echo "    apt-get install $pkg" >&2
+			echo "I'll wait." >&2
+			wait_return
+		fi
+	done
+else
+	# not sure
+	fatal "can't make a reasonable guess as what distro you're running"
+fi
+echo -e "\n"
+
+# all the modules we'll need
+update_perl_mods $gitdir
+
+# finally, make sure our local modules dir is getting into @INC
+if ! echo $PERL5LIB | fgrep -q $perldir/$gitdir/perl
+then
+	export PERL5LIB=$perldir/$gitdir/perl:$PERL5LIB
+fi
+
+# kick it off
+exec $gitdir/bin/hire

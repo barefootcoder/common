@@ -509,7 +509,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Send Emails'					=>	\%email_menu,
 	'Resume Stuff'					=>	\%resume_menu,
 	'Refresh Data'					=>	func { $sheet->refresh },
-	Reload							=>	func { exec $0, @ARGV },
+	Reload							=>	\&reload_program,
 	Quit							=>	func { exit },
 );
 
@@ -853,4 +853,13 @@ func share_resumes
 			say 'done';
 		}
 	}
+}
+
+
+func reload_program
+{
+	my $prog = file($0);
+	my $setup_prog = $prog->dir->file("setup_hire");
+	$prog = $setup_prog if -x $setup_prog;
+	exec $prog, @ARGV;
 }
