@@ -334,12 +334,17 @@ class HiringSheet
 		return $data;
 	}
 
+	method _read_candidate (Int $row)
+	{
+		my $cells = [];
+		$cells->[$_->col] = $_ foreach $self->eng->cells({ row => $row });
+		return Candidate->new( data => $cells, sheet => $self );
+	}
+
 	method _get_single_candidate (Int $row)
 	{
 		print STDERR "reading back ... ";
-		my $cells = [];
-		$cells->[$_->col] = $_ foreach $self->eng->cells({ row => $row });
-		push @{ $self->_data }, Candidate->new( data => $cells, sheet => $self );
+		push @{ $self->_data }, $self->_read_candidate($row);
 		say STDERR "done\n";
 	}
 
@@ -414,7 +419,11 @@ class HiringSheet
 		foreach (@{ $self->_data })
 		{
 			debuggit(4 => "checking row", $_->row);
-			return $_ if lc $_->first eq $first and lc $_->last eq $last;
+			if (lc $_->first eq $first and lc $_->last eq $last)
+			{
+				$_ = $self->_read_candidate($_->row);
+				return $_;
+			}
 		}
 
 		return undef;
