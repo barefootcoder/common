@@ -12,15 +12,13 @@
 
 function ask
 {
-	echo -n "$1  " >&2
-	read answer
+	read -p "$1 [y/N] " answer
 	[[ $answer == [Yy]* ]]
 }
 
 function wait_return
 {
-	echo -n "Press <Enter> to continue ... "
-	read
+	read -p "Press <Enter> to continue ... "
 	echo ""
 }
 
@@ -162,12 +160,28 @@ echo -e "\n"
 
 # all the modules we'll need
 update_perl_mods $gitdir
+echo -e "\n"
 
-# finally, make sure our local modules dir is getting into @INC
+# make sure our local modules dir is getting into @INC
 if ! echo $PERL5LIB | fgrep -q $perldir/$gitdir/perl
 then
 	export PERL5LIB=$perldir/$gitdir/perl:$PERL5LIB
 fi
 
-# kick it off
+# create .googlerc, if necessary
+googlerc=~/.googlerc
+if [[ ! -r $googlerc ]]
+then
+	if ask "You must have a .googlerc; create it now?"
+	then
+		read -p "What is your (personal) Google account name? " user
+		read -sp "What is your Google account password? " passwd
+		echo -e "user = $user\npassword = $passwd" >$googlerc
+	else
+		fatal "You make me sad.  So be it."
+	fi
+fi
+chmod 600 $googlerc
+
+# finally, kick it off
 exec $gitdir/bin/hire
