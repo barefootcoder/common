@@ -7,7 +7,6 @@ use IO::Prompt;
 use Tie::IxHash;
 use Term::ANSIScreen;
 use File::Glob qw< :glob >;
-use Shell::POSIX::Select qw< $Reply $Eof >;
 
 
 const our $MANAGERS =>
