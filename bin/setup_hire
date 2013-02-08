@@ -75,7 +75,7 @@ else
 		fi
 	else
 		clone_repo $gitdir
-		exec $gitdir/setup_hire
+		exec $gitdir/bin/setup_hire
 	fi
 fi
 echo -e "\n"
