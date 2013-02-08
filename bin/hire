@@ -662,10 +662,12 @@ func lunch_interview
 
 	state $ATTENDEES =
 	{
-		'Alain Avakian'		=>	'aavakian@rent.com',
-		'Benny Millares'	=>	'bmillares@rent.com',
-		'Aran Deltac' 		=>	'adeltac@ebay.com',
-		'Mike Rozek'		=>	'mrozek@rent.com',
+		'Alain Avakian'			=>	'aavakian@rent.com',
+		'Benny Millares'		=>	'bmillares@rent.com',
+		'Diane Xu'				=>	'dxu@rent.com',
+		'Aran Deltac' 			=>	'adeltac@rent.com',
+		'Mike Rozek'			=>	'mrozek@rent.com',
+		'Albert Boyd-Bilger'	=>	'aboydbilger@rent.com',
 	};
 	state $meeting_descr = "Standard lunch and then conference room testing (if someone could reserve Spaceballs "
 			. "for at least 1-3, that would be appreciated).  I've marked the event as going until 4 just in case "
@@ -687,7 +689,7 @@ func lunch_interview
 
 	$GOOGLE->add_cal_event(
 		title		=>	"Lunch Interview: " . $cand->name,
-		location	=>	"Cafe Bizou / Spaceballs",
+		location	=>	"Cafe Bizou or Tiato / Spaceballs (hopefully)",
 		content		=>	$meeting_descr,
 		when		=>	"$datetime noon",
 		howlong		=>	4,
