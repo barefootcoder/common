@@ -694,6 +694,7 @@ func lunch_interview
 		when		=>	"$datetime noon",
 		howlong		=>	4,
 		guests		=>	$ATTENDEES,
+		reminder	=>	"sms 3h",
 	);
 	$cand->set_datum( "interview date" => time2str('%m/%d/%Y', $secs) );
 
@@ -707,6 +708,7 @@ func lunch_interview
 			when		=>	"$datetime 3:30pm",
 			howlong		=>	.5,
 			guests		=>	$CLIOPS_BUSINESS,
+			reminder	=>	"sms 3h",
 		);
 	}
 }
