@@ -22,6 +22,12 @@ function fatal
 	exit 1
 }
 
+function clone_repo
+{
+	dir="$1"
+	git clone https://github.com/barefootcoder/common.git $dir
+}
+
 function locate_cmd
 {
 	which "$1" >/dev/null 2>&1
@@ -58,12 +64,18 @@ then
 		cd ..
 	fi
 else
-	if ask "You don't have a copy of the repo.  Clone it?"
+	if [[ -t 0 ]]
 	then
-		git clone https://github.com/barefootcoder/common.git BuddyStuff
+		if ask "You don't have a copy of the repo.  Clone it?"
+		then
+			clone_repo $gitdir
+		else
+			echo "Can't continue." >&2
+			exit 2
+		fi
 	else
-		echo "Can't continue." >&2
-		exit 2
+		clone_repo $gitdir
+		exec $gitdir/setup_hire
 	fi
 fi
 echo -e "\n"
