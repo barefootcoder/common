@@ -4,7 +4,6 @@ use Devel::Declare 0.006007 ();
 
 package myperl;
 
-use CLASS;
 use Import::Into;
 use Sub::Install;
 use Module::Runtime qw< use_module >;
@@ -58,6 +57,7 @@ sub import
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
+		CLASS							=>	1.00		=>
 		TryCatch						=>
 		'Const::Fast'					=>
 		'Path::Class'					=>

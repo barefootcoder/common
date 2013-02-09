@@ -22,6 +22,7 @@ our %SNIPPETS =
 	q{ my @t = gather { take 5 }	}	=>	undef,									# Perl6::Gather
 	#q{ open(IN, "bmoogle")			}	=>	qr/No such file or directory/,			# autodie
 	#q{ system("bmoogle")			}	=>	qr/No such file or directory/,			# autodie 'system'
+	q{ sub foo {} CLASS->foo;		}	=>	undef,									# CLASS
 );
 
 
