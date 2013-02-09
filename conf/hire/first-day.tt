@@ -1,0 +1,10 @@
+[% firstName %],
+
+Welcome to the Rent.com team!  We're very pleased to have you aboard.
+
+I have your first day as [% ${ "start date" } %].  You should get in around 11am; Nichelle (at the front desk) will be expecting you.  You'll be reporting to [% manager %], but any of the managers (Aran, Diane, or Mike) can help you get settled in.  Account names and passwords from our IT department are below.
+
+Looking forward to seeing you in the office!
+
+
+		-- Buddy
