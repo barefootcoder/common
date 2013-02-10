@@ -192,6 +192,7 @@ Text::Unidecode
 Text::Capitalize
 MooseX::NonMoose
 MooseX::Singleton
+Class::PseudoHash
 MooseX::Has::Sugar
 Method::Signatures
 IPC::System::Simple

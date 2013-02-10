@@ -230,8 +230,14 @@ class Google::Worksheet
 {
 
 	has	_sheet		=>	( ro, isa => 'Net::Google::Spreadsheets::Worksheet', lazy, builder => '_read_sheet' );
-	has _headers	=>	( ro, isa => 'HashRef[Int]', lazy, builder => '_read_headers' );
-	has _columns	=>	( ro, isa => 'HashRef[Str]', lazy, default => method { return { reverse %{ $self->_headers } }; } );
+	has _columns	=>	( ro, isa => 'ArrayRef', lazy, builder => '_read_headers' );
+	has _headers	=>	( ro, isa => 'HashRef[Int]', lazy,
+							default => method
+							{
+								my $a = $self->_columns;
+								return +{ map { defined $a->[$_] ? ($a->[$_] => $_) : () } 0..$#$a };
+							},
+						);
 	has _data		=>	( rw, isa => 'ArrayRef[Maybe[ArrayRef]]', lazy, builder => '_get_data',
 							traits => [qw< Array >], handles =>
 							{
@@ -253,7 +259,9 @@ class Google::Worksheet
 	method _read_headers ()
 	{
 		my @header_cells = $self->_sheet->cells({ row => $self->header_row });
-		return { _row => 0, map { $_->content => $_->col } @header_cells };
+		my $cols = [];
+		$cols->[$_->col] = $_->content foreach @header_cells;
+		return $cols;
 	}
 
 	method _get_data ()
@@ -276,7 +284,7 @@ class Google::Worksheet
 			next unless $key;
 
 			$data->[$row] = [ map { defined() ? $_->content : undef } @$cellrow ];
-			$data->[$row]->[0] = $row;
+			#$data->[$row]->[0] = $row;
 		}
 
 		return $data;
@@ -382,11 +390,14 @@ class Google::Worksheet
 
 	method foreach_row (CodeRef $doit)
 	{
+		use Class::PseudoHash;
+
 		debuggit(4 => "columns has is", DUMP => $self->_columns);
 		foreach my $row ($self->rows)
 		{
 			next unless $row;
-			local $_ = +{ map { $self->_columns->{$_} => $row->[$_] } keys %{ $self->_columns } };
+			#local $_ = +{ map { $self->_columns->[$_] => $row->[$_] } keys %{ $self->_columns } };
+			local $_ = Class::PseudoHash->new( [ @{$self->_columns}[1..$#{$self->_columns}] ], [ @$row[1..$#$row] ] );
 			$doit->($_);
 		}
 	}
