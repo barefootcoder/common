@@ -25,6 +25,7 @@ class myperl::Declare extends MooseX::Declare
 		myperl->import_list_into($calling_package,
 
 			Debuggit						=>
+			CLASS							=>	1.00		=>
 			TryCatch						=>
 			'Const::Fast'					=>
 			'Path::Class'					=>

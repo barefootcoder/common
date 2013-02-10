@@ -1,0 +1,8 @@
+[% firstName %],
+
+Okay, sounds good.  I'll call you at [% phone %] [% datetime %].
+
+Talk to you then.
+
+
+		-- Buddy

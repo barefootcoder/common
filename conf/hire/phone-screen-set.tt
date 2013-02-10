@@ -1,0 +1,24 @@
+[% firstName %],
+
+We received the resume [% Source == 'jobs.perl.org' || Source == 'Dice.com' ? 'you submitted to us for our Internet job listing' : 'your recruiter submitted to us for our job listing' %] and are interested in talking to you further.  Would you be available to conduct a phone interview?  My schedule for the coming week is below; please choose a one hour slot within one of the following blocks (phone screens are typically around a half an hour, but I leave time for going over) and let me know what would be best for you (and please remember we're on PST, so adjust appropriately for your location):
+
+[% schedule %]
+
+[% IF position == "Client Ops" -%]
+This particular position is contracting only.  We will consider full-time telecommuting for non-local candidates; however, we would want to have you on-site for at least a 2-week ramp-up period before starting that.
+[% ELSIF position == "Release Mgr" -%]
+This particular position is full-time.  We strongly prefer local candidates for this position; however, we may make an exception for particularly outstanding candidates.  There is some budget for relocation assistance, depending on candidate qualifications.
+[% ELSIF situation == "contractor only" -%]
+We are hiring for contracting positions only at this time.  We will consider full-time telecommuting for contractors; however, we would want to have you on-site for at least a 2-week ramp-up period before starting that.
+[% ELSE -%]
+We are hiring for full-time and contracting positions.  There is some budget for relocation assistance for full-time employees, depending on candidate qualifications.  We will consider full-time telecommuting for contractors (only); however, we would want to have you on-site for at least a 2-week ramp-up period before starting that.
+[% END -%]
+[% IF phone == "" -%]
+
+I do not have a phone number for you, so please include one in your reply.
+[% END -%]
+
+Looking forward to hearing back from you!
+
+
+		-- Buddy Burden, senior architect
