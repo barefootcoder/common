@@ -581,7 +581,6 @@ func dispatch ($code)
 		say STDERR "call died with: $err";
 	}
 }
-# line 562
 
 
 func prompt_for_candidate
@@ -606,7 +605,6 @@ func dump_candidate
 		system('firefox', $cand->resume_url);
 	}
 }
-# line 587
 
 func get_new_candidate
 {
@@ -653,7 +651,6 @@ func take_home_test
 
 	try
 	{
-# line 625
 		#my $cand = existing_candidate();
 		#my $name = $cand->name;
 		my ($first, $last) = prompt_for_candidate;
@@ -674,7 +671,6 @@ func take_home_test
 	}
 	chdir $pwd;
 }
-# line 646
 
 
 func lunch_interview
