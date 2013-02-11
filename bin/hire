@@ -142,6 +142,8 @@ class Candidate
 {
 	use myperl::Template "$ENV{HOME}/common/conf/hire";
 
+	use MooseX::ClassAttribute;
+
 
 	our %IN_HOUSE_RECRUITER =
 	(
@@ -154,6 +156,14 @@ class Candidate
 		'Client Ops'		=>	'Client Ops Engineer',
 		'Release Mgr'		=>	'Release Manager',
 	);
+
+	class_has recruiters	=>	( ro, isa => 'Google::Worksheet', lazy, default => method {
+																						Google::Worksheet->new(
+																								doc => "candidates",
+																								name => "Recruiters",
+																								key => "Name"
+																						);
+																					}, );
 
 
 	has data		=>	( ro, isa => 'ArrayRef[Maybe[Net::Google::Spreadsheets::Cell]]', required );
@@ -223,6 +233,14 @@ class Candidate
 		$hash->{display_position} = $DISPLAY_POSITIONS{$self->get_datum('position')};
 
 		$hash->{HR}->{email} = CLASS->hr_email;
+
+		my $recruiter = $self->recruiters->get_row($self->source);
+		if ($recruiter)
+		{
+			# have to flatten this or TT won't play nice
+			$hash->{Recruiter} = {};
+			$hash->{Recruiter}->{$_} = $recruiter->{$_} foreach keys %$recruiter;
+		}
 
 		return join('', expand(templ::process($file, $hash)));
 	}
