@@ -837,8 +837,10 @@ func send_take_home_test
 
 func upload_resume
 {
-	#my $file = prompt -menu => [ glob("/tmp/{*.pdf,*.doc*,*.txt}") ];
-	my $file = prompt -menu => [ glob("/tmp/*.pdf") ];
+	my @pdfs = glob("/tmp/*.pdf");
+	die("too many PDF files in your /tmp; clean some out and try again") if @pdfs > 26;
+
+	my $file = prompt -menu => [ @pdfs ];
 	return unless $file;
 
 	my $resume = Resume->upload( $file );
