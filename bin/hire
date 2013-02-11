@@ -140,7 +140,7 @@ class Resume
 
 class Candidate
 {
-	use myperl::Template "$ENV{HOME}/work/hiring/emails";
+	use myperl::Template "$ENV{HOME}/common/conf/hire";
 
 
 	has data		=>	( ro, isa => 'ArrayRef[Maybe[Net::Google::Spreadsheets::Cell]]', required );
