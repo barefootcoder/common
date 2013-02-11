@@ -7,6 +7,7 @@ use IO::Prompt;
 use Tie::IxHash;
 use Term::ANSIScreen;
 use File::Glob qw< :glob >;
+use Config::General qw< ParseConfig >;
 
 
 const our $MANAGERS =>
@@ -17,6 +18,8 @@ const our $MANAGERS =>
 };
 
 const our $NON_RECRUITERS => { map { $_ => 1 } qw< jobs.perl.org Dice.com > };
+
+const our $CONFIG => { ParseConfig(file($0)->dir->resolve->parent->subdir('conf')->file('hire.conf')) };
 
 
 
@@ -665,7 +668,7 @@ func take_home_test
 	use autodie qw< system >;
 
 	my $pwd = dir()->absolute;
-	chdir "$ENV{HOME}/work/hiring/take-home";
+	chdir $CONFIG->{take_home_test_dir};;
 
 	try
 	{
