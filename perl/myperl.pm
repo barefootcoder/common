@@ -161,7 +161,7 @@ version
 Debuggit
 TryCatch
 Template
-MP3::Tag
+#MP3::Tag																# constantly reinstalls itself :-(
 Test::Most
 Term::Size
 File::Stat
