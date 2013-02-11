@@ -143,6 +143,19 @@ class Candidate
 	use myperl::Template "$ENV{HOME}/common/conf/hire";
 
 
+	our %IN_HOUSE_RECRUITER =
+	(
+		'Albert Boyd-Bilger'	=>	'aboydbilger@rent.com',
+	);
+
+	our %DISPLAY_POSITIONS =
+	(
+		'Perl Engineer'		=>	'Sr Perl Engineer',
+		'Client Ops'		=>	'Client Ops Engineer',
+		'Release Mgr'		=>	'Release Manager',
+	);
+
+
 	has data		=>	( ro, isa => 'ArrayRef[Maybe[Net::Google::Spreadsheets::Cell]]', required );
 	has sheet		=>	( ro, isa => 'HiringSheet', required, weak_ref );
 
@@ -176,6 +189,12 @@ class Candidate
 	}
 
 
+	method hr_email ($class: )
+	{
+		return join(',', map { qq{"$_" <$IN_HOUSE_RECRUITER{$_}>} } keys %IN_HOUSE_RECRUITER);
+	}
+
+
 	method row
 	{
 		return $self->data->[1]->row;
@@ -200,6 +219,11 @@ class Candidate
 		use Text::Tabs; $tabstop = 4;
 
 		$hash->{$_} = $self->get_datum($_) foreach $self->sheet->headers;
+		$hash->{name} = $self->name;
+		$hash->{display_position} = $DISPLAY_POSITIONS{$self->get_datum('position')};
+
+		$hash->{HR}->{email} = CLASS->hr_email;
+
 		return join('', expand(templ::process($file, $hash)));
 	}
 
@@ -667,7 +691,8 @@ func lunch_interview
 		'Diane Xu'				=>	'dxu@rent.com',
 		'Aran Deltac' 			=>	'adeltac@rent.com',
 		'Mike Rozek'			=>	'mrozek@rent.com',
-		'Albert Boyd-Bilger'	=>	'aboydbilger@rent.com',
+		# Albert likes to be included on these even though he doesn't attend
+		%Candidate::IN_HOUSE_RECRUITER,
 	};
 	state $meeting_descr = "Standard lunch and then conference room testing (if someone could reserve Spaceballs "
 			. "for at least 1-3, that would be appreciated).  I've marked the event as going until 4 just in case "
