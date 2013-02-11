@@ -193,6 +193,7 @@ Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
 MooseX::Singleton
+Class::PseudoHash
 MooseX::Has::Sugar
 Method::Signatures
 IPC::System::Simple
