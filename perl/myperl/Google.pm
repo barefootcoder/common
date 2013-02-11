@@ -323,6 +323,14 @@ class Google::Worksheet
 		return ($row, $col);
 	}
 
+	method _build_datarow (Maybe[ArrayRef] $row)
+	{
+		use Class::PseudoHash;
+
+		return undef unless defined $row;
+		return Class::PseudoHash->new( [ @{$self->_columns}[1..$#{$self->_columns}] ], [ @$row[1..$#$row] ] );
+	}
+
 
 	method last_data_row
 	{
@@ -349,6 +357,12 @@ class Google::Worksheet
 		return $self->_data->[$row]->[$col] = $value;
 	}
 
+
+	method get_row ($row_or_rowname)
+	{
+		my $row = $row_or_rowname =~ /^\d+$/ ? $row_or_rowname : $self->_row($row_or_rowname);
+		return $self->_build_datarow($self->_data->[$row]);
+	}
 
 	method read_row (Int|Str $rowname)
 	{
@@ -390,14 +404,11 @@ class Google::Worksheet
 
 	method foreach_row (CodeRef $doit)
 	{
-		use Class::PseudoHash;
-
 		debuggit(4 => "columns has is", DUMP => $self->_columns);
 		foreach my $row ($self->rows)
 		{
 			next unless $row;
-			#local $_ = +{ map { $self->_columns->[$_] => $row->[$_] } keys %{ $self->_columns } };
-			local $_ = Class::PseudoHash->new( [ @{$self->_columns}[1..$#{$self->_columns}] ], [ @$row[1..$#$row] ] );
+			local $_ = $self->_build_datarow($row);
 			$doit->($_);
 		}
 	}
