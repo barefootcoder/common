@@ -1,3 +1,11 @@
+     To: [% email %]
+	 CC: [% HR.email %]
+[% IF Recruiter -%]
+	 CC: "[% Recruiter.Contact %]" <[% Recruiter.Email %]>
+[% END -%]
+Subject: [% name %]: [% display_position %] (phone screen)
+
+
 [% firstName %],
 
 Okay, sounds good.  I'll call you at [% phone %] [% datetime %].
@@ -5,4 +13,4 @@ Okay, sounds good.  I'll call you at [% phone %] [% datetime %].
 Talk to you then.
 
 
-		-- Buddy
+		-- [% Config.name %]
