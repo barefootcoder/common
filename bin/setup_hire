@@ -48,10 +48,36 @@ function update_perl_mods
 	podselect -section PREREQS $dir/perl/myperl.pm | grep '^[a-zA-Z]' | cpanm -n
 }
 
+function choose_config
+{
+	conf=hire.conf
+	dir=$(pwd)
+	oldps3=$PS3
+
+	cd $(dirname $0)/../conf/hire
+	echo -ne "\n\nCurrent config : "
+	grep '^name' $conf
+
+	echo -e "\nChoose a new config:"
+	PS3="Which config? "
+	select file in $(ls -1 *.conf | grep -v $conf)
+	do
+		if [[ -n $file ]]
+		then
+			/bin/cp -fv $file $conf
+			break
+		fi
+	done
+
+	PS3=$oldps3
+	cd $dir
+}
+
 
 if [[ ~/common/bin/$(basename $0) -ef $0 ]]								# backdoor for personal use
 then
 	update_perl_mods ~/common
+	choose_config
 	exec ~/bin/hire
 fi
 

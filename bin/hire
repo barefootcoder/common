@@ -17,9 +17,17 @@ const our $MANAGERS =>
 	mike	=>	'Mike Rozek',
 };
 
+const our $HIRING_EMAILS =>
+{
+	'Buddy Burden'			=>	'bburden@rent.com',
+	'Diane Xu'				=>	'dxu@rent.com',
+	'Aran Deltac' 			=>	'adeltac@rent.com',
+	'Mike Rozek'			=>	'mrozek@rent.com',
+};
+
 const our $NON_RECRUITERS => { map { $_ => 1 } qw< jobs.perl.org Dice.com > };
 
-const our $CONFIG => { ParseConfig(file($0)->dir->resolve->parent->subdir('conf')->file('hire.conf')) };
+const our $CONFIG => { ParseConfig(file($0)->dir->resolve->parent->subdir('conf', 'hire')->file('hire.conf')) };
 
 
 
@@ -244,6 +252,8 @@ class Candidate
 			$hash->{Recruiter} = {};
 			$hash->{Recruiter}->{$_} = $recruiter->{$_} foreach keys %$recruiter;
 		}
+
+		$hash->{Config} = $CONFIG;
 
 		return join('', expand(templ::process($file, $hash)));
 	}
@@ -555,6 +565,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Resume Stuff'					=>	\%resume_menu,
 	'Refresh Data'					=>	func { $sheet->refresh },
 	Reload							=>	\&reload_program,
+	'Show Config'					=>	\&show_config,
 	Quit							=>	func { exit },
 );
 
@@ -571,6 +582,7 @@ func menu ($menu)
 	MENULOOP: while (1)
 	{
 		system("clear");
+		say "\nYou are logged in as $CONFIG->{'name'}.  Choose 'Reload' to change that.\n\n";
 
 		while (1)
 		{
@@ -652,8 +664,8 @@ func get_new_candidate
 		$sheet->add_candidate({
 			firstName		=>	$first,
 			lastName		=>	$last,
-			Source			=>	"$source",								# have to stringify this to remove Damien magic
-			screener		=>	'BB',
+			Source			=>	"$source",								# have to stringify this to remove Damian magic
+			screener		=>	$CONFIG->{'initials'},
 			position		=>	'Perl Engineer',
 			'job type'		=>	'Any',
 			'resume link'	=>	$resume ? $resume->url : undef,
@@ -705,9 +717,8 @@ func lunch_interview
 	{
 		'Alain Avakian'			=>	'aavakian@rent.com',
 		'Benny Millares'		=>	'bmillares@rent.com',
-		'Diane Xu'				=>	'dxu@rent.com',
-		'Aran Deltac' 			=>	'adeltac@rent.com',
-		'Mike Rozek'			=>	'mrozek@rent.com',
+		# all the people on the hiring team get included
+		%$HIRING_EMAILS,
 		# Albert likes to be included on these even though he doesn't attend
 		%Candidate::IN_HOUSE_RECRUITER,
 	};
@@ -731,7 +742,7 @@ func lunch_interview
 
 	$GOOGLE->add_cal_event(
 		title		=>	"Lunch Interview: " . $cand->name,
-		location	=>	"Cafe Bizou or Tiato / Spaceballs (hopefully)",
+		location	=>	"Cafe Bizou or Tiato or Daily Grill / Spaceballs (hopefully)",
 		content		=>	$meeting_descr,
 		when		=>	"$datetime noon",
 		howlong		=>	4,
@@ -805,13 +816,19 @@ func phone_screen_confirmation
 	{
 		$phone = prompt("Enter phone number: ");
 		die("have to have phone number") unless $phone;
-		$cand->set_datum( phone => $phone );
+		$cand->set_datum( phone => "$phone" );							# remove Damian magic again
 	}
 
 	my $datetime = prompt("Enter date and time: ");
 	my $secs = parsedate($datetime) || die("couldn't parse your date/time");
 
-	$GOOGLE->add_cal_event( title => "Phone Screen: " . $cand->name, location => $phone, when => $datetime, howlong => 1 );
+	$GOOGLE->add_cal_event(
+		title		=>	"Phone Screen: " . $cand->name,
+		location	=>	$phone,
+		when		=>	$datetime,
+		howlong		=>	1,
+		guests		=>	{ $CONFIG->{'name'} => $HIRING_EMAILS->{$CONFIG->{'name'}} },
+	);
 	$cand->set_datum( "ps 1 date" => time2str('%m/%d/%Y', $secs) );
 
 	$datetime = time2str('on %L/%d at %l:%M%P %Z', $secs);
@@ -840,8 +857,8 @@ func send_take_home_test
 
 func upload_resume
 {
-	my @pdfs = glob("/tmp/*.pdf");
-	die("too many PDF files in your /tmp; clean some out and try again") if @pdfs > 26;
+	my @pdfs = glob("$CONFIG->{'pdf_files_dir'}/*.pdf");
+	die("too many PDF files in your $CONFIG->{'pdf_files_dir'}; clean some out and try again") if @pdfs > 26;
 
 	my $file = prompt -menu => [ @pdfs ];
 	return unless $file;
@@ -906,4 +923,11 @@ func reload_program
 	my $setup_prog = $prog->dir->file("setup_hire");
 	$prog = $setup_prog if -x $setup_prog;
 	exec $prog, @ARGV;
+}
+
+func show_config
+{
+	my $len = max map { length } keys %$CONFIG;
+	my $fmt = "{<{$len}<} : {<{80}<}";
+	print foreach map { form($fmt, $_, $CONFIG->{$_}) } keys %$CONFIG;
 }
