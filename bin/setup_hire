@@ -200,7 +200,7 @@ then
 	if ask "You must have a .googlerc; create it now?"
 	then
 		read -p "What is your (personal) Google account name? " user
-		read -ps "What is your Google account password? " passwd
+		read -sp "What is your Google account password? " passwd
 		echo -e "user = $user\npassword = $passwd" >$googlerc
 	else
 		fatal "You make me sad.  So be it."
