@@ -1,3 +1,11 @@
+     To: [% email %]
+	 CC: [% HR.email %]
+[% IF Recruiter -%]
+	 CC: "[% Recruiter.Contact %]" <[% Recruiter.Email %]>
+[% END -%]
+Subject: [% name %]: [% display_position %] (phone screen)
+
+
 [% firstName %],
 
 We received the resume [% Source == 'jobs.perl.org' || Source == 'Dice.com' ? 'you submitted to us for our Internet job listing' : 'your recruiter submitted to us for our job listing' %] and are interested in talking to you further.  Would you be available to conduct a phone interview?  My schedule for the coming week is below; please choose a one hour slot within one of the following blocks (phone screens are typically around a half an hour, but I leave time for going over) and let me know what would be best for you (and please remember we're on PST, so adjust appropriately for your location):
@@ -21,4 +29,4 @@ I do not have a phone number for you, so please include one in your reply.
 Looking forward to hearing back from you!
 
 
-		-- Buddy Burden, senior architect
+		-- [% Config.name %], [% Config.position %]

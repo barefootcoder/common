@@ -1,0 +1,166 @@
+#!/bin/bash
+
+candidate="$1"
+TEST_DIR="OOPerlTest-Personal-*"
+PACK_FILE="$TEST_DIR.tar.gz"
+script="script_test.pl"
+script_only=0
+
+if [[ ! -d "$candidate" ]]
+then
+	echo "you must create the candidate dir before calling me" >&2
+	exit 1
+fi
+
+function is_script_only
+{
+	script_test_dir="ScriptPerl*"
+	script_pack_file="$script_test_dir.tar.gz"
+
+	[[ -f "$candidate"/$script ]] && return 0
+
+	script_alt="contractor_test.pl"
+	if [[ -f "$candidate"/$script_alt ]]
+	then
+		script=$script_alt
+		return 0
+	fi
+
+	script_alt="test_script.pl"
+	if [[ -f "$candidate"/$script_alt ]]
+	then
+		script=$script_alt
+		return 0
+	fi
+
+	packfile="$(ls "$candidate"/$script_pack_file 2>/dev/null)"
+	if [[ -n $packfile ]]
+	then
+		cd "$candidate/"
+		tar xvpzf $(basename "$packfile")
+
+		script_alt="$(ls $script_test_dir/$script_alt)"
+		if [[ -f $script_alt ]]
+		then
+			script=$script_alt
+			cd ..
+			return 0
+		fi
+
+		script_alt="$(ls $script_test_dir/$script)"
+		if [[ -f $script_alt ]]
+		then
+			script=$script_alt
+			cd ..
+			return 0
+		fi
+
+		cd ..
+	fi
+
+	return 1
+}
+
+function find_dir
+{
+	find "$1"/* -maxdepth 0 -type d
+}
+
+testdir="$(find_dir "$candidate")"
+if [[ ! -d "$testdir" ]]
+then
+	if is_script_only
+	then
+		echo -n "Evaluate on bonus script only? "
+		read ans
+		if [[ $ans == [yY]* ]]
+		then
+			script_only=1
+		else
+			echo "Remove $candidate/$script and try again"
+			exit 2
+		fi
+	else
+		packfile="$(ls "$candidate"/$PACK_FILE 2>/dev/null)"
+		if [[ -z $packfile ]]
+		then
+			echo "you must save the candidate's attachment in $candidate/ first" >&2
+			exit 1
+		fi
+		cd "$candidate/"
+		tar xvpzf $(basename "$packfile")
+		cd ..
+		testdir="$(find_dir "$candidate")"
+	fi
+fi
+
+function check_script
+{
+	echo -e "\n\nBONUS SCRIPT:\n=============\n"
+
+	if [[ -z $(perl $script 2>&1) ]]
+	then
+		diff -bB ../../../$TEST_DIR/bonus/$script $script
+	else
+		echo -e "Their answer:\n"
+		perl $script
+
+		echo -e "\nCorrect answer:\n"
+		$WEBROOT/doc/interview/takehome/programmer_test_solution.pl
+	fi
+}
+
+if (( $script_only ))
+then
+	cd "$candidate"
+else
+	cd "$testdir"
+fi
+
+if (( $script_only ))
+then
+	check_script
+else
+	diffs=$(diff -rbB --brief ../../$TEST_DIR/ .)
+	echo -e "MODIFIED FILES:\n===============\n\n$diffs"
+	unexpected=$(echo "$diffs" | perl -lne '/and (.*?) differ/ and $1 !~ /\.p[ml]$/ and print $1')
+	echo -e "\n\nUNUSUAL FILES:\n==============\n\n"
+	for file in $unexpected
+	do
+		echo "$file:"
+		diff -bB ../../$TEST_DIR/$file $file
+	done
+	echo -ne "\n\nPress RETURN ..."
+	read ans
+
+	perl Makefile.PL
+	make
+	make test
+	echo -ne "\n\nPress RETURN ..."
+	read ans
+
+	echo -e "\n\n"
+	for module in Person WorkUnit Employee Manager
+	do
+		if echo "$diffs" | fgrep -q /$module.pm
+		then
+			t=$(ls t/*$module.t 2>/dev/null)
+			[[ -z $t ]] && t=$(ls bonus/*$module.t 2>/dev/null)
+			if [[ -z $t ]]
+			then
+				echo "can't find the t file for $module" >&2
+			fi
+			echo "$module: $(prove -Ilib -v "$t" 2>&1 | grep '^ok [1-9]' | wc -l)"
+		else
+			echo "$module: 0"
+		fi
+	done
+	echo -ne "\n\nPress RETURN ..."
+	read ans
+
+	if echo "$diffs" | fgrep -q bonus/$script
+	then
+		cd bonus
+		check_script
+	fi
+fi

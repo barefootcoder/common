@@ -161,7 +161,7 @@ version
 Debuggit
 TryCatch
 Template
-MP3::Tag
+#MP3::Tag																# constantly reinstalls itself :-(
 Test::Most
 Term::Size
 File::Stat
@@ -200,6 +200,7 @@ IPC::System::Simple
 Test::Pod::Coverage
 Net::Google::Calendar
 Net::Google::PicasaWeb
+MooseX::ClassAttribute
 Net::Google::Spreadsheets
 Module::Install::JSONMETA
 Net::Google::DocumentsList

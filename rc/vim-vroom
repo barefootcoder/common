@@ -1,0 +1,66 @@
+set autoindent			" handy for programming
+set tabstop=4			" standard for Barefoot files
+"set shiftwidth=4		" needs to match tabstop
+
+" make Y same as y$
+nmap Y y$
+" make g same as G
+map g G
+
+set exrc
+source ./.vimrc
+
+
+set showmode			" want to see insert / replace mode
+set nobackup			" stop leaving annoying tilde droppings all over the place
+set autoindent			" handy for programming
+set tabstop=4			" standard for Barefoot files
+set shiftwidth=4		" needs to match tabstop
+set undolevels=1000		" go with default undolevels
+set linebreak			" let's see how well this works
+set noexpandtab			" gawd this is annoying which it magically flicks on ...
+
+" make Y same as y$
+nmap Y y$
+" make g same as G
+map g G
+" easy comment
+map q :s/^/\/\* /<CR>:s/$/ \*\//<CR>
+" easy uncomment
+map Q :s/^\/\* //<CR>:s/ \*\/$//<CR>
+" remove any ^R remap
+"try | unmap  | catch /E31/ | endtry
+" show buffers
+map  :files<CR>
+" get rid of annoying trailing spaces
+map  :%s/[ 	]\+$//<CR>
+" search for the word under the cursor
+map  /<C-R><C-W><CR>
+" stop the hideously annoying shift+backspace problem
+map!  
+" push to testing
+nmap  :w<CR>:!pusht %<CR>
+" compile check
+nmap  :w<CR>:!ccheck %<CR>
+
+" allow locking of vi
+map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2)<CR>:if choice == 1<CR>:x<CR>:endif<CR><CR>
+map Lock :map ZZ LockZZ<CR>:echo "Locked"<CR>
+
+set formatoptions=croqv		" only autoformat comments
+set textwidth=100			" width for comment autoformatting
+" comment markers (only works for Perl and piqt, and sort of for Mason)
+set comments=b:#,b:%,b:*,b:--\!\ print,b:--
+" reformat current comment block (using Alt-R)
+nnoremap <Esc>r ^gq/^$\<Bar>^<Tab>*#$\<Bar>^--! print$<CR>
+" use my tfmt program for reformatting non-comment stuff
+set equalprg=tfmt\ -t4\ -w100
+
+"syntax off
+set nohlsearch
+set noincsearch
+set nocindent
+filetype off
+filetype indent off
+
+let loaded_matchparen = 1

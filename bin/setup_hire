@@ -48,14 +48,46 @@ function update_perl_mods
 	podselect -section PREREQS $dir/perl/myperl.pm | grep '^[a-zA-Z]' | cpanm -n
 }
 
+function choose_config
+{
+	conf=hire.conf
+	dir=$(pwd)
+	oldps3=$PS3
+
+	cd $(dirname $0)/../conf/hire
+	echo -ne "\n\nCurrent config : "
+	grep '^name' $conf
+
+	echo -e "\nChoose a new config:"
+	PS3="Which config? "
+	select file in $(ls -1 *.conf | grep -v $conf)
+	do
+		if [[ -n $file ]]
+		then
+			/bin/cp -fv $file $conf
+			break
+		fi
+	done
+
+	PS3=$oldps3
+	cd $dir
+}
+
 
 if [[ ~/common/bin/$(basename $0) -ef $0 ]]								# backdoor for personal use
 then
 	update_perl_mods ~/common
+	choose_config
 	exec ~/bin/hire
 fi
 
 echo -e "\n"
+
+# we'll need $WEBROOT at some point; better make sure it's set
+if [[ -z $WEBROOT ]]
+then
+	fatal "You need a $WEBROOT set or else I won't know where to get my take-home test comparisons from."
+fi
 
 # base directory
 perldir=~/perl5
@@ -166,6 +198,25 @@ echo -e "\n"
 if ! echo $PERL5LIB | fgrep -q $perldir/$gitdir/perl
 then
 	export PERL5LIB=$perldir/$gitdir/perl:$PERL5LIB
+fi
+
+# create config, if necessary
+config=$gitdir/conf/hire.conf
+if [[ ! -r $config ]]
+then
+	if ask "You must have a hire.conf; create it now?"
+	then
+		# directory for take-home tests
+		default_takehomedir=$perldir/data/hire/take-home
+		read -p "What directory do you want to use for dropping take-home tests into? [$default_takehomedir] " takehomedir
+		takehomedir=${takehomedir:-$default_takehomedir}
+		mkdir -p $takehomedir >/dev/null 2>&1
+		ln -s $WEBROOT/doc/howto/interview-programmer/take-home-test/OOPerlTest-Personal-0.01 $takehomedir
+		ln -s $perldir/$gitdir/conf/hire/review $takehomedir
+		echo "take_home_test_dir = $takehomedir" >>$config
+	else
+		fatal "You're boned."
+	fi
 fi
 
 # create .googlerc, if necessary
