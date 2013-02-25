@@ -176,6 +176,18 @@ class Candidate
 																						);
 																					}, );
 
+	method get_recruiter ($class: $recruiter)
+	{
+		try
+		{
+			return $class->recruiters->get_row($recruiter);
+		}
+		catch ($err where { /no such row as/ } )
+		{
+			return undef;
+		}
+	}
+
 
 	has data		=>	( ro, isa => 'ArrayRef[Maybe[Net::Google::Spreadsheets::Cell]]', required );
 	has sheet		=>	( ro, isa => 'HiringSheet', required, weak_ref );
@@ -245,7 +257,7 @@ class Candidate
 
 		$hash->{HR}->{email} = CLASS->hr_email;
 
-		my $recruiter = $self->recruiters->get_row($self->source);
+		my $recruiter = $self->get_recruiter($self->source);
 		if ($recruiter)
 		{
 			# have to flatten this or TT won't play nice
