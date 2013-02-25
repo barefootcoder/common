@@ -55,12 +55,12 @@ if ( $?VCTOOLS_SHELL ) then
 		alias unget 'git checkout --'
 		alias vbranch git-helper-branch
 		alias vunbranch 'git-helper-branch -u'
-		alias vmerge 'vpull ; git merge origin/master'
+		alias vmerge 'sync ; git merge origin/master'
 		alias stg 'vcpatchws `git status -s | awk "{print $2}"` ; git add .'
 		alias istg 'vcpatchws `git status -s | awk "{print $2}"` ; git add -i .'
 		alias vpush 'git pull ; git push'
 		alias stash 'git stash save -u \!* ; st'
-		alias unstash 'git stash pop ; up'
+		alias unstash 'git stash pop ; st'
 		alias testclean 'git stash save ; t ; git stash pop'
 	else
 		alias vbuild vbuild -v
