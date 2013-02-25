@@ -33,6 +33,7 @@ class myperl::Declare extends MooseX::Declare
 			'Perl6::Slurp'					=>
 			'Perl6::Gather'					=>	0.42		=>
 			'MooseX::Has::Sugar'			=>
+			'MooseX::ClassAttribute'		=>	0.26		=>
 			'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
 			'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
 			'Class::Load'					=>					[ 'load_class' ],

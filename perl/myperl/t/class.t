@@ -13,7 +13,7 @@ END
 test_snippet(<<'END');
 	class %
 	{
-		method foo (@_)					# guarantees that we're using MSM instead of MXMS
+		method foo (...)					# guarantees that we're using MSM instead of MXMS
 		{
 		}
 	}
@@ -23,6 +23,13 @@ test_snippet(<<'END');
 	class %
 	{
 		has foo => (ro, isa => Int);
+	}
+END
+
+test_snippet(<<'END');
+	class %
+	{
+		class_has foo => (ro, isa => Int);
 	}
 END
 
