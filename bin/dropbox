@@ -84,7 +84,7 @@ status() {
 			echo "$prog for USER $USER: running (pid $dbpid)"
 		fi
 	else
-		if [ -n $dbpid ] ; then
+		if [[ -n $dbpid ]] ; then
 			echo $dbpid
 		fi
 	fi
