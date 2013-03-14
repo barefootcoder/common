@@ -87,6 +87,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
+	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	unless ($blog_type eq 'bbcode')
 	{
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
@@ -114,8 +115,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{${front_boundary}_(\w+)_(?=\w)}{$1 . fmt(italic => $2)}seg;					# partial word italics (front)
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
-	s{$front_boundary\*([^\]]+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;			# bold
+	s{$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;				# bold
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
+	s{\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;						# forward links (internal only)
 	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
@@ -140,7 +142,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		{
 			push @notes, footnote(final => $footnotes[$f], $f) if defined $footnotes[$f];
 		}
-		$_ .= fmt(small => join("<br>\n", @notes)) . "\n";
+		$_ .= '<div style="line-height: 70%;">' . fmt(small => join('', map { "<p>$_</p>\n" } @notes)) . '</div>';
 	}
 	# now put all blocks back
 	s{\cQ(\d+)}{$blocks[$1]}g;
@@ -179,10 +181,13 @@ sub block_save
 
 sub url_block
 {
+	my $forward = 0;
+	$forward = 1 && shift if $_[0] eq 'FORWARD';
 	my ($url, $alt_text) = @_;
 
 	if ($blog_type eq 'bbcode')
 	{
+		die("can't do forward links in bbcode") if $forward;
 		state $bbcodes = [ map { qr{^/?$_\b}i } qw< b i quote list code size font spoiler center color url indent > ];
 		if (($url eq '*' or $url ~~ @$bbcodes) and not $alt_text)
 		{
@@ -192,6 +197,7 @@ sub url_block
 
 	if ($url =~ /^(\w+):/)												# external link
 	{
+		die("can't do forward links for external links") if $forward;
 		given ($1)
 		{
 			when ('cpan')												# shortcut for links to CPAN modules
@@ -211,6 +217,8 @@ sub url_block
 	else																# internal link
 	{
 		$alt_text ||= $url;												# no alt text
+		return qq{<span style="color: gray;">$alt_text</span>}			# forward link
+				if $forward;
 		$url = get_blog($url);
 	}
 
@@ -272,14 +280,21 @@ sub footnote_ref
 	return $footnote_style eq '1' ? $num : $footnote_style x $num;
 }
 
+sub save_footnote_and_gen_ref
+{
+	my ($note) = @_;
+
+	push @footnotes, $note;
+	return '<sup>' . fmt(small => qq{<a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a>') . '</sup>';
+}
+
 sub footnote
 {
 	my ($type, $text, $num) = @_;
 
 	if ($type eq 'ref')
 	{
-		push @footnotes, undef;
-		return qq{<sup><a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a></sup>';
+		save_footnote_and_gen_ref(undef);
 	}
 	elsif ($type eq 'text')
 	{
@@ -295,8 +310,7 @@ sub footnote
 	}
 	elsif ($type eq 'full')
 	{
-		push @footnotes, $text;
-		return qq{<sup><a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a></sup>';
+		save_footnote_and_gen_ref($text);
 	}
 	elsif ($type eq 'final')
 	{
