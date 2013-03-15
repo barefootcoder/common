@@ -88,7 +88,11 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
-	unless ($blog_type eq 'bbcode')
+	if ($blog_type eq 'bbcode')
+	{
+		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
+	}																				# confused with boldface
+	else
 	{
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
@@ -146,6 +150,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	}
 	# now put all blocks back
 	s{\cQ(\d+)}{$blocks[$1]}g;
+	# put BBcode lists items back
+	s{\cL}{[*]}g if $blog_type eq 'bbcode';
 	# handle initial whitespace according to blog type
 	s{\A\s*}{$blog{$blog_type}->{'initial'}};
 
@@ -188,7 +194,7 @@ sub url_block
 	if ($blog_type eq 'bbcode')
 	{
 		die("can't do forward links in bbcode") if $forward;
-		state $bbcodes = [ map { qr{^/?$_\b}i } qw< b i quote list code size font spoiler center color url indent > ];
+		state $bbcodes = [ map { qr{^/?$_\b}i } qw< b i u quote list code img size font spoiler center color url indent > ];
 		if (($url eq '*' or $url ~~ @$bbcodes) and not $alt_text)
 		{
 			return "[$url]";
