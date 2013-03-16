@@ -138,4 +138,4 @@ terminfo  xterm 'XC=K%,%\E(B,[\304,\\\\\326,]\334,{\344,|\366,}\374,~\337'
 ##################################
 chdir							# all new windows should start from $HOME
 
-source .screenrc.local
+source ".screenrc.$CURRENT_SCREEN"

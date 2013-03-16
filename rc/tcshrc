@@ -161,7 +161,8 @@ alias pdoc perldoc
 alias pfunc perlfunc
 alias pfind perlfind
 alias unison "unison -ui text"
-alias sr "screen -A -x base"
+setenv CURRENT_SCREEN base
+alias sr 'screen -A -x $CURRENT_SCREEN'
 alias dev 'umask 2 ; newgrp \!^ dev'
 alias cpi 'cpanm -n \!*'
 alias pgrep 'grep -P \!*'

@@ -183,14 +183,15 @@ fi
 
 # now the special ones:
 
-# 1: .screenrc.local
+# 1: .screenrc.base
 # if this file exists, don't mess with it
 # if not, supply a useful default
-if [[ ! -e ~/.screenrc.local ]]
+if [[ ! -e ~/.screenrc.base ]]
 then
-	cat >~/.screenrc.local <<END
+	cat >~/.screenrc.base <<END
 screen -t base
 screen -t timer
+	stuff "timer\015"
 screen -t man
 	stuff "man screen\015"
 screen -t top top
