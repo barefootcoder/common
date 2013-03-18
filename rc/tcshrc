@@ -34,6 +34,9 @@ set term=vt100
 
 if ( $?METHOD_SIGNATURES_DEBUG ) then
 	set prompt="[Method::Signatures debugging] "
+	alias msdebug 'unsetenv METHOD_SIGNATURES_DEBUG ; resrc'
+else
+	alias msdebug 'setenv METHOD_SIGNATURES_DEBUG 1 ; resrc'
 endif
 
 set WHOAMI=`/usr/bin/whoami`
