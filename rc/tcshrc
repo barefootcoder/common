@@ -167,7 +167,7 @@ alias cpi 'cpanm -n \!*'
 alias pgrep 'grep -P \!*'
 alias weberr "tail $APACHE_LOG/error_log"
 alias timer "cd ~/timer ; vi -u ~/.vim-timer timer-new"
-alias lctime "history | tail -n2 | head -n1 | awk '{print \$2}'"
+alias lctime "history | tail -n2 | head -n1 | awk '{print "'$2'"}'"
 
 set sys_complete=/etc/profile.d/tcsh-complete
 if ( -e $sys_complete ) then
