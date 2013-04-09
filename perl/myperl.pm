@@ -104,7 +104,7 @@ sub title_case
 	# ought to be able to use local here, but I can't seem to make it work
 	# perhaps you can't localize variables in other packages?
 	my @save = @Text::Capitalize::exceptions;
-	push @Text::Capitalize::exceptions, qw< from into as >;
+	push @Text::Capitalize::exceptions, qw< from into as on >;
 	my $t = Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1);
 
 	# preserving all caps seems to let the word "A" stay "A" when it should go to "a"
