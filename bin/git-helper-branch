@@ -5,14 +5,17 @@
 
 mode=switch
 local=0
+force=0
 pretend=0
-while getopts ":c:lusph" opt
+while getopts ":c:lfusph" opt
 do
 	case $opt in
 		c)	mode=create
 			branch=$OPTARG
 			;;
 		l)	local=1
+			;;
+		f)	force=1
 			;;
 		s)	mode=show
 			;;
@@ -22,9 +25,12 @@ do
 			;;
 		p)	pretend=1
 			;;
-		h)  echo "usage: $me -h | [-p] { -c branch [-l] | -s | [branch] }" >&2
+		h)  echo "usage: $me -h | [-p] { -c branch [-lf] | -s | -u | [-f] [branch] }" >&2
 			echo "    -c : create a branch" >&2
 			echo "    -s : show branches" >&2
+			echo "    -u : unbranch (same as $me master)" >&2
+			echo "    -l : create branch locally (default: create branch on origin)" >&2
+			echo "    -f : force (don't allow unstashed changes to stop create or switch)" >&2
 			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
 			echo "    -h : this help message" >&2
 			echo "    branch : without -c, switch to that branch (default: master)" >&2
@@ -53,7 +59,7 @@ function run
 	fi
 }
 
-if [[ $mode != "show" ]] && ! git status | fgrep -q "working directory clean"
+if [[ $mode != "show" ]] && [[ $force == 0 ]] && ! git status | fgrep -q "working directory clean"
 then
 	echo "$me: won't branch or create branch with unstashed changes" >&2
 	exit 1
