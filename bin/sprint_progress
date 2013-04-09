@@ -106,7 +106,7 @@ func read_timerfile ($fname)
 	foreach (split("\n", $descriptions))
 	{
 		my ($tname, $descr) = split(":\t");
-		my $ticket = $descr =~ /([A-Z]{2}-\d{4,5})/ ? $1 : undef;
+		my $ticket = $descr =~ /^[[:upper:]]{2,3}-\d{1,5}$/ ? $1 : undef;
 
 		if (exists $t->{$tname})
 		{

@@ -9,7 +9,7 @@ my $opts = {};
 getopts('vb', $opts);
 
 my $ticket = shift;
-die("don't recoginze Jira ticket num: $ticket") unless $ticket =~ /^[[:upper:]]{2}-\d{4,5}$/;
+die("don't recoginze Jira ticket num: $ticket") unless $ticket =~ /^[[:upper:]]{2,3}-\d{1,5}$/;
 
 
 my $pipe_opened = 0;
