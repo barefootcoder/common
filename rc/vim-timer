@@ -17,6 +17,7 @@
 :map <C-D><C-D> :w<CR>^:!fake_timer daybreak today %<CR>
 :map <C-D><C-Y> :w<CR>^:!fake_timer daybreak yesterday %<CR>
 :map <C-D><C-F> :w<CR>^:!fake_timer daybreak 'last friday' #<CR>
+:map <C-D><C-W> :w<CR>^:!fake_timer daybreak 'last friday' %<CR>
 :map <C-D><C-R> :w<CR>^:!fake_timer review <cword> %<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
 :let g:timer="default"
