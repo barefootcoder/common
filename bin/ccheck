@@ -8,7 +8,7 @@ taint=$(perl -lne 'print "T" if /perl -T/; exit if $. > 1' $1)
 #echo "url would be $(perl -lne 'print "'$wikibase'/$1/$2" if $. == 1 && /^==> (.+?):(.+?) <==$/' "$1")"
 
 proj=rent
-if [[ 1 == 0 && ( $VCTOOLS_SHELL == "proj:$proj" || $VCTOOLS_SHELL == "git" ) ]]
+if [[ $(vconfig_directive Project) == "rent" ]]
 then
 	# get the name of the sandbox machine from the Unison pref file
 	readonly sandbox=$(perl -lne 'print $1 if m{^root\s*=\s*ssh://(?:\w+@)?([\w.-]+)//}' ~/.unison/sandbox.prf)
