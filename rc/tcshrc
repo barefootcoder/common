@@ -34,6 +34,9 @@ set term=vt100
 
 if ( $?METHOD_SIGNATURES_DEBUG ) then
 	set prompt="[Method::Signatures debugging] "
+	alias msdebug 'unsetenv METHOD_SIGNATURES_DEBUG ; resrc'
+else
+	alias msdebug 'setenv METHOD_SIGNATURES_DEBUG 1 ; resrc'
 endif
 
 set WHOAMI=`/usr/bin/whoami`
@@ -161,7 +164,8 @@ alias pdoc perldoc
 alias pfunc perlfunc
 alias pfind perlfind
 alias unison "unison -ui text"
-alias sr "screen -A -x base"
+setenv CURRENT_SCREEN base
+alias sr 'screen -A -x $CURRENT_SCREEN'
 alias dev 'umask 2 ; newgrp \!^ dev'
 alias cpi 'cpanm -n \!*'
 alias pgrep 'grep -P \!*'
