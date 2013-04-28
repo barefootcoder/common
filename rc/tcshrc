@@ -168,6 +168,7 @@ setenv CURRENT_SCREEN base
 alias sr 'screen -A -x $CURRENT_SCREEN'
 alias dev 'umask 2 ; newgrp \!^ dev'
 alias cpi 'cpanm -n \!*'
+alias drel 'dzil clean ; dzil release'
 alias pgrep 'grep -P \!*'
 alias weberr "tail $APACHE_LOG/error_log"
 alias timer "cd ~/timer ; vi -u ~/.vim-timer timer-new"
