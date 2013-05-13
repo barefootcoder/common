@@ -53,7 +53,7 @@ function send_to_sandbox
 		fpath="$(realpath "$file")"
 		if [[ -n $file ]]
 		then
-			if [[ $fpath == $base_dir/web/* || $fpath == $base_dir/lib/* && $fpath != */t/* ]]
+			if [[ $fpath == $base_dir/web/* || $fpath == $base_dir/lib/* && $fpath != */t/* && $fpath != */Test/* ]]
 			then
 				bounce_apache=1
 				if [[ $fpath == $base_dir/lib/reports/* || $fpath == $base_dir/lib/oracle/* || $fpath == *.html ]]
