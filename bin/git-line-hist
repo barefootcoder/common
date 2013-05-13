@@ -1,0 +1,14 @@
+#! /bin/bash
+
+line=$1
+file="$2"
+commit="$3"
+
+while [[ 1 ]]
+do
+	blame=$(git blame -M -L $line,$line -n $commit $file)
+	[[ $blame ]] || exit
+	commit=$(echo "$blame" | awk '{print $1}')^
+	line=$(echo "$blame" | awk '{print $2}')
+	echo "$blame"
+done
