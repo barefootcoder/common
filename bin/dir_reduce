@@ -1,0 +1,28 @@
+#! /usr/bin/env perl
+
+use 5.12.0;
+use warnings;
+
+use Data::Printer;
+use File::Basename;
+
+
+my @files = <>;
+chomp @files;
+my $reduced;
+do
+{
+	$reduced = 0;
+	my %dirs; $dirs{dirname $_}++ foreach @files;
+	foreach my $dir (keys %dirs)
+	{
+		if ($dirs{$dir} >= 5)
+		{
+			$reduced = 1;
+			@files = grep { dirname($_) ne $dir } @files;
+			push @files, $dir unless grep /^$dir$/, @files;
+		}
+	}
+} until ($reduced == 0);
+
+say foreach @files;
