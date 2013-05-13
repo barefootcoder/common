@@ -49,13 +49,31 @@ class Calendar::Event extends Net::Google::Calendar::Entry
 
 class Google::Service
 {
+	use MooseX::ClassAttribute;
+
 	use Net::Google::Calendar;
 	use Net::Google::PicasaWeb;
 	use Net::Google::Spreadsheets;
 	use Net::Google::DocumentsList;
 
 
-	has _config		=>	( ro, isa => 'HashRef', lazy, builder => '_read_config' );
+	class_has _config		=>	( ro, isa => 'HashRef', lazy, builder => '_read_config' );
+
+	has _acct_config		=>	( ro, isa => 'HashRef', lazy, builder => '_choose_config' );
+
+	method _read_config
+	{
+		use Config::General qw< ParseConfig >;
+
+		return { ParseConfig("$ENV{HOME}/.googlerc") };
+	}
+
+	method _choose_config
+	{
+		return $self->account eq 'default' ? $self->_config : $self->_config->{$self->account};
+	}
+
+
 	has _ssheets	=>	( ro, isa => 'Net::Google::Spreadsheets', lazy, builder => '_connect_to_spreadsheets',
 								handles => [ qw< spreadsheet > ] );
 	has _doclist	=>	( ro, isa => 'Net::Google::DocumentsList', lazy, builder => '_connect_to_documents',
@@ -64,12 +82,7 @@ class Google::Service
 	has _picasa		=>	( ro, isa => 'Net::Google::PicasaWeb', lazy, builder => '_connect_to_picasa',
 								handles => { photo_albums => 'list_albums' } );
 
-	method _read_config
-	{
-		use Config::General qw< ParseConfig >;
-
-		return { ParseConfig("$ENV{HOME}/.googlerc") };
-	}
+	has account		=>	( ro, isa => Str, default => 'default' );
 
 	method _connect_to_spreadsheets
 	{
@@ -84,6 +97,12 @@ class Google::Service
 	method _connect_to_calendar
 	{
 		my $cal = Net::Google::Calendar->new;
+		# this is totally and utterly cheating here ...
+		if ($self->_acct_config->{'url'})
+		{
+			$cal->{_auth}->{url} = $self->_acct_config->{'url'};
+		}
+
 		$cal->login( $self->_login_params('list') );
 		return $cal;
 	}
@@ -98,12 +117,19 @@ class Google::Service
 
 	method _login_params ($type)
 	{
-		my $user = $self->_config->{'username'} || $self->_config->{'user'};
-		my $passwd = $self->_config->{'password'};
+		my $user = $self->_acct_config->{'username'} || $self->_acct_config->{'user'};
+		my $passwd = $self->_acct_config->{'password'};
+		debuggit(4 => "login params:", $user, $self->_obscurify($passwd));
 
 		return ($user, $passwd) if $type eq 'list';
 		return (username => $user, password => $passwd) if $type eq 'hash';
 		die("unknown type to _login_params: $type");
+	}
+
+	method _obscurify ($passwd)
+	{
+		# this is not really that obscure, but it's close enough for now
+		return substr($passwd, 0, 1) . '*' x (length($passwd) - 2) . substr($passwd, -1);
 	}
 
 
