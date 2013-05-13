@@ -50,4 +50,4 @@ then
 	echo "< $stdin"
 	echo "> $cmd"
 fi
-$get | diff $diffopts --label "$stdin" --label "$cmd" - <(eval $cmd)
+diff $diffopts --label "$stdin" --label "$cmd" <(eval $get) <(eval $cmd)
