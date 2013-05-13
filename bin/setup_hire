@@ -86,7 +86,7 @@ echo -e "\n"
 # we'll need $WEBROOT at some point; better make sure it's set
 if [[ -z $WEBROOT ]]
 then
-	fatal "You need a $WEBROOT set or else I won't know where to get my take-home test comparisons from."
+	fatal "You need a \$WEBROOT set or else I won't know where to get my take-home test comparisons from."
 fi
 
 # base directory
