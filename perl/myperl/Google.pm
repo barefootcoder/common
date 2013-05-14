@@ -454,3 +454,32 @@ package myperl::Google;
 
 
 1;
+
+=pod
+
+=head1 SYNOPSIS
+
+	use myperl::Google;
+
+	my $doc = $GOOGLE->document({ title => 'My Google Doc' });
+	my $sheet = $GOOGLE->spreadsheet({ title => 'My Google Spreadsheet' });
+
+	$GOOGLE->upload_doc($filename, 'My Google Drive Folder');
+
+	my $attendees = { 'My Friend1' => 'friend1@gmail.com', 'My Friend2' => 'friend2@gmail.com', };
+	$GOOGLE->add_cal_event(
+		title		=>	"My Meeting",
+		location	=>	"My Conference Room",
+		content		=>	"My description of what my meeting is for.",
+		when		=>	"tomorrow 3pm",
+		howlong		=>	1,							# in hours
+		guests		=>	$attendees,
+		reminder	=>	"sms 3h",					# can be alert, email, or sms
+	);
+
+	say "Meeting ", $_->title, " at ", $_->when foreach $GOOGLE->cal_events("tomorrow");
+
+	my $url = $GOOGLE->photo_url('My Picasa Photo', album => 'My Picasa Album');
+
+=cut
+

@@ -141,6 +141,81 @@ sub round
 
 =pod
 
+=head1 SYNOPSIS
+
+	use myperl;
+
+is pretty much the same thing as:
+
+	use 5.12.0;							# implies `use strict`
+	use warnings FATAL => 'all';
+
+	use CLASS;
+	use TryCatch;
+	use Const::Fast;
+	use Path::Class;
+	use Perl6::Form;
+	use Perl6::Slurp;
+	use Perl6::Gather;
+	use Method::Signatures;
+
+	use Class::Load 'load_class';
+	use List::Util qw< first max min reduce shuffle sum >;
+	use List::MoreUtils qw< apply zip uniq >;
+
+	use myperl::Declare;
+	use Debuggit DataPrinter => 1;
+
+Plus the import of any functions below under L</FUNCTIONS>.
+
+
+=head1 OPTIONS
+
+The following options can be passed to C<myperl>.  They can be combined in any combiation.
+
+=head2 DEBUG
+
+	use myperl DEBUG => 2;
+
+This is just passed straight through to L<Debuggit>.
+
+=head2 NoFatalWarns
+
+	use myperl NoFatalWarns => 1;
+
+Don't make all warnings fatal (but still turn them on).
+
+=head2 DataDumper
+
+	use myperl DataDumper => 1;
+
+Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of L<Data::Printer>).
+
+
+=head1 FUNCTIONS
+
+=head2 title_case
+
+	$title = title_case($title);
+
+Similar the C<capitalize_title> method of L<Text::Capitalize>.  It preserves words in all caps, but
+still handles the word "a" appropriately.  It also adds a few more exceptions to the list.
+
+=head2 round
+
+	$num = round($num);					# round off to the nearest 1
+	$num = round(OFF => $num);			# same thing
+	$num = round(DOWN => $num);			# or can round down
+	$num = round(UP => $num);			# or up
+	$num = round($num, .25);			# round off to the nearest 1/4
+	$num = round(DOWN => $num, .25);	# combine all options
+
+A simple way to do rounding.  When you give round() an initial argument of C<UP>, it acts just like C<POSIX::ceil>.
+When you give it an initial argument of C<DOWN>, it behaves just like C<POSIX::floor>.  When you use
+an initial argument of C<OFF>, or omit that argument altogether, it acts like C<nearest> from
+L<Math::Round>.
+
+
 =head1 INSTALLATION
 
 You will probably need the following packages, which might not be installed already:

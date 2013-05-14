@@ -45,3 +45,28 @@ class myperl::Declare extends MooseX::Declare
 	}
 
 }
+
+
+1;
+
+
+=pod
+
+=head1 SYNOPSIS
+
+	use myperl::Declare;
+
+is pretty much the same thing as:
+
+	use myperl;
+
+	use MooseX::Declare;
+	use MooseX::Has::Sugar;
+	use MooseX::ClassAttribute;
+	use Method::Signatures::Modifiers;
+	use MooseX::Types::Moose qw< all >;
+
+except that you'd never actually C<use myperl::Declare> directly.  Instead, C<use myperl> and then
+just declare your classes or roles with the appropriate keyword (a la L<MooseX::Declare>).
+
+=cut
