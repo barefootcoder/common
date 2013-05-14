@@ -443,7 +443,7 @@ class Google::Worksheet
 
 
 
-package myperl::Google;
+package myperl::Google
 {
 	use parent 'Exporter';
 	our @EXPORT = qw< $GOOGLE >;
