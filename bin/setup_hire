@@ -42,10 +42,13 @@ function locate_cmd
 
 function update_perl_mods
 {
-	dir="$1"
-	echo -e "\nThis should take about 5-6 minutes if starting from scratch." >&2
-	echo -e "(Much less if just updating.)\n" >&2
-	podselect -section PREREQS $dir/perl/myperl.pm | grep '^[a-zA-Z]' | cpanm -n
+	if ask "Update the dependent Perl modules?"
+	then
+		dir="$1"
+		echo -e "\nThis should take about 5-6 minutes if starting from scratch." >&2
+		echo -e "(Much less if just updating.)\n" >&2
+		podselect -section PREREQS $dir/perl/myperl.pm | grep '^[a-zA-Z]' | cpanm -n
+	fi
 }
 
 function choose_config
@@ -90,12 +93,12 @@ then
 fi
 
 # base directory
-perldir=~/perl5
-[[ -d $perldir ]] || mkdir $perldir
-cd $perldir
+basedir=/rent/perlhire
+[[ -d $basedir ]] || fatal "I can't find $basedir; that's a bit of a dealbreaker, I'm afraid."
+cd $basedir
 
 # Git repo
-gitdir=BuddyStuff
+gitdir=common
 if [[ -d $gitdir ]]
 then
 	if ask "Update your copy of the repo?"
@@ -122,33 +125,31 @@ fi
 echo -e "\n"
 
 # Perlbrew
-if [[ ! -d perlbrew ]]
+perlbrewdir=perl5
+if [[ -z $PERLBREW_PERL ]]
 then
-	if ask "You don't appear to have perlbrew.  Install it?"
-	then
-		if ! curl -kL http://install.perlbrew.pl | bash
-		then
-			wget --no-check-certificate -O - http://install.perlbrew.pl | bash
-		fi
-	else
-		echo "Trying to continue, but not hopeful." >&2
-	fi
+	fatal "You don't appear to have perlbrew, but I dare not install it.  Get thee to a sysadmin!"
 fi
-source perlbrew/etc/bashrc
+if [[ $PERLBREW_ROOT != $basedir/$perlbrewdir ]]
+then
+	fatal "Your perlbrew isn't pointing whence it should.  Try $basedir/$perlbrewdir instead."
+fi
+source $perlbrewdir/etc/bashrc
 echo -e "\n"
 
 # proper Perl
-if ! perlbrew list | grep -q 5.14.2
+version=5.14.4
+if ! perlbrew list | grep -q $version
 then
-	if ask "You don't appear to have perl 5.14.2.  Build it?"
+	if ask "You don't appear to have perl $version.  Build it?"
 	then
 		echo -e "\nThis should take about 4-5 minutes.\n" >&2
-		perlbrew install -n 5.14.2
+		perlbrew install -n $version
 	else
 		echo "Trying to continue, but not hopeful." >&2
 	fi
 fi
-perlbrew use perl-5.14.2
+perlbrew use perl-$version
 echo -e "\n"
 
 # cpanm
@@ -195,26 +196,55 @@ update_perl_mods $gitdir
 echo -e "\n"
 
 # make sure our local modules dir is getting into @INC
-if ! echo $PERL5LIB | fgrep -q $perldir/$gitdir/perl
+if ! echo $PERL5LIB | fgrep -q $basedir/$gitdir/perl
 then
-	export PERL5LIB=$perldir/$gitdir/perl:$PERL5LIB
+	export PERL5LIB=$basedir/$gitdir/perl:$PERL5LIB
 fi
 
 # create config, if necessary
-config=$gitdir/conf/hire.conf
+config=~/hire.conf
 if [[ ! -r $config ]]
 then
 	if ask "You must have a hire.conf; create it now?"
 	then
 		# directory for take-home tests
-		default_takehomedir=$perldir/data/hire/take-home
+		default_takehomedir=$basedir/take-home
 		read -p "What directory do you want to use for dropping take-home tests into? [$default_takehomedir] " takehomedir
 		takehomedir=${takehomedir:-$default_takehomedir}
-		mkdir -p $takehomedir >/dev/null 2>&1
+		mkdir -p $takehomedir
 		ln -s $WEBROOT/doc/howto/interview-programmer/take-home-test/OOPerlTest-Personal-0.01 $takehomedir
 		ln -s $perldir/$gitdir/conf/hire/review $takehomedir
 		echo "take_home_test_dir = $takehomedir" >>$config
-	else
+
+		# directory for resumes
+		default_resumedir=/tmp
+		read -p "What directory do you want to use for dropping resume PDFs into? [$default_resumedir] " resumedir
+		resumedir=${resumedir:-$default_resumedir}
+		mkdir -p $resumedir
+		echo "pdf_files_dir = $resumedir" >>$config
+
+		echo '' >>$config
+
+		# name
+		uid=$(id -u)
+		default_fullname=$(awk -F: '$3 == '$uid' {print $5}' /etc/passwd)
+		read -p "What is your full name? [$default_fullname] " fullname
+		fullname=${fullname:-$default_fullname}
+		echo "name = $fullname" >>$config
+
+		# position
+		default_position="hiring manager"
+		read -p "What is your full name? [$default_position] " position
+		position=${position:-$default_position}
+		echo "name = $position" >>$config
+
+		# initials
+		default_initials=$(perl -le 'print uc join "", map { substr($_, 0, 1) } @ARGV' $fullname)
+		read -p "What is your full name? [$default_initials] " initials
+		initials=${initials:-$default_initials}
+		echo "initials = $initials" >>$config
+	elif [[ ! -r $gitdir/conf/hire.conf ]]
+	then
 		fatal "You're boned."
 	fi
 fi
@@ -225,9 +255,7 @@ if [[ ! -r $googlerc ]]
 then
 	if ask "You must have a .googlerc; create it now?"
 	then
-		read -p "What is your (personal) Google account name? " user
-		read -sp "What is your Google account password? " passwd
-		echo -e "user = $user\npassword = $passwd" >$googlerc
+		echo -e "user = rent.com.engteam.testing@gmail.com\npassword = voidxu33" >$googlerc
 	else
 		fatal "You make me sad.  So be it."
 	fi
