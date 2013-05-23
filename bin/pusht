@@ -64,7 +64,8 @@ function send_to_sandbox
 		fi
 	fi
 
-	unison -ui text $batch $config
+	# unison -ui text $batch $config
+	rsync -avzt -C /home/buddy/proj/rent/ buddy@www-02.v-lax-buddy:/home/buddy/proj/rent
 	if [[ $bounce_apache == 1 ]]
 	then
 		ssh $sandbox "cd $sandbox_dir ; make restart"
