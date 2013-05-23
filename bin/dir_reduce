@@ -9,20 +9,33 @@ use File::Basename;
 
 my @files = <>;
 chomp @files;
-my $reduced;
-do
+
+my $files = reduce_list( { map { $_ => 1 } @files }, 1 );
+while (1)
 {
-	$reduced = 0;
-	my %dirs; $dirs{dirname $_}++ foreach @files;
-	foreach my $dir (keys %dirs)
-	{
-		if ($dirs{$dir} >= 5)
-		{
-			$reduced = 1;
-			@files = grep { dirname($_) ne $dir } @files;
-			push @files, $dir unless grep /^$dir$/, @files;
-		}
-	}
-} until ($reduced == 0);
+	my $count = keys %$files;
+	$files = reduce_list($files, 5);
+	last if keys %$files = $count;
+}
 
 say foreach @files;
+
+
+sub reduce_list
+{
+	my ($files, $limit) = @_;
+
+	my %parents;
+	$parents{dirname $_}++ foreach keys %$files;
+	foreach my $file (keys %$files)
+	{
+		my $parent = dirname $file;
+		if ($parents{$parent} >= $limit)
+		{
+			delete $files->{$file};
+			++$files->{$parent};
+		}
+	}
+
+	return $files;
+}
