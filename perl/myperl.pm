@@ -255,6 +255,7 @@ Date::Format
 Carp::Always
 Email::Stuff
 Perl6::Gather
+Data::Printer
 Test::Command
 Package::Stash
 Mail::Sendmail
