@@ -2,16 +2,20 @@
 
 readonly ME=${0##*/}													# slightly prettier than $0
 
-while getopts ":ibh" opt
+while getopts ":ibrh" opt
 do
 	case $opt in
 		i)	diffopts="i$diffopts"
 			;;
 		b)	diffopts="bB$diffopts"
 			;;
+		r)	dirs=1
+			diffopts="bB"
+			;;
 		h)	echo "usage: $ME [-ibh] 'specialfilename'" >&2
 			echo "    -i : ignore case (i.e. diff -i)" >&2
 			echo "    -b : ignore whitespace (i.e. diff -bB)" >&2
+			echo "    -r : compare directories (via ls -l)" >&2
 			echo "    -h : this help message" >&2
 			echo "  specialfilename may contain any number of {} groups" >&2
 			echo "  each group must contain two alternatives separated by a comma" >&2
@@ -41,12 +45,24 @@ file="$1"
 [[ -n $diffopts ]] && diffopts="-$diffopts"
 
 
-prog='
-	$which=shift;
-	$_=shift;
-	s/\{(.*?)\}/(split(",",$1))[$which-1]/eg;
-	print s{^([^/]+):}{} ? "ssh $1 cat $_" : "cat $_";
-'
+if [[ $dirs == 1 ]]
+then
+	prog='
+		$which=shift;
+		$_=shift;
+		s/\{(.*?)\}/(split(",",$1))[$which-1]/eg;
+		$postproc = q{$_ = <> and redo if /^total \d+$/; s/\.// if substr($_, 10, 1) eq q{.}};
+		$list_dir = qq{/bin/ls -1lRAFG | perl -lpe '"'"'$postproc'"'"'};
+		print s{^([^/]+):}{} ? "ssh $1 cd $_ \\; $list_dir" : "cd $_ ; $list_dir";
+	'
+else
+	prog='
+		$which=shift;
+		$_=shift;
+		s/\{(.*?)\}/(split(",",$1))[$which-1]/eg;
+		print s{^([^/]+):}{} ? "ssh $1 cat $_" : "cat $_";
+	'
+fi
 
 
 diff $diffopts <(eval "$(perl -e "$prog" 1 "$file")") <(eval "$(perl -e "$prog" 2 "$file")")
