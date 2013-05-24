@@ -234,13 +234,13 @@ then
 
 		# position
 		default_position="hiring manager"
-		read -p "What is your full name? [$default_position] " position
+		read -p "What is your position? [$default_position] " position
 		position=${position:-$default_position}
-		echo "name = $position" >>$config
+		echo "position = $position" >>$config
 
 		# initials
 		default_initials=$(perl -le 'print uc join "", map { substr($_, 0, 1) } @ARGV' $fullname)
-		read -p "What is your full name? [$default_initials] " initials
+		read -p "What are your initials? [$default_initials] " initials
 		initials=${initials:-$default_initials}
 		echo "initials = $initials" >>$config
 	elif [[ ! -r $gitdir/conf/hire.conf ]]
