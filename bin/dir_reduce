@@ -18,12 +18,13 @@ while (1)
 	last if keys %$files = $count;
 }
 
-say foreach @files;
+say foreach sort keys %$files;
 
 
 sub reduce_list
 {
 	my ($files, $limit) = @_;
+	#say "before:"; p $files;
 
 	my %parents;
 	$parents{dirname $_}++ foreach keys %$files;
@@ -37,5 +38,6 @@ sub reduce_list
 		}
 	}
 
+	#say "after:"; p $files;
 	return $files;
 }
