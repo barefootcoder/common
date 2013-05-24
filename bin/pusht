@@ -89,6 +89,7 @@ then
 	send_to_sandbox "$1"
 elif [[ -n $1 ]]
 then
+	base=$(basename "$1")
 	first_line="$(head -n1 "$1")"
 	if [[ "$first_line" == '==>'* ]]
 	then
@@ -103,6 +104,9 @@ then
 	then
 		scp -p $1 wdev@pm-01:bin
 		#ssh wdev@pm-01 $1
+	elif [[ $base == hire || $base == setup_hire ]]
+	then
+		scp -p $1 uvirt-03:/rent/perlhire/common/bin
 	elif [[ -x "$1" ]]
 	then
 		"$1"
