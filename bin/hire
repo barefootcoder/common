@@ -588,6 +588,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Refresh Data'					=>	func { $sheet->refresh },
 	Reload							=>	\&reload_program,
 	'Show Config'					=>	\&show_config,
+	'Add a Perl Module'				=>	func { system("cpanm " . prompt("Module name: ")) },
 	Quit							=>	func { exit },
 );
 
