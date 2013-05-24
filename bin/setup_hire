@@ -126,7 +126,7 @@ echo -e "\n"
 
 # Perlbrew
 perlbrewdir=perl5
-if [[ -z $PERLBREW_PERL ]]
+if [[ -z $PERLBREW_HOME ]]
 then
 	fatal "You don't appear to have perlbrew, but I dare not install it.  Get thee to a sysadmin!"
 fi
@@ -212,8 +212,8 @@ then
 		read -p "What directory do you want to use for dropping take-home tests into? [$default_takehomedir] " takehomedir
 		takehomedir=${takehomedir:-$default_takehomedir}
 		mkdir -p $takehomedir
-		ln -s $WEBROOT/doc/howto/interview-programmer/take-home-test/OOPerlTest-Personal-0.01 $takehomedir
-		ln -s $perldir/$gitdir/conf/hire/review $takehomedir
+		ln -sf $WEBROOT/doc/howto/interview-programmer/take-home-test/OOPerlTest-Personal-0.01 $takehomedir
+		ln -sf $basedir/$gitdir/conf/hire/review $takehomedir
 		echo "take_home_test_dir = $takehomedir" >>$config
 
 		# directory for resumes

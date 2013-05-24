@@ -27,7 +27,16 @@ const our $HIRING_EMAILS =>
 
 const our $NON_RECRUITERS => { map { $_ => 1 } qw< jobs.perl.org Dice.com > };
 
-const our $CONFIG => { ParseConfig(file($0)->dir->resolve->parent->subdir('conf', 'hire')->file('hire.conf')) };
+const our $CONF_DIR => file($0)->dir->resolve->parent->subdir('conf', 'hire');
+const our $CONFIG => read_config();
+
+sub read_config
+{
+	my $filename = 'hire.conf';
+	my $homedir = dir($ENV{HOME});
+	my $conf_file = -e $homedir->file($filename) ? $homedir->file($filename) : $CONF_DIR->file($filename);
+	return { ParseConfig($conf_file) };
+}
 
 
 
@@ -151,7 +160,10 @@ class Resume
 
 class Candidate
 {
-	use myperl::Template "$ENV{HOME}/common/conf/hire";
+	use Module::Runtime;
+	# can't use `use` here, because then $CONF_DIR would have to be defined at compile time, which
+	# it isn't
+	require myperl::Template; myperl::Template->import($CONF_DIR);
 
 	use MooseX::ClassAttribute;
 
@@ -702,7 +714,7 @@ func take_home_test
 		my $name = "$first $last";
 
 		warn("going to do a review of $name in dir ", dir()->absolute);
-		system(review => $name);
+		system("./review" => $name);
 		foreach (bsd_glob("$name/*"))
 		{
 			chdir $_ if -d;
@@ -871,6 +883,11 @@ func upload_resume
 {
 	my @pdfs = glob("$CONFIG->{'pdf_files_dir'}/*.pdf");
 	die("too many PDF files in your $CONFIG->{'pdf_files_dir'}; clean some out and try again") if @pdfs > 26;
+	if (not @pdfs)
+	{
+		warn("no resumes found! proceeding without it ...");
+		return;
+	}
 
 	my $file = prompt -menu => [ @pdfs ];
 	return unless $file;
@@ -942,4 +959,6 @@ func show_config
 	my $len = max map { length } keys %$CONFIG;
 	my $fmt = "{<{$len}<} : {<{80}<}";
 	print foreach map { form($fmt, $_, $CONFIG->{$_}) } keys %$CONFIG;
+
+	print "\n", form($fmt, 'CONFIG DIR', $CONF_DIR);
 }
