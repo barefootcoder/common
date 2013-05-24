@@ -19,7 +19,6 @@ const our $MANAGERS =>
 
 const our $HIRING_EMAILS =>
 {
-	'Buddy Burden'			=>	'bburden@rent.com',
 	'Diane Xu'				=>	'dxu@rent.com',
 	'Aran Deltac' 			=>	'adeltac@rent.com',
 	'Mike Rozek'			=>	'mrozek@rent.com',
@@ -170,7 +169,6 @@ class Candidate
 
 	our %IN_HOUSE_RECRUITER =
 	(
-		'Albert Boyd-Bilger'	=>	'aboydbilger@rent.com',
 	);
 
 	our %DISPLAY_POSITIONS =
@@ -743,7 +741,7 @@ func lunch_interview
 		'Benny Millares'		=>	'bmillares@rent.com',
 		# all the people on the hiring team get included
 		%$HIRING_EMAILS,
-		# Albert likes to be included on these even though he doesn't attend
+		# in-house recruiter (if there is one) should be included just so s/he knows about it
 		%Candidate::IN_HOUSE_RECRUITER,
 	};
 	state $meeting_descr = "Standard lunch and then conference room testing (if someone could reserve Spaceballs "
