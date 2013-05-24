@@ -5,4 +5,4 @@ Thank you for submitting your resume in response to our jobs.perl.org listing.  
 Thank you for your interest, and we will keep your resume on file.
 
 
-		-- Buddy Burden, senior architect
+		-- [% Config.name %], [% Config.position %]

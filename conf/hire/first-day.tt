@@ -7,4 +7,4 @@ I have your first day as [% ${ "start date" } %].  You should get in around 11am
 Looking forward to seeing you in the office!
 
 
-		-- Buddy
+		-- [% Config.name %]
