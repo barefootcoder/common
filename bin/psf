@@ -1,16 +1,20 @@
 #! /bin/bash
 
 me=${0##*/}
-while getopts ":p:dh" opt
+while getopts ":p:g:dh" opt
 do
 	case $opt in
 		p)	pid=$OPTARG
 			;;
+		g)	grep=$OPTARG
+			;;
 		d)	debug=1
 			;;
-		h)	echo "usage: $me [-h] [ { -p pid | tty } ]" >&2
+		h)	echo "usage: $me [-h] [ { -p pid | -g procname | tty } ]" >&2
 			echo "   tty : display process of this tty instead of the current one" >&2
-			echo "    -p : display complete parentage of this process instead of a tty" >&2
+			echo "    -p : display complete parentage of pid instead of a tty" >&2
+			echo "    -g : display complete parentage of `pgrep -f procname` instead of a tty" >&2
+			echo "         (error if pgrep -f procname returns more than one process)" >&2
 			echo "    -h : this help message" >&2
 			exit
 			;;
@@ -37,20 +41,33 @@ function get_childpids
 }
 
 
-tty=$1
-if [[ -z $tty ]]
+if [[ -n $grep ]]
 then
-	tty=$(tty)
-fi
-
-if [[ -n $tty ]]
-then
-	echo TTY is $tty
+	pid="$(pgrep -f $grep | grep -v "^$$"'$' )"
+echo "pid is $pid, me is $$"
+psf -p $$
+ps -p $(get_childpids $$)
+	if [[ $(echo "$pid" | wc -l) != 1 ]]
+	then
+		echo "$me: more than one process matches: "$pid >&2
+		exit 1
+	fi
 fi
 
 ps_out="-o pid -o ppid -o user -o stat=S -o stime -o cputime -o tty -o command"
 if [[ -z $pid ]]
 then
+	tty=$1
+	if [[ -z $tty ]]
+	then
+		tty=$(tty)
+	fi
+
+	if [[ -n $tty ]]
+	then
+		echo TTY is $tty
+	fi
+
 	exec /bin/ps ft$tty $ps_out
 else
 	orig_pid=$pid
