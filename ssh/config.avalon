@@ -1,0 +1,4 @@
+Host			avalon
+	HostName			54.215.135.74
+	User				ec2-user
+	IdentityFile		~/Dropbox/sensitive/ec2/Avalon.pem
