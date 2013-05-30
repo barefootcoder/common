@@ -703,7 +703,12 @@ func take_home_test
 	use autodie qw< system >;
 
 	my $pwd = dir()->absolute;
-	chdir $CONFIG->{take_home_test_dir};;
+	if (prompt -yd => 'n', "Update rent repo? ")
+	{
+		chdir dir($CONFIG->{take_home_test_dir}, 'OOPerlTest-Personal-0.01', '..', '..');
+		system("git pull");
+	}
+	chdir $CONFIG->{take_home_test_dir};
 
 	try
 	{
