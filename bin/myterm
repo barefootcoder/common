@@ -97,7 +97,7 @@ case $scrsize in
 				;;
 	*x1200)		fontsize=4
 				;;
-	*x1050)		fontsize=4
+	*x10[58]0)	fontsize=4
 				;;
 	VNC)		# we've guessed VNC from the error message
 				fontsize=2.5
