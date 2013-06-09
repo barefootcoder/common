@@ -1,0 +1,22 @@
+#! /usr/bin/env perl
+
+use myperl;
+use autodie qw< :all >;
+
+
+my $dest = shift;
+die("must supply destination") unless $dest;
+
+my $backup_ctl = "$ENV{HOME}/local/data/for.backup";
+die("can't read backup control file") unless -r $backup_ctl;
+
+open(IN, $backup_ctl);
+while ( <IN> )
+{
+	chomp;
+	die("can't read file/dir to be backed up: $_") unless -r;
+
+	say "backing up $_ ...";
+	system("rsync -avzR --delete $_ $dest");
+}
+close(IN);

@@ -1,0 +1,11 @@
+#! /bin/bash
+
+if pgrep win >/dev/null
+then
+	killall win
+fi
+
+if pgrep rdesktop >/dev/null
+then
+	killall rdesktop
+fi

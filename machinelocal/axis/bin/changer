@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+from xml.dom import minidom
+from sys import exit
+import gconf
+import os
+import random
+
+client = gconf.client_get_default()
+
+def decodeWP(node):
+    if node.hasAttribute( "deleted" ) and node.getAttribute( "deleted" ) == "true":
+        return None
+    results = {}
+    for value in node.childNodes:
+        if value.nodeType==1:
+            ndata = ''
+            for val in value.childNodes:
+                if val.nodeType==3: # TEXT_NODE
+                    ndata = ndata + val.data
+            results[value.tagName] = ndata
+    if results["name"] == "No Wallpaper":
+         return None
+    return results;
+
+settings = os.path.expanduser('~') + '/.gnome2/backgrounds.xml'
+xmldoc = minidom.parse(settings)
+
+wallpapers = [];
+for child in xmldoc.childNodes:
+    if child.nodeType==1:
+        if child.tagName=='wallpapers':
+            for wp in child.childNodes:
+                if wp.nodeType==1:
+                    if wp.tagName=='wallpaper':
+                        w = decodeWP(wp)
+                        if w:
+                            wallpapers.append(w)
+if wallpapers == []:
+    exit()
+
+random.seed()
+index = random.randint(0, len(wallpapers)-1)
+changeSet = gconf.ChangeSet()
+
+wp = wallpapers[index]
+gs = '/desktop/gnome/background/'
+
+#print 'Setting background to: ' + wp['name']
+changeSet.set_string(gs + 'picture_filename',   wp['filename'])
+changeSet.set_string(gs + 'picture_options',    wp['options'])
+changeSet.set_string(gs + 'primary_color',      wp['pcolor'])
+changeSet.set_string(gs + 'secondary_color',    wp['scolor'])
+changeSet.set_string(gs + 'color_shading_type', wp['shade_type'])
+
+client.commit_change_set(changeSet, True)
+

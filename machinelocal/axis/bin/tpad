@@ -1,0 +1,111 @@
+#!/bin/bash
+
+param=$1
+value=$2
+
+dir=~/local/data
+conf=01-synaptics-touchpad.conf
+realconf=/etc/X11/xorg.conf.d/$conf
+fakeconf=$dir/$conf
+before=synclient-before.out
+after=synclient-after.out
+new=synclient-new.out
+
+if [[ -e $realconf ]]
+then
+	conf=$realconf
+elif [[ -e $fakeconf ]]
+then
+	conf=$fakeconf
+else
+	echo "$0: no $conf file found!" >&2
+	exit 1
+fi
+
+function new_settings
+{
+	synclient | diff $dir/$before - | grep '^>' | sed 's/^>  *//'
+}
+
+function xform_setting
+{
+	perl -lne '/\s*(.+?)\s*=\s*(.*+)\s*/ and print qq{\tOption "$1" "$2"\n}'
+}
+
+if [[ -z $param ]]
+then
+	new_settings
+	#grep Option $conf
+else
+	if [[ $param == "check" ]]
+	then
+		if [[ 1 == 0 ]]
+		then
+			IFS='
+'
+			for setting in $(new_settings)
+			do
+				#echo "setting is $setting"
+				conf_setting="$(echo "$setting" | xform_setting)"
+				if ! fgrep -q "$conf_setting" $conf
+				then
+					base=${setting%% *}
+					echo "discrepancy: $base"
+					echo -e "\t$setting"
+					fgrep $base $conf || echo "\tNOT IN CONF"
+				fi
+			done
+		fi
+
+		synclient | sed 's/^  *//' | diff $dir/$new - | grep '^>' | sed 's/^>  *//'
+	elif [[ $param == "fix" ]]
+	then
+		if [[ 1 == 0 ]]
+		then
+			perl -lne '
+				s/ //g;
+				system("synclient $_") if /=/;
+			' $dir/$new
+		else
+			$0 check | awk '{print $1}' | /usr/local/bin/each -q 'fgrep {} ~/local/data/synclient-new.out' | sed 's/ //g'	\
+					| /usr/local/bin/each 'synclient {}'
+		fi
+	elif [[ $param == "orig" ]]
+	then
+		synclient | diff $dir/$before - | grep '^<' | sed 's/^<  *//'
+	elif [[ $param == "daemon" ]]
+	then
+		echo "daemonizing ..." >&2
+		exec $0 bg &
+	elif [[ $param == "bg" ]]
+	then
+		while [[ 1 ]]
+		do
+			if ! $0 fix
+			then
+				echo "can't run fix: $?" >&2
+				exit 1
+			fi
+			sleep 300
+		done
+	elif [[ -z $value ]]
+	then
+		synclient | fgrep -i $param
+	else
+		if synclient $param=$value
+		then
+			if [[ -e $conf ]]
+			then
+				file=$conf
+			else
+				file=$new
+			fi
+			perl -MPerl6::Slurp -e '
+				($p, $v, $f) = @ARGV;
+				$b = slurp $f;
+				$b =~ s/Option "$p" ".+?"/Option "$p" "$v"/ or $b =~ s/EndSection/\tOption "$p" "$v"\nEndSection/;
+				open(OUT, ">$f") and print OUT $b and close(OUT);
+			' $param $value $file
+		fi
+	fi
+fi

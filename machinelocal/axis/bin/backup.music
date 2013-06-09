@@ -1,0 +1,18 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+
+src_dir=tyr://export/music
+backup_dir=/media/buddy/GreatHall/backup/music 
+
+ping -c1 -W2 tyr >/dev/null || die "set up your tunnel to work first, dork"
+[[ -d $backup_dir ]] || die "you have to mount the backup drive first, pal"
+
+for dir in $backup_dir/*
+do
+	[[ -d $dir ]] || die "I can only handle dirs; $dir is not a dir"
+	subdir=$(basename "$dir")
+	echo -e "\n\nbacking up $subdir ..."
+	rsync -avz --delete "$src_dir/'$subdir'/" "$dir"
+done

@@ -1,0 +1,44 @@
+#! /bin/bash
+
+readonly ME=${0##*/}													# slightly prettier than $0
+
+reset=0
+while getopts ":rh" opt
+do
+	case $opt in
+		r)	reset=1
+			;;
+		h)  echo "usage: $me -h | [-r]" >&2
+			echo "    -r : reset (disconnect existing tunnel first)" >&2
+			echo "    create tunnel unless one already exists" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+if ! ping -c1 -W2 tyr >/dev/null
+then
+	reset=1
+fi
+
+if [[ $reset == 1 ]]
+then
+	sudo vpnc-disconnect
+	while pgrep -f 'vpnc primedia' >/dev/null
+	do
+		sleep 1
+	done
+fi
+
+if ! pgrep -f 'vpnc primedia' >/dev/null
+then
+	sudo vpnc primedia
+fi

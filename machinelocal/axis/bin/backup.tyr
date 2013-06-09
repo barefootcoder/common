@@ -1,0 +1,21 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+
+src_dir=tyr://home/buddy
+backup_dir=/media/buddy/GreatHall/backup/tyr/home
+
+ping -c1 -W2 tyr >/dev/null || die "set up your tunnel to work first, dork"
+[[ -d $backup_dir ]] || die "you have to mount the backup drive first, pal"
+
+for dir in $backup_dir/* $backup_dir/.[a-z]*
+do
+	[[ -d $dir ]] || die "I can only handle dirs; $dir is not a dir"
+	subdir=$(basename "$dir")
+	echo -e "\n\nbacking up $subdir ..."
+	rsync -avz --delete "$src_dir/'$subdir'/" "$dir"
+done
+
+rsync -avz --delete tyr://var/install /media/buddy/GreatHall/backup/tyr/var
+rsync -avz tyr://home/libvirt-images/windows7_install.iso /media/buddy/GreatHall/backup/tyr/var
