@@ -221,7 +221,8 @@ L<Math::Round>.
 You will probably need the following packages, which might not be installed already:
 
 	openssl-devel [on Fedora] or libssl-dev    [on Linux Mint]
-	libxml2-devel [on Fedora] or libexpat1-dev [on Linux Mint]
+	libxml2-devel [on Fedora] or libxml2-dev   [on Linux Mint]
+	expat-devel   [on Fedora] or libexpat1-dev [on Linux Mint]
 
 I<After> that, if you want to make sure you have all the necessary prereqs, try this:
 
