@@ -33,7 +33,7 @@ pkg=$1
 ##  FEDORA  ##
 ##############
 
-if which rpm >/dev/null 2>&1
+if type rpm >/dev/null 2>&1
 then
 	cmd="rpm -ql $pkg"
 fi
@@ -43,15 +43,15 @@ fi
 ##  GENTOO  ##
 ##############
 
-if which emerge >/dev/null 2>&1
+if type emerge >/dev/null 2>&1
 then
-	if ! which pkgfullname >/dev/null 2>&1
+	if ! type pkgfullname >/dev/null 2>&1
 	then
 		echo "$me: can't find pkgfullname command"
 		exit 1
 	fi
 
-	if ! which equery >/dev/null 2>&1
+	if ! type equery >/dev/null 2>&1
 	then
 		echo "$me: can't find equery command"
 		exit 1
