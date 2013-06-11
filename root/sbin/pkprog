@@ -39,6 +39,16 @@ then
 fi
 
 
+###########
+##  MINT ##
+###########
+
+if type dpkg-query >/dev/null 2>&1
+then
+	cmd="dpkg-query -L $pkg"
+fi
+
+
 ##############
 ##  GENTOO  ##
 ##############

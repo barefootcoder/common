@@ -16,6 +16,18 @@ then
 fi
 
 
+############
+##  MINT  ##
+############
+
+if type dpkg-query >/dev/null 2>&1
+then
+	identified=1
+
+	dpkg-query -S $file
+fi
+
+
 ##############
 ##  FEDORA  ##
 ##############
