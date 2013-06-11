@@ -1,0 +1,108 @@
+##########################################
+# MENUBAR
+##########################################
+style "menubar" = "default"
+{
+xthickness=6
+ythickness=6
+
+GtkMenuBar::internal-padding	= 1
+GtkMenuBar::window-dragging	= 1
+GtkMenuBar::shadow-type		= GTK_SHADOW_NONE
+
+fg[NORMAL]		= @selected_fg_color
+fg[PRELIGHT]		= @selected_fg_color
+fg[ACTIVE]		= @selected_fg_color
+fg[SELECTED]		= @selected_fg_color
+fg[INSENSITIVE]		= @selected_fg_color
+
+text[NORMAL]		= @selected_fg_color
+text[PRELIGHT]		= @selected_fg_color
+text[ACTIVE]		= @selected_fg_color
+text[SELECTED]		= @selected_fg_color
+text[INSENSITIVE]	= @selected_fg_color
+
+bg[NORMAL] 		= @bg_color
+bg[PRELIGHT] 		= @tooltip_bg_color
+bg[ACTIVE] 		= @selecte_bg_color
+bg[SELECTED] 		= @tooltip_bg_color
+bg[INSENSITIVE] 	= @tooltip_bg_color
+
+base[NORMAL] 		= @base_color
+base[PRELIGHT] 		= @tooltip_bg_color
+base[ACTIVE] 		= @tooltip_bg_color
+base[SELECTED] 		= @tooltip_bg_color
+base[INSENSITIVE] 	= @base_color
+
+engine "murrine" {
+roundness 		= 3
+contrast 		= 0.5
+
+glow_shade 		= 1.2
+glowstyle 		= 1
+lightborder_shade   	= 0.88
+gradient_shades     	= {0.95, 1.0, 1.0, 1.1}
+border_shades 		= {1.0, 1.1}
+}}
+
+##########################################
+# MENUS	
+##########################################
+style "menuitem" = "menubar"
+{
+xthickness=6
+ythickness=6
+
+GtkMenuItem::selected-shadow-type	= GTK_SHADOW_ETCHED_IN
+GtkMenuItem::horizontal-padding		= 5
+GtkMenuItem::toggle-spacing		= 6
+
+
+bg[SELECTED] 		= @selected_bg_color
+fg[PRELIGHT] 		= @selected_fg_color		
+
+
+engine "murrine" {	
+roundness 		= 24
+contrast 		= 0.7
+
+glow_shade 		= 1.1
+glowstyle 		= 1
+lightborder_shade   	= 0.88
+gradient_shades     	= {0.9, 1.0, 1.0, 1.1}
+border_shades 		= {0.82, 1.73}
+}}
+
+style "menu" = "menubar"
+{
+xthickness=6
+ythickness=6
+
+GtkMenu::horizontal-offset	= -1
+GtkMenu::horizontal-padding	= 1
+GtkMenu::vertical-padding	= 1
+
+fg[PRELIGHT] 		= @tooltip_fg_color	
+fg[SELECTED] 		= @tooltip_fg_color
+
+bg[NORMAL]   		= shade (0.95, @base_color)
+
+fg[ACTIVE]		= "#808080"
+fg[INSENSITIVE]		= "#808080"
+
+text[ACTIVE] 		= "#808080"
+text[INSENSITIVE] 	= "#808080"
+
+text[PRELIGHT] 		= @tooltip_fg_color
+text[SELECTED] 		= @tooltip_fg_color
+
+engine "murrine" {
+contrast 		= 0.8
+}}
+
+##########################################
+# MATCHES	
+##########################################
+widget_class "*<GtkMenuItem>*"          	style "menuitem"
+widget_class "*<GtkMenu>*"              	style "menu"
+widget_class "*<GtkMenuBar>*"           	style "menubar"

@@ -1,0 +1,73 @@
+##########################################
+# SCROLLBARS RANGE AND PROGRESSBARS	
+##########################################
+style "range" = "default" {
+GtkScale::slider-length		= 12
+GtkScale::slider-width		= 12
+GtkScale::trough-side-details 	= 1
+bg[PRELIGHT] = @selected_bg_color
+bg[SELECTED]	  	= lighter (@selected_bg_color)
+
+engine "murrine" {
+roundness		= 12
+contrast 		= 0.7
+gradient_shades 	= {0.95, 1.0, 1.0, 1.08}
+trough_shades 		= { 0.95, 0.99 }
+trough_border_shades 	= { 1.0 , 1.2 }
+border_shades 		= { 0.99 , 0.95 }
+}}
+
+style "scrollbar" = "default" {
+
+GtkScrollbar::fixed-slider-length			= 0
+GtkScrolledWindow::scrollbar-spacing			= 4
+
+GtkRange::trough-border 				= 1
+GtkRange::slider-width 					= 12
+GtkRange::stepper-size 					= 0
+GtkScrollbar::min_slider_length 			= 32
+GtkScrollbar::has-backward-stepper 			= 1
+#GtkScrollbar::has-secondary-backward-stepper 		= 1
+GtkScrollbar::has-forward-stepper			= 1
+#GtkScrollbar::has-secondary-forward-stepper		= 1
+GtkRange::trough-under-steppers 			= 1
+
+#bg[NORMAL] = @selected_bg_color
+bg[PRELIGHT] = @selected_bg_color
+
+engine "murrine" {
+roundness		= 12
+contrast 		= 0.7
+trough_border_shades 	= { 1.2 , 1.1 }
+trough_shades 		= { 0.92, 1.05 }
+border_shades 		= {1.05, 1.0}
+}}
+
+style "progressbar" = "default" {
+xthickness 		= 3
+ythickness 		= 3
+
+bg[SELECTED]	  	= @selected_bg_color
+
+GtkProgressBar::min-horizontal-bar-height		= 18
+GtkProgressBar::min-vertical-bar-width			= 18
+
+engine "murrine" {
+contrast		= 0.7
+roundness		= 12
+gradient_shades 	= {0.95, 1.0, 1.0, 1.08}
+
+}}
+
+##########################################
+# MATCHES	
+##########################################
+class "GtkRange"     					style "range"
+widget_class "*<GtkProgress>"				style "progressbar"
+widget_class "*<GtkProgressBar>"      			style "progressbar"
+widget_class "*<GtkScrollbar>"       			style "scrollbar"
+
+widget		"__gtksharp_1*SeekSlider*"	style : highest "range"
+widget_class	"__gtksharp_1*<GtkScale>*"	style : highest "range"
+
+

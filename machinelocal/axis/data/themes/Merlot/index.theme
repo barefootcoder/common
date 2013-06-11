@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Merlot
+Type=X-GNOME-Metatheme
+Comment=
+
+[X-GNOME-Metatheme]
+GtkTheme=A-New-Hope
+MetacityTheme=A-New-Hope
+IconTheme=Faenza Dark
+NotificationTheme=ubuntu
+ButtonLayout=close,minimize,maximize:menu

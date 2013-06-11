@@ -1,0 +1,190 @@
+# Merlot
+# by acrobat
+
+# This theme is based heavily on 'A New Hope' by jurielmonkey, with additional configuration for Thunar borrowed from 'Flow' by Twilight in Zero. 
+
+# Input boxes are lighter shades of "Window" colours
+# Menus, menubars and panels take "Input Boxes" colours
+# Selected menu items are the same as "Tooltip" colours
+# All other selected items take "Selected" colours
+
+
+##########################################
+# COLOR SCHEME	
+##########################################
+gtk_color_scheme	= "bg_color:#d2d3bf\nfg_color:#3d3d3d"				# Window Colours
+gtk_color_scheme	= "selected_bg_color:#9e7ba6\nselected_fg_color:#3d3d3d"	# Selected Items
+gtk_color_scheme	= "base_color:#d2d3bf\ntext_color:#3d3d3d"			# Menus, Menubars, Panels
+gtk_color_scheme	= "tooltip_bg_color:#2E2D2A\ntooltip_fg_color:#ffffff" 		# Tooltips, Menuitems
+gtk_color_scheme	= "link_color:#08c"						# Hyperlinks
+gtk_color_scheme	= "frame_color:#33322E\ninactive_frame_color:#33322E"		# Fix for Chrome
+gtk_color_scheme	= "sidebar_color:#3c3b37\nsidetxt_color:#c7c7c7"		# Nautilus Sidebar 
+
+gtk-icon-sizes 		= "panel-menu=22,22:panel=22,22:gtk-button=16,16:gtk-large-toolbar=22,22"
+
+gtk-button-images	= 0			# Disables icons in buttons
+gtk-toolbar-style	= 0			# Disables text in toolbar
+gtk-auto-mnemonics	= 1			# Disables ugly lines under menu items
+
+
+##########################################
+# DEFAULT STYLE
+##########################################
+style "default" {
+fg[NORMAL]        	= @fg_color
+fg[PRELIGHT]      	= @fg_color
+fg[SELECTED]      	= @selected_fg_color
+fg[ACTIVE]        	= @fg_color
+fg[INSENSITIVE]   	= darker (@bg_color)
+
+bg[NORMAL]        	= @bg_color
+bg[PRELIGHT]      	= shade (1.02, @bg_color)
+bg[SELECTED]	  	= @selected_bg_color
+bg[INSENSITIVE]   	= @bg_color
+bg[ACTIVE]        	= shade (1.04, @bg_color)
+
+base[NORMAL]      	= @base_color
+base[PRELIGHT]    	= shade (0.95, @bg_color)
+base[ACTIVE]      	= shade (0.92, @selected_bg_color)
+base[SELECTED]    	= shade (0.93, @selected_bg_color)
+base[INSENSITIVE] 	= @bg_color
+
+text[NORMAL]      	= @fg_color
+text[PRELIGHT]    	= @fg_color
+text[ACTIVE]      	= @selected_fg_color
+text[SELECTED]    	= @selected_fg_color
+text[INSENSITIVE] 	= darker (@bg_color)
+
+
+# COMBOBOX / ENTRYBOX STYLE PROPERTIES
+GtkComboBox::appears-as-list				= 0
+GtkEntry::inner-border					= {2,2,2,2}
+GtkEntry::state-hint					= 0
+GtkEntry::honors-transparent-bg-hint			= 1
+GtkEntry::progress-border				= {0,0,0,0}
+
+# MISC STYLE PROPERTIES
+GtkWidget::new-tooltip-style				= 1
+GtkWidget::focus-padding				= 0
+GtkImage::x-ayatana-indicator-dynamic			= 1
+GtkPaned::handle-size					= 4
+GtkTreeView::expander-size				= 14
+GtkTreeView::vertical-separator				= 0
+GtkExpander::expander-size				= 16
+GtkRange::trough-under-steppers 			= 1
+GtkScrolledWindow::scrollbars-within-bevel		= 0
+
+# BUTTON STYLE PROPERTIES
+GtkButton::default-border 				= { 2, 2, 2, 2 }
+GtkButton::default-outside-border 			= { 2, 2, 2, 2 }
+#GtkButton::inner-border 				= { 3, 3, 1, 1 }
+#GtkButton::image-spacing				= 0
+#GtkButton::child-displacement-x			= 1
+#GtkButton::child-displacement-y			= 1
+#GtkButton::displace-focus				= 1
+
+
+# HTML STYLE PROPERTIES
+GnomeHRef		::link_color  				= @link_color		
+GtkHTML			::link-color				= @link_color
+GtkIMHtmlr		::hyperlink-color 			= @link_color
+GtkIMHtml		::hyperlink-color			= @link_color
+GtkWidget		::link-color				= @link_color
+GtkWidget		::visited-link-color			= @fg_color
+
+xthickness = 4
+ythickness = 4
+
+engine "murrine" {
+animation		= TRUE
+roundness		= 3
+contrast 		= 0.3
+
+highlight_shade 	= 1.0
+glazestyle 		= 0
+
+lightborderstyle 	= 1
+lightborder_shade 	= 1.3
+
+#glow_shade		= 1.0
+#glowstyle		= 0
+#border_shades 		= {1.08, 1.03}
+gradient_shades 	= {1.07, 0.98, 0.98, 0.95}
+
+glow_shade 		= 1.08
+glowstyle 		= 5
+border_shades 		= {1.13, 1.03}
+
+
+trough_shades 		= { 0.92, 1.05 }
+trough_border_shades 	= { 1.1 , 1.1 }
+
+menustyle 		= 2	# 0 = no stripe, 1 = stripe, 2 = light glow, 3 = dark glow
+menubaritemstyle 	= 1	# 0 = menuitem look, 1 = button look
+menubarstyle		= 0	# 0 = flat, 1 = glassy, 2 = gradient, 3 = striped
+menuitemstyle		= 0   	# 0 = flat, 1 = glassy, 2 = striped
+toolbarstyle		= 0	# 0 = flat, 1 = glassy, 2 = gradient
+focusstyle 		= 0
+separatorstyle 		= 1
+textstyle 		= 0
+handlestyle 		= 2
+listviewstyle 		= 0
+progressbarstyle 	= 0
+arrowstyle 		= 0
+reliefstyle 		= 0
+sliderstyle		= 0
+stepperstyle 		= 1
+scrollbarstyle		= 0
+
+default_button_color 	= shade (0.95, @selected_bg_color)
+
+rgba		   	= FALSE
+colorize_scrollbar 	= FALSE
+}
+}
+
+style "wide" = "default" {
+xthickness 		= 2
+ythickness 		= 2
+}
+
+style "wider" = "default" {
+xthickness 		= 3
+ythickness 		= 3
+}
+
+style "widest" = "default" {
+xthickness 		= 4
+ythickness 		= 3
+}
+
+style "tooltips" = "widest"{
+fg[NORMAL] 		= @tooltip_fg_color		# TEXT COLOR
+bg[NORMAL] 		= @tooltip_bg_color		# BG COLOR
+bg[SELECTED] 		= @tooltip_bg_color		# BORDER
+engine "murrine" {
+roundness 		= 6
+}}
+
+##########################################
+# MATCHES	
+##########################################
+class "GtkWidget"    					style "default"
+#class "GtkFrame"     					style "widest"
+#class "GtkSeparator" 					style "wide"
+widget "gtk-tooltip*" 					style "tooltips"
+
+##########################################
+# INCLUDES	
+##########################################
+include "Styles/notebook.rc"
+include "Styles/button.rc"
+include "Styles/menu.rc"				
+include "Styles/panel.rc"			
+include "Styles/toolbar.rc"			
+include "Styles/nautilus.rc"			
+include "Styles/breadcrumbs.rc"
+include "Styles/scrollbar.rc"
+include "Styles/thunar.rc"     # Coloured Thunar sidepane
+include "Styles/shotwell.rc"
+

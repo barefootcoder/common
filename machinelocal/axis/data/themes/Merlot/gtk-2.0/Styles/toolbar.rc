@@ -1,0 +1,190 @@
+##########################################
+# DARK TOOLBARS	
+##########################################
+style "toolbar-dark" = "default"
+{
+xthickness		= 3
+ythickness		= 3
+
+# TOOLBAR STYLE PROPERTIES
+GtkToolbar::button-relief				= GTK_RELIEF_NONE 	
+# Indicated the relief to be drawn around a GtkButton. 
+# GTK_RELIEF_NORMAL	Draw a normal relief. 
+# GTK_RELIEF_HALF	A half relief. 
+# GTK_RELIEF_NONE	No relief.
+
+GtkToolbar::internal-padding				= 0
+
+#GtkToolbar::shadow-type=GTK_SHADOW_NONE
+# GTK_SHADOW_NONE	No outline. 
+# GTK_SHADOW_IN		The outline is bevelled inwards. 
+# GTK_SHADOW_OUT	The outline is bevelled outwards like a button. 
+# GTK_SHADOW_ETCHED_IN	The outline has a sunken 3d appearance. 
+# GTK_SHADOW_ETCHED_OUT	The outline has a raised 3d appearance
+
+fg[NORMAL] 		= @text_color			
+fg[ACTIVE] 		= @text_color			
+fg[PRELIGHT] 		= @tooltip_fg_color			
+fg[SELECTED] 		= @tooltip_fg_color
+fg[INSENSITIVE] 	= @text_color
+
+text[NORMAL] 		= @text_color			
+text[ACTIVE] 		= @text_color			
+text[PRELIGHT] 		= @tooltip_fg_color			
+text[SELECTED] 		= @tooltip_fg_color
+text[INSENSITIVE] 	= @text_color			
+
+bg[NORMAL] 		= @base_color	
+bg[ACTIVE] 		= shade (0.93, @base_color)
+bg[PRELIGHT] 		= @selected_bg_color
+bg[SELECTED] 		= @tooltip_bg_color
+bg[INSENSITIVE] 	= @base_color	
+
+engine "murrine" {
+contrast 		= 0.0
+reliefstyle		= 1
+toolbarstyle		= 0
+gradient_shades 	= {1.0, 1.1, 1.1, 1.2}
+glow_shade 		= 1.0
+}
+}
+style "toolbar-button-dark" = "toolbar-dark"
+{
+
+engine "murrine" {
+#roundness 		= 3
+border_shades 		= {1.16, 1.0}
+glow_shade 		= 1.1
+glowstyle 		= 5
+contrast 		= 0.6
+lightborder_shade 	= 0.88
+gradient_shades 	= {0.88, 0.95, 0.95, 1.18}
+}
+}
+
+
+#########################################
+# TOOLBAR FIXES			
+#########################################
+# FIXES FOR				
+# ---------------------------------------
+# BANSHEE				
+# EVOLUTION
+# CHROMIUM 
+# FIREFOX
+# SYNAPTIC QUICKSEARCH TEXT
+#########################################
+# TO FIX
+# ---------------------------------------
+# RHYTHMBOX ALBUM BAR TEXT
+#########################################
+
+# LIGHT TOOLBARS
+style "toolbar-fix" {
+fg[NORMAL]        	= @fg_color
+fg[PRELIGHT]      	= @fg_color
+fg[SELECTED]      	= @selected_fg_color
+fg[ACTIVE]        	= @fg_color
+fg[INSENSITIVE]   	= darker (@fg_color)
+
+text[NORMAL]        	= @fg_color
+text[PRELIGHT]      	= @fg_color
+text[SELECTED]      	= @selected_fg_color
+text[ACTIVE]        	= @fg_color
+text[INSENSITIVE]   	= darker (@fg_color)
+
+bg[NORMAL]        	= @bg_color
+bg[PRELIGHT]      	= shade (1.02, @bg_color)
+bg[SELECTED]	  	= @selected_bg_color
+bg[INSENSITIVE]   	= @bg_color
+bg[ACTIVE]        	= shade (1.04, @bg_color)
+
+base[NORMAL]      	= lighter (@bg_color)
+base[PRELIGHT]    	= shade (0.95, @bg_color)
+base[ACTIVE]      	= shade (0.92, @selected_bg_color)
+base[SELECTED]    	= shade (0.93, @selected_bg_color)
+base[INSENSITIVE] 	= @bg_color
+
+engine "murrine" {
+toolbarstyle		= 0
+reliefstyle		= 1
+}
+}
+style "toolbar-button-fix" = "toolbar-fix"
+{
+
+engine "murrine" {
+#roundness 		= 3
+border_shades 		= {1.16, 1.0}
+glow_shade 		= 1.1
+glowstyle 		= 5
+lightborder_shade 	= 1.3
+gradient_shades 	= {0.95, 1.05, 1.05, 1.18}
+}
+}
+
+# FG IS TEXT COLOR WORKAROUND
+style "fg_is_text_color_workaround" {
+fg[NORMAL] = @text_color
+fg[PRELIGHT] = @text_color
+fg[SELECTED] = @selected_fg_color
+fg[ACTIVE] = @selected_fg_color
+fg[INSENSITIVE] = darker (@bg_color)
+}
+
+##########################################
+# MATCHES	
+##########################################	
+widget_class "*<BonoboDockItem>*" 			style "toolbar-dark"
+class "*BonoboDockItem" 				style "toolbar-dark"
+widget_class "*<HandleBox>*"			 	style "toolbar-dark"
+class "*HandleBox" 					style "toolbar-dark"
+widget_class "*<GtkToolbar>*"     			style "toolbar-dark"
+widget_class "*<Toolbar>*" 				style "toolbar-dark"
+class "*Toolbar" 					style "toolbar-dark"
+
+# TOOLBAR BUTTONS
+widget_class "*<GtkToolbar>*<GtkEntry>"			style "entrybox"
+widget_class "*<GtkToolbar>*<GtkButton>"     		style "toolbar-button-dark"
+widget_class "*<GtkToolbar>*<GtkComboBox>"         	style "toolbar-button-dark"
+widget_class "*<GtkToolbar>*<GtkCombo>"         	style "toolbar-button-dark"
+
+# ------------------------------------------------------------------------------
+# SYNAPTIC QUICKSEARCH TEXT FIX									
+# ------------------------------------------------------------------------------
+widget "*.label_fast_search" style "fg_is_text_color_workaround"
+
+
+# ------------------------------------------------------------------------------
+# RHYTHMBOX TOOLBAR NEAR SEARCH BAR FIX
+# ------------------------------------------------------------------------------
+widget_class "*RBSourceHeader*"	style "toolbar-button-fix"
+widget_class "*HeaderToolbar*"	style "toolbar-button-fix"
+widget_class "*FooterToolbar*"	style "toolbar-button-fix"
+
+
+# ------------------------------------------------------------------------------
+# BANSHEE FIX									
+# ------------------------------------------------------------------------------
+widget_class	"__gtksharp_1*<GtkToolbar>*"	style "toolbar-fix"
+#widget_class	"__gtksharp_1*<GtkButton>*"	style "toolbar-fix"
+widget_class	"__gtksharp_1*<GtkEntry>*"	style "button"
+
+# ------------------------------------------------------------------------------
+# EVOLUTION FIX									
+# ------------------------------------------------------------------------------
+widget_class "EShellWindow.*Toolbar*" 		style : highest "toolbar-fix"
+
+
+# ------------------------------------------------------------------------------
+# CHROME/CHROMIUM FIX								
+# ------------------------------------------------------------------------------
+widget_class "*Chrom*" 				style "toolbar-fix"
+
+
+# ------------------------------------------------------------------------------
+# FIREFOX FIX								
+# ------------------------------------------------------------------------------
+widget	"MozillaGtkWidget.GtkFixed.GtkHandleBox.GtkToolbar" style "toolbar-fix"
+
+

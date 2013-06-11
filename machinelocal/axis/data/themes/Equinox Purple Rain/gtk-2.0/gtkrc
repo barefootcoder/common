@@ -1,0 +1,724 @@
+# Equinox Purple Rain theme
+#
+# Mod from Aurora Leopard theme and Equinox theme, altered for Elementary Nautilus users.
+#
+# Feel free to modify and share!
+
+gtk_color_scheme = "fg_color:#DDE9ED\nbg_color:#292733\nbase_color:#1A1C1F\ntext_color:#DDE9ED\nselected_bg_color:#43346F\nselected_fg_color:#FFFFFF\ntooltip_bg_color:#000\ntooltip_fg_color:#FFFFFF\nlink_color:#0059FF"
+
+gtk-icon-sizes = "panel-menu=22,22:gtk-button=16,16:gtk-large-toolbar=22,22"
+
+gtk-auto-mnemonics = 1 
+
+style "default"
+{
+	xthickness = 1
+	ythickness = 1
+
+	GtkWidget::new-tooltip-style = 1
+
+	GtkImage::x-ayatana-indicator-dynamic = 1
+
+	GtkScrolledWindow ::scrollbar-spacing = 0
+	GtkScrolledWindow ::scrollbar-within-bevel = 0
+	
+	GtkButton::child-displacement-x = 1
+	GtkButton::child-displacement-y = 1
+	GtkButton::default-border = { 0, 0, 0, 0 }
+
+	GtkCheckButton::indicator-size = 14
+
+	GtkPaned::handle-size = 6
+
+	GtkRange::trough-border = 1
+	GtkRange::slider-width = 12
+	GtkRange::stepper-size = 3
+        GtkRange::trough-under-steppers = 2
+
+	GtkScale::slider-length = 11
+#	GtkScale::trough-side-details = 1
+    	GtkScale::slider-width  = 11
+    	GtkScale::trough-border = 0
+
+
+	GtkScrollbar::min-slider-length = 30
+	GtkScrollbar::activate-slider = 1
+
+	GtkMenuBar::internal-padding = 0
+	GtkExpander::expander-size = 10
+	GtkToolbar::internal-padding = 1
+	GtkTreeView::expander-size = 10
+	GtkTreeView::indent-expanders = 1
+	GtkTreeView::vertical-separator = 0
+	color["odd_row_color"] = mix(0.35, @bg_color, @base_color)
+    	GtkTreeView::horizontal_separator = 2
+    	GtkTreeView::odd_row_color = @odd_row_color
+	#GtkProgressBar ::min-vertical-bar-width = 14
+	#GtkProgressBar ::min-horizontal-bar-width = 14
+	#GtkProgressBar ::min-horizontal-bar-height = 14
+	#GtkProgressBar ::min-vertical-bar-height = 12
+
+	GtkMenu::horizontal-padding = 0
+	GtkMenu::vertical-padding = 0
+
+	WnckTasklist::fade-overlay-rect = 0
+	# The following line hints to gecko (and possibly other appliations)
+	# that the entry should be drawn transparently on the canvas.
+	# Without this, gecko will fill in the background of the entry.
+	GtkEntry::honors-transparent-bg-hint = 1
+	GtkEntry::state-hint = 0
+
+        GtkEntry::progress-border = { 2, 2, 2, 2 }
+	#GtkToolbar:: shadow-type = GTK_SHADOW_NONE
+	#GtkMenuBar:: shadow-type = GTK_SHADOW_NONE
+	GtkMenuBar::window-dragging = 1
+
+    GtkWidget::link-color = "#0062dc" #blue
+    GtkWidget::visited-link-color = "#8c00dc" #purple
+
+	fg[NORMAL]        = @fg_color
+	fg[PRELIGHT]      = @fg_color
+	fg[ACTIVE]        = @fg_color
+	fg[SELECTED]      = @selected_fg_color
+	fg[INSENSITIVE]   = darker (@bg_color)
+	
+	bg[NORMAL]        = @bg_color
+	bg[PRELIGHT]      = shade (1.02, @bg_color)
+	bg[ACTIVE]        = shade (0.8, @bg_color)
+	bg[SELECTED]	  = @selected_bg_color
+	bg[INSENSITIVE]   = @bg_color
+	
+	base[NORMAL]      = @base_color
+	base[PRELIGHT]    = shade (0.95, @bg_color)
+	base[ACTIVE]      = mix (0.7, @selected_bg_color, @bg_color)
+	base[SELECTED]    = @selected_bg_color
+	base[INSENSITIVE] = @bg_color
+
+
+	text[NORMAL]      = @text_color
+	text[PRELIGHT]    = @text_color
+	text[ACTIVE]      = @selected_fg_color
+	text[SELECTED]    = @selected_fg_color
+	#text[INSENSITIVE] = darker (@bg_color)
+	text[INSENSITIVE] = darker ("#A8A8A8")
+
+	engine "equinox" {
+	        curvature           = 2.5
+	        menubarstyle        = 3 # 0 = flat, 1 = gradient, 2 = flat without border, 3 = gradient without border
+        	toolbarstyle        = 5 # 0 = flat, 1 = gradient, 2 = flat without border, 3 = gradient without border, 4 = flat with bottom border, 5 = gradient with bottom border
+        	buttonstyle         = 1 # 0 = normal, 1 = glassy
+       	 	menuitemstyle       = 1 # 0 = normal, 1 = glassy
+        	listviewheaderstyle = 1 # 0 = normal, 1 = glassy
+        	scrollbarstyle      = 1 # 0 = normal, 1 = glassy, 2 = normal with handles, 3 = glassy with handles
+        	scalesliderstyle    = 1 # 0 = normal, 1 = glassy, 2 = normal with bullet
+        	checkradiostyle     = 1 # 0 = normal, 1 = glassy
+        	progressbarstyle    = 1 # 0 = normal, 1 = glassy
+        	separatorstyle      = 1 # 0 = solid, 1 = gradient
+        	animation           = TRUE # FALSE = disabled, TRUE = enabled
+        	arrowsize           = 0.1 # controls combo_arrow circle size.  Diameter set by (11 + 2 * arrowsize)
+    	}
+}
+
+style "default" {
+
+    GtkButton::default_border = { 0, 0, 0, 0 }
+    GtkButton::child-displacement-x = 1
+    GtkButton::child-displacement-y = 1
+    GtkWidget::focus-padding = 0
+
+    GtkRange::trough-border   = 0
+    GtkRange::slider-width    = 16
+    GtkRange::stepper_size    = 18
+    GtkRange::stepper_spacing = 0
+
+    GtkScrollbar::min_slider_length = 50
+    GtkScrollbar::has-secondary-forward-stepper = 0
+    GtkScrollbar::has-secondary-backward-stepper = 1
+
+    GtkPaned::handle_size  = 6
+
+    GtkMenuBar::internal-padding  = 0
+    GtkTreeView::expander_size    = 13
+    GtkExpander::expander_size    = 13
+
+    GtkScale::slider-length = 12
+    GtkScale::slider-width  = 12
+    GtkScale::trough-border = 2
+
+    GtkWidget::link-color = @link_color
+    GtkIMHtml::hyperlink-color = @link_color
+    GtkHTML::link-color = @link_color
+
+    WnckTasklist::fade-overlay-rect = 0
+    WnckTasklist::fade-loop-time    = 5.0 # 5 seconds
+    WnckTasklist::fade-opacity      = 0.5 # final opacity
+
+    #makes menu only overlap border
+    #GtkMenu::horizontal-offset  = -2
+    GtkMenu::horizontal-padding = 0
+
+    #removes extra padding at top and bottom of menus.  Makes menuitem overlap border
+    GtkMenu::vertical-padding = 0
+
+    #set to the same as roundness, used for better hotspot selection of tabs
+    GtkNotebook::tab-curvature = 2.5
+    GtkNotebook::tab-overlap   = 3
+
+    GtkMenuItem::arrow-spacing = 10
+    #Spacing between edge with indicator and text
+    GtkOptionMenu  ::indicator-size = {11, 5}
+    #GtkOptionMenu  ::indicator-spacing = {6, 5, 4, 4}
+
+    GtkCheckButton ::indicator-size    = 15
+    GtkCheckButton ::indicator-spacing = 1
+    GtkRadioButton ::indicator-size    = 15
+
+    # A new color must be defined since affectation of mix or shade functions to GtkTreeView::odd_row_color raise this message :
+    # Gtk-Message: (for origin information, set GTK_DEBUG): failed to retrieve property `GtkTreeView::odd-row-color' of type `GdkColor' from rc file value "((GString*) 0x9ccba00)" of type `GString'
+    color["odd_row_color"] = mix(0.35, @bg_color, @base_color)
+    GtkTreeView::horizontal_separator = 2
+    GtkTreeView::odd_row_color = @odd_row_color
+
+    GtkScrolledWindow::scrollbar-spacing       = 0
+    GtkScrolledWindow::scrollbars-within-bevel = 1
+    GtkScrolledWindow::window-placement-set    = 0
+
+    GtkEntry::honors-transparent-bg-hint = 1
+
+    GtkWidget::new-tooltip-style = 1
+    
+    xthickness = 1
+    ythickness = 1
+
+	fg[NORMAL]        = @fg_color
+	fg[PRELIGHT]      = @fg_color
+	fg[ACTIVE]        = @fg_color
+	fg[SELECTED]      = @selected_fg_color
+	fg[INSENSITIVE]   = darker (@bg_color)
+	
+	bg[NORMAL]        = @bg_color
+	bg[PRELIGHT]      = shade (1.02, @bg_color)
+	bg[ACTIVE]        =  shade (1.0125, @bg_color) # inactive tab color
+	#bg[ACTIVE]        = shade (0.8, @bg_color)
+	bg[SELECTED]	  = @selected_bg_color
+	bg[INSENSITIVE]   = @bg_color
+	
+	base[NORMAL]      = @base_color
+	base[PRELIGHT]    = shade (0.95, @bg_color)
+	base[ACTIVE]      = mix (0.7, @selected_bg_color, @bg_color)
+	base[SELECTED]    = @selected_bg_color
+	base[INSENSITIVE] = @bg_color
+
+
+	text[NORMAL]      = @text_color
+	text[PRELIGHT]    = @text_color
+	text[ACTIVE]      = @selected_fg_color
+	text[SELECTED]    = @selected_fg_color
+	#text[INSENSITIVE] = darker (@bg_color)
+	text[INSENSITIVE] = darker ("#A8A8A8")
+	
+
+    engine "equinox" {
+        curvature           = 2.5
+	menubarstyle        = 3 # 0 = flat, 1 = gradient, 2 = flat without border, 3 = gradient without border
+        toolbarstyle        = 5 # 0 = flat, 1 = gradient, 2 = flat without border, 3 = gradient without border, 4 = flat with bottom border, 5 = gradient with bottom border
+        buttonstyle         = 1 # 0 = normal, 1 = glassy
+       	menuitemstyle       = 1 # 0 = normal, 1 = glassy
+        listviewheaderstyle = 1 # 0 = normal, 1 = glassy
+        scrollbarstyle      = 1 # 0 = normal, 1 = glassy, 2 = normal with handles, 3 = glassy with handles
+        scalesliderstyle    = 1 # 0 = normal, 1 = glassy, 2 = normal with bullet
+        checkradiostyle     = 1 # 0 = normal, 1 = glassy
+        progressbarstyle    = 1 # 0 = normal, 1 = glassy
+        separatorstyle      = 1 # 0 = solid, 1 = gradient
+        animation           = TRUE # FALSE = disabled, TRUE = enabled
+        arrowsize           = 0.1 # controls combo_arrow circle size.  Diameter set by (11 + 2 * arrowsize)
+    }
+}
+
+style "invert" 
+{
+	fg[NORMAL]        = "#232323"
+	fg[PRELIGHT]      = "#232323"
+	fg[ACTIVE]        = "#232323"
+	fg[SELECTED]      = "#3C9ADE"
+	fg[INSENSITIVE]   = darker ("#232323")
+	
+	bg[NORMAL]        = "#C8C8C8"
+	bg[PRELIGHT]      = shade (1.02, "#C8C8C8")
+	bg[ACTIVE]        =  shade (1.0125, "#C8C8C8") # inactive tab color
+	#bg[ACTIVE]        = shade (0.8, @bg_color)
+	bg[SELECTED]	  = "#000000"
+	bg[INSENSITIVE]   = "#C8C8C8"
+	
+	base[NORMAL]      = "#C8C8C8"
+	base[PRELIGHT]    = shade (0.95, "#C8C8C8")
+	base[ACTIVE]      = mix (0.7, "#000000", "#C8C8C8")
+	base[SELECTED]    = "#000000"
+	base[INSENSITIVE] = "#C8C8C8"
+
+
+	text[NORMAL]      = "#3C9ADE"
+	text[PRELIGHT]    = "#3C9ADE"
+	text[ACTIVE]      = "#C8C8C8"
+	text[SELECTED]    = "#C8C8C8"
+	text[INSENSITIVE] = darker ("#C8C8C8")
+}
+
+style "selected" = "default"
+{
+	#bg[NORMAL]   = shade (0.75, "#F2F7F7")
+	bg[PRELIGHT] = shade (1.1, "#43346F")
+	bg[SELECTED] = shade (1.05, "#43346F")
+	bg[ACTIVE]   = shade (0.75, "#43346F")
+	#bg[INSENSITIVE]   = mix (0.35, @selected_bg_color, "#F2F7F7")
+}
+
+style "wide"
+{
+	xthickness = 2
+	ythickness = 2
+}
+
+style "wider"
+{
+	xthickness = 3
+	ythickness = 3
+}
+
+style "entry" #= "invert"
+{
+	xthickness = 3
+	ythickness = 3
+
+	bg[SELECTED] = mix (0.4, "#43346F", @base_color)
+	fg[SELECTED] = @fg_color
+	#engine "equinox" {
+	#	curvature = 12
+	#}
+	#engine "murrine"
+	#{
+	#	border_shades = {1.0, 1.0 }
+	#	contrast = .8
+	#}
+}
+
+style "frame" = "wide" {
+    GtkWidget::draw-border = {0,0,0,0}
+}
+
+style "button" #= "selected"
+{
+	xthickness = 3
+	ythickness = 3
+
+	bg[NORMAL]   = shade (1.0, "#221C31")
+	bg[PRELIGHT] = shade (1.0, "#7A6EA3")
+	bg[SELECTED] = shade (1.0, "#7A6EA3")
+	bg[ACTIVE]   = shade (1.0, @selected_bg_color)
+	#bg[INSENSITIVE]   = mix (0.3, @selected_bg_color, @bg_color)
+	bg[INSENSITIVE]   = shade (1.0, @bg_color)
+	engine "equinox" {
+		curvature = 2
+	}
+}
+
+style "toolbar" = "default"
+{
+	xthickness = 0
+	ythickness = 0
+    	#bg[NORMAL] = shade (1.1, @bg_color)
+	#bg[NORMAL] = mix (1.0, "#464551", "#000009")
+	#bg[INSENSITIVE]   = mix (0.9, @selected_bg_color, @bg_color)
+	engine "pixmap"
+	{
+		image
+		{
+			function = BOX
+			recolorable = TRUE
+			state	= NORMAL
+			file	= "toolbar_bg.png"
+			stretch	= TRUE
+    		}
+          	image
+          	{
+                	function = HANDLE
+			recolorable = TRUE
+                	overlay_file = "handle-v.png"
+                	overlay_stretch = FALSE
+                	orientation = VERTICAL
+          	}
+  	}
+}
+
+style "toolbar-item" = "toolbar"
+{
+    bg[NORMAL]   = shade (1.0, @bg_color)
+    bg[ACTIVE]   = shade (0.72, @bg_color)
+    bg[PRELIGHT] = shade (0.95, @bg_color)
+}
+
+style "notebook" = "default"
+{
+	#base[SELECTED] = "#3C9ADE"
+	#bg[SELECTED] 	= "#3C9ADE"
+	#bg[SELECTED] = mix (0.4, "#43346F", @base_color)
+	bg[SELECTED] = shade (1.2, "#7A6EA3")
+	base[SELECTED] = shade (1.2, "#7A6EA3")
+}
+
+style "panel" = "selected"
+{
+	xthickness = 0
+	ythickness = 0
+
+	#bg_pixmap[NORMAL] = "panel_bg.png"
+        
+}
+
+style "terminal" 
+{
+text[NORMAL] = "#ffffff"
+base[NORMAL] = "#292733"
+TerminalScreen::background-darkness=0.60
+}
+
+style "menu" = "default"
+{
+	xthickness = 0
+	ythickness = 0
+
+	bg[INSENSITIVE]   = mix (0.4, @selected_bg_color, @bg_color)
+}
+
+style "menu-item" = "default"
+{
+	xthickness = 3
+	ythickness = 2
+
+}
+
+style "separator-menu-item"
+{
+	#GtkSeparatorMenuItem::horizontal-padding = 6
+	GtkWidget::wide-separators = 1
+	GtkWidget::separator-width = 1
+	GtkWidget::separator-height = 2
+	xthickness = 4
+	ythickness = 0
+}
+
+# Based on the default style so that the colors from the button
+# style are overriden again.
+style "treeview"
+{
+}
+
+style "treeview-header" = "selected"
+{
+	xthickness = 2
+	ythickness = 1
+
+}
+
+style "tooltips"
+{
+	xthickness = 8
+	ythickness = 5
+
+	bg[NORMAL] = @tooltip_bg_color
+	bg[SELECTED] = @tooltip_bg_color
+	fg[NORMAL] = @tooltip_fg_color
+}
+
+style "progressbar" 
+{
+	xthickness   = 2
+    	ythickness   = 2
+    	font_name    = "Bold"
+	
+	bg[NORMAL]	= shade (1.0, @bg_color)
+	bg[PRELIGHT] 	= shade (1.2, "#7A6EA3")
+	bg[SELECTED] 	= "#7A6EA3"
+
+	#fg[PRELIGHT] 	= "#fff"
+	fg[PRELIGHT]= @selected_fg_color
+	engine "equinox" {
+		curvature = 12
+	}
+}
+
+style "statusbar" = "default"
+{
+}
+
+style "comboboxentry" 
+{
+    GtkButton::inner-border = { 0, 0, 0, 0 }
+	ythickness = 3
+	xthickness = 3
+
+}
+
+style "spinbutton" 
+{
+}
+
+style "scale" = "default"
+{
+	engine "equinox" {
+        	curvature = 6
+	}
+
+	bg[NORMAL]	= shade (1.15, @bg_color)
+	bg[PRELIGHT] 	= shade (1.15, @selected_bg_color)
+	bg[SELECTED] 	= "#7A6EA3"
+	#base[SELECTED] = mix (0.5, "#7A6EA3", shade (0.85, @bg_color))
+	base[SELECTED] = shade (1.2, "#7A6EA3")
+}
+
+style "hscale" = "scale"
+{
+}
+
+style "vscale" = "scale"
+{
+}
+
+style "scrollbar" = "default"
+{
+    engine "equinox" {curvature = 7}
+
+    xthickness   = 0
+    ythickness   = 0
+    bg[ACTIVE]   = shade (1.05, @selected_bg_color)
+    bg[SELECTED]   = shade (1.2, "#7A6EA3")
+    #base[NORMAL] = mix (0.35, @selected_bg_color, @base_color)
+    base[NORMAL] = shade (1.0, @bg_color)
+    base[SELECTED] = shade (1.2, "#7A6EA3")
+    bg[PRELIGHT] = shade (1.2, @selected_bg_color)
+    bg[NORMAL]   = shade (1.0, @bg_color)
+	
+}
+
+style "hscrollbar"
+{
+}
+
+style "vscrollbar"
+{
+}
+
+style "menubar" = "default"
+{
+	bg[NORMAL]	= "#22232D"
+}
+
+
+style "frame-title" = "frame"
+{
+}
+
+style "nautilus-location"
+{
+	bg[NORMAL] = mix(0.60, @bg_color, @selected_bg_color)
+}
+
+style "nautilus-sidebar" 
+{
+	GtkTreeView::even_row_color = @bg_color
+}
+
+style "radiocheck"
+{
+	base[SELECTED] = shade (1.2, "#7A6EA3")
+	#bg[SELECTED] 	= "#7A6EA3"
+	#bg[NORMAL] 	= mix (0.3, @selected_bg_color, @bg_color)
+	bg[NORMAL]   = shade (1.0, "#221C31")
+	bg[PRELIGHT] = shade (1.0, "#7A6EA3")
+	bg[SELECTED] = shade (1.0, "#7A6EA3")
+	bg[ACTIVE]   = shade (1.0, @selected_bg_color)
+	#bg[INSENSITIVE]   = mix (0.3, @selected_bg_color, @bg_color)
+	bg[INSENSITIVE]   = shade (1.0, @bg_color)
+
+}
+
+style "applet-text" = "panel"
+{
+	fg[NORMAL] = @bg_color
+}
+
+#########################################
+# Matches
+#########################################
+
+widget "ido-offscreen-scale" style "menubar"
+widget "*IdoEntryMenuItem*" style "wide"
+
+# default style is applied to every widget
+class "GtkWidget"    style "default"
+
+# Increase the x/ythickness in some widgets
+class "GtkRange"     					style "default"
+class "GtkFrame"     					style "frame"
+class "GtkSeparator" 					style "wide"
+class "GtkEntry"     					style "entry"
+
+# Toolbar
+class "*HandleBoxt"         style "toolbar"
+class "GtkToolbar"          style "toolbar"
+widget_class "*HandleBox"   style "toolbar"
+widget_class "*<GtkToolbar>*<GtkButton>"    style "toolbar-item"
+
+class "GtkSpinButton"  					style "spinbutton"
+class "GtkScale"       					style "scale"
+class "GtkVScale"      					style "vscale"
+class "GtkHScale"      					style "hscale"
+class "GtkScrollbar"   					style "scrollbar"
+class "GtkVScrollbar"  					style "vscrollbar"
+class "GtkHScrollbar"  					style "hscrollbar"
+
+class "GtkRadioButton"					style:highest "radiocheck"	
+class "GtkCheckButton"					style:highest "radiocheck"	
+
+widget_class "*<GtkNotebook>*<GtkEventBox>"     	style "notebook"
+widget_class "*<GtkNotebook>*<GtkDrawingArea>"		style "notebook"
+widget_class "*<GtkNotebook>*<GtkLayout>"       	style "notebook"
+widget_class "*<GtkNotebook>*<GtkViewport>"		style "notebook"
+widget_class "*<GtkNotebook>*<GtkScrolledWindow>"	style "notebook"
+
+widget_class "*<GtkButton>"      			style "button"
+widget_class "*<GtkNotebook>"    			style "notebook"
+widget_class "*<GtkStatusbar>*"  			style "statusbar"
+
+widget_class "*<GtkComboBoxEntry>*"			style:highest "comboboxentry"
+widget_class "*<GtkComboBox>*"         			style:highest "comboboxentry"
+widget_class "*<GtkOptionMenu>*"         		style:highest "comboboxentry"
+widget_class "*<GtkCombo>*"         			style:highest "comboboxentry"
+
+widget_class "*<GtkMenuBar>*"           		style "menubar"
+widget_class "*<GtkMenu>*"              		style "menu"
+widget_class "*<GtkMenuItem>*"          		style "menu-item"
+widget_class "*<GtkSeparatorMenuItem>*" 		style "separator-menu-item"
+#widget_class "*<GtkCheckMenuItem>*" 			style "radiocheck"
+#widget_class "*<GtkRadioMenuItem>*" 			style "radiocheck"
+
+widget_class "*.<GtkFrame>.<GtkLabel>" 			style "frame-title"
+#widget_class "*.<GtkTreeView>*"        		style "treeview"
+
+widget_class "*<GtkProgress>"				style "progressbar"
+widget_class "*<GtkProgressBar>"       			style "progressbar"
+
+# Treeview header
+widget_class "*.<GtkTreeView>.<GtkButton>" 		style "treeview-header"
+widget_class "*.<GtkCTree>.<GtkButton>"    		style "treeview-header"
+widget_class "*.<GtkList>.<GtkButton>"     		style "treeview-header"
+widget_class "*.<GtkCList>.<GtkButton>"    		style "treeview-header"
+
+# Workarounds for Evolution
+widget_class "*.ETable.ECanvas"    			style "treeview-header"
+widget_class "*.ETree.ECanvas"    			style "treeview-header"
+
+# Theme panel elements
+widget "*PanelWidget*" 					style "panel"
+widget "*PanelApplet*" 					style "panel"
+widget "*fast-user-switch*"				style "panel" # workaround for Fast User Switch applet
+class "PanelApp*" 					style "panel"
+class "PanelToplevel*" 					style "panel"
+widget_class "*notif*" 					style "panel"
+widget_class "*Notif*" 					style "panel"
+widget_class "*CPUFreqApplet*" 				style:highest "applet-text" # CPU Frequency Applet
+
+#XFCE panel
+widget_class "*notif*"		style "panel"
+widget_class "*Notif*"		style "panel"
+widget_class "*Tray*"		style "panel"
+widget_class "*tray*"		style "panel"
+widget "*Xfce*Panel*"		style "panel"
+class "*Xfce*Panel*"		style "panel"
+
+#Fix textboxes on toolbars (memenu LP:#532843)
+style "text-dark" = "default" 
+{
+}
+
+widget_class "*<GtkToolbar>*<GtkEntry>*" 		style "text-dark"
+widget_class "*<GtkMenu>*<GtkEntry>*" 			style "text-dark"
+
+# The window of the tooltip is called "gtk-tooltip"
+################################
+# FIXME:
+# This will not work if one embeds eg. a button into the tooltip.
+# As far as I can tell right now we will need to rework the theme
+# quite a bit to get this working correctly.
+# (It will involve setting different priorities, etc.)
+################################
+widget "gtk-tooltip*" 					style "tooltips"
+
+###################################################
+# Special cases and work arounds
+###################################################
+
+# Special case the nautilus-extra-view-widget
+# ToDo: A more generic approach for all applications that have a widget like this.
+widget "*.nautilus-extra-view-widget" 			style : highest "nautilus-location"
+
+# Nautilus sidebar
+widget_class "*Nautilus*Places*Sidebar*"    	style "nautilus-sidebar"
+widget_class "*Nautilus*Side*.GtkWidget"    	style "nautilus-sidebar"
+
+# Work around for http://bugzilla.gnome.org/show_bug.cgi?id=382646
+# Note that the work around assumes that the combobox is _not_ in
+# appears-as-list mode.
+# Similar hack also in the menuitem style.
+# This style does not affect GtkComboBoxEntry, it does have an effect
+# on comboboxes in appears-as-list mode though.
+style "combobox-text-color-workaround"
+{
+	text[NORMAL]      = @fg_color
+	text[PRELIGHT]    = @fg_color
+	text[ACTIVE]      = @fg_color
+	text[SELECTED]    = @selected_fg_color
+	text[INSENSITIVE] = shade (0.65, @bg_color)
+}
+widget_class "*.<GtkComboBox>.<GtkCellView>"		style "combobox-text-color-workaround"
+
+style "menuitem-text-is-fg-color-workaround"
+{
+	text[NORMAL]        = @fg_color
+	text[PRELIGHT]      = @selected_fg_color
+	text[SELECTED]      = @fg_color
+	text[ACTIVE]        = @selected_fg_color
+	text[INSENSITIVE]   = shade (0.65, @bg_color)
+}
+
+widget "*.gtk-combobox-popup-menu.*"   			style "menuitem-text-is-fg-color-workaround"
+
+# Work around the usage of GtkLabel inside GtkListItems to display text.
+# This breaks because the label is shown on a background that is based on the
+# base color set.
+style "fg-is-text-color-workaround"
+{
+	fg[NORMAL]      = @text_color
+	fg[PRELIGHT]    = @text_color
+	fg[ACTIVE]      = @selected_fg_color
+	fg[SELECTED]    = @selected_fg_color
+	fg[INSENSITIVE] = shade (0.65, @bg_color)
+}
+
+widget_class "*<GtkListItem>*" 				style "fg-is-text-color-workaround"
+
+# The same problem also exists for GtkCList and GtkCTree
+# Only match GtkCList and not the parent widgets, because that would also change the headers.
+widget_class "*<GtkCList>" 				style "fg-is-text-color-workaround"
+
+style "evo-new-button-workaround"
+{
+
+	engine "equinox"
+	{
+		toolbarstyle = 0
+	}
+}
+
+widget "*swt*toolbar*"	style "default"
+class "TerminalScreen" style "terminal"

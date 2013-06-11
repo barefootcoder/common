@@ -1,0 +1,41 @@
+##########################################
+# NOTEBOOK (TABS)	
+##########################################
+style "notebook" = "default"
+{
+
+xthickness		= 3
+ythickness		= 3
+
+bg[NORMAL]		= shade (1.0, @bg_color)	# selected tab entire
+bg[ACTIVE]		= shade (0.9, @bg_color)	# unselected tab
+
+GtkNotebook::tab-overlap				= -1
+GtkNotebook::tab-roundness				= 0
+
+engine "murrine" {
+contrast 		= 0.5
+gradient_shades 	= {1.25, 1.0, 1.0, 1.1}
+}
+}
+
+
+style "gedit-frame"
+{	
+xthickness = 1
+ythickness = 1
+}
+
+
+##########################################
+# MATCHES	
+##########################################
+widget_class "*<GtkNotebook>"    			style "notebook"
+widget_class "*<GtkNotebook>*<GtkEventBox>"     	style "notebook"
+widget_class "*<GtkNotebook>*<GtkDrawingArea>"  	style "notebook"
+widget_class "*<GtkNotebook>*<GtkLayout>"      		style "notebook"
+widget_class "*<GtkNotebook>*<GtkLabel>"		style "notebook"
+#widget_class "*Gedit*.<GtkFrame>*"  	   		style "gedit-frame" # STATUS
+#widget_class "*Gedit*.<GtkNotebook>"     		style "gedit-frame"
+widget_class "*Gedit*.<GtkScrolledWindow>"     		style "gedit-frame"
+

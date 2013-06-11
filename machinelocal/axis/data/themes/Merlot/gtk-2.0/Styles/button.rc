@@ -1,0 +1,79 @@
+##########################################
+# BUTTONS ENTRYBOX COMBO INFOBAR RADIO	
+##########################################
+style "button" = "wider" {
+
+bg[PRELIGHT]      	= shade (1.0, mix (0.0, @base_color, @selected_bg_color)) 	# BUTTON MOUSEOVER
+bg[ACTIVE]        	= shade (0.93, @bg_color) 					# PUSHED BUTTONS
+
+engine "murrine" {
+reliefstyle 		= 2
+border_shades 		= {1.03, 0.88}
+glow_shade 		= 1.08
+glowstyle 		= 5
+lightborder_shade 	= 1.5
+gradient_shades 	= {0.95, 1.0, 1.0, 1.08}
+}}
+
+style "entrybox" = "wider" {
+base[NORMAL]      	= lighter (@bg_color)
+engine "murrine" {
+reliefstyle 		= 2
+gradient_shades 	= {0.95, 1.0, 1.0, 1.08}
+}}
+
+
+style "infobar" {
+
+engine "murrine" {
+roundness = 6
+border_shades = {1.16, 1.0}
+glow_shade = 1.1
+glowstyle = 5
+contrast = 0.6
+gradient_shades 	= {1.07, 0.98, 0.98, 0.95}
+}}
+
+style "treeview" = "default" {
+# SELECTED ITEMS COLOR
+#base[PRELIGHT]      	= @base_color
+#base[ACTIVE]      	= @base_color
+#base[SELECTED]      	= @base_color
+
+# SELECTED ITEMS TEXT
+#text[PRELIGHT]      	= @tooltip_fg_color
+#text[ACTIVE]      	= @tooltip_fg_color
+#text[SELECTED]      	= @tooltip_fg_color
+
+engine "murrine" {
+gradient_shades 	= {.95, .975, .975, 1.0}
+}}
+
+style "radiocheck" {
+base[NORMAL]      	= lighter (@bg_color)
+fg[ACTIVE]		= shade (1.0, @fg_color)	# unselected tab
+
+engine "murrine" {
+roundness = 3
+border_shades = {1.0, 1.0}
+glow_shade = 1.0
+glowstyle = 0
+}}
+##########################################
+# MATCHES	
+##########################################
+class "GtkButton*"					style "button"
+
+widget_class "*GtkRadio*"                 	    		style "radiocheck"
+widget_class "*GtkCheck*"                           		style "radiocheck"
+
+class "GtkEntry"     					style "entrybox"
+class "GtkCombo*"					style "entrybox"
+class "GtkComboBox"					style "button"
+class "GtkComboBoxEntry"				style "entrybox"
+
+class "GtkInfoBar" 					style "infobar"
+class "GtkIconView" 					style "infobar"
+class "GtkTreeView" 					style "treeview"
+
+

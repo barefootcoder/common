@@ -1,0 +1,2 @@
+#Shotwell 0.7.0
+widget		"LibraryWindow.GtkVB*.GtkHP*.GtkVP*.GtkFr*.GtkScrolledWindow.Sidebar"	style:highest	"theme-thunar-sidepane"

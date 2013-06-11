@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Mint-Merlot
+Type=X-GNOME-Metatheme
+Comment=Mostly Mint-X, with just a hint of Merlot
+
+[X-GNOME-Metatheme]
+GtkTheme=Mint-X
+MetacityTheme=Splint
+IconTheme=Mint-X-Dark
+GtkColorScheme=fg_color:#000000000000,bg_color:#eaeaeaeaeaea,text_color:#000000000000,base_color:#ffffffffffff,selected_fg_color:#ffffffffffff,selected_bg_color:#9e9e7b7ba6a6,tooltip_fg_color:#ffffffffffff,tooltip_bg_color:#d277bbbad733
+CursorTheme=default
+CursorSize=18
+NotificationTheme=standard

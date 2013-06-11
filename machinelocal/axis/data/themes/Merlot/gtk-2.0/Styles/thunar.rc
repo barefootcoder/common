@@ -1,0 +1,60 @@
+# Brings some of the awesomeness from nautilus-elementary to Thunar.
+# Mostly adapted from Victorious Elements's implementation.
+# Side pane will use dark colors.
+#
+# Unfortunately, the entire effect cannot be obtained without modifying
+# Thunar; the hardcoded border width on the GtkHPaned breaks everything.
+# In order to use this without it looking stupid, you'll have to change
+# it in the source, then compile and install the modified version. :(
+# THIS IS FIXED IN THUNAR 1.0.2
+
+
+# Creates a little visual separation between the toolbar and the content.
+style "theme-thunar-toolbar"
+{
+	GtkToolbar::shadow-type = GTK_SHADOW_OUT
+	GtkStatusbar::shadow-type = GTK_SHADOW_IN
+}
+
+style "theme-thunar-sidepane" = "default"
+{
+	GtkTreeView::odd_row_color = @selected_bg_color
+	GtkTreeView::even_row_color = @selected_bg_color
+	base[NORMAL] = @selected_bg_color
+	base[ACTIVE] = shade (0.8, @selected_bg_color)
+	base[SELECTED] = shade (0.6, @selected_bg_color)
+	text[NORMAL] = @selected_fg_color
+	text[ACTIVE] = @selected_fg_color
+	text[SELECTED] = @selected_fg_color
+}
+
+style "theme-thunar-paned"
+{
+	xthickness = 2
+	ythickness = 2
+	
+	GtkWidget::border_width = 6
+	GtkContainer::border_width = 6
+	GtkPaned::border_width = 6
+	GtkPaned::handle-size = 1
+	
+	engine "pixmap"
+	{
+		image # for the thin gray line separating the sidepane and viewpane
+		{
+		    function	= HANDLE
+		    recolorable	= TRUE
+		    file		= "pixmap-thunar-handle.png"
+		    stretch		= TRUE
+		    border 		= { 0, 0, 0, 0 }
+		}
+	}
+}
+
+widget_class "ThunarWindow*View" style "default"
+widget_class "ThunarWindow*Pane" style "default"
+widget_class "ThunarWindow*MenuBar*MenuItem.*" style "default"
+widget_class "ThunarWindow*Toolbar" style "theme-thunar-toolbar"
+widget_class "ThunarWindow*Statusbar" style "theme-thunar-toolbar"
+widget_class "ThunarWindow*Thunar*Pane*View" style "theme-thunar-sidepane"
+widget_class "ThunarWindow*GtkHPaned" style: highest "theme-thunar-paned"
