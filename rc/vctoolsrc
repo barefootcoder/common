@@ -1,7 +1,7 @@
 unset localize_vctools
 if ( $?localize_vctools ) then
 	set vctoolsdir=`vctools-config --working`/VCtools
-	setenv PERL5LIB `addpath -fB PERL5LIB $vctoolsdir/lib`
+	setenv PERL5LIB `addpath -fb PERL5LIB $vctoolsdir/lib`
 
 	alias vmv $vctoolsdir/vmv
 	alias vrel $vctoolsdir/vrel

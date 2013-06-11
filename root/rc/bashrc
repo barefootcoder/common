@@ -30,7 +30,7 @@ then
 	addpath=$buddy/bin/addpath
 	if [[ -x $addpath ]]
 	then
-		PATH=$($addpath /root/bin /usr/lib/ccache/bin /usr/lib64/ccache /bin /sbin /usr/bin /usr/sbin /usr/local/bin /opt/bin /usr/local/sbin /usr/lib64/qt-3.3/bin /usr/i686-pc-linux-gnu/gcc-bin/3.3.5-20050130)
+		PATH=$($addpath -B /root/bin /usr/lib/ccache/bin /usr/lib64/ccache /bin /sbin /usr/bin /usr/sbin /usr/local/bin /opt/bin /usr/local/sbin /usr/lib64/qt-3.3/bin /usr/i686-pc-linux-gnu/gcc-bin/3.3.5-20050130)
 	else
 		echo "can't execute addpath; not adjusting path ..." >&2
 	fi
