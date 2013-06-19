@@ -24,7 +24,7 @@ else
 	$tname = $arg;
 }
 
-my ($group_found, $timer_found) = (0,0);
+my ($group_found, $timer_found, $avail_found) = (0,0);
 $today = time2str('%Y/%m/%d', parsedate($today)) if $today;
 my (%totals, @daybreak, %review);
 
@@ -76,10 +76,18 @@ while ( <> )
 	{
 		$chunks .= time() . ',' unless $name eq $AVAIL and $tname ne $AVAIL;
 	}
-	if ( $cmd ~~ [qw< start half >]  and ($name eq $tname and !$timer_found or $name eq $AVAIL and $chunks !~ /-$/))
+	if ( $cmd ~~ [qw< start half >] )
 	{
-		$timer_found = $name eq $tname;
-		$chunks .= ($cmd eq 'half' and $name ne AVAIL ? '2/' : '') . time() . '-';
+		if ($name eq $tname and !$timer_found)
+		{
+			$timer_found = 1;
+			$chunks .= ($cmd eq 'half' ? '2/' : '') . time() . '-';
+		}
+		elsif ($name eq $AVAIL and !$avail_found)
+		{
+			$avail_found = 1;
+			$chunks .= time() . '-' unless $chunks =~ /-$/;
+		}
 	}
 
 	if ($cmd eq 'breakdown')
