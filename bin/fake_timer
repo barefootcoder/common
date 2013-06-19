@@ -1,29 +1,23 @@
 #! /usr/bin/env perl
 
-use strict;
-use warnings;
-
-use Debuggit(DEBUG => 1);
+use myperl DEBUG => 1;
 
 use Time::Local;
-use List::Util qw<sum>;
-use POSIX qw< ceil floor >;
 use Date::Format qw<time2str>;
 use Time::ParseDate qw<parsedate>;
 
-use constant AVAIL => ':AVAILABILITY';
+const my $AVAIL => ':AVAILABILITY';
 
 my $cmd = shift;
 my $arg = shift;
 my ($tname, $today, $prefix);
 if ($cmd eq 'eod' or $cmd eq 'daybreak')
 {
-	$today = $arg || get_date(time());
+	$today = $arg // get_date(time());
 }
 elsif ($cmd eq 'review')
 {
-	#$prefix = "$arg-" || '';
-	$prefix = $arg || '';
+	$prefix = $arg // '';
 }
 else
 {
@@ -60,7 +54,7 @@ while ( <> )
 						print_time($_, $totals{$_});
 					}
 					print_time("GRAND TOTAL", $total) if $lines > 1;
-					print_time("AVAILABILITY", $totals{+AVAIL}) if $totals{+AVAIL};
+					print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
 				}
 				exit;
 			}
@@ -70,7 +64,7 @@ while ( <> )
 			}
 		}
 
-		print unless $cmd eq 'breakdown' or $cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak' or $cmd eq 'review';
+		print unless $cmd ~~ [qw< breakdown total eod daybreak review >];
 		next;
 	}
 
@@ -80,9 +74,9 @@ while ( <> )
 
 	if ($chunks and substr($chunks, -1, 1) eq '-' and ($cmd eq 'start' or $cmd eq 'half' or $cmd eq 'pause'))
 	{
-		$chunks .= time() . ',' unless $name eq AVAIL and $tname ne AVAIL;
+		$chunks .= time() . ',' unless $name eq $AVAIL and $tname ne $AVAIL;
 	}
-	if (($cmd eq 'start' or $cmd eq 'half') and ($name eq $tname and !$timer_found or $name eq AVAIL and $chunks !~ /-$/))
+	if ( $cmd ~~ [qw< start half >]  and ($name eq $tname and !$timer_found or $name eq $AVAIL and $chunks !~ /-$/))
 	{
 		$timer_found = $name eq $tname;
 		$chunks .= ($cmd eq 'half' and $name ne AVAIL ? '2/' : '') . time() . '-';
@@ -118,7 +112,7 @@ while ( <> )
 				$group_found = 1;
 				$totals{$sub} += total_chunk($_);
 			}
-			elsif ($cmd eq 'daybreak' and $min eq $today and $name ne AVAIL)
+			elsif ($cmd eq 'daybreak' and $min eq $today and $name ne $AVAIL)
 			{
 				$group_found = 1;
 				push @daybreak, "$_:$name";
@@ -190,7 +184,7 @@ sub total_chunk
 
 	my $mins = (($to || time()) - $from) / 60;
 	$mins /= 2 if $half;
-	$mins = ceil($mins);
+	$mins = round(UP => $mins);
 
 	return wantarray ? ($from, $to, $mins, $half) : $mins;
 }
@@ -200,7 +194,7 @@ sub print_time
 {
 	my ($label, $mins) = @_;
 
-	my $hrs = floor($mins / 60);
+	my $hrs = round(DOWN => $mins / 60);
 	$mins %= 60;
 	printf("%2d hrs, %2d mins : %s\n", $hrs, $mins, $label);
 }
@@ -220,7 +214,7 @@ sub breakdown
 		$duration .= " (half time)" if $half;
 		$duration .= " [$tname]" if $tname;
 		print_time($duration, $mins);
-		#if ($name eq AVAIL)
+		#if ($name eq $AVAIL)
 		#{
 		#	print_time($duration, $mins);
 		#}
