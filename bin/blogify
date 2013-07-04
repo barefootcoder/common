@@ -121,6 +121,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
 	s{$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;				# bold
+	s[{img (.*?)}][<img src="$1">]g;												# embedded images
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
