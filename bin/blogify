@@ -274,9 +274,23 @@ sub list
 	else
 	{
 		$type = $type eq 'ordered' ? 'ol' : 'ul';
+		my ($open, $close, $item_style);
+		if ($blog_type eq 'blogspot')
+		{
+			my $marker = $type eq 'ol' ? 'decimal' : 'disc';
+			$open = qq{$type style="list-style: $marker outside none"};
+			$close = $type;
+			$item_style = qq{style="background-image: none; list-style: inherit; padding-bottom: 5px; padding-left: 5px"};
+		}
+		else
+		{
+			$open = $close = $type;
+			$item_style = '';
+		}
+
 		$text =~ s/^\s+//;
-		$text = join('', map { s/^\s*[#*]\s*//; "<li>$_</li>" } split("\n", $text));
-		return "\n<$type>$text</$type>";
+		$text = join('', map { s/^\s*[#*]\s*//; "<li $item_style>$_</li>" } split("\n", $text));
+		return "\n<$open>$text</$close>";
 	}
 }
 
