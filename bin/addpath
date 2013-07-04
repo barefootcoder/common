@@ -4,22 +4,25 @@ use Getopt::Std;
 use File::Basename;
 
 
-getopts('fsB:h');
+getopts('fsb:Bh');
 
 if ($opt_h)
 {
-	print STDERR "usage: ", basename($0), " [-h] [-s] [[-f] -B env_var] dir [...]\n";
+	print STDERR "usage: ", basename($0), " -h | [-sf] [-B | -b env_var] [dir ...]\n";
 	print STDERR "       -s : return dirs separated by space (default: colon)\n";
-	print STDERR "       -B : use this env_var's value as the base list to add to\n";
 	print STDERR "       -f : add dir(s) to front of list instead of back\n";
-	print STDERR "            (this means that multiple dirs get reversed in the final list)\n";
+	print STDERR "       -b : use this env_var's value as the base list to add to [default: \$PATH]\n";
+	print STDERR "       -B : start with a blank base list\n";
 	print STDERR "       -h : this help message\n";
+	print STDERR "     dirs that do not exist and duplicate dirs are removed from the list\n";
+	print STDERR "     this is true even if the dirs are in the base list instead of the supplied list\n";
 	exit;
 }
 
-if ($opt_B and $ENV{$opt_B})
+$opt_b ||= 'PATH';
+unless ($opt_B)
 {
-	@dirs = split(':', $ENV{$opt_B});
+	@dirs = split(':', $ENV{$opt_b});
 	%dirs = map { $_ => 1 } @dirs;
 }
 
@@ -27,16 +30,17 @@ foreach $dir (@ARGV)
 {
 	if ($dir and not exists $dirs{$dir} and -d $dir)
 	{
-		if ($opt_f)
-		{
-			unshift @dirs, $dir;
-		}
-		else
-		{
-			push @dirs, $dir;
-		}
+		push @newdirs, $dir;
 		$dirs{$dir} = 1;
 	}
+}
+if ($opt_f)
+{
+	unshift @dirs, @newdirs;
+}
+else
+{
+	push @dirs, @newdirs;
 }
 
 print join($opt_s ? ' ' : ':', @dirs);

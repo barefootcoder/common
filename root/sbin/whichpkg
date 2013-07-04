@@ -1,14 +1,14 @@
 #! /bin/bash
 
 
-file=$(which $1)
+file=$(type -P $1)
 
 
 ###############
 ##  MANDRAKE ##
 ###############
 
-if which urpmf >/dev/null 2>&1
+if type urpmf >/dev/null 2>&1
 then
 	identified=1
 
@@ -16,11 +16,23 @@ then
 fi
 
 
+############
+##  MINT  ##
+############
+
+if type dpkg-query >/dev/null 2>&1
+then
+	identified=1
+
+	dpkg-query -S $file
+fi
+
+
 ##############
 ##  FEDORA  ##
 ##############
 
-if which yum >/dev/null 2>&1
+if type yum >/dev/null 2>&1
 then
 	identified=1
 
@@ -32,13 +44,13 @@ fi
 ##  GENTOO  ##
 ##############
 
-if which emerge >/dev/null 2>&1
+if type emerge >/dev/null 2>&1
 then
 	identified=1
 
 	if [[ -n $file ]]
 	then
-		if which etool >/dev/null 2>&1
+		if type etool >/dev/null 2>&1
 		then
 			etool -f $file
 		else
