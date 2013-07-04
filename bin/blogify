@@ -211,8 +211,8 @@ sub url_block
 			when ('cpan')												# shortcut for links to CPAN modules
 			{
 				$url =~ s/^cpan://;
-				$alt_text = $url;
-				$url = 'https://metacpan.org/module/' . $alt_text;
+				$alt_text //= $url;
+				$url = 'https://metacpan.org/module/' . $url;
 			}
 			default
 			{
