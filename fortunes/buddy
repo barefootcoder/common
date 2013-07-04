@@ -2936,3 +2936,11 @@ morning.  Follow your dream.
 	-- Jeffrey Thalhammer (author of Perl::Critic and Pinto)
 	http://blogs.perl.org/users/vyacheslav_matjukhin/2013/04/play-perl-is-a-startup.html#comment-476715
 %
+Look, if your code is well-tested, you can be bold.  You can now start tearing
+out the internals, and rewriting it, and making it faster, and using better
+algorithms, because you know that, when you push a button, it's going to say
+"okay"--or it's not, and it's going to tell you that you broke something.
+
+	-- Michael Schwern (author of Test::More)
+	http://perlmaven.com/videos/michael-schwern-on-test-automation-and-git
+%
