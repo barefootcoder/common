@@ -105,8 +105,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	}
 	s{^----$}{$section_break}mg;													# section break
 	s{^====$}{<hr/>}mg;																# horizontal rule
-	s{^//---\s*(.*?)\s*---//\n}{fmt(quote => $1)}mseg;								# nested quotes
-	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1)}mseg;								# quotes
+	s{^//---\s*(.*?)\s*---//\n}{fmt(quote => $1) . "\n"}mseg;						# nested blockquotes
+	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
 	unless ($blog_type eq 'bbcode')
 	{
