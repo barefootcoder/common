@@ -80,7 +80,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\\?<}{&lt;}g;																	# literal <'s
 	s{\\?>}{&gt;}g;																	# literal >'s
 	s{^\.\n(.+?)^\.\n}{code_block(block => $1)}smeg;								# code block (only works on Perl blog)
-	s{`(.+?)`}{code_block(inline => $1)}eg;											# inline code
+	s{$front_boundary`(.+?)`}{$1 . code_block(inline => $2)}eg;						# inline code
 	s{e`}{&eacute;}g;																# generalized e accute
 	s{a`}{&agrave;}g;																# generalized a grave
 	s{u`}{&uacute;}g;																# generalized u accute
