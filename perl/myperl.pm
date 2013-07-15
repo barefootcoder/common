@@ -49,6 +49,24 @@ sub import
 	# our own routines, which we have to transfer by hand
 	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round;
 
+	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
+	# functions which loads the module, then passes off to the function.  Thus, if the function is
+	# never called, the module will never be loaded.  If it is called, it will be just like the
+	# function had been exported.
+	my %autoload_funcs =
+	(
+		'Date::Parse'	=>	'str2time',
+		'Date::Format'	=>	'time2str',
+	);
+	foreach (keys %autoload_funcs)
+	{
+		my $module = $_;
+		my $function = $autoload_funcs{$module};
+		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
+		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
+				unless $calling_package->can($function);
+	}
+
 	myperl->import_list_into($calling_package,
 
 		strict							=>
@@ -194,6 +212,18 @@ Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Du
 
 =head1 FUNCTIONS
 
+=head2 Date Functions
+
+These functions are exported, but the modules they derive from are only loaded if the functions themselves are called.  See their respective modules for more info on them:
+
+=over 4
+
+=item B<str2time> (from L<Date::Parse>)
+
+=item B<time2str> (from L<Date::Format>)
+
+=back
+
 =head2 title_case
 
 	$title = title_case($title);
@@ -249,12 +279,14 @@ Date::Parse
 Perl6::Form
 Dist::Zilla
 Math::Round
+Date::Parse
 Import::Into
 Sub::Install
 Perl6::Slurp
 Date::Format
 Carp::Always
 Email::Stuff
+Date::Format
 Perl6::Gather
 Data::Printer
 Test::Command
