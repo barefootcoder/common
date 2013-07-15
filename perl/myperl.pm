@@ -75,7 +75,7 @@ sub import
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
-		CLASS							=>	1.00		=>
+		#CLASS							=>	1.00		=>				# handled by myperl::Declare
 		TryCatch						=>
 		'Const::Fast'					=>
 		'Path::Class'					=>
