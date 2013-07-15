@@ -51,4 +51,19 @@ myperl->use_and_import_into( Testy3 => 'List::Util', [ 'sum' ] );
 can_ok Testy3 => 'sum';
 
 
+# transfer with version
+{
+	package Testy4;
+}
+{
+	package Testy5;
+}
+
+myperl->use_and_import_into( Testy4 => 'Path::Class', 0.17 );			# oldest version currently on CPAN
+can_ok Testy4 => 'dir';
+
+throws_ok { myperl->use_and_import_into( Testy5 => 'Path::Class', 999 ) } qr/version 999 required/,
+		'version demand feature works';
+
+
 done_testing;
