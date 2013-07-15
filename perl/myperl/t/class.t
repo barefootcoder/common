@@ -3,6 +3,7 @@ use myperl DEBUG => 1;													# need debugging on to test this one
 use Test::Most 0.25;
 
 
+# tests MooseX::Has::Sugar
 test_snippet(<<'END');
 	class %
 	{
@@ -10,15 +11,17 @@ test_snippet(<<'END');
 	}
 END
 
+# guarantees we're using MSM instead of MXMS
 test_snippet(<<'END');
 	class %
 	{
-		method foo (...)					# guarantees that we're using MSM instead of MXMS
+		method foo (...)
 		{
 		}
 	}
 END
 
+# tests MooseX::Types::Moose
 test_snippet(<<'END');
 	class %
 	{
@@ -26,6 +29,16 @@ test_snippet(<<'END');
 	}
 END
 
+# tests MooseX::StrictConstructor
+test_snippet(<<'END', 'unknown attribute');
+	class %
+	{
+		has foo => (ro);
+	}
+	%->new( foo => 1, bar => 2 );
+END
+
+# tests MooseX::ClassAttribute
 test_snippet(<<'END');
 	class %
 	{
@@ -51,7 +64,7 @@ done_testing;
 
 sub test_snippet
 {
-	my ($snippet) = @_;
+	my ($snippet, $error) = @_;
 	state $count = 0;
 
 	my $to_eval = $snippet;
@@ -59,6 +72,13 @@ sub test_snippet
 	$to_eval =~ s/%/$classname/g;
 
 	eval $to_eval;
-	is $@, '', "snippet succeeds as expected: $snippet";
+	if ($error)
+	{
+		like $@, qr/$error/, "snippet fails as expected: $to_eval";
+	}
+	else
+	{
+		is $@, '', "snippet succeeds as expected: $snippet";
+	}
 
 }

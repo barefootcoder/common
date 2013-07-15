@@ -280,6 +280,7 @@ Net::Google::PicasaWeb
 MooseX::ClassAttribute
 Net::Google::Spreadsheets
 Module::Install::JSONMETA
+MooseX::StrictConstructor
 Net::Google::DocumentsList
 
 =cut
