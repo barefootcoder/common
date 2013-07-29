@@ -117,21 +117,31 @@ sub use_and_import_into
 
 sub title_case
 {
+	use utf8;
 	require Text::Capitalize;
+	require Unicode::Normalize;
+
+	# let's make this work with Unicode
+	local $Text::Capitalize::word_rule = $Text::Capitalize::word_rule;
+	$Text::Capitalize::word_rule =~ s/\\w/\\p{Word}/g;
 
 	# ought to be able to use local here, but I can't seem to make it work
 	# perhaps you can't localize variables in other packages?
 	my @save = @Text::Capitalize::exceptions;
-	push @Text::Capitalize::exceptions, qw< from into as on >;
-	my $t = Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1);
+	push @Text::Capitalize::exceptions, qw< from into as on la du un pour des >;
+	my $t = Unicode::Normalize::NFD(Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1));
 
 	# preserving all caps seems to let the word "A" stay "A" when it should go to "a"
 	# we'll fix that with an explicit substitution
 	# we use literal spaces rather than \b's to avoid changing it at the beginning or end of the string
-	$t =~ s/ A / a /g;
+	$t =~ s/ (A\X?) / lc " $1 " /eg;
+
+	# some fixups for French titles
+	$t =~ s/ ([DL])'(\p{Word})/ lc(" $1") . "'$2" /eg;
+	$t =~ s/\b([DLdl])'(\p{Word})/ "$1'" . uc($2) /eg;
 
 	@Text::Capitalize::exceptions = @save;
-	return $t;
+	return Unicode::Normalize::NFC($t);
 }
 
 
