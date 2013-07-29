@@ -4,7 +4,6 @@ use myperl DEBUG => 1;
 
 use Getopt::Std;
 use Time::Local;
-use Date::Format qw<time2str>;
 use Time::ParseDate qw<parsedate>;
 
 const my $AVAIL => ':AVAILABILITY';
@@ -37,7 +36,7 @@ while ( <> )
 {
 	if (/^\s*$/)
 	{
-		if ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+		if ( $cmd ~~ [qw< total eod daybreak >] )
 		{
 			if ($group_found)
 			{
@@ -106,7 +105,7 @@ while ( <> )
 		}
 		next;
 	}
-	elsif ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
 		next if $name =~ /:$/;
 
