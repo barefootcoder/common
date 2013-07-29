@@ -8,3 +8,6 @@
 [core]
 	excludesfile = /home/buddy/.gitignore
 	preloadindex = true
+[branch]
+	autosetuprebase = always
+	autosetupmerge  = true
