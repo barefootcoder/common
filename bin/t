@@ -212,7 +212,7 @@ $precommand->() if $precommand;
 
 my @prove_args;
 push @prove_args, '-c' if -t STDOUT;
-push @prove_args, '-v' if $opt->{v};
+push @prove_args, '-v', '--merge' if $opt->{v};
 push @prove_args, '-Q' if $opt->{s};
 push @prove_args, '-T' if $opt->{T};
 push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
