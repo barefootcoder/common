@@ -256,6 +256,11 @@ if ( -d ~/.dropbox-dist ) then
 	$HOME/bin/dropbox start
 endif
 
+# ssh-agent setup
+if ( `/usr/bin/pgrep -fx ssh-agent` == "" ) then
+	eval `ssh-agent`
+endif
+
 if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	# debugging
 	#alias vctools-config ~/proj/VCtools/vctools-config
