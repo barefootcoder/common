@@ -26,6 +26,7 @@ unset autologout
 unset autocorrect
 unset correct
 unset complete
+set echo_style=both
 set notify
 set symlinks=ignore
 set ellipsis
