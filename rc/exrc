@@ -77,3 +77,7 @@ filetype indent off
 set sessionoptions=buffers,curdir,globals,options,unix
 
 let loaded_matchparen = 1
+
+" restore last known position when opening a new file
+" (this used to happen automatically, but something I did turned it off)
+au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
