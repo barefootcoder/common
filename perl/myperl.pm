@@ -200,7 +200,7 @@ Plus the import of any functions below under L</FUNCTIONS>.
 
 =head1 OPTIONS
 
-The following options can be passed to C<myperl>.  They can be combined in any combiation.
+The following options can be passed to C<myperl>.  They can be combined in any permutation.
 
 =head2 DEBUG
 
@@ -218,14 +218,16 @@ Don't make all warnings fatal (but still turn them on).
 
 	use myperl DataDumper => 1;
 
-Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of L<Data::Printer>).
+Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
+L<Data::Printer>).
 
 
 =head1 FUNCTIONS
 
 =head2 Date Functions
 
-These functions are exported, but the modules they derive from are only loaded if the functions themselves are called.  See their respective modules for more info on them:
+These functions are exported, but the modules they derive from are only loaded if the functions
+themselves are called.  See their respective modules for more info on them:
 
 =over 4
 
@@ -247,17 +249,18 @@ simple string.  We'll see if this becomes necessary.  See L<IO::Prompter> for fu
 
 	$title = title_case($title);
 
-Similar the C<capitalize_title> method of L<Text::Capitalize>.  It preserves words in all caps, but
-still handles the word "a" appropriately.  It also adds a few more exceptions to the list.
+Similar to the C<capitalize_title> method of L<Text::Capitalize>.  It preserves words in all caps,
+but still handles the word "a" appropriately.  It also adds a few more exceptions to the list,
+including some which make it work more appropriately for French titles.
 
 =head2 round
 
-	$num = round($num);					# round off to the nearest 1
-	$num = round(OFF => $num);			# same thing
-	$num = round(DOWN => $num);			# or can round down
-	$num = round(UP => $num);			# or up
-	$num = round($num, .25);			# round off to the nearest 1/4
-	$num = round(DOWN => $num, .25);	# combine all options
+    $num = round($num);                 # round off to the nearest 1
+    $num = round(OFF => $num);          # same thing
+    $num = round(DOWN => $num);         # or can round down
+    $num = round(UP => $num);           # or up
+    $num = round($num, .25);            # round off to the nearest 1/4
+    $num = round(DOWN => $num, .25);    # combine all options
 
 A simple way to do rounding.  When you give round() an initial argument of C<UP>, it acts just like C<POSIX::ceil>.
 When you give it an initial argument of C<DOWN>, it behaves just like C<POSIX::floor>.  When you use
@@ -278,6 +281,8 @@ I<After> that, if you want to make sure you have all the necessary prereqs, try 
 	podselect -section PREREQS `perlfind -f myperl` | grep '^[a-zA-Z]' | cpanm -n
 
 =head1 PREREQS
+
+# ignore this section if you're reading the man page
 
 CLASS
 Roman
