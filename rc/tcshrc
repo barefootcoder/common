@@ -257,6 +257,9 @@ if ( -d ~/.dropbox-dist ) then
 	$HOME/bin/dropbox start
 endif
 
+# refresh or create ssh-agent vars
+eval `ssh-agent-env`
+
 if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	# debugging
 	#alias vctools-config ~/proj/VCtools/vctools-config
