@@ -1,7 +1,7 @@
 #! /bin/bash
 
 me=${0##*/}
-termprog=Eterm
+termprog=urxvt
 force=0
 while getopts ":sfD:h" opt
 do
@@ -106,6 +106,12 @@ case $scrsize in
 esac
 
 case $termprog in
+	urxvt)
+					image="-pixmap $pixmap"
+					font_switch=-fn
+					font="xft:DejaVu Sans Mono:pixelsize=$fontsize"
+					args="-title $title $image -fg white -bg black -geometry $geometry +sb -e"
+					;;
 	Eterm)
 					if [[ $scaled == 1 ]]
 					then
