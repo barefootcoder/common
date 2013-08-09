@@ -89,13 +89,13 @@ fi
 scrsize=$(xrandr -q 2>&1 | perl -lne 'if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}')
 # figure proper font size
 case $scrsize in
-	*x768)		fontsize=11
+	*x768)		fontsize=12
 				;;
-	*x1024)		fontsize=12
+	*x1024)		fontsize=13
 				;;
-	*x1200)		fontsize=13
+	*x1200)		fontsize=14
 				;;
-	*x10[58]0)	fontsize=13
+	*x10[58]0)	fontsize=15
 				;;
 	VNC)		# we've guessed VNC from the error message
 				fontsize=2.5
@@ -109,7 +109,7 @@ case $termprog in
 	urxvt)
 					image="-pixmap $pixmap"
 					font_switch=-fn
-					font="xft:DejaVu Sans Mono:pixelsize=$fontsize"
+					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
 					args="-title $title $image -fg white -bg black -geometry $geometry +sb -e"
 					;;
 	Eterm)
@@ -126,7 +126,7 @@ case $termprog in
 					#font_switch=-F
 					#font="-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
 					font_switch=--default-font-index
-					font=$(( fontsize - 10))
+					font=$(( fontsize - 11))
 					args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off -e"
 					;;
 	gnome-terminal)
