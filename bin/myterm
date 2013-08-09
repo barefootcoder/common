@@ -78,11 +78,15 @@ then
 	exit 2
 fi
 
-iconfile=/usr/share/icons/gnome/16x16/apps/gnome-terminal.png
-if [[ -r $iconfile ]]
-then
-	icon="-I $iconfile"
-fi
+icondir=/usr/share/icons
+for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
+do
+	iconfile="$icondir/$iconfile"
+	if [[ -r $iconfile ]]
+	then
+		break
+	fi
+done
 
 # figure out geometry/font adjustments
 # get screen size
@@ -108,9 +112,10 @@ esac
 case $termprog in
 	urxvt)
 					image="-pixmap $pixmap"
+					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
-					args="-title $title $image -fg white -bg black -geometry $geometry +sb -e"
+					args="-title $title $image $icon -fg white -bg black -geometry $geometry +sb -e"
 					;;
 	Eterm)
 					if [[ $scaled == 1 ]]
@@ -123,6 +128,7 @@ case $termprog in
 					then
 						args="-D $desktop $args"
 					fi
+					[[ -n $iconfile ]] && icon="-I $iconfile"
 					#font_switch=-F
 					#font="-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
 					font_switch=--default-font-index
