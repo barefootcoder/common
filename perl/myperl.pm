@@ -57,6 +57,7 @@ sub import
 	(
 		'Date::Parse'	=>	'str2time',
 		'Date::Format'	=>	'time2str',
+		'IO::Prompter'	=>	'prompt',
 	);
 	foreach (keys %autoload_funcs)
 	{
@@ -234,6 +235,14 @@ These functions are exported, but the modules they derive from are only loaded i
 
 =back
 
+=head2 prompt
+
+Like the date functions, C<prompt> from L<IO::Prompter> is exported, but the module is only loaded
+if the function itself is called.  Note that C<prompt> returns an object and not a string, which may
+do funky things in certain circumstances.  I'm considering having C<prompt> be a wrapper around the
+original which will always throw exceptions in the case of failure (or timeout) and just return a
+simple string.  We'll see if this becomes necessary.  See L<IO::Prompter> for full details.
+
 =head2 title_case
 
 	$title = title_case($title);
@@ -281,7 +290,6 @@ Template
 Test::Most
 Term::Size
 File::Stat
-IO::Prompt
 Const::Fast
 Path::Class
 Tie::IxHash
@@ -297,6 +305,7 @@ Date::Format
 Carp::Always
 Email::Stuff
 Date::Format
+IO::Prompter
 Perl6::Gather
 Data::Printer
 Test::Command
