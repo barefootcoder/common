@@ -11,3 +11,7 @@
 [branch]
 	autosetuprebase = always
 	autosetupmerge  = true
+[branch "planner"]
+	rebase = true
+[branch "trunk"]
+	rebase = true
