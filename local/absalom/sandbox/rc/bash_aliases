@@ -1,0 +1,13 @@
+export CE_REMOTE_USERNAME=bburden
+export PERL5LIB=$CEROOT/lib:$CEROOT/extlib/lib/perl5
+
+if ! echo $PATH | fgrep -q $CEROOT/tmp/bin
+then
+	PATH=$PATH:$CEROOT/tmp/bin
+fi
+
+alias resrc='source ~/.bashrc'
+alias reset_sandbox='$CEROOT/tmp/new_sandbox'
+alias sql='$CEROOT/bin/db localdev'
+alias sqlr='$CEROOT/bin/db ceprod4-tunnel'
+alias sqll='$CEROOT/bin/db redshift-ceprod-tunnel'

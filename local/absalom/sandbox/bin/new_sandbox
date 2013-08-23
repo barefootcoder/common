@@ -1,0 +1,44 @@
+#! /bin/bash
+
+if [[ $(hostname) != vagrant-sandbox ]]
+then
+	echo "you should run this from the sandbox (do `vagrant ssh` first)" >&2
+	exit 1
+fi
+
+if [[ -z $CEROOT ]]
+then
+	echo "can't do much without CEROOT being set" >&2
+	exit 1
+fi
+
+
+for file in $(ls $CEROOT/tmp/rc)
+do
+	rcfile=~/.$file
+	if [[ -e $rcfile ]]
+	then
+		if [[ ! -L $rcfile ]]
+		then
+			echo "file $rfcile exists but is not a symlink; skipping" >&2
+		fi
+	else
+		ln -s $CEROOT/tmp/rc/$file $rcfile
+	fi
+done
+
+# can't run remount from $CEROOT/tmp/bin
+cp $CEROOT/tmp/bin/remount ~
+
+
+# instructions from doc/howto/vagrant-sandbox.txt
+cd $CEROOT
+make sandbox-puppet
+make extlib
+make tunnels
+
+query="select user_id from tbluser where email_address='$CE_REMOTE_USERNAME@campusexplorer.com'"
+user_id=$(bin/db ceprod4-tunnel --skip-column-names -e "$query")
+system_user_id=$(bin/config-installation-value me system_user_id)
+returnpath_user_id=$(bin/config-installation-value me returnpath_user_id)
+bin/copy-user-db-records $system_user_id $returnpath_user_id $user_id
