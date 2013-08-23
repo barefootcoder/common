@@ -15,3 +15,14 @@
 	rebase = true
 [branch "trunk"]
 	rebase = true
+
+[gitflow "branch"]
+    master = production
+    develop = trunk
+[gitflow "prefix"]
+    feature = feature/
+    release = staging/
+    hotfix = hotfix/
+    support = support/
+	cepatch = cepatch/
+    versiontag = release
