@@ -1,5 +1,6 @@
+export CEROOT=/vagrant
 export CE_REMOTE_USERNAME=bburden
-export PERL5LIB=$CEROOT/lib:$CEROOT/extlib/lib/perl5
+export PERL5LIB=$CEROOT/lib:$CEROOT/extlib/lib/perl5:$CEROOT/tlib
 
 if ! echo $PATH | fgrep -q $CEROOT/tmp/bin
 then
