@@ -65,13 +65,13 @@ function locate_img
 		patterns="$patterns $dir/$image.*"
 	done
 
-	for file in $(ls $patterns 2>/dev/null)
+	for file in $(/bin/ls -1 $patterns 2>/dev/null | head -n1)
 	do
 		:
 	done
 	echo $file
 }
-pixmap=$(locate_img $pixmap ~/local/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
+pixmap=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
 if [[ -z $pixmap ]]
 then
 	echo "$me: can't find image file for $pixmap" >&2
