@@ -3,6 +3,23 @@
 me=${0##*/}																# slightly prettier than $0
 readonly me
 
+
+function current_branch
+{
+	branch=$(git branch --contains HEAD | perl -lne 'print if s/^\* //')
+	if [[ $branch == *"no branch"* ]]
+	then
+		echo "$me: can't show branch logs with a detached HEAD" >&2
+		exit 1
+	fi
+	echo $branch
+}
+
+function branched_from
+{
+	git show-branch | perl -lne 'print $1 and exit if /^\*\s*\+\s*\[([^^~]+).*?\]/'
+}
+
 cmd="git log"
 
 args=''
@@ -22,21 +39,25 @@ do
 			;;
 		p)	pretend=1
 			;;
-		b)	branch=$(git branch --contains HEAD | sed 's/^\* //')
-			if [[ $branch == *"no branch"* ]]
-			then
-				echo "$me: can't show branch logs with a detached HEAD" >&2
-				exit 1
-			fi
-			args="$args master..$branch"
+		b)	branch=$(current_branch)
+			from=$(branched_from)
+			args="$args $from..$branch"
 			;;
-		L)	branch=$(git branch --contains HEAD | sed 's/^\* //')
-			if [[ $branch == *"no branch"* ]]
+		L)	pushed=origin/$(current_branch)
+			if ! git show-ref --quiet $pushed
 			then
-				echo "$me: can't show branch logs with a detached HEAD" >&2
-				exit 1
+				# perhaps this is a new branch, never pushed anywhere
+				# let's try to find where it was branched from
+				pushed=$(branched_from)
+				if ! git show-ref --quiet $pushed
+				then
+					# WTF? it was branched from something that doesn't exist?
+					# that should never happen
+					echo "$me: branch never pushed and can't determine where branched from"
+					exit 1
+				fi
 			fi
-			args="$args origin/$branch..HEAD"
+			args="$args $pushed..HEAD"
 			;;
 		l)	args="$args -n1"
 			;;
