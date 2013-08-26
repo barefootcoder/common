@@ -29,7 +29,7 @@ fi
 
 if [[ -z $socket ]]
 then
-	echo "can't find the socket!" >&2
+	echo "$0: can't find the socket!" >&2
 	exit 1
 fi
 
