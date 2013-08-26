@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if [[ ! -d tmp ]]
+then
+	echo "run this from inside your git working copy, at the root" >&2
+	exit 1
+fi
+
+/bin/cp -rfv ~/local/sandbox/* tmp/
