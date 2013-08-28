@@ -1,0 +1,18 @@
+#! /bin/bash
+
+db=${1:-dev}
+case $db in
+	dev)	db=localdev
+			;;
+	rpt)	db=ceprod4-tunnel
+			;;
+	log)	db=redshift-ceprod-tunnel
+			;;
+	lstg)	db=redshift-cestg-tunnel
+			;;
+esac
+echo "$0: connecting to DB: $db"
+
+make tunnels
+cd $CEROOT
+bin/db $db

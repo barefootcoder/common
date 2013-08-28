@@ -7,8 +7,8 @@ then
 	PATH=$PATH:$CEROOT/tmp/bin
 fi
 
+alias ls='ls -CF'
 alias resrc='source ~/.bashrc'
 alias reset_sandbox='$CEROOT/tmp/new_sandbox'
-alias sql='$CEROOT/bin/db localdev'
-alias sqlr='$CEROOT/bin/db ceprod4-tunnel'
-alias sqll='$CEROOT/bin/db redshift-ceprod-tunnel'
+alias sqlr='sql rpt'
+alias sqll='sql log'
