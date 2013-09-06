@@ -6,4 +6,8 @@ then
 	exit 1
 fi
 
-/bin/cp -rfv ~/local/sandbox/* tmp/
+/bin/cp -rpfv ~/local/sandbox/* tmp/
+for script in t
+do
+	/bin/cp -pfv ~/bin/$script tmp/bin
+done
