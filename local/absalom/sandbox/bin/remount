@@ -1,4 +1,5 @@
 #! /bin/bash
 
+sudo fuser -km /vagrant
 sudo umount /vagrant
 sudo mount -t vboxsf -o uid=1001,gid=1001,rw /vagrant /vagrant
