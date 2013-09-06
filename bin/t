@@ -182,13 +182,21 @@ if ($arg)
 		}
 		$pkg =~ s/::/-/g if $pkg;
 
-		foreach my $rentdir ($ENV{RENT_HOME}, $ENV{WEBROOT})
+		my %WORK =
+		(
+			WEBROOT		=>	[qw< lib/Test/t lib/Company/t >],
+			CEROOT		=>	[qw< t/lib >],
+		);
+		$WORK{'RENT_HOME'} = $WORK{'CEROOT'};
+
+		foreach (keys %WORK)
 		{
+			my $rentdir = $ENV{$_};
 			next unless defined $rentdir;
 
-			# if we get this far, we're running in Rent.com environment
+			# if we get this far, we're running in a work environment
 			(my $d = $arg) =~ s{::}{/}g;
-			foreach my $t_dir (qw< lib/Test/t lib/Company/t >)
+			foreach my $t_dir ( @{$WORK{$_}} )
 			{
 				push @possibles, "$rentdir/$t_dir/$d";
 				push @possibles, "$rentdir/$t_dir/$pkg" if $pkg;
@@ -201,15 +209,15 @@ if ($arg)
 		@possibles = uniq @possibles;
 		push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
 
-		$dir = find_dir(@possibles);
-		# used to chdir to $dir here, but I don't think it's truly necessary ...
+		my $found = find_dest(@possibles);
+		-d $found ? ($dir = $found) : push @files, $found;
 	}
 }
 
 # if we haven't found the directory/files yet, better try harder
 if (not $dir and not @files)
 {
-	$dir = find_dir("t", "../t", "../../t", "../../../t");
+	$dir = find_dest("t", "../t", "../../t", "../../../t");
 }
 die("$0: cannot figure out where test files are\n") unless $dir or @files;
 
@@ -351,15 +359,19 @@ sub identify_perl_module
 }
 
 
-sub find_dir
+sub find_dest
 {
 	foreach (@_)
 	{
 		next unless $_;
-		print STDERR "looking for dir: $_\n" if $opt->{D};
+		print STDERR "checking destination: $_\n" if $opt->{D};
 		if (-d)
 		{
 			return prettify_dir($_);
+		}
+		elsif (-f "$_.pm")
+		{
+			return prettify_dir("$_.pm");
 		}
 	}
 	return undef;
