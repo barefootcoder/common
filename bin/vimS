@@ -32,4 +32,4 @@ then
 fi
 
 first_file=$(awk '$1 == "args" { print $2 }' $sessionfile)
-vim -S $sessionfile $first_file
+vim -S $sessionfile $(eval "echo $first_file")
