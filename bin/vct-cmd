@@ -1,0 +1,6 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+export command=$1
+vimS ~/.vimS-vctoolscmd
