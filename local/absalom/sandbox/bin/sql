@@ -4,6 +4,8 @@ db=${1:-dev}
 case $db in
 	dev)	db=localdev
 			;;
+	prod)	db=ceprod4-tunnel
+			;;
 	rpt)	db=ceprod4-tunnel
 			;;
 	log)	db=redshift-ceprod-tunnel
