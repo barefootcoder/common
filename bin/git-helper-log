@@ -17,7 +17,7 @@ function current_branch
 
 function branched_from
 {
-	git show-branch | perl -lne 'print $1 and exit if /^\*\s*\+\s*\[([^^~]+).*?\]/'
+	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~]+).*?\]/'
 }
 
 cmd="git log"
@@ -75,7 +75,7 @@ do
 			echo "    -G : display dates in GMT/UTC format" >&2
 			echo "    -c : don't show commits, just count them" >&2
 			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
-			echo "    -b : show only commit on the current branch (no merges unless -v)" >&2
+			echo "    -b : show only commits on the current branch (no merges unless -v)" >&2
 			echo "    -L : show only commits not yet pushed to server (no merges unless -v)" >&2
 			echo "    -l : show only latest commit (same as -n1)" >&2
 			echo "    -n : show only X commits (default: show all)" >&2
