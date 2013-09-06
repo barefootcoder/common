@@ -6,7 +6,7 @@ no warnings 'uninitialized';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class List::MoreUtils Test::Pretty >)
+	foreach (qw< Getopt::Std Path::Class List::MoreUtils >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -126,6 +126,11 @@ if (-r "dist.ini" and @ARGV)
 ###########################
 
 
+#
+# set up cover stuff
+# 		[ -c switch ]
+#
+
 my $coverdb = '/tmp/cover_db';
 my $cover = "cover";
 $cover .= " -silent" unless $opt->{D};
@@ -139,6 +144,20 @@ if ($opt->{c})
 	$ENV{$HARNESS} = "-MDevel::Cover=-db,$coverdb";
 }
 
+#
+# set up Test::Pretty stuff
+# 		[ -P switch ]
+#
+
+if ($opt->{P})
+{
+	eval { require Test::Pretty } or die("$0: Test::Pretty not found [ $@ ]\n");
+}
+
+
+#
+# find the right directory
+#
 
 my ($dir, @files);
 my $arg = shift;
