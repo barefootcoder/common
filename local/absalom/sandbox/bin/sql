@@ -13,6 +13,6 @@ case $db in
 esac
 echo "$0: connecting to DB: $db"
 
-make tunnels
 cd $CEROOT
+make tunnels
 bin/db $db
