@@ -1,8 +1,8 @@
 #! /usr/bin/env perl
 
-use strict;
-use warnings;
-no warnings 'uninitialized';
+use 5.010;
+use autodie qw< :all >;
+use warnings FATAL => 'all';
 
 sub check_prereqs
 {
@@ -20,7 +20,9 @@ use List::MoreUtils qw< uniq >;
 sub print_color(@);
 
 
-my $opt = {};
+$| = 1;
+
+my $opt = { N => '', };
 getopts("hnTcvsAPDN:", $opt);
 
 # help message
@@ -210,7 +212,7 @@ if ($arg)
 		push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
 
 		my $found = find_dest(@possibles);
-		-d $found ? ($dir = $found) : push @files, $found;
+		-d $found ? ($dir = $found) : push @files, $found if $found;
 	}
 }
 
