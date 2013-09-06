@@ -9,6 +9,7 @@ fi
 
 alias ls='ls -CF'
 alias resrc='source ~/.bashrc'
+alias pdoc=perldoc
 alias reset_sandbox='$CEROOT/tmp/new_sandbox'
 alias sqlr='sql rpt'
 alias sqll='sql log'
