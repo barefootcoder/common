@@ -184,24 +184,15 @@ if ($arg)
 		}
 		$pkg =~ s/::/-/g if $pkg;
 
-		my %WORK =
-		(
-			WEBROOT		=>	[qw< lib/Test/t lib/Company/t >],
-			CEROOT		=>	[qw< t/lib >],
-		);
-		$WORK{'RENT_HOME'} = $WORK{'CEROOT'};
-
-		foreach (keys %WORK)
+		my @dirs = get_workenv('test_dirs');
+		if (@dirs)
 		{
-			my $rentdir = $ENV{$_};
-			next unless defined $rentdir;
-
 			# if we get this far, we're running in a work environment
 			(my $d = $arg) =~ s{::}{/}g;
-			foreach my $t_dir ( @{$WORK{$_}} )
+			foreach my $t_dir ( @dirs )
 			{
-				push @possibles, "$rentdir/$t_dir/$d";
-				push @possibles, "$rentdir/$t_dir/$pkg" if $pkg;
+				push @possibles, "$WORKDIR/$t_dir/$d";
+				push @possibles, "$WORKDIR/$t_dir/$pkg" if $pkg;
 			}
 		}
 
@@ -320,6 +311,47 @@ if ($opt->{c})
 ###########################
 ###  SUBS
 ###########################
+
+
+our $WORKDIR;
+sub get_workenv
+{
+	my ($param) = @_;
+	state $WORKENV =
+	{
+		Rent	=>	{
+						env_var		=>	[ 'WEBROOT', 'RENT_HOME' ],
+						test_dirs	=>	[qw< lib/Test/t lib/Company/t >],
+					},
+		CE		=>	{
+						env_var		=>	[ 'CEROOT' ],
+						test_dirs	=>	[qw< t/lib >],
+					},
+	};
+	state $CURENV;
+
+	unless (defined $CURENV)
+	{
+		foreach my $env (keys %$WORKENV)
+		{
+			my $env_vars = $WORKENV->{$env}->{env_var};
+			foreach (@$env_vars)
+			{
+				if (exists $ENV{$_})
+				{
+					$WORKDIR = $ENV{$_};
+					next unless -d $WORKDIR;
+					$CURENV = $env;
+					last;
+				}
+			}
+			last if $CURENV;
+		}
+		$CURENV //= 0;													# i.e., false but not undefined
+	}
+
+	return $CURENV ? @{ $WORKENV->{$CURENV}->{$param} } : ();
+}
 
 
 sub get_pkgname
