@@ -2,13 +2,17 @@
 
 . ~/bin/bash_funcs
 
-while getopts ":nh" opt
+count=-c
+while getopts ":nvh" opt
 do
 	case $opt in
 		n)	files=$(git status -s | awk '{print $2}')
 			;;
-		h)  echo "usage: $me -h | [-n] [dir]" >&2
+		v)	count=-n
+			;;
+		h)  echo "usage: $me -h | [-nv] [dir]" >&2
 			echo "    -n : only check for tabs in Git modified files" >&2
+			echo "    -v : verbose (print matching lines, not just count)" >&2
 			echo "    -h : this help message" >&2
 			echo "    dir : directory to search (default [w/o -n]: .)" >&2
 			exit
@@ -36,4 +40,4 @@ then
 	fi
 fi
 
-fgrep -rcI '	' $files | grep -v ':0$'
+fgrep $count -rI '	' $files | grep -v ':0$'
