@@ -165,7 +165,7 @@ my ($dir, @files);
 my $arg = shift;
 if ($arg)
 {
-	if ( $arg =~ /\.t$/ )
+	if ( $arg =~ /\.(t|pm)$/ )
 	{
 		@files = ($arg);
 	}
@@ -401,13 +401,13 @@ sub find_dest
 	{
 		next unless $_;
 		print STDERR "checking destination: $_\n" if $opt->{D};
-		if (-d)
-		{
-			return prettify_dir($_);
-		}
-		elsif (-f "$_.pm")
+		if (-f "$_.pm")
 		{
 			return prettify_dir("$_.pm");
+		}
+		elsif (-d)
+		{
+			return prettify_dir($_);
 		}
 	}
 	return undef;
