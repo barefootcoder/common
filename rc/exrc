@@ -40,6 +40,8 @@ nmap <C-W> :w<CR>:!pusht %<CR>
 nmap <C-C> :w<CR>:!ccheck %<CR>
 " show doco
 nmap <Esc>d :w<CR>:!perldoc %<CR>
+" swap artist/title in a mix file
+map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'<CR>
 
 :function! FindMatching()
 :	if getline(".") =~ '=cut'
