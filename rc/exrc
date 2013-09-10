@@ -11,10 +11,11 @@ set noexpandtab			" yes, I like real tabs in my files; so sue me
 nmap Y y$
 " make g same as G (g not used in original vi, so this mapping is ancient)
 map g G
-" make [[ work for Perl-style curly brace placement (doesn't work if you're actually on the close curly)
-map [[ ][%
-" ditto for ]] (these also screw up your `` or '', but, hey: nothing's perfect)
-map ]] 2][%
+" make [[ et al work for Perl-style curly brace placement (according to vim help)
+map [[ ?{<CR>w99[{
+map ][ /}<CR>b99]}
+map ]] j0[[%/{<CR>
+map [] k$][%?}<CR>
 " turn "add" into "plus" (because ^A conflicts with screen, and ^P is the same as k)
 map <C-P> <C-A>
 " easy comment
