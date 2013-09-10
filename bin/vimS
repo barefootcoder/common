@@ -1,5 +1,7 @@
 #! /bin/bash
 
+. ~/bin/bash_funcs
+
 # restore a vim session, only *exactly* like it was before
 #
 # Normally, using `vim -S sessionfile` leaves buffer #1 empty, and starts loading files at buffer
@@ -26,9 +28,17 @@
 # sessionfile, under the `args` command ...
 
 sessionfile=$1
+if [[ ! -f $sessionfile ]]
+then
+	sessionfile=~/.vimS-$1
+	if [[ ! -f ~/.vimS-$sessionfile ]]
+	then
+		sessionfile=~/local/data/vimS/$1
+	fi
+fi
 if [[ ! -r $sessionfile ]]
 then
-	die "session file $sessionfile not specified, doesn't exist, or is unreadable"
+	die "session file $1 not specified, doesn't exist, or is unreadable"
 fi
 
 first_file=$(awk '$1 == "args" { print $2 }' $sessionfile)
