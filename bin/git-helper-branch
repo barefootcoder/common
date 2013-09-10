@@ -20,7 +20,8 @@ do
 		s)	mode=show
 			;;
 		u)	mode=switch
-			branch=master
+			branch=$(vc info Mainline 2>/dev/null)
+			: ${branch:=master}
 			break
 			;;
 		p)	pretend=1
