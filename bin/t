@@ -241,6 +241,7 @@ push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c} or $opt->{P};
 push @prove_args, '-PPretty' if $opt->{P};
 push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 push @prove_args, @files;
+push @prove_args, get_workenv('post_args');
 my $command = "prove @prove_args";
 print STDERR "running: $command\n" if $opt->{D};
 print STDERR "         (with \$HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
@@ -326,6 +327,7 @@ sub get_workenv
 		CE		=>	{
 						env_var		=>	[ 'CEROOT' ],
 						test_dirs	=>	[qw< t/lib >],
+						post_args	=>	[qw< :: --database cetest >],
 					},
 	};
 	state $CURENV;
