@@ -26,7 +26,7 @@ args=''
 verbose=0
 pretend=0
 date_format=local
-while getopts ":vdcpbln:LU:g:Gh" opt
+while getopts ":vdcpbln:LmU:g:Gh" opt
 do
 	case $opt in
 		v)	verbose=1
@@ -63,13 +63,15 @@ do
 			;;
 		n)	args="$args -n$OPTARG"
 			;;
+		m)  args="$args --author $(git config user.email)"
+			;;
 		U)  args="$args --author $OPTARG"
 			;;
 		g)	args="$args --grep $OPTARG"
 			;;
 		G)	date_format=gmt
 			;;
-		h)  echo "usage: $me -h | [-vdG | -c] [-p] [-b | -L] [-l | -nX] [-Uuser] [-g regex] [file ...]" >&2
+		h)  echo "usage: $me -h | [-vdG | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
 			echo "    -v : verbose (show files changed, include merge commits)" >&2
 			echo "    -d : show diffs of changed files" >&2
 			echo "    -G : display dates in GMT/UTC format" >&2
@@ -79,6 +81,7 @@ do
 			echo "    -L : show only commits not yet pushed to server (no merges unless -v)" >&2
 			echo "    -l : show only latest commit (same as -n1)" >&2
 			echo "    -n : show only X commits (default: show all)" >&2
+			echo "    -m : show only my commits (commits by current user)" >&2
 			echo "    -U : show only commits by user" >&2
 			echo "    -g : show only commits with log messages containing regex" >&2
 			echo "    -h : this help message" >&2
