@@ -19,11 +19,6 @@ endif
 setenv LC_ALL C
 setenv LESSCHARSET utf-8
 
-# ssh-agent setup
-if ( `/usr/bin/pgrep -fx ssh-agent` == "" ) then
-	eval `ssh-agent`
-endif
-
 which fortune >&/dev/null
 if ( $? == 0 ) then
 	echo ""
