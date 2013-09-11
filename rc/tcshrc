@@ -152,6 +152,7 @@ endif
 alias ff 'bash -c "find . -name /proc -prune -o -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
 alias ffd 'bash -c "find . -name /proc -prune -o -type d -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
 alias vi "fe_vi"
+alias vims "vimS"
 alias list "vi -v +'map   '"
 alias less "less -a -x4"
 alias dlocate "locate -be \!^ | each -l '[ -d {} ] && echo x'"
