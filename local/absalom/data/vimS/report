@@ -17,6 +17,7 @@ nmap  /\<\>
 nmap % :call FindMatching()
 map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
+map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'<CR>
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
 map [[ ?{<CR>w99[{
@@ -59,7 +60,7 @@ badd +31 $sql_file
 badd +58 $yml_file
 badd +170 root/reports/index.tt
 args $sql_file
-edit $sql_file
+edit root/reports/index.tt
 set splitbelow splitright
 set nosplitbelow
 set nosplitright

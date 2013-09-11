@@ -59,7 +59,7 @@ badd +1504 t/lib/CE/Search/WebUpsell.pm
 badd +0 database/scripts/build-offer-search-tables.sql
 badd +20 tlib/CE/TestSchemaObject/Publisher.pm
 args lib/CE/Schema/SearchOfferLeadCap.pm
-edit database/scripts/build-offer-search-tables.sql
+edit t/lib/CE/Search/WebUpsell.pm
 set splitbelow splitright
 set nosplitbelow
 set nosplitright

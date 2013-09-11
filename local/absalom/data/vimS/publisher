@@ -17,13 +17,13 @@ nmap  /\<\>
 nmap % :call FindMatching()
 map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
-map QQ !!perl -lpe 's/^([<>FXV?*~ :=-]{4}?)(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'
+map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'<CR>
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
-map [] k$][%?}
-map [[ ?{w99[{
-map ]] j0[[%/{
-map ][ /}b99]}
+map [[ ?{<CR>w99[{
+map ][ /}<CR>b99]}
+map ]] j0[[%/{<CR>
+map [] k$][%?}<CR>
 nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
@@ -61,6 +61,8 @@ badd +55 t/lib/CE/Schema/Publisher.pm
 badd +1 tlib/CE/TestSchemaObject/Publisher.pm
 badd +2288 database/schema.sql
 badd +15 push-tasks.txt
+badd +23 root/admin/publisher/overview.tt
+badd +85 lib/CE/Controller/Admin/Publisher.pm
 args lib/CE/Schema/Publisher.pm
 edit t/lib/CE/Schema/Publisher.pm
 set splitbelow splitright
@@ -162,7 +164,7 @@ setlocal syntax=
 endif
 setlocal tabstop=4
 setlocal tags=
-setlocal textwidth=100
+setlocal textwidth=75
 setlocal thesaurus=
 setlocal noundofile
 setlocal nowinfixheight
