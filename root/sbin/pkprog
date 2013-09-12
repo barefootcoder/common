@@ -82,7 +82,7 @@ fi
 ##  MINT  ##
 ############
 
-if which dpkg-query >/dev/null 2>&1
+if type dpkg-query >/dev/null 2>&1
 then
 	cmd="dpkg-query -L $pkg"
 fi

@@ -76,6 +76,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	my %align = ( '-><-' => 'CENTER', '->->' => 'RIGHT', '<-<-' => 'LEFT' );
 	s{(->|<-)(.+?)(->|<-)}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}sg;
 
+	# save URLs so they don't get messed with later
+	s{\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;								# ]] <-- to keep % from freaking out
+
 	s{\A/(\w+)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
 	s{\\?<}{&lt;}g;																	# literal <'s
 	s{\\?>}{&gt;}g;																	# literal >'s
@@ -87,6 +90,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
+	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	if ($blog_type eq 'bbcode')
@@ -192,6 +196,8 @@ sub url_block
 	my $forward = 0;
 	$forward = 1 && shift if $_[0] eq 'FORWARD';
 	my ($url, $alt_text) = @_;
+	$url = $blocks[$1] if $url =~ /^\cQ(\d+)$/;
+	debuggit(4 => "url_block:", $url, "=>", $alt_text);
 
 	if ($blog_type eq 'bbcode')
 	{
