@@ -1,0 +1,66 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+proj_dir=~/proj
+if [[ -e $proj_dir ]]
+then
+	if [[ -d $proj_dir ]]
+	then
+		if [[ -L $proj_dir ]]
+		then
+			: nothing to do
+		else
+			die "you made a real ~/proj; don't do that"
+		fi
+	else
+		die "your ~/proj is a file, not a dir--you're weird"
+	fi
+else
+	ln -s ~/Dropbox/proj ~/proj
+fi
+
+vctools_dir=$proj_dir/VCtools
+if [[ ! -d $vctools_dir ]]
+then
+	echo "you have to symlink ~/proj first, dope" >&2
+	exit 1
+fi
+
+chgrp -R dev $vctools_dir
+
+function make_dev_dir
+{
+	dir=$1
+	if mkdir -p $dir 2>/dev/null
+	then
+		chgrp dev $dir
+		chmod g+w $dir
+	else
+		sudo mkdir -p $dir 2>/dev/null
+		sudo chgrp dev $dir
+		sudo chmod g+w $dir
+	fi
+}
+
+etc_dir=/usr/local/etc/VCtools
+bin_dir=/usr/local/VCtools
+perllib_dir=$(uname -i | perl -MList::Util=first -e 'chomp($a=<STDIN>); print first{/site_perl/ and not /$a/}@INC')/VCtools
+
+make_dev_dir $bin_dir
+make_dev_dir $etc_dir
+make_dev_dir $perllib_dir
+
+cp ~/common/machinelocal/VCtools.conf $etc_dir
+
+cd $vctools_dir
+export PERL5LIB=$vctools_dir/lib
+export VCTOOLS_CONFIG=$(perl vctools-config --config)
+cp v* $bin_dir
+cp etc/vctools.* $etc_dir
+cp lib/VCtools/* $perllib_dir
+
+sudo ln -s $bin_dir/vctools-config /usr/local/bin
+
+echo "done"
+echo "don't forget to resrc"

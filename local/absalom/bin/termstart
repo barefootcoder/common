@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if screen -ls | grep base
+then
+	cmd="screen -x base"
+else
+	cmd="screen -S base"
+fi
+myterm -s Absalom city-spires 125x50+7+30 $cmd
+
+#myterm -s Tyr wasteland 125x50-0-30 ssh tyr
+#myterm -s AWS Neopolis-horizon 125x50-33-30 ssh nami-aws

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 me=${0##*/}
-termprog=Eterm
+termprog=urxvt
 force=0
 while getopts ":sfD:h" opt
 do
@@ -58,46 +58,48 @@ fi
 
 function locate_img
 {
-	dir=$1
-	image=$2
-	for file in $(ls $dir/$image.* 2>/dev/null)
+	image=$1
+	shift
+	for dir
+	do
+		patterns="$patterns $dir/$image.*"
+	done
+
+	for file in $(/bin/ls -1 $patterns 2>/dev/null | head -n1)
 	do
 		:
 	done
 	echo $file
 }
-if [[ $scaled == 1 ]]
-then
-	pixmap=$(locate_img /usr/share/Eterm/pix/scale $pixmap)
-	image="-P $pixmap@155x100:propscaled"
-else
-	pixmap=$(locate_img /usr/share/Eterm/pix/tile $pixmap)
-	image="-P $pixmap@:tiled"
-fi
+pixmap=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
 if [[ -z $pixmap ]]
 then
 	echo "$me: can't find image file for $pixmap" >&2
 	exit 2
 fi
 
-iconfile=/usr/share/icons/gnome/16x16/apps/gnome-terminal.png
-if [[ -r $iconfile ]]
-then
-	icon="-I $iconfile"
-fi
+icondir=/usr/share/icons
+for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
+do
+	iconfile="$icondir/$iconfile"
+	if [[ -r $iconfile ]]
+	then
+		break
+	fi
+done
 
 # figure out geometry/font adjustments
 # get screen size
 scrsize=$(xrandr -q 2>&1 | perl -lne 'if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}')
 # figure proper font size
 case $scrsize in
-	*x768)		fontsize=3
+	*x768)		fontsize=12
 				;;
-	*x1024)		fontsize=3
+	*x1024)		fontsize=13
 				;;
-	*x1200)		fontsize=4
+	*x1200)		fontsize=14
 				;;
-	*x10[58]0)	fontsize=4
+	*x10[58]0)	fontsize=15
 				;;
 	VNC)		# we've guessed VNC from the error message
 				fontsize=2.5
@@ -108,18 +110,37 @@ case $scrsize in
 esac
 
 case $termprog in
-	Eterm)			args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off -e"
+	urxvt)
+					image="-pixmap $pixmap"
+					[[ -n $iconfile ]] && icon="-icon $iconfile"
+					font_switch=-fn
+					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
+					args="-title $title $image $icon -fg white -bg black -geometry $geometry +sb -e"
+					;;
+	Eterm)
+					if [[ $scaled == 1 ]]
+					then
+						image="-P $pixmap@155x100:propscaled"
+					else
+						image="-P $pixmap@:tiled"
+					fi
 					if [[ -n "$desktop" ]]
 					then
 						args="-D $desktop $args"
 					fi
-					font="-F-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
-					font_idx="--default-font-index $fontsize"
+					[[ -n $iconfile ]] && icon="-I $iconfile"
+					#font_switch=-F
+					#font="-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
+					font_switch=--default-font-index
+					font=$(( fontsize - 11))
+					args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off -e"
 					;;
-	gnome-terminal)	args="--geometry=$geometry"
+	gnome-terminal)
+					args="--geometry=$geometry"
 					;;
-	*)				echo "myterm: don't know how to start term $termprog" >&2
+	*)
+					echo "myterm: don't know how to start term $termprog" >&2
 					;;
 esac
 
-$termprog $font_idx $args "$@" &
+$termprog $font_switch "$font" $args "$@" &

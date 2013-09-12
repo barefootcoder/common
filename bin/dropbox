@@ -91,13 +91,13 @@ status() {
 }
 
 stop() {
-        echo -n $"Stopping $prog"
+	echo -n $"Stopping $prog"
     for dbuser in $DROPBOX_USERS; do
-        killproc $distdir/dropbox
+        pkill -f $distdir/dropbox
     done
-        RETVAL=$?
-        echo
-        [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
 }
 
 install () {

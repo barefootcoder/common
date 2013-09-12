@@ -1,0 +1,42 @@
+#! /bin/bash
+
+if [[ $(hostname) != vagrant-sandbox ]]
+then
+	echo "you should run this from the sandbox (do `vagrant ssh` first)" >&2
+	exit 1
+fi
+
+if [[ -z $CEROOT ]]
+then
+	echo "can't do much without CEROOT being set" >&2
+	exit 1
+fi
+
+
+for file in $(ls $CEROOT/tmp/rc)
+do
+	rcfile=~/.$file
+	if [[ -e $rcfile ]]
+	then
+		if [[ ! -L $rcfile ]]
+		then
+			echo "file $rfcile exists but is not a symlink; skipping" >&2
+		fi
+	else
+		ln -s $CEROOT/tmp/rc/$file $rcfile
+	fi
+done
+
+# can't run remount from $CEROOT/tmp/bin
+cp $CEROOT/tmp/bin/remount ~
+
+
+# instructions from doc/howto/vagrant-sandbox.txt
+cd $CEROOT
+make sandbox-puppet
+make extlib
+make tunnels
+
+# call our companion script
+# (this is seprated out so it can also be called by refresh_sandbox)
+update_user_records

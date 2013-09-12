@@ -1,0 +1,72 @@
+#! /usr/bin/env perl
+
+use myperl DEBUG => 1;
+
+use Getopt::Std;
+
+
+my $opts = {};
+getopts('v', $opts);
+
+
+my ($min_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
+my $num_days = num_weekdays($min_date);
+
+say "Average time: ", $total_time / $num_days;
+say "Average availability: ", $total_avail / $num_days;
+#say "Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
+
+
+func num_weekdays ($from)
+{
+	use Date::Gregorian::Business;
+	use Date::Gregorian qw< :weekdays >;
+
+	# create a date with a calendar with normal weekends, but no holidays
+	my $date = Date::Gregorian::Business->new([ [ SATURDAY, SUNDAY ], [] ]);
+	$date->set_ymd(split('/', time2str('%Y/%m/%d', $from)));
+
+	return $date->get_businessdays_until(Date::Gregorian->new->set_today);
+}
+
+
+func time_and_avail ($file)
+{
+	my ($time, $avail) = (0,0);
+
+	my $min_date = time;
+	open(IN, "fake_timer -a total email $file |") or die("can't open pipe");
+	while ( <IN> )
+	{
+		# time from 2013/07/15 to 2013/07/19:
+		if ( m{time from (\d{4}/\d{2}/\d{2})} )
+		{
+			$min_date = min($min_date, str2time($1));
+		}
+
+		#  0 hrs, 36 mins : cpan
+		my ($hrs, $mins, $timer) = /^ \s* (\d+) \s+ hrs, \s+ (\d+) \s+ mins \s* : \s* (.+) $/x;
+		next unless $timer and ( $timer eq 'GRAND TOTAL' or $timer eq 'AVAILABILITY' );
+
+		if ($opts->{v})
+		{
+			say "$file : $timer $hrs:$mins";
+		}
+		$time += $hrs + $mins / 60 if $timer eq 'GRAND TOTAL';
+		$avail += $hrs + $mins / 60 if $timer eq 'AVAILABILITY';
+	}
+	close(IN);
+
+	debuggit(4 => "for file", $file, "time is", $time, "and avail is", $avail);
+	return wantarray ? ($min_date, $time, $avail) : $time;
+}
+
+
+func print_time ($time)
+{
+	$time = round($time, .25);
+	my $hrs = int($time);
+	my $mins = abs( ($time - $hrs) * 60 );
+
+	return sprintf("%2d:%02d", $hrs, $mins);
+}

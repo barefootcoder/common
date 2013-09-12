@@ -94,7 +94,7 @@ then
 	if [[ "$first_line" == '==>'* ]]
 	then
 		wikify "$1"
-	elif [[ $(pwd) == *docs/blog || "$first_line" == "/bbcode/" ]]
+	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || "$first_line" == "/bbcode/" ]]
 	then
 		if blogify "$1" >/tmp/hold.wri
 		then

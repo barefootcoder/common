@@ -1,12 +1,12 @@
 #! /usr/bin/env perl
 
-use strict;
-use warnings;
-no warnings 'uninitialized';
+use 5.010;
+use autodie qw< :all >;
+use warnings FATAL => 'all';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class List::MoreUtils Test::Pretty >)
+	foreach (qw< Getopt::Std Path::Class List::MoreUtils >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -20,7 +20,9 @@ use List::MoreUtils qw< uniq >;
 sub print_color(@);
 
 
-my $opt = {};
+$| = 1;
+
+my $opt = { N => '', };
 getopts("hnTcvsAPDN:", $opt);
 
 # help message
@@ -126,6 +128,11 @@ if (-r "dist.ini" and @ARGV)
 ###########################
 
 
+#
+# set up cover stuff
+# 		[ -c switch ]
+#
+
 my $coverdb = '/tmp/cover_db';
 my $cover = "cover";
 $cover .= " -silent" unless $opt->{D};
@@ -139,12 +146,26 @@ if ($opt->{c})
 	$ENV{$HARNESS} = "-MDevel::Cover=-db,$coverdb";
 }
 
+#
+# set up Test::Pretty stuff
+# 		[ -P switch ]
+#
+
+if ($opt->{P})
+{
+	eval { require Test::Pretty } or die("$0: Test::Pretty not found [ $@ ]\n");
+}
+
+
+#
+# find the right directory
+#
 
 my ($dir, @files);
 my $arg = shift;
 if ($arg)
 {
-	if ( $arg =~ /\.t$/ )
+	if ( $arg =~ /\.(t|pm)$/ )
 	{
 		@files = ($arg);
 	}
@@ -163,16 +184,15 @@ if ($arg)
 		}
 		$pkg =~ s/::/-/g if $pkg;
 
-		foreach my $rentdir ($ENV{RENT_HOME}, $ENV{WEBROOT})
+		my @dirs = get_workenv('test_dirs');
+		if (@dirs)
 		{
-			next unless defined $rentdir;
-
-			# if we get this far, we're running in Rent.com environment
+			# if we get this far, we're running in a work environment
 			(my $d = $arg) =~ s{::}{/}g;
-			foreach my $t_dir (qw< lib/Test/t lib/Company/t >)
+			foreach my $t_dir ( @dirs )
 			{
-				push @possibles, "$rentdir/$t_dir/$d";
-				push @possibles, "$rentdir/$t_dir/$pkg" if $pkg;
+				push @possibles, "$WORKDIR/$t_dir/$d";
+				push @possibles, "$WORKDIR/$t_dir/$pkg" if $pkg;
 			}
 		}
 
@@ -182,15 +202,15 @@ if ($arg)
 		@possibles = uniq @possibles;
 		push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
 
-		$dir = find_dir(@possibles);
-		# used to chdir to $dir here, but I don't think it's truly necessary ...
+		my $found = find_dest(@possibles);
+		-d $found ? ($dir = $found) : push @files, $found if $found;
 	}
 }
 
 # if we haven't found the directory/files yet, better try harder
 if (not $dir and not @files)
 {
-	$dir = find_dir("t", "../t", "../../t", "../../../t");
+	$dir = find_dest("t", "../t", "../../t", "../../../t");
 }
 die("$0: cannot figure out where test files are\n") unless $dir or @files;
 
@@ -212,7 +232,7 @@ $precommand->() if $precommand;
 
 my @prove_args;
 push @prove_args, '-c' if -t STDOUT;
-push @prove_args, '-v' if $opt->{v};
+push @prove_args, '-v', '--merge' if $opt->{v};
 push @prove_args, '-Q' if $opt->{s};
 push @prove_args, '-T' if $opt->{T};
 push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
@@ -221,6 +241,7 @@ push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c} or $opt->{P};
 push @prove_args, '-PPretty' if $opt->{P};
 push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 push @prove_args, @files;
+push @prove_args, get_workenv('post_args');
 my $command = "prove @prove_args";
 print STDERR "running: $command\n" if $opt->{D};
 print STDERR "         (with \$HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
@@ -293,6 +314,48 @@ if ($opt->{c})
 ###########################
 
 
+our $WORKDIR;
+sub get_workenv
+{
+	my ($param) = @_;
+	state $WORKENV =
+	{
+		Rent	=>	{
+						env_var		=>	[ 'WEBROOT', 'RENT_HOME' ],
+						test_dirs	=>	[qw< lib/Test/t lib/Company/t >],
+					},
+		CE		=>	{
+						env_var		=>	[ 'CEROOT' ],
+						test_dirs	=>	[qw< t/lib >],
+						post_args	=>	[qw< :: --database cetest >],
+					},
+	};
+	state $CURENV;
+
+	unless (defined $CURENV)
+	{
+		foreach my $env (keys %$WORKENV)
+		{
+			my $env_vars = $WORKENV->{$env}->{env_var};
+			foreach (@$env_vars)
+			{
+				if (exists $ENV{$_})
+				{
+					$WORKDIR = $ENV{$_};
+					next unless -d $WORKDIR;
+					$CURENV = $env;
+					last;
+				}
+			}
+			last if $CURENV;
+		}
+		$CURENV //= 0;													# i.e., false but not undefined
+	}
+
+	return $CURENV ? @{ $WORKENV->{$CURENV}->{$param} } : ();
+}
+
+
 sub get_pkgname
 {
 	if (local $_ = shift)
@@ -332,13 +395,17 @@ sub identify_perl_module
 }
 
 
-sub find_dir
+sub find_dest
 {
 	foreach (@_)
 	{
 		next unless $_;
-		print STDERR "looking for dir: $_\n" if $opt->{D};
-		if (-d)
+		print STDERR "checking destination: $_\n" if $opt->{D};
+		if (-f "$_.pm")
+		{
+			return prettify_dir("$_.pm");
+		}
+		elsif (-d)
 		{
 			return prettify_dir($_);
 		}

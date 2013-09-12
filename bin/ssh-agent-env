@@ -1,0 +1,38 @@
+#! /bin/bash
+
+# oldest copy of ssh-agent running
+pid=$(/bin/ps -o pid= --sort -stime -p $(/usr/bin/pgrep -x ssh-agent) | head -n1)
+
+# find the socket(s)
+sockets=$(/bin/ls -1 /tmp/ssh-*/agent.*)
+if [[ $(echo "$sockets" | wc -l) == 1 ]]
+then
+	socket=$sockets
+else
+	for socket in $sockets
+	do
+		# `ls -l` returns dates as *either* Mmm DD HH:MM *or* Mmm DD  YYYY
+		# whereas `ps -o lstart` always returns Dow Mmm DD HH:MM:SS YYYY
+		# so we'll just compare both ways; if either match, this is the right socket
+		ls_date=$(/bin/ls -l $socket | awk '{print $6, $7, $8}')
+		pid_date=$(/bin/ps -o lstart= $pid)
+		pid_daytime=$(echo "$pid_date" | awk '{print $2, $3, $4}')
+		pid_dayyear=$(echo "$pid_date" | awk '{print $2, $3, $5}')
+		pid_daytime=${pid_daytime%:*}									# remove seconds
+		if [[ $ls_date == $pid_daytime || $ls_date == $pid_dayyear ]]
+		then
+			break
+		fi
+		socket=
+	done
+fi
+
+if [[ -z $socket ]]
+then
+	echo "$0: can't find the socket!" >&2
+	exit 1
+fi
+
+
+echo "setenv SSH_AGENT_PID $pid;"
+echo "setenv SSH_AUTH_SOCK $socket;"

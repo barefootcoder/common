@@ -1,5 +1,5 @@
 GRIP 2
-grip_version 3.2.0
+grip_version 3.3.1
 cd_device /dev/cdrom
 force_scsi 
 ripexename /usr/bin/cdparanoia
@@ -30,7 +30,7 @@ mp3_filter_cmd
 doid3 1
 doid3v2 1
 tag_mp3_only 1
-id3_comment Created by Grip
+id3_comment 
 max_wavs 99
 auto_rip 0
 eject_after_rip 1
@@ -59,8 +59,10 @@ automatic_cddb 1
 automatic_reshuffle 1
 no_lower_case 1
 no_underscore 1
-allow_high_bits 1
-allow_these_chars 
+allow_high_bits 0
+escape 0
+allow_these_chars !~'"-:?
+show_tray_icon 1
 num_cpu 1
 kbits_per_sec 128
 selected_encoder 2
@@ -76,9 +78,3 @@ vol_vis 0
 track_edit_vis 1
 track_prog_vis 0
 volume 255
-execute_after_encode_cmd 
-disable_paranoia 0
-disable_extra_paranoia 0
-disable_scratch_detect 0
-disable_scratch_repair 0
-calc_gain 0

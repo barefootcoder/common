@@ -2,11 +2,15 @@
 
 use myperl DEBUG => 1;
 
+use Getopt::Std;
 use Time::Local;
-use Date::Format qw<time2str>;
 use Time::ParseDate qw<parsedate>;
 
 const my $AVAIL => ':AVAILABILITY';
+
+
+my $opts = {};
+getopts('a', $opts);
 
 my $cmd = shift;
 my $arg = shift;
@@ -32,7 +36,7 @@ while ( <> )
 {
 	if (/^\s*$/)
 	{
-		if ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+		if ( $cmd ~~ [qw< total eod daybreak >] )
 		{
 			if ($group_found)
 			{
@@ -56,7 +60,9 @@ while ( <> )
 					print_time("GRAND TOTAL", $total) if $lines > 1;
 					print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
 				}
-				exit;
+				exit unless $opts->{a};
+				say '';
+				$group_found = 0;
 			}
 			else
 			{
@@ -99,8 +105,10 @@ while ( <> )
 		}
 		next;
 	}
-	elsif ($cmd eq 'total' or $cmd eq 'eod' or $cmd eq 'daybreak')
+	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
+		next if $name =~ /:$/;
+
 		$group_found = 1 if $cmd eq 'total' and $name eq $tname;
 		my $sub;
 		if (@stuff)

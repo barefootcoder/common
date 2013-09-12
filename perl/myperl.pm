@@ -49,6 +49,25 @@ sub import
 	# our own routines, which we have to transfer by hand
 	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round;
 
+	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
+	# functions which loads the module, then passes off to the function.  Thus, if the function is
+	# never called, the module will never be loaded.  If it is called, it will be just like the
+	# function had been exported.
+	my %autoload_funcs =
+	(
+		'Date::Parse'	=>	'str2time',
+		'Date::Format'	=>	'time2str',
+		'IO::Prompter'	=>	'prompt',
+	);
+	foreach (keys %autoload_funcs)
+	{
+		my $module = $_;
+		my $function = $autoload_funcs{$module};
+		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
+		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
+				unless $calling_package->can($function);
+	}
+
 	myperl->import_list_into($calling_package,
 
 		strict							=>
@@ -57,7 +76,7 @@ sub import
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
-		CLASS							=>	1.00		=>
+		#CLASS							=>	1.00		=>				# handled by myperl::Declare
 		TryCatch						=>
 		'Const::Fast'					=>
 		'Path::Class'					=>
@@ -92,28 +111,38 @@ sub use_and_import_into
 	my $args = ref $_[-1] eq 'ARRAY' ? pop : undef;
 	my ($class, $to_pkg, $from_pkg, $version) = @_;
 
-	use_module($from_pkg);
+	use_module($from_pkg, $version);
 	$from_pkg->import::into($to_pkg, @{ $args || [] }) unless $args and @$args == 0;
 }
 
 
 sub title_case
 {
+	use utf8;
 	require Text::Capitalize;
+	require Unicode::Normalize;
+
+	# let's make this work with Unicode
+	local $Text::Capitalize::word_rule = $Text::Capitalize::word_rule;
+	$Text::Capitalize::word_rule =~ s/\\w/\\p{Word}/g;
 
 	# ought to be able to use local here, but I can't seem to make it work
 	# perhaps you can't localize variables in other packages?
 	my @save = @Text::Capitalize::exceptions;
-	push @Text::Capitalize::exceptions, qw< from into as on >;
-	my $t = Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1);
+	push @Text::Capitalize::exceptions, qw< from into as on la du un pour des >;
+	my $t = Unicode::Normalize::NFD(Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1));
 
 	# preserving all caps seems to let the word "A" stay "A" when it should go to "a"
 	# we'll fix that with an explicit substitution
 	# we use literal spaces rather than \b's to avoid changing it at the beginning or end of the string
-	$t =~ s/ A / a /g;
+	$t =~ s/ (A\X?) / lc " $1 " /eg;
+
+	# some fixups for French titles
+	$t =~ s/ ([DL])'(\p{Word})/ lc(" $1") . "'$2" /eg;
+	$t =~ s/\b([DLdl])'(\p{Word})/ "$1'" . uc($2) /eg;
 
 	@Text::Capitalize::exceptions = @save;
-	return $t;
+	return Unicode::Normalize::NFC($t);
 }
 
 
@@ -171,7 +200,7 @@ Plus the import of any functions below under L</FUNCTIONS>.
 
 =head1 OPTIONS
 
-The following options can be passed to C<myperl>.  They can be combined in any combiation.
+The following options can be passed to C<myperl>.  They can be combined in any permutation.
 
 =head2 DEBUG
 
@@ -189,26 +218,49 @@ Don't make all warnings fatal (but still turn them on).
 
 	use myperl DataDumper => 1;
 
-Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of L<Data::Printer>).
+Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
+L<Data::Printer>).
 
 
 =head1 FUNCTIONS
+
+=head2 Date Functions
+
+These functions are exported, but the modules they derive from are only loaded if the functions
+themselves are called.  See their respective modules for more info on them:
+
+=over 4
+
+=item B<str2time> (from L<Date::Parse>)
+
+=item B<time2str> (from L<Date::Format>)
+
+=back
+
+=head2 prompt
+
+Like the date functions, C<prompt> from L<IO::Prompter> is exported, but the module is only loaded
+if the function itself is called.  Note that C<prompt> returns an object and not a string, which may
+do funky things in certain circumstances.  I'm considering having C<prompt> be a wrapper around the
+original which will always throw exceptions in the case of failure (or timeout) and just return a
+simple string.  We'll see if this becomes necessary.  See L<IO::Prompter> for full details.
 
 =head2 title_case
 
 	$title = title_case($title);
 
-Similar the C<capitalize_title> method of L<Text::Capitalize>.  It preserves words in all caps, but
-still handles the word "a" appropriately.  It also adds a few more exceptions to the list.
+Similar to the C<capitalize_title> method of L<Text::Capitalize>.  It preserves words in all caps,
+but still handles the word "a" appropriately.  It also adds a few more exceptions to the list,
+including some which make it work more appropriately for French titles.
 
 =head2 round
 
-	$num = round($num);					# round off to the nearest 1
-	$num = round(OFF => $num);			# same thing
-	$num = round(DOWN => $num);			# or can round down
-	$num = round(UP => $num);			# or up
-	$num = round($num, .25);			# round off to the nearest 1/4
-	$num = round(DOWN => $num, .25);	# combine all options
+    $num = round($num);                 # round off to the nearest 1
+    $num = round(OFF => $num);          # same thing
+    $num = round(DOWN => $num);         # or can round down
+    $num = round(UP => $num);           # or up
+    $num = round($num, .25);            # round off to the nearest 1/4
+    $num = round(DOWN => $num, .25);    # combine all options
 
 A simple way to do rounding.  When you give round() an initial argument of C<UP>, it acts just like C<POSIX::ceil>.
 When you give it an initial argument of C<DOWN>, it behaves just like C<POSIX::floor>.  When you use
@@ -230,6 +282,8 @@ I<After> that, if you want to make sure you have all the necessary prereqs, try 
 
 =head1 PREREQS
 
+# ignore this section if you're reading the man page
+
 CLASS
 Roman
 parent
@@ -241,7 +295,6 @@ Template
 Test::Most
 Term::Size
 File::Stat
-IO::Prompt
 Const::Fast
 Path::Class
 Tie::IxHash
@@ -249,12 +302,15 @@ Date::Parse
 Perl6::Form
 Dist::Zilla
 Math::Round
+Date::Parse
 Import::Into
 Sub::Install
 Perl6::Slurp
 Date::Format
 Carp::Always
 Email::Stuff
+Date::Format
+IO::Prompter
 Perl6::Gather
 Data::Printer
 Test::Command
@@ -280,6 +336,7 @@ Net::Google::PicasaWeb
 MooseX::ClassAttribute
 Net::Google::Spreadsheets
 Module::Install::JSONMETA
+MooseX::StrictConstructor
 Net::Google::DocumentsList
 
 =cut

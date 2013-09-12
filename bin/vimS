@@ -1,0 +1,45 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+# restore a vim session, only *exactly* like it was before
+#
+# Normally, using `vim -S sessionfile` leaves buffer #1 empty, and starts loading files at buffer
+# #2.  When searching for solutions for this online, most people advised that you shouldn't really
+# care (or rely on) which files were set to which buffers.  However, I find that, after working with
+# a certain set of files for a long time, your fingers grow accustomed to Ctrl-^ 3 being a certain
+# file, and when the buffers get renumbered, you have to retrain your fingers.  Why kill your
+# productivity this way?
+#
+# Plus the problem is very simple to fix.  When you do `vim -S sessionfile`, the first thing vim is
+# doing (apparently) is loading an empty buffer (exactly as if you'd done just `vim`).  Then, as it
+# goes through the `badd` commands in the sessionfile, it starts opening files, with the first one
+# starting at buffer #2.  There is also an `args` command in the sessionfile, which contains the
+# very first file (i.e., the one you initiated the whole session with by typing `vim first_file` in
+# the first place), but this doesn't seem to help fix the buffer numbering problem.  (Alert readers
+# of their sessionfiles will note that the `args` tends to come _after_ all the `badd`s; however,
+# moving the `args` up ahead of all the `badd`s doesn't change anything.)
+#
+# So the solution is to simply use `vim -S sessionfile first_file` instead.  Of course, this
+# requires that you remember which file was first.  You probably do, of course: if your fingers
+# weren't trained to know which file was Ctrl-^ 1, you wouldn't be so desperate to get the damn
+# numbering right in the first place.  However, it might be a long pathname, and who wants to type
+# that every time?  But, of course, we've already mentioned that filename is right there, in the
+# sessionfile, under the `args` command ...
+
+sessionfile=$1
+if [[ ! -f $sessionfile ]]
+then
+	sessionfile=~/.vimS-$1
+	if [[ ! -f ~/.vimS-$sessionfile ]]
+	then
+		sessionfile=~/local/data/vimS/$1
+	fi
+fi
+if [[ ! -r $sessionfile ]]
+then
+	die "session file $1 not specified, doesn't exist, or is unreadable"
+fi
+
+first_file=$(awk '$1 == "args" { print $2 }' $sessionfile)
+vim -S $sessionfile $(eval "echo $first_file")

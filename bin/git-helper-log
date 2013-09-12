@@ -3,13 +3,30 @@
 me=${0##*/}																# slightly prettier than $0
 readonly me
 
+
+function current_branch
+{
+	branch=$(git branch --contains HEAD | perl -lne 'print if s/^\* //')
+	if [[ $branch == *"no branch"* ]]
+	then
+		echo "$me: can't show branch logs with a detached HEAD" >&2
+		exit 1
+	fi
+	echo $branch
+}
+
+function branched_from
+{
+	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~]+).*?\]/'
+}
+
 cmd="git log"
 
 args=''
 verbose=0
 pretend=0
 date_format=local
-while getopts ":vdcpbln:LU:g:Gh" opt
+while getopts ":vdcpbln:LmU:g:Gh" opt
 do
 	case $opt in
 		v)	verbose=1
@@ -22,25 +39,31 @@ do
 			;;
 		p)	pretend=1
 			;;
-		b)	branch=$(git branch --contains HEAD | sed 's/^\* //')
-			if [[ $branch == *"no branch"* ]]
-			then
-				echo "$me: can't show branch logs with a detached HEAD" >&2
-				exit 1
-			fi
-			args="$args master..$branch"
+		b)	branch=$(current_branch)
+			from=$(branched_from)
+			args="$args $from..$branch"
 			;;
-		L)	branch=$(git branch --contains HEAD | sed 's/^\* //')
-			if [[ $branch == *"no branch"* ]]
+		L)	pushed=origin/$(current_branch)
+			if ! git show-ref --quiet $pushed
 			then
-				echo "$me: can't show branch logs with a detached HEAD" >&2
-				exit 1
+				# perhaps this is a new branch, never pushed anywhere
+				# let's try to find where it was branched from
+				pushed=$(branched_from)
+				if ! git show-ref --quiet $pushed
+				then
+					# WTF? it was branched from something that doesn't exist?
+					# that should never happen
+					echo "$me: branch never pushed and can't determine where branched from"
+					exit 1
+				fi
 			fi
-			args="$args origin/$branch..HEAD"
+			args="$args $pushed..HEAD"
 			;;
 		l)	args="$args -n1"
 			;;
 		n)	args="$args -n$OPTARG"
+			;;
+		m)  args="$args --author $(git config user.email)"
 			;;
 		U)  args="$args --author $OPTARG"
 			;;
@@ -48,16 +71,17 @@ do
 			;;
 		G)	date_format=gmt
 			;;
-		h)  echo "usage: $me -h | [-vdG | -c] [-p] [-b | -L] [-l | -nX] [-Uuser] [-g regex] [file ...]" >&2
+		h)  echo "usage: $me -h | [-vdG | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
 			echo "    -v : verbose (show files changed, include merge commits)" >&2
 			echo "    -d : show diffs of changed files" >&2
 			echo "    -G : display dates in GMT/UTC format" >&2
 			echo "    -c : don't show commits, just count them" >&2
 			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
-			echo "    -b : show only commit on the current branch (no merges unless -v)" >&2
+			echo "    -b : show only commits on the current branch (no merges unless -v)" >&2
 			echo "    -L : show only commits not yet pushed to server (no merges unless -v)" >&2
 			echo "    -l : show only latest commit (same as -n1)" >&2
 			echo "    -n : show only X commits (default: show all)" >&2
+			echo "    -m : show only my commits (commits by current user)" >&2
 			echo "    -U : show only commits by user" >&2
 			echo "    -g : show only commits with log messages containing regex" >&2
 			echo "    -h : this help message" >&2

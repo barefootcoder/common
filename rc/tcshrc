@@ -26,6 +26,7 @@ unset autologout
 unset autocorrect
 unset correct
 unset complete
+set echo_style=both
 set notify
 set symlinks=ignore
 set ellipsis
@@ -255,6 +256,9 @@ endif
 if ( -d ~/.dropbox-dist ) then
 	$HOME/bin/dropbox start
 endif
+
+# refresh or create ssh-agent vars
+eval `ssh-agent-env`
 
 if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	# debugging

@@ -1,0 +1,13 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+sql_file=$1
+if [[ $sql_file == ${sql_file%.sql} ]]
+then
+	die "arg must be a .sql file"
+fi
+
+export sql_file
+export yml_file=${sql_file%.sql}.yml
+vimS ~/.vimS-report

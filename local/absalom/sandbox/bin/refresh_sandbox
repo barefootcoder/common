@@ -1,0 +1,46 @@
+#! /bin/bash
+
+# need this for practically everything
+make tunnels
+
+
+# cpanm infrastructure
+cpanm --sudo --self-upgrade
+cpanm --sudo Digest::MD5::File File::chdir File::Find::Rule IO::All IPC::System::Simple JSON::XS local::lib 		\
+		LWP::Simple List::AllUtils MyCPAN::App::DPAN YAML::XS
+
+
+# update local::lib stuff
+rm ~/.cpanm/build.log
+make extlib
+
+
+# Puppet
+make sandbox-puppet
+
+
+# datbase updates
+dbname=localdev
+
+# have to do the schema-diff first, or sometimes the other commands will fail
+echo -e "\n\n\nPlease run the following commands (if any) in your $dbname:"
+bin/dbschema-diff
+echo "I'll wait ..."
+while true
+do
+	read
+	echo -n "Are you ready to proceed? [y/N]  "
+	read yn
+	if [[ $yn == [yY]* ]]
+	then
+		break
+	fi
+done
+
+bin/copy-database --from ceprod4 --to $dbname --base-tables --location-tables --partner-map-tables					\
+		--table tblfake_user_data --remote-user $CE_REMOTE_USERNAME
+bin/copy-available-offer-db-records
+
+# call our companion script
+# (this is seprated out so it can also be called by new_sandbox)
+update_user_records
