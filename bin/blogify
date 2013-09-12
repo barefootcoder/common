@@ -90,6 +90,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
+	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	if ($blog_type eq 'bbcode')
