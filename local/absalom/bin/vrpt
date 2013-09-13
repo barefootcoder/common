@@ -10,4 +10,4 @@ fi
 
 export sql_file
 export yml_file=${sql_file%.sql}.yml
-vimS ~/.vimS-report
+vimS report

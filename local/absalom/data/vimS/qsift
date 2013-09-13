@@ -58,6 +58,8 @@ badd +1573 lib/CE/PotentialLeadsCalculator.pm
 badd +1504 t/lib/CE/Search/WebUpsell.pm
 badd +0 database/scripts/build-offer-search-tables.sql
 badd +20 tlib/CE/TestSchemaObject/Publisher.pm
+badd +800 lib/CE/PageAdmin/PotentialLeadsManager.pm
+badd +3570 t/lib/CE/PotentialLeadsCalculator.pm
 args lib/CE/Schema/SearchOfferLeadCap.pm
 edit t/lib/CE/Search/WebUpsell.pm
 set splitbelow splitright
