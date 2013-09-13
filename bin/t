@@ -6,7 +6,7 @@ use warnings FATAL => 'all';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class List::MoreUtils >)
+	foreach (qw< Getopt::Std Path::Class Perl6::Slurp List::MoreUtils >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -15,6 +15,7 @@ BEGIN { check_prereqs() }
 
 use Getopt::Std;
 use Path::Class;
+use Perl6::Slurp;
 use List::MoreUtils qw< uniq >;
 
 sub print_color(@);
@@ -23,7 +24,7 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-getopts("hnTcvsAPDN:", $opt);
+getopts("hnTcvsAPDN:m:", $opt);
 
 # help message
 if ($opt->{h})
@@ -46,6 +47,10 @@ if ($opt->{h})
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
 	print "                  -Nj: do not parallelize tests (default: prove -j5 [unless -c or -P])\n";
+	print "           -m: only run a single test method in the specified file\n";
+	print "                  this only works with Test::Class-style tests\n";
+	print "                  you can specify a partial name; if it is ambiguous, it is an error\n";
+	print "                  this probably doesn't work with multiple files\n";
 	exit;
 }
 
@@ -226,6 +231,26 @@ my %req_modules =
 );
 $ENV{PERL5OPT} = join(' ', map { $opt->{$_} ? "-M$req_modules{$_}" : () } keys %req_modules);
 
+# set test method if requested
+if ($opt->{m})
+{
+	my $sub = qr/\w*$opt->{m}\w*/;
+	my @candidates = map { /sub\s+($sub)\s*:\s*Test/ ? $1 : () } map { slurp } @files;
+	if (@candidates == 0)												# too few
+	{
+		die("$0: can't find method *$opt->{m}*");
+	}
+	elsif (@candidates > 1)												# too many
+	{
+
+		die("$0: method pattern *$opt->{m}* is ambiguous (", join(',', @candidates), ")");
+	}
+	else																# just right
+	{
+		$ENV{TEST_METHOD} = $candidates[0];
+	}
+}
+
 
 print "\n" x 10 unless $opt->{s};
 $precommand->() if $precommand;
@@ -244,8 +269,9 @@ push @prove_args, @files;
 push @prove_args, get_workenv('post_args');
 my $command = "prove @prove_args";
 print STDERR "running: $command\n" if $opt->{D};
-print STDERR "         (with \$HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
+print STDERR "         (with $HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
 print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and grep { $opt->{$_} } keys %req_modules;
+print STDERR "         (with TEST_METHOD=$ENV{TEST_METHOD})\n" if $opt->{D} and $opt->{m};
 #!system("$command 2>&1 | grep -v '^Devel::Cover' | grep -v '^Can.t find digest for accessor'") or exit 1;
 open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
 while ( <PIPE> )
