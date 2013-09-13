@@ -31,7 +31,7 @@ sessionfile=$1
 if [[ ! -f $sessionfile ]]
 then
 	sessionfile=~/.vimS-$1
-	if [[ ! -f ~/.vimS-$sessionfile ]]
+	if [[ ! -f $sessionfile ]]
 	then
 		sessionfile=~/local/data/vimS/$1
 	fi
