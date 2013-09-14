@@ -17,7 +17,7 @@ function current_branch
 
 function branched_from
 {
-	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~]+).*?\]/'
+	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/'
 }
 
 cmd="git log"
