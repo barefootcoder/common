@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # need this for practically everything
-make tunnels
+bin/ssh-tunnels
 
 
 # cpanm infrastructure
@@ -12,7 +12,7 @@ cpanm --sudo Digest::MD5::File File::chdir File::Find::Rule IO::All IPC::System:
 
 # update local::lib stuff
 rm ~/.cpanm/build.log
-make extlib
+extlib/install --quiet --notest
 
 
 # Puppet
@@ -40,6 +40,8 @@ done
 bin/copy-database --from ceprod4 --to $dbname --base-tables --location-tables --partner-map-tables					\
 		--table tblfake_user_data --remote-user $CE_REMOTE_USERNAME
 bin/copy-available-offer-db-records
+make elasticsearch-refresh
+make cetest
 
 # call our companion script
 # (this is seprated out so it can also be called by new_sandbox)
