@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+
+use myperl;
+use autodie qw< :all >;
+
+use JSON;
+
+$| = 1;
+
+
+my $prog = shift or die("usage: $0 'perl program to process json lines' [file ...]");
+our $j;
+
+my $processor = q{
+	sub process
+	{
+		local $_ = {};
+		##prog##;
+		say to_json($_) if %$_;
+	}
+	1;
+};
+$processor =~ s/##prog##/$prog/;
+eval $processor or die("$0: compile error: $@");
+
+while ( <> )
+{
+	s/^.*?{/{/;
+	$j = from_json($_);
+	process();
+}
+
+
+func copy (@keys)
+{
+	my $dest = $_;
+	local $_;
+	$dest->{$_} = $j->{$_} foreach @keys;
+	#$_ = $dest;
+}
