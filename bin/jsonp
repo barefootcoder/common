@@ -1,9 +1,11 @@
 #! /usr/bin/env perl
 
-use myperl;
+use 5.014;
 use autodie qw< :all >;
+use warnings FATAL => 'all';
 
 use JSON;
+use Method::Signatures;
 
 $| = 1;
 
@@ -36,5 +38,4 @@ func copy (@keys)
 	my $dest = $_;
 	local $_;
 	$dest->{$_} = $j->{$_} foreach @keys;
-	#$_ = $dest;
 }
