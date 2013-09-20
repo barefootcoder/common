@@ -29,7 +29,8 @@ uda.xpri.type=string
 uda.xpri.label=Pri
 uda.xpri.values=A1,A2,A3,B1,B2,B3,C1,C2,C3,D1,D2,D3
 
-report.ls.columns=id,project,xpri,description
+report.ls.columns=id,project,xpri,description,tags
+report.ls.labels=ID,Project,Pri,Description,Category
 report.ls.sort=xpri+,project+
 report.next.columns=id,project,xpri,due,start.active,entry.age,urgency,description
 report.next.sort=urgency-,due+,xpri-,start-,project+
