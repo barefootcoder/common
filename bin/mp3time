@@ -1,0 +1,16 @@
+#! /usr/bin/env perl
+
+use 5.014;
+use autodie qw< :all >;
+use warnings FATAL => 'all';
+
+use MP3::Info;
+
+foreach (@ARGV)
+{
+	my $info = get_mp3info($_) or die("$_ doesn't look like an MP3 file");
+	my $total_secs = $info->{SECS};
+	my $mins = int( $total_secs / 60 );
+	my $secs = $total_secs % 60;
+	printf("%3d:%02d :: $_\n", $mins, $secs);
+}
