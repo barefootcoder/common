@@ -1,0 +1,12 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+host="$1"
+if ! fgrep "*.campusexplorer.com" ~/.ssh/config | grep -qe $host
+then
+	die "can't login to host $host"
+fi
+
+
+ssh $host "cd /var/local/CE/var/log/apache2 ; tail -F error_log.$(date +%Y%m%d)"
