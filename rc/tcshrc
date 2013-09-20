@@ -170,7 +170,9 @@ setenv CURRENT_SCREEN base
 alias sr 'screen -A -x $CURRENT_SCREEN'
 alias dev 'umask 2 ; newgrp \!^ dev'
 alias pgrep 'grep -P \!*'
-alias weberr "tail $APACHE_LOG/error_log"
+if ( -e /etc/profile.d/tcsh-complete ) then
+	alias weberr "tail $APACHE_LOG/error_log"
+endif
 alias timer "cd ~/timer ; vi -u ~/.vim-timer timer-new"
 alias lctime "history | tail -n2 | head -n1 | awk '{print "'$2'"}'"
 
