@@ -93,7 +93,7 @@ done
 scrsize=$(xrandr -q 2>&1 | perl -lne 'if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}')
 # figure proper font size
 case $scrsize in
-	*x768)		fontsize=12
+	*x768)		fontsize=11.5
 				;;
 	*x1024)		fontsize=13
 				;;
