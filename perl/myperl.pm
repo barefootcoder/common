@@ -50,7 +50,7 @@ sub import
 	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round;
 
 	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
-	# functions which loads the module, then passes off to the function.  Thus, if the function is
+	# function which loads the module, then passes off to the function.  Thus, if the function is
 	# never called, the module will never be loaded.  If it is called, it will be just like the
 	# function had been exported.
 	my %autoload_funcs =
@@ -58,10 +58,13 @@ sub import
 		'Date::Parse'	=>	'str2time',
 		'Date::Format'	=>	'time2str',
 		'IO::Prompter'	=>	'prompt',
+		'myperl::Menu'	=>	'menu',
 	);
 	foreach (keys %autoload_funcs)
 	{
 		my $module = $_;
+		next if $calling_package eq $module;							# don't export things to themselves
+
 		my $function = $autoload_funcs{$module};
 		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
 		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })

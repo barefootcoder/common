@@ -303,7 +303,6 @@ class HiringSheet
 {
 	use myperl::Google;
 
-	use Date::Format;
 	use Net::Google::Spreadsheets;
 
 
@@ -599,45 +598,6 @@ menu(\%main_menu);
 #         functions
 ######################################################################
 
-func menu ($menu)
-{
-	state $menu_prompt = "Enter letter of choice.\nUse <Esc> to return to previous menu.\n";
-	MENULOOP: while (1)
-	{
-		system("clear");
-		say "\nYou are logged in as $CONFIG->{'name'}.  Choose 'Reload' to change that.\n\n";
-
-		while (1)
-		{
-			local $_ = prompt $menu_prompt, -menu => [ keys %$menu ];
-			given ($menu->{$_})
-			{
-				dispatch($_) when ref eq 'CODE';
-				menu($_) and next MENULOOP when ref eq 'HASH';
-				return 1 when undef;
-			}
-			last if $_;
-		}
-
-		print "\n\nPress RETURN to continue ...  ";
-		<STDIN>;
-	}
-}
-
-func dispatch ($code)
-{
-	say "\n";
-	try
-	{
-		$code->();
-		1;
-	}
-	catch ($err)
-	{
-		say STDERR "call died with: $err";
-	}
-}
-
 
 func prompt_for_candidate
 {
@@ -738,7 +698,6 @@ func lunch_interview
 {
 	use myperl::Google;
 
-	use Date::Format;
 	use Time::ParseDate;
 
 	state $ATTENDEES =
@@ -835,7 +794,6 @@ func phone_screen_confirmation
 {
 	use myperl::Google;
 
-	use Date::Format;
 	use Time::ParseDate;
 
 	my $cand = existing_candidate();
