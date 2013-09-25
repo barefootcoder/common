@@ -100,6 +100,10 @@ then
 		then
 			DISPLAY=${DISPLAY:-:0.0} $GUI_EDITOR /tmp/hold.wri
 		fi
+	elif [[ "$1" == *.md ]]
+	then
+		xclip -selection c "$1"
+		echo "copied to X clipboard"
 	elif [[ "$1" == xtrack_posts ]]
 	then
 		scp $1 heroscapers:bin
