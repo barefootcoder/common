@@ -3,11 +3,25 @@ package myperl::Menu;
 use myperl;
 
 
-our $status = '';
+my ($status, $status_func);
+menu::status('');
 
 func menu::status ($new_status)
 {
-	$status = $new_status;
+	if (ref $new_status eq 'CODE')
+	{
+		$status_func = $new_status;
+	}
+	else
+	{
+		$status_func = \&_show_status;
+		$status = $new_status;
+	}
+}
+
+func _show_status
+{
+	say "\n$status\n\n";
 }
 
 
@@ -18,7 +32,7 @@ func menu ($menu, :$prompt = "Enter letter of choice.\nUse <Esc> to return to pr
 	MENULOOP: while (1)
 	{
 		system("clear");
-		say "\n$status\n\n";
+		$status_func->();
 
 		while (1)
 		{
