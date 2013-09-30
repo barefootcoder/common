@@ -23,8 +23,8 @@ make sandbox-puppet
 dbname=localdev
 
 # have to do the schema-diff first, or sometimes the other commands will fail
-echo -e "\n\n\nPlease run the following commands (if any) in your $dbname:"
 bin/dbschema-diff
+echo -e "\n\nPlease run the above commands (if any) in your $dbname."
 echo "I'll wait ..."
 while true
 do
