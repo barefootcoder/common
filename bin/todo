@@ -1,0 +1,121 @@
+#! /usr/bin/env perl
+
+use myperl;
+use myperl::Menu;
+
+use Tie::IxHash;
+
+
+my $cur_context;
+# default contexts (by day)
+my %CONTEXT_DAYS =
+(
+	Mon		=>	'+computer',
+	Tue		=>	'-work',
+	Wed		=>	'+perl',
+	Thu		=>	'+gaming',
+	Fri		=>	'+forum',
+	Sat		=>	'+reorg',
+	Sun		=>	'(+writing or +music)',
+);
+
+# priorities
+my @PRIORITIES = qw< A1 A2 A3 B1 B3 B3 C1 C2 C3 D1 D2 D3 >;
+
+tie my %context_menu, 'Tie::IxHash',
+(
+	"Today's context"					=>	'today',
+	"Work"								=>	'+work',
+	"Only non-work"						=>	'-work',
+	"Choose a category"					=>	'cat',
+	"Choose a project"					=>	'proj',
+);
+
+tie my %main_menu, 'Tie::IxHash',
+(
+	'Add an item'						=>	\&add_item,
+	'Reload program'					=>	sub { exec $0, @ARGV },
+	'Context switch'					=>	\&change_context,
+);
+
+menu::status(sub {
+	say "Current context: $cur_context";
+	system(qw< task ls >, $cur_context);
+});
+
+change_context('today');
+menu(\%main_menu, prompt => "\nTask menu:  (Esc to refresh)") while 1;
+
+
+
+#################
+# HELPER SUBS
+#################
+
+func today
+{
+	# we want each day to start at 6am
+	# thus, times prior to 6am should register as "yesterday"
+	# so we just take the current time and subtract 6 hours
+	return time - 60 * 60 * 6;
+}
+
+#################
+# MENU SUBS
+#################
+
+func add_item
+{
+	my $desc = prompt "Task:";
+
+	my $def_proj = $cur_context =~ /proj:(\w+)/ ? $1 : '';
+	my $proj = prompt "Project:";
+
+	my $def_cat = $cur_context =~ /\+(\w+)/ ? $1 : '';
+	my $cat = prompt "Category:";
+
+	my $pri = prompt -single, -menu => [ @PRIORITIES ], 'Priority:';
+
+	die("must supply all values") unless $desc and $proj and $cat and $pri;
+	system(qw< task add >, $desc, "proj:$proj", "+$cat", "xpri:$pri");
+}
+
+
+func change_context ($context?)
+{
+	unless ($context)
+	{
+		$context = menu(\%context_menu);
+	}
+
+	given ($context)
+	{
+		when ('today')
+		{
+			my $day = time2str('%a', today);
+			$cur_context = $CONTEXT_DAYS{$day};
+		}
+
+		when ('cat')
+		{
+			my $cat = prompt "Enter category:";
+			$cur_context = "+$cat";
+		}
+
+		when ('proj')
+		{
+			my $proj = prompt "Enter project:";
+			$cur_context = "proj:$proj";
+		}
+
+		when (/^[+-]/)
+		{
+			$cur_context = $context;
+		}
+
+		default
+		{
+			die("don't know how to interpret context: $context");
+		}
+	}
+}
