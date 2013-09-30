@@ -73,17 +73,6 @@ function send_to_sandbox
 }
 
 
-if [[ -z $GUI_EDITOR ]]
-then
-	if which pluma >/dev/null 2>&1
-	then
-		GUI_EDITOR=pluma
-	else
-		GUI_EDITOR=gedit
-	fi
-fi
-
-
 if [[ $VCTOOLS_SHELL == "proj:$proj" || ( $VCTOOLS_SHELL == "git" && $(pwd) == */proj/rent* ) ]]
 then
 	send_to_sandbox "$1"
@@ -96,10 +85,8 @@ then
 		wikify "$1"
 	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || "$first_line" == "/bbcode/" ]]
 	then
-		if blogify "$1" >/tmp/hold.wri
-		then
-			DISPLAY=${DISPLAY:-:0.0} $GUI_EDITOR /tmp/hold.wri
-		fi
+		blogify "$1" | xclip -selection c
+		echo "copied to X clipboard"
 	elif [[ "$1" == *.md ]]
 	then
 		xclip -selection c "$1"
@@ -115,7 +102,8 @@ then
 		gen_pdf
 	elif [[ $1 == *.testing.notes || $(realpath "$1") == */C3V/* || $(basename "$1") == github.reply ]]
 	then
-		DISPLAY=${DISPLAY:-:0.0} $GUI_EDITOR "$1"
+		xclip -selection c "$1"
+		echo "copied to X clipboard"
 	else
 		echo "$me: don't know how to push this file to testing" >&2
 		exit 2
