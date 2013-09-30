@@ -57,8 +57,9 @@ endif
 set shortmess=aoO
 badd +1 lib/App/VC/Command/$command.pm
 badd +0 lib/App/VC/Command.pm
+badd +5 bin/vc
 args lib/App/VC/Command/$command.pm
-edit lib/App/VC/Command/$command.pm
+edit lib/App/VC/Command.pm
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
