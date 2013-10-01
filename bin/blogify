@@ -208,6 +208,8 @@ sub url_block
 		{
 			return "[$url]";
 		}
+
+		return qq{[url="$url"]${alt_text}[/url]};
 	}
 
 	if ($url =~ /^(\w+):/)												# external link
@@ -246,7 +248,7 @@ sub code_block
 	my ($type, $code) = @_;
 
 	$code = fmt(code => expand($code));
-	$code = "<pre>$code</pre>" if $type eq 'block';
+	$code = "<pre>$code</pre>" if $type eq 'block' and $blog_type ne 'bbcode';
 	return block_save($code);
 }
 
