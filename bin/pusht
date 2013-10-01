@@ -85,8 +85,9 @@ then
 		wikify "$1"
 	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || "$first_line" == "/bbcode/" ]]
 	then
+		set -o pipefail
 		blogify "$1" | xclip -selection c
-		echo "copied to X clipboard"
+		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.md ]]
 	then
 		xclip -selection c "$1"
