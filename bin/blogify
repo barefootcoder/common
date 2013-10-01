@@ -144,6 +144,14 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
+	# handle italics inside blockquotes (blogspot only)
+	if ($blog_type eq 'blogspot')
+	{
+		while (m{<blockquote>(.*?)</blockquote>}sg)
+		{
+			substr($_, $-[1], $+[1] - $-[1]) =~ s/font-style: italic;/font-style: normal;/g;
+		}
+	}
 	# append footnotes
 	if (first { defined } @footnotes)
 	{
