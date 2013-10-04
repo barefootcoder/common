@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+
+use myperl;
+use autodie qw< :all >;
+
+
+my (@includes, @excludes);
+my @sql_keywords = (qr/;\s*$/, qr/^\s*\)/, map { qr/^[\s,(]*\b$_\b/i } qw< create select union >);
+my @table_keywords = map { qr/^\s*$_\b(\s+\w+)?/i } 'from', '(?:left\s+|right\s+)?join';
+
+foreach (@ARGV)
+{
+	push @includes, qr/$_/ and next if s/^\+//;
+	push @excludes, qr/$_/ and next if s/^-//;
+	process_file($_);
+}
+
+
+func process_file ($filename)
+{
+	my $print_next = 0;
+
+	open(IN, $filename);
+	foreach ( <IN> )
+	{
+		print and $print_next = 0 when $print_next > 0;
+		next when @excludes;
+		print when @includes;
+		print when @sql_keywords;
+
+		when (@table_keywords)
+		{
+			print;
+			$print_next = 1 unless $1;
+		}
+	}
+	close(IN);
+
+	# reset includes and excludes here?
+}
