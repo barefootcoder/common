@@ -36,6 +36,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Add an item'						=>	\&add_item,
 	'Reload program'					=>	sub { exec $0, $cur_context },
 	'Context switch'					=>	\&change_context,
+	'Done with a task'					=>	\&done_item,
 );
 
 menu::status(sub {
@@ -78,6 +79,17 @@ func add_item
 
 	die("must supply all values") unless $desc and $proj and $cat and $pri;
 	system(qw< task add >, $desc, "proj:$proj", "+$cat", "xpri:$pri");
+}
+
+
+func done_item
+{
+	my $task = prompt "Which task is done?", -integer => sub { $_ > 0 };
+	system(qw< task ls >, $task);
+	if (prompt -y1, "Is this the right task?")
+	{
+		system(qw< task >, $task, qw< done >);
+	}
 }
 
 
