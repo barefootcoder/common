@@ -6,7 +6,7 @@ use myperl::Menu;
 use Tie::IxHash;
 
 
-my $cur_context;
+my $cur_context = shift // 'today';
 # default contexts (by day)
 my %CONTEXT_DAYS =
 (
@@ -34,7 +34,7 @@ tie my %context_menu, 'Tie::IxHash',
 tie my %main_menu, 'Tie::IxHash',
 (
 	'Add an item'						=>	\&add_item,
-	'Reload program'					=>	sub { exec $0, @ARGV },
+	'Reload program'					=>	sub { exec $0, $cur_context },
 	'Context switch'					=>	\&change_context,
 );
 
@@ -43,7 +43,7 @@ menu::status(sub {
 	system(qw< task ls >, $cur_context);
 });
 
-change_context('today');
+change_context($cur_context);
 menu(\%main_menu, prompt => "\nTask menu:  (Esc to refresh)") while 1;
 
 
@@ -108,7 +108,7 @@ func change_context ($context?)
 			$cur_context = "proj:$proj";
 		}
 
-		when (/^[+-]/)
+		when (/^[+-]/ or /^proj:/)
 		{
 			$cur_context = $context;
 		}
