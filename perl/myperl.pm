@@ -328,6 +328,7 @@ Text::Unidecode
 Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
+MooseX::App::Cmd
 MooseX::Singleton
 Class::PseudoHash
 MooseX::Has::Sugar
@@ -337,6 +338,7 @@ Test::Pod::Coverage
 Net::Google::Calendar
 Net::Google::PicasaWeb
 MooseX::ClassAttribute
+MooseX::Attribute::ENV
 Net::Google::Spreadsheets
 Module::Install::JSONMETA
 MooseX::StrictConstructor
