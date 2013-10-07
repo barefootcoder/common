@@ -12,6 +12,7 @@ $| = 1;
 
 my $prog = shift or die("usage: $0 'perl program to process json lines' [file ...]");
 our $j;
+our %count_results;
 
 my $processor = q{
 	sub process
@@ -33,6 +34,11 @@ while ( <> )
 	process();
 }
 
+if (%count_results)
+{
+	say "$_ : $count_results{$_}" foreach sort keys %count_results;
+}
+
 
 func copy (@keys)
 {
@@ -46,4 +52,9 @@ func clone ()
 	my $dest = $_;
 	local $_;
 	$dest->{$_} = $j->{$_} foreach keys %$j;
+}
+
+func count ($value)
+{
+	++$count_results{$value};
 }
