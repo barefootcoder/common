@@ -17,6 +17,7 @@ my $processor = q{
 	sub process
 	{
 		local $_ = {};
+		no warnings 'exiting';
 		##prog##;
 		say to_json($_) if %$_;
 	}
