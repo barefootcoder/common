@@ -40,3 +40,10 @@ func copy (@keys)
 	local $_;
 	$dest->{$_} = $j->{$_} foreach @keys;
 }
+
+func clone ()
+{
+	my $dest = $_;
+	local $_;
+	$dest->{$_} = $j->{$_} foreach keys %$j;
+}
