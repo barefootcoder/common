@@ -37,6 +37,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Reload program'					=>	sub { exec $0, $cur_context },
 	'Context switch'					=>	\&change_context,
 	'Done with a task'					=>	\&done_item,
+	'Edit a task'						=>	\&edit_item,
 	'Enter a custom command'			=>	\&custom,
 );
 
@@ -102,6 +103,15 @@ func done_item
 	if (my $task = pick_item("is done"))
 	{
 		system(qw< task >, $task, qw< done >);
+	}
+}
+
+
+func edit_item
+{
+	if (my $task = pick_item("to edit"))
+	{
+		system(qw< task >, $task, qw< edit >);
 	}
 }
 
