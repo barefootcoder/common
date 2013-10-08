@@ -1,5 +1,6 @@
 use 5.012;
 use warnings;
+use experimental 'smartmatch';
 use Devel::Declare 0.006007 ();
 
 package myperl;
@@ -76,6 +77,7 @@ sub import
 		strict							=>
 		warnings						=>					@{$mod_args{warnings}},,
 		feature							=>					[	':5.12'			],
+		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
@@ -306,6 +308,7 @@ Perl6::Form
 Dist::Zilla
 Math::Round
 Date::Parse
+experimental
 Import::Into
 Sub::Install
 Perl6::Slurp
