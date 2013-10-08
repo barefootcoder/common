@@ -20,15 +20,15 @@ my %CONTEXT_DAYS =
 );
 
 # priorities
-my @PRIORITIES = qw< A1 A2 A3 B1 B3 B3 C1 C2 C3 D1 D2 D3 >;
+my @PRIORITIES = qw< A1 A2 A3 B1 B2 B3 C1 C2 C3 D1 D2 D3 >;
 
 tie my %context_menu, 'Tie::IxHash',
 (
 	"Today's context"					=>	'today',
 	"Work"								=>	'+work',
-	"Only non-work"						=>	'-work',
 	"Choose a category"					=>	'cat',
 	"Choose a project"					=>	'proj',
+	"Only non-work"						=>	'-work',
 );
 
 tie my %main_menu, 'Tie::IxHash',
@@ -37,6 +37,7 @@ tie my %main_menu, 'Tie::IxHash',
 	'Reload program'					=>	sub { exec $0, $cur_context },
 	'Context switch'					=>	\&change_context,
 	'Done with a task'					=>	\&done_item,
+	'Enter a custom command'			=>	\&custom,
 );
 
 menu::status(sub {
@@ -64,6 +65,13 @@ func today
 #################
 # MENU SUBS
 #################
+
+func custom
+{
+	my $line = prompt "Send command: task ";
+	system("task $line");
+}
+
 
 func add_item
 {
