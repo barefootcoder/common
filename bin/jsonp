@@ -40,6 +40,21 @@ if (%count_results)
 }
 
 
+func p ($composite_key)
+{
+	my $hash = $j;
+	foreach (split(/\./, $composite_key))
+	{
+		unless (exists $hash->{$_})
+		{
+			return '';													# could also warn here
+		}
+		$hash = $hash->{$_};
+	}
+
+	return $hash;
+}
+
 func copy (@keys)
 {
 	my $dest = $_;
