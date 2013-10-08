@@ -329,6 +329,7 @@ Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
 MooseX::App::Cmd
+Array::Columnize
 MooseX::Singleton
 Class::PseudoHash
 MooseX::Has::Sugar
