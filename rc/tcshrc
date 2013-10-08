@@ -20,7 +20,8 @@ endif
 
 # internal shell stuff
 bindkey -v
-set autoexpand
+set autoexpand=onlyhistory
+set histdup=erase
 set autolist=ambiguous
 unset autologout
 unset autocorrect
