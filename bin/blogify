@@ -93,7 +93,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
-	s{(\d) 1/2}{$1&frac12;}g;														# numer + one half
+	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
 	if ($blog_type eq 'bbcode')
 	{
 		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
