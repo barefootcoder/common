@@ -40,7 +40,7 @@ if (%count_results)
 }
 
 
-func p ($composite_key)
+func p ($composite_key = $_)
 {
 	my $hash = $j;
 	foreach (split(/\./, $composite_key))
@@ -59,7 +59,7 @@ func copy (@keys)
 {
 	my $dest = $_;
 	local $_;
-	$dest->{$_} = $j->{$_} foreach @keys;
+	$dest->{$_} = p() foreach @keys;
 }
 
 func clone ()
@@ -67,6 +67,16 @@ func clone ()
 	my $dest = $_;
 	local $_;
 	$dest->{$_} = $j->{$_} foreach keys %$j;
+}
+
+func csv (@keys)
+{
+	say join(',', map { s/"/\\"/g; qq{"$_"} } map { p() } @keys);
+}
+
+func tsv (@keys)
+{
+	say join("\t", map { p() } @keys);
 }
 
 func count ($value)
