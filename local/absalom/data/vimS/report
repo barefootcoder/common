@@ -59,6 +59,8 @@ set shortmess=aoO
 badd +31 $sql_file
 badd +58 $yml_file
 badd +170 root/reports/index.tt
+badd +87 lib/CE/Reports.pm
+badd +267 lib/CE/ControllerBase/Reports.pm
 args $sql_file
 edit root/reports/index.tt
 set splitbelow splitright
