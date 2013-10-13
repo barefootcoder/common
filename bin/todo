@@ -3,7 +3,9 @@
 use myperl;
 use myperl::Menu;
 
+use JSON::XS;
 use Tie::IxHash;
+use List::MoreUtils qw< firstidx >;
 
 
 my $cur_context = shift // 'today';
@@ -34,11 +36,12 @@ tie my %context_menu, 'Tie::IxHash',
 tie my %main_menu, 'Tie::IxHash',
 (
 	'Add an item'						=>	\&add_item,
-	'Reload program'					=>	sub { exec $0, $cur_context },
+	'Bump an item (increase priority)'	=>	\&bump_item,
 	'Context switch'					=>	\&change_context,
 	'Done with a task'					=>	\&done_item,
 	'Edit a task'						=>	\&edit_item,
 	'Enter a custom command'			=>	\&custom,
+	'Reload program'					=>	sub { exec $0, $cur_context },
 );
 
 menu::status(sub {
@@ -70,6 +73,12 @@ func pick_item ($action)
 	return prompt(-y1, "Is this the right task?") ? $task : 0;
 }
 
+func item_info ($id)
+{
+	my $json = `task $id export`;
+	return decode_json($json);
+}
+
 #################
 # MENU SUBS
 #################
@@ -95,6 +104,21 @@ func add_item
 
 	die("must supply all values") unless $desc and $proj and $cat and $pri;
 	system(qw< task add >, $desc, "proj:$proj", "+$cat", "xpri:$pri");
+}
+
+
+func bump_item
+{
+	if (my $task = pick_item("to bump"))
+	{
+		my $item = item_info($task);
+		my $old_pri = $item->{'xpri'};
+		my $new_pri = $PRIORITIES[ (firstidx { $_ eq $old_pri } @PRIORITIES) - 1 ];
+		if (prompt(-y1, "Bumping priority from $old_pri to $new_pri.  Is this right?"))
+		{
+			system(qw< task >, $task, qw< mod >, "xpri:$new_pri");
+		}
+	}
 }
 
 
