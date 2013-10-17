@@ -256,7 +256,8 @@ sub code_block
 	my ($type, $code) = @_;
 
 	$code = fmt(code => expand($code));
-	$code = "<pre>$code</pre>" if $type eq 'block' and $blog_type ne 'bbcode';
+	$code =~ s/^$/ /mg			if						$blog_type eq 'perl';
+	$code = "<pre>$code</pre>"	if $type eq 'block' and	$blog_type ne 'bbcode';
 	return block_save($code);
 }
 
