@@ -103,7 +103,7 @@ func add_item
 	my $pri = prompt -single, -menu => [ @PRIORITIES ], 'Priority:';
 
 	die("must supply all values") unless $desc and $proj and $cat and $pri;
-	system(qw< task add >, $desc, "proj:$proj", "+$cat", "xpri:$pri");
+	system(qw< task add >, "proj:$proj", "+$cat", "xpri:$pri", qw< -- >, $desc);
 }
 
 
