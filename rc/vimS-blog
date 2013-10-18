@@ -36,12 +36,12 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-"edit common.pm
-"badd +82 common.pm
+badd +82 common.pm
 badd +96 ~/bin/blogify
 badd +133 read_story
 badd +1 topics
-"args common.pm
+edit topics
+args common.pm
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
