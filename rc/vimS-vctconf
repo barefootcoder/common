@@ -56,6 +56,8 @@ set shortmess=aoO
 badd +98 .vctoolsrc
 badd +71 .vctools.conf
 badd +217 .tcshrc
+badd +69 ~/proj/VCtools/share/conf/git.conf
+badd +48 ~/CE.conf
 args .vctoolsrc
 edit .vctools.conf
 set splitbelow splitright
