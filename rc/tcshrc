@@ -270,8 +270,9 @@ if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	#source ~/proj/VCtools/etc/vctools.cshrc
 
 	# production
-	source /usr/local/etc/VCtools/vctools.cshrc
-else if ( $?VCTOOLS_SHELL ) then
+	#source /usr/local/etc/VCtools/vctools.cshrc
+endif
+if ( $?VCTOOLS_SHELL ) then
 	source ~/.vctoolsrc
 endif
 
