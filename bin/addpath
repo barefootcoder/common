@@ -4,13 +4,14 @@ use Getopt::Std;
 use File::Basename;
 
 
-getopts('fsb:Bh');
+getopts('fseb:Bh');
 
 if ($opt_h)
 {
-	print STDERR "usage: ", basename($0), " -h | [-sf] [-B | -b env_var] [dir ...]\n";
+	print STDERR "usage: ", basename($0), " -h | [-sfe] [-B | -b env_var] [dir ...]\n";
 	print STDERR "       -s : return dirs separated by space (default: colon)\n";
 	print STDERR "       -f : add dir(s) to front of list instead of back\n";
+	print STDERR "       -e : output shell commands suitable for eval'ing\n";
 	print STDERR "       -b : use this env_var's value as the base list to add to [default: \$PATH]\n";
 	print STDERR "       -B : start with a blank base list\n";
 	print STDERR "       -h : this help message\n";
@@ -43,34 +44,19 @@ else
 	push @dirs, @newdirs;
 }
 
-print join($opt_s ? ' ' : ':', @dirs);
-
-
-__END__
-
-
-#! /bin/bash
-
-base="$1"
-shift
-
-for dir in "$@"
-do
-	if [[ -n $dir ]]
-	then
-		if ! echo "$base" | /bin/grep -Eq '(^|:)'"$dir"'(:|$)'
-		then
-			if [[ -d $dir ]]
-			then
-				if [[ -z $base ]]
-				then
-					base="$dir"
-				else
-					base="$base:$dir"
-				fi
-			fi
-		fi
-	fi
-done
-
-echo "$base"
+my $out = join($opt_s ? ' ' : ':', @dirs);
+if ($opt_e)
+{
+	if ($ENV{SHELL} =~ /csh/)
+	{
+		print "setenv $opt_b $out";
+	}
+	else
+	{
+		print "export $opt_b=$out";
+	}
+}
+else
+{
+	print $out;
+}
