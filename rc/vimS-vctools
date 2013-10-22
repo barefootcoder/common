@@ -9,7 +9,9 @@ map  
 nmap  :w:!pusht %
 map  :files
 map  :%s/[ 	]\+$//
+nnoremap cl :%g/^# line/d:w
 nnoremap rl m`:1,$! reset_lines``
+nnoremap il m`Oi# line 0:1,$! reset_lines:w``
 nnoremap rr gqgq
 nnoremap r ^gq/^$\|^	*#$\|^	*[^	#]\|^--! print$
 nmap d :w:!perldoc %
@@ -17,12 +19,13 @@ nmap  /\<\>
 nmap % :call FindMatching()
 map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
+map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
-map [[ ?{<CR>w99[{
-map ][ /}<CR>b99]}
-map ]] j0[[%/{<CR>
-map [] k$][%?}<CR>
+map [] k$][%?}
+map [[ ?{w99[{
+map ]] j0[[%/{
+map ][ /}b99]}
 nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
@@ -34,7 +37,9 @@ set background=dark
 set backspace=indent,eol,start
 set comments=b:#,b:%,b:*,b:--!\ print,b:--
 set equalprg=tfmt\ -t4\ -w100
+set fileencodings=ucs-bom,utf-8,default,latin1
 set formatoptions=croqv
+set helplang=en
 set history=50
 set nomodeline
 set printoptions=paper:letter
@@ -48,21 +53,20 @@ set textwidth=100
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
 silent only
-cd ~/workproj/CE
+cd ~/proj/VCtools
 if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +1 lib/CE/Schema/SearchOfferLeadCap.pm
-badd +595 lib/CE/Search/WebUpsell.pm
-badd +1573 lib/CE/PotentialLeadsCalculator.pm
-badd +1504 t/lib/CE/Search/WebUpsell.pm
-badd +0 database/scripts/build-offer-search-tables.sql
-badd +20 tlib/CE/TestSchemaObject/Publisher.pm
-badd +800 lib/CE/PageAdmin/PotentialLeadsManager.pm
-badd +3570 t/lib/CE/PotentialLeadsCalculator.pm
-args lib/CE/Schema/SearchOfferLeadCap.pm
-edit t/lib/CE/Search/WebUpsell.pm
+badd +1 lib/App/VC/Command/info.pm
+badd +1 lib/App/VC/Command.pm
+badd +5 bin/vc
+badd +1 lib/App/VC/CustomCommand.pm
+badd +1 lib/App/VC/CustomCommandSpec.pm
+badd +1 lib/App/VC/Config.pm
+badd +1 lib/App/VC/InfoCache.pm
+args lib/App/VC/Command/info.pm
+edit lib/App/VC/Command.pm
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
@@ -169,11 +173,11 @@ setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-let s:l = 927 - ((48 * winheight(0) + 24) / 49)
+let s:l = 1 - ((0 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-927
+1
 normal! 0
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf

@@ -26,20 +26,60 @@
 # numbering right in the first place.  However, it might be a long pathname, and who wants to type
 # that every time?  But, of course, we've already mentioned that filename is right there, in the
 # sessionfile, under the `args` command ...
+#
+# Other tricky bits:
+#	*	vim will change to the directory specified in the "cd" line of the session file.  However,
+#		if the "args" file is a relative path, that's too late for the first buffer.  So we should
+#		pull out the "cd" line and go there first.
+#	*	Environment variables in "badd" lines are okay; vim will expand them.  But in the "args"
+#		line, we'll have to expand that ourselves.  Also, there might be tildes which need expanding
+#		(this applies to the "cd" line as well).  Thus the `eval`s below.
+
+for prefix in ~/.vimS- ~/local/data/vimS/
+do
+	prefixes="$prefixes $prefix"
+done
+
+while getopts ":lh" opt
+do
+	case $opt in
+		l)	for prefix in $prefixes
+			do
+				for file in $prefix*
+				do
+					echo ${file##$prefix}
+				done
+			done
+			exit
+			;;
+		h)  echo "usage: $me -h | -l | file" >&2
+			echo "    -l : instead of starting a vim session, list possible session files" >&2
+			echo "    -h : this help message" >&2
+			echo "    file : session file (or partial name)" >&2
+			exit
+			;;
+		:)  usage_erorr "$OPTARG requires an argument"
+			;;
+		\?) usage_error "unknown argument $OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+[[ -n $1 ]] || usage_error "sessionfile arg required"
+
 
 sessionfile=$1
-if [[ ! -f $sessionfile ]]
-then
-	sessionfile=~/.vimS-$1
-	if [[ ! -f $sessionfile ]]
-	then
-		sessionfile=~/local/data/vimS/$1
-	fi
-fi
+for prefix in $prefixes
+do
+	[[ -f $sessionfile ]] && break
+	sessionfile=$prefix$1
+done
+
 if [[ ! -r $sessionfile ]]
 then
 	die "session file $1 not specified, doesn't exist, or is unreadable"
 fi
 
-first_file=$(awk '$1 == "args" { print $2 }' $sessionfile)
-vim -S $sessionfile $(eval "echo $first_file")
+eval $(awk '$1 == "cd"' $sessionfile)
+eval vim -S $sessionfile $(awk '$1 == "args" { print $2 }' $sessionfile)

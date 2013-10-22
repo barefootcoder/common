@@ -17,9 +17,9 @@ do
 			echo "    dir : directory to search (default [w/o -n]: .)" >&2
 			exit
 			;;
-		:)  bad_arg "$OPTARG requires an argument"
+		:)  usage_error "$OPTARG requires an argument"
 			;;
-		\?) bad_arg "unknown argument $OPTARG"
+		\?) usage_error "unknown argument $OPTARG"
 			;;
 	esac
 done
