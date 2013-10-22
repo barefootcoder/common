@@ -1,0 +1,18 @@
+setenv CE_REMOTE_USERNAME bburden
+setenv CEROOT ~/workproj/CE
+eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib`
+
+# AWS setup -- BEGIN
+setenv JAVA_HOME /usr
+setenv EC2_HOME /usr/local/aws
+setenv AWS_ELB_HOME $EC2_HOME
+eval `~/bin/addpath -e $EC2_HOME/bin`
+
+# AWS credentials for Campus Explorer
+setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
+setenv EC2_PRIVATE_KEY `echo /home/buddy/.aws-campusexplorer/pk-*.pem`
+setenv EC2_CERT `echo /home/buddy/.aws-campusexplorer/cert-*.pem`
+setenv BOTO_CONFIG /home/buddy/.aws-campusexplorer/boto.cfg
+setenv S3CMD_CONFIG /home/buddy/.aws-campusexplorer/s3cfg
+alias s3cmd "s3cmd --config=$S3CMD_CONFIG"
+# AWS setup -- END

@@ -48,7 +48,8 @@ function make_link
 		read yn
 		case $yn in
 			[yY]*)
-				ln -sf $1 $2
+				/bin/rm -f $2
+				ln -s $1 $2
 				;;
 		esac
 	else
