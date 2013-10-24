@@ -236,6 +236,8 @@ complete cdp 'n/-u/u/'
 complete svn 'p/1/(add checkout cleanup commit remove diff help log mkdir propdel propedit propget proplist propset		\
 		revert resolved status update)/'
 complete psync 'C?[^-]*?`friendly-hosts`?'
+complete vims 'C?[^-]*?`vimS -l`?'
+complete vimS 'C?[^-]*?`vimS -l`?'										# should be same as line above
 complete sylogin 'p?1?`grep "^[A-Za-z]" /opt/sybase/interfaces`?'
 complete syfile 'p/1/`syls | tail +3 | awk \{print\ \$1\}`/'
 complete sycat 'p/1/`syls | tail +3 | awk \{print\ \$1\}`/'
