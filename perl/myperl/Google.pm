@@ -255,6 +255,10 @@ class Google::Service
 class Google::Worksheet
 {
 
+	###############
+	# PRIVATE STUFF
+	###############
+
 	has	_sheet		=>	( ro, isa => 'Net::Google::Spreadsheets::Worksheet', lazy, builder => '_read_sheet' );
 	has _columns	=>	( ro, isa => 'ArrayRef', lazy, builder => '_read_headers' );
 	has _headers	=>	( ro, isa => 'HashRef[Int]', lazy,
@@ -275,7 +279,7 @@ class Google::Worksheet
 
 	method _read_sheet ()
 	{
-		my $ssheet = $myperl::Google::GOOGLE->spreadsheet({ title => $self->doc });
+		my $ssheet = $self->Google->spreadsheet({ title => $self->doc });
 		die("can't find spreadsheet: " . $self->doc) unless $ssheet;
 		my $wsheet = $ssheet->worksheet({ title => $self->name });
 		die("can't find worksheet " . $self->name . " in requested doc") unless $wsheet;
@@ -322,6 +326,14 @@ class Google::Worksheet
 	}
 
 
+	##############
+	# PUBLIC STUFF
+	##############
+
+	# ATTRIBUTES
+
+	has Google		=>	( ro, isa => 'Google::Service', lazy, default => $myperl::Google::GOOGLE, );
+
 	has doc			=>	( ro, isa => Str, required );
 	has name		=>	( ro, isa => Str, required );
 	has key			=>	( ro, isa => Str, required );
@@ -329,8 +341,17 @@ class Google::Worksheet
 	has key_col		=>	( ro, isa => Int, lazy, default => method { return $self->_headers->{ $self->key }; } );
 
 
-	method _row ($rowname)
+	# BUILDERS
+
+	method _row (Int|Str $rowname)
 	{
+		# first, consider the possibility that it might actually be a row _number_
+		# if it's a positive integer and reasonably small, just return it as is
+		if ($rowname =~ /^\d+$/ and $rowname > 0 and $rowname <= $self->last_data_row * 10)
+		{
+			return $rowname;
+		}
+
 		debuggit(3 => "trying to access row", $rowname);
 		die("no such row as $rowname") unless exists $self->_keymap->{$rowname};
 		return $self->_keymap->{$rowname};
@@ -358,6 +379,8 @@ class Google::Worksheet
 	}
 
 
+	# PUBLIC METHODS
+
 	method last_data_row
 	{
 		return $#{ $self->_data };
@@ -384,15 +407,16 @@ class Google::Worksheet
 	}
 
 
-	method get_row ($row_or_rowname)
+	method get_row (Int|Str $row_or_rowname)
 	{
-		my $row = $row_or_rowname =~ /^\d+$/ ? $row_or_rowname : $self->_row($row_or_rowname);
+		my $row = $self->_row($row_or_rowname);
+		debuggit(4 => "getting row", $row);
 		return $self->_build_datarow($self->_data->[$row]);
 	}
 
 	method read_row (Int|Str $rowname)
 	{
-		my $row = $rowname =~ /^\d+$/ ? $rowname : $self->_row($rowname);
+		my $row = $self->_row($rowname);
 		debuggit(2 => "reading row", $row);
 		foreach ( $self->_sheet->cells({ 'row' => $row }) )
 		{
