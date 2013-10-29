@@ -11,6 +11,11 @@ set noexpandtab			" yes, I like real tabs in my files; so sue me
 set keywordprg=perlref
 set iskeyword=@,48-57,_,$,@-@,%,:
 
+" class stuff
+map <C-C><C-H> :!clgrep -a %<CR>
+map <C-C><C-I> :!clgrep -i %<CR>
+map <C-C><C-M> :!clgrep -m %<CR>
+
 " make Y same as y$ (matches other operators)
 nmap Y y$
 " make g same as G (g not used in original vi, so this mapping is ancient)

@@ -1,0 +1,125 @@
+#! /usr/bin/env perl
+
+use 5.12.0;
+use autodie qw< :all >;
+use warnings FATAL => 'all';
+
+use File::Next;
+use Getopt::Std;
+use Perl6::Slurp;
+use File::Basename;
+use Regexp::Common;
+use List::Util qw< first >;
+use Text::Tabs; $tabstop = 4;
+use Text::Balanced qw< extract_quotelike extract_multiple >;
+
+
+our $ME = basename($0);
+
+my $opts = {};
+getopts('amin:h', $opts);
+HELP_MESSAGE() if $opts->{'h'};
+my %modes = ( a => 'attributes', m => 'methods', i => 'inheritance' );
+my $mode = first { $_ } map { $opts->{$_} ? $modes{$_} : () } sort keys %modes
+		or usage_error("must supply one of: " . join(" | ", map { "-$_" } sort keys %modes));
+
+sub usage_error
+{
+	my ($msg) = @_;
+	say STDERR "$ME: $msg ($ME -h for help)";
+	exit 1;
+}
+
+sub HELP_MESSAGE
+{
+	say STDERR "usage: $ME [-h] { -a | -m | -i } [-n regex] file_or_dir [...]";
+	say STDERR "            -a : find attributes in file(s)";
+	say STDERR "            -m : find methods in file(s)";
+	say STDERR "            -i : find inheritance (superclasses and roles) in file(s)";
+	say STDERR "            -n : search only for this name (treated as a Perl regex)";
+	say STDERR "            -h : this help message";
+	say STDERR "       dirs are treated recursively";
+	exit;
+}
+
+usage_error("must supply file(s) or dir(s)") unless @ARGV;
+
+
+my %KEYWORDS =
+(
+	attributes		=>	[qw< has class_has mk_accessors >],
+	methods			=>	[qw< sub func method before after around override augment >],
+	inheritance		=>	[qw< base parent extends with >],
+);
+my $keywords = join('|', @{ $KEYWORDS{$mode} });
+$keywords = qr/$keywords/;
+
+
+my $files = File::Next::files(@ARGV);
+while ( defined (my $file = $files->()) )
+{
+	next unless $file =~ /\.p[lm]$/ or -x $file;
+	print "checking $file ...", ' ' x 40, "\r";
+	process_file($file);
+}
+print ' ' x 80, "\r";
+
+
+sub process_file
+{
+	my ($file) = @_;
+
+	my $code = slurp $file;
+
+	# ignore POD
+	$code =~ s/\n\n^=\w+.*?\n\n^=cut.*?$//msg;
+	# stash away quoted things so we don't get false positives
+	# (as ever, stolen shamelessly from Filter::Simple by The Damian)
+	my @quoted_strings;
+	$code = join('', map { ref $_ ? scalar((push @quoted_strings, $_), "{Q$#quoted_strings}") : $_ }
+			extract_multiple($code,
+			[
+					{ Q => sub { extract_quotelike($_[0]) } },
+					{ C => qr/#.*?\n/ },								# try to eat comments
+					qr{[^#'"`/mstyq<]+},								# i.e. exclude all characters that could
+			])															# _possibly_ introduce a quoted string
+			# note that this could still possibly screw up: imagine some code like so:
+			#		my $foo = $bam/$bar/3;
+			# first, it eats the whitespace at the beginning of the line, then stops at the 'm' in `my`
+			# next, it pops off the 'm' (because nothing matched, so it pops one char)
+			# next, it pops off the 'y' (same reason)
+			# next, it eats everything up to the next 'm'
+			# which, unfortunately, leaves:
+			#		m/$bar/3;
+			# which is going to look like a m// regex <sigh>
+			# we're not going to worry about this, however
+			# because everything gets reassembled at the end
+			# so, as long as there are no keywords in there we need to find, we're okay
+			# (and that seems like a pretty safe bet)
+	);
+
+	while ($code =~ /^(.*?[^\$\@%])?\b$keywords\s+(\w+).*?$/mg)
+	{
+		next if $opts->{'n'} and $2 ne $opts->{'n'};
+		my ($start, $end) = ($-[0], $+[0]);
+
+		if ( $mode eq 'attributes' and substr($code, $start, $end - $start) =~ /\(/ )
+		{
+			my $parend_at = $start + $-[0];
+			substr($code, $parend_at) =~ /$RE{balanced}{-parens=>'()'}/ or die("can't find closing parend anywhere");
+			$end = $parend_at + $+[1];
+		}
+
+		if ( $mode eq 'methods' and $opts->{'n'} )
+		{
+			substr($code, $start) =~ /$RE{balanced}{-parens=>'{}'}/ or die("can't find closing brace anywhere");
+			$end = $start + $+[1];
+		}
+
+		my $line = expand substr($code, $start, $end - $start);
+		$line =~ s/\A\n//;
+		$line =~ s/\n/"\n" . ' ' x (length($file) - 1) . "-:"/ge;
+		$line =~ s/{Q(\d+)}/${$quoted_strings[$1]}/g;					# put any quoted strings back
+		say "$file:$line";
+	}
+}
