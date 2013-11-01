@@ -36,7 +36,9 @@ map Q :s/^\/\* //<CR>:s/ \*\/$//<CR>
 " show buffers
 map <C-Y> :files<CR>
 " get rid of annoying trailing spaces
-map  :%s/[ 	]\+$//<CR>
+map <C-Z> :%s/[ 	]\+$//<CR>
+" convert all spaces to tabs ... BE VERY CAREFUL WITH THIS ONE!
+map <C-Z><C-Z> :w<CR>:!vcpatchws -f %<CR>:e!<CR>
 " search for the word under the cursor
 nmap <C-_> /\<<C-R><C-W>\><CR>
 " start search from top of file
