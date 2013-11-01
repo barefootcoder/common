@@ -54,12 +54,12 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
 endif
 set shortmess=aoO
 badd +98 .vctoolsrc
-badd +71 .vctools.conf
+badd +71 .vctools/vctools.conf
 badd +217 .tcshrc
 badd +69 ~/proj/VCtools/share/conf/git.conf
-badd +48 ~/CE.conf
+badd +48 ~/workproj/CE/etc/ceflow/CE.conf
 args .vctoolsrc
-edit .vctools.conf
+edit .vctools/vctools.conf
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
