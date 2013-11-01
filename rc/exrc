@@ -15,6 +15,7 @@ set keywordprg=perlref
 map <C-C><C-H> :!clgrep -a %<CR>
 map <C-C><C-I> :!clgrep -i %<CR>
 map <C-C><C-M> :!clgrep -m %<CR>
+map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>
 
 " make Y same as y$ (matches other operators)
 nmap Y y$
