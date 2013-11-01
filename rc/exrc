@@ -8,8 +8,8 @@ set linebreak			" makes long lines easier to read without inserting newlines
 set noexpandtab			" yes, I like real tabs in my files; so sue me
 
 " keyword lookups
+nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,48-57,_<CR>
 set keywordprg=perlref
-set iskeyword=@,48-57,_,$,@-@,%,:
 
 " class stuff
 map <C-C><C-H> :!clgrep -a %<CR>
