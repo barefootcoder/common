@@ -211,7 +211,8 @@ sub url_block
 	if ($blog_type eq 'bbcode')
 	{
 		die("can't do forward links in bbcode") if $forward;
-		state $bbcodes = [ map { qr{^/?$_\b}i } qw< b i u quote list code img size font spoiler center color url indent > ];
+		state $bbcodes = [ map { qr{^/?$_\b}i }
+				qw< b i u s quote list code img size font spoiler center color url indent > ];
 		if (($url eq '*' or $url ~~ @$bbcodes) and not $alt_text)
 		{
 			return "[$url]";
