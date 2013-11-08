@@ -5,15 +5,18 @@ readonly me=${0##*/}													# slightly prettier than $0
 privatedir=~/common/perl
 
 mode=add
-while getopts ":rdh" opt
+while getopts ":rtdh" opt
 do
 	case $opt in
 		r)	mode=remove
 			;;
+		t)	mode=temp
+			;;
 		d)	mode=diff
 			;;
-		h)  echo "usage: $me -h | [-r | -d] Perl::Module" >&2
+		h)  echo "usage: $me -h | [-r | -t | -d] Perl::Module" >&2
 			echo "    -r : remove a previously privatized copy" >&2
+			echo "    -t : temp (privatize, edit, then remove)" >&2
 			echo "    -d : diff the currently privatized copy (if any)" >&2
 			echo "    -h : this help message" >&2
 			echo "    Perl::Module : Perl module to be privatized" >&2
@@ -45,9 +48,8 @@ do
 	fi
 done
 
-newmod=$privatedir/$base
-if [[ $module == $newmod && $mode == 'remove' ]]
-then
+function remove_mod
+{
 	echo "removing $newmod"
 	/bin/rm $newmod
 	while [[ $newmod != $privatedir ]]
@@ -60,20 +62,38 @@ then
 			break
 		fi
 	done
+}
+
+newmod=$privatedir/$base
+if [[ $module == $newmod && $mode == 'remove' ]]
+then
+	remove_mod
 elif [[ $module == $newmod && $mode == 'diff' ]]
 then
-	oldmod=$(perlfind -f $1 | awk '{print $2}')
+	# Find the Perl module which:
+	# *		isn't the first result (that'll be the privatized one), and
+	# *		doesn't start with ./ (those will almost certinaly be dups), and
+	# *		is the shortest from among what's left (most likely the right one).
+	# In the Perl snippet below, you might think you need `next if $. == 1`, but you don't.
+	# Think about it.  (Hint: What's the length of $l before it's ever set?)
+	oldmod=$(perlfind -f $1 | perl -lne '$l = $_ if $. == 2 or m{^/} && length() < length $l; END { print $l }')
 	echo "diffing $newmod against $oldmod"
 	diff $oldmod $newmod
 elif [[ $module == $newmod ]]
 then
 	echo "$me: looks like $1 is already privatized [$newmod]" >&2
 	exit 1
-elif [[ $mode == 'add' ]]
+elif [[ $mode == 'add' || $mode == 'temp' ]]
 then
 	mkdir -p $(dirname $newmod) 2>/dev/null
 	cp -pv $module $newmod
 	chmod ug+w $newmod
+
+	if [[ $mode == 'temp' ]]
+	then
+		${EDITOR:-vim} $newmod
+		remove_mod
+	fi
 else
 	echo "$me: $1 not privatized; can't $mode" >&2
 	exit 1

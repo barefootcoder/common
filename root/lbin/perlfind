@@ -52,7 +52,7 @@ function results
 	then
 		grep '$.*VERSION[ 	]*=[ 	]*'"['\"0-9]" $1
 	else
-		echo $1
+		echo "$1"
 	fi
 	if [[ $edit -eq 1 ]]
 	then
