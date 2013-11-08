@@ -11,6 +11,7 @@ use File::Basename;
 use Regexp::Common;
 use List::Util qw< first >;
 use Text::Tabs; $tabstop = 4;
+use List::MoreUtils qw< firstidx >;
 use Text::Balanced qw< extract_quotelike extract_multiple >;
 
 
@@ -98,9 +99,11 @@ sub process_file
 			# (and that seems like a pretty safe bet)
 	);
 
-	while ($code =~ /^(.*?[^\$\@%])?\b$keywords\s+(\w+).*?$/mg)
+	my $disp_file;
+	while ($code =~ /^(.*?[^\$\@%])?\b$keywords\s+(\w+|{Q\d+}).*?$/mg)
 	{
 		next if $opts->{'n'} and $2 ne $opts->{'n'};
+		my $keyword_pos = $+[1] ? $+[1] - $-[1] : 0;
 		my ($start, $end) = ($-[0], $+[0]);
 
 		if ( $mode eq 'attributes' and substr($code, $start, $end - $start) =~ /\(/ )
@@ -116,10 +119,24 @@ sub process_file
 			$end = $start + $+[1];
 		}
 
-		my $line = expand substr($code, $start, $end - $start);
+		unless ($disp_file)
+		{
+			# get rid of useless dirs so filename isn't so damn long ...
+			my @parts = split('/', $file);
+			my $i = firstidx { /perl/ or /linux/ or /^\d+\.\d+(\.\d+)?$/ } reverse @parts;
+			$disp_file = join('/', @parts[(@parts-$i)..$#parts]);
+		}
+
+		my $line = substr($code, $start, $end - $start);
+		while ($line =~ /{Q(\d+)}/g)
+		{
+			my $i = $1;
+			$line =~ s/{Q$i}// if $-[0] < $keyword_pos and ${$quoted_strings[$i]} =~ /\n/;
+		}
 		$line =~ s/{Q(\d+)}/${$quoted_strings[$1]}/g;					# put any quoted strings back
+		$line = expand $line;
 		$line =~ s/\A\n//;
-		$line =~ s/\n/"\n" . ' ' x (length($file) - 1) . "-:"/ge;
-		say "$file:$line";
+		$line =~ s/\n/"\n" . ' ' x (length($disp_file) - 1) . "-:"/ge;
+		say "$disp_file:$line";
 	}
 }
