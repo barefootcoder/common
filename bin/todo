@@ -40,8 +40,9 @@ tie my %main_menu, 'Tie::IxHash',
 	'Context switch'					=>	\&change_context,
 	'Done with a task'					=>	\&done_item,
 	'Edit a task'						=>	\&edit_item,
-	'Enter a custom command'			=>	\&custom,
+	'Push an item (decrease priority)'	=>	\&push_item,
 	'Reload program'					=>	sub { exec $0, $cur_context },
+	'Enter a custom command'			=>	\&custom,
 );
 
 menu::status(sub {
@@ -107,19 +108,22 @@ func add_item
 }
 
 
-func bump_item
+func change_priority ($verb, $inc)
 {
-	if (my $task = pick_item("to bump"))
+	if (my $task = pick_item("to $verb"))
 	{
 		my $item = item_info($task);
 		my $old_pri = $item->{'xpri'};
-		my $new_pri = $PRIORITIES[ (firstidx { $_ eq $old_pri } @PRIORITIES) - 1 ];
-		if (prompt(-y1, "Bumping priority from $old_pri to $new_pri.  Is this right?"))
+		my $new_pri = $PRIORITIES[ (firstidx { $_ eq $old_pri } @PRIORITIES) + $inc ];
+		if (prompt(-y1, "Changing priority from $old_pri to $new_pri.  Is this right?"))
 		{
 			system(qw< task >, $task, qw< mod >, "xpri:$new_pri");
 		}
 	}
 }
+
+func bump_item { change_priority(bump => -1) }
+func push_item { change_priority(push => +1) }
 
 
 func done_item
