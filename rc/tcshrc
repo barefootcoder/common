@@ -137,7 +137,7 @@ unalias psf #alias psf 'echo TTY is $tty ; /bin/ps ft$tty -o pid -o ppid -o stat
 alias psg '/usr/bin/pgrep -f \!* >/dev/null && ps -p `/usr/bin/pgrep -f \!*`'
 alias dfk df -h .
 	set mfawk='{ mem = $2 / 1024; t = "Mb"; if (mem > 1024) { mem = mem / 1024; t = "Gb" } }'
-	set mfawk="$mfawk"'$1 == "MemFree:" { printf "%7.2f %s main\n", mem, t }'
+	set mfawk="$mfawk"' $1 == "MemFree:" { printf "%7.2f %s main\n", mem, t }'
 	set mfawk="$mfawk"' $1 == "SwapFree:" { printf "%7.2f %s swap\n", mem, t }'
 alias mf "cat /proc/meminfo | awk '$mfawk'"
 alias du. 'du -chs "`ls -1 | grep /`"'
@@ -176,6 +176,7 @@ if ( -e /etc/profile.d/tcsh-complete ) then
 endif
 alias timer "cd ~/timer ; vi -u ~/.vim-timer timer-new"
 alias lctime "history | tail -n2 | head -n1 | awk '{print "'$2'"}'"
+alias updreq "perl -e 'print time' > \!^/update-request"
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
