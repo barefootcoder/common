@@ -34,6 +34,18 @@ set ellipsis
 set prompt="[${LOCALHOSTNAME}:%.04] "
 set term=vt100
 
+if ( $?PERL5OPT ) then
+	echo $PERL5OPT | grep -q Carp::Always
+	if ( $? == 0 ) then
+		set prompt="[Carp::Always debugging] "
+		alias carpalways 'unsetenv PERL5OPT ; resrc'
+	else
+		unalias carpalways
+	endif
+else
+	alias carpalways 'setenv PERL5OPT -MCarp::Always ; resrc'
+endif
+
 if ( $?METHOD_SIGNATURES_DEBUG ) then
 	set prompt="[Method::Signatures debugging] "
 	alias msdebug 'unsetenv METHOD_SIGNATURES_DEBUG ; resrc'
