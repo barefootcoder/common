@@ -17,7 +17,8 @@ function current_branch
 
 function branched_from
 {
-	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/'
+	branch="$1"
+	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/ and $1 ne '"'$branch'"
 }
 
 cmd="git log"
@@ -40,15 +41,16 @@ do
 		p)	pretend=1
 			;;
 		b)	branch=$(current_branch)
-			from=$(branched_from)
+			from=$(branched_from $branch)
 			args="$args $from..$branch"
 			;;
-		L)	pushed=origin/$(current_branch)
+		L)	branch=$(current_branch)
+			pushed=origin/$branch
 			if ! git show-ref --quiet $pushed
 			then
 				# perhaps this is a new branch, never pushed anywhere
 				# let's try to find where it was branched from
-				pushed=$(branched_from)
+				pushed=$(branched_from $branch)
 				if ! git show-ref --quiet $pushed
 				then
 					# WTF? it was branched from something that doesn't exist?
