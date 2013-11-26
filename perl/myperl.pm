@@ -48,7 +48,7 @@ sub import
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
-	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round;
+	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round, \&prompt;
 
 	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
 	# function which loads the module, then passes off to the function.  Thus, if the function is
@@ -170,6 +170,29 @@ sub round
 }
 
 
+sub prompt
+{
+	require IO::Prompter;
+	my $answer;
+	if (grep { /^-/ } @_)
+	{
+		$answer = &IO::Prompter::prompt;
+	}
+	else
+	{
+		my ($prompt, %in_opts) = @_;
+		my %out_opts;
+		if (exists $in_opts{default})
+		{
+			$prompt = "$prompt [$in_opts{default}] ";
+			$out_opts{-default} = $in_opts{default};
+		}
+		$answer = IO::Prompter::prompt($prompt, %out_opts);
+	}
+	return "$answer";
+}
+
+
 1;
 
 
@@ -244,11 +267,34 @@ themselves are called.  See their respective modules for more info on them:
 
 =head2 prompt
 
-Like the date functions, C<prompt> from L<IO::Prompter> is exported, but the module is only loaded
-if the function itself is called.  Note that C<prompt> returns an object and not a string, which may
-do funky things in certain circumstances.  I'm considering having C<prompt> be a wrapper around the
-original which will always throw exceptions in the case of failure (or timeout) and just return a
-simple string.  We'll see if this becomes necessary.  See L<IO::Prompter> for full details.
+Like the date functions, C<prompt> from L<IO::Prompter> is made available, but the module is only
+loaded if the function itself is called.  Actually this is a thin wrapper around the actual
+IO::Prompter function.  There are currently only two differences:
+
+=over 4
+
+=item *
+
+This C<prompt> returns a string, not an object.
+
+=item *
+
+If you use this syntax:
+
+	my $thing = prompt "Enter thing:", default => "nothing";
+
+it will work just like the native IO::Prompter syntax:
+
+	my $thing = prompt "Enter thing:", -default => "nothing";
+
+except that the default value is appended to the prompt.
+
+=back
+
+Ideally, the wrapper should also always throw exceptions in the case of failure (or timeout), but
+this hasn't been implemented yet.
+
+See L<IO::Prompter> for full details.
 
 =head2 title_case
 
