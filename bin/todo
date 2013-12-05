@@ -94,6 +94,7 @@ func custom
 func add_item
 {
 	my $desc = prompt "Task:";
+	die("must supply a description") unless "$desc";					# to remove IO::Prompter magic
 
 	my $def_proj = $cur_context =~ /proj:(\w+)/ ? $1 : '';
 	my $proj = prompt "Project:";
