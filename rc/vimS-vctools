@@ -35,7 +35,7 @@ unlet s:cpo_save
 set autoindent
 set background=dark
 set backspace=indent,eol,start
-set comments=b:#,b:%,b:*,b:--!\ print,b:--
+set comments=b:#,b:%,b:--!\ print,b:--
 set equalprg=tfmt\ -t4\ -w100
 set fileencodings=ucs-bom,utf-8,default,latin1
 set formatoptions=croqv
@@ -58,13 +58,15 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +1 lib/App/VC/Command/info.pm
-badd +1 lib/App/VC/Command.pm
-badd +5 bin/vc
-badd +1 lib/App/VC/CustomCommand.pm
-badd +1 lib/App/VC/CustomCommandSpec.pm
-badd +1 lib/App/VC/Config.pm
+badd +50 lib/App/VC/Command/info.pm
+badd +318 lib/App/VC/Command.pm
+badd +57 bin/vc
+badd +90 lib/App/VC.pm
+badd +60 lib/App/VC/CustomCommand.pm
+badd +145 lib/App/VC/CustomCommandSpec.pm
+badd +82 lib/App/VC/Config.pm
 badd +1 lib/App/VC/InfoCache.pm
+badd +31 lib/App/VC/Recoverable.pm
 args lib/App/VC/Command/info.pm
 edit lib/App/VC/Command.pm
 set splitbelow splitright
@@ -85,7 +87,7 @@ setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
 setlocal cinoptions=
 setlocal cinwords=if,else,while,do,for,switch
 setlocal colorcolumn=
-setlocal comments=b:#,b:%,b:*,b:--!\ print,b:--
+setlocal comments=b:#,b:%,b:--!\ print,b:--
 setlocal commentstring=/*%s*/
 setlocal complete=.,w,b,u,t,i
 setlocal concealcursor=
@@ -126,7 +128,7 @@ setlocal includeexpr=
 setlocal indentexpr=
 setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
 setlocal noinfercase
-setlocal iskeyword=@,48-57,_,192-255
+setlocal iskeyword=@,48-57,_
 setlocal keywordprg=
 set linebreak
 setlocal linebreak
