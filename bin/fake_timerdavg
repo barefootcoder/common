@@ -9,15 +9,37 @@ my $opts = {};
 getopts('v', $opts);
 
 
-my ($min_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
-my $num_days = num_weekdays($min_date);
+my ($min_date, $max_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
+my $num_days = num_weekdays($min_date, $max_date);
 
-say "Average time: ", $total_time / $num_days;
+if ($opts->{v})
+{
+	say "Time from: ", time2str('%m/%d/%Y', $min_date);
+	say "       to: ", time2str('%m/%d/%Y', $max_date);
+	say "     days: $num_days";
+	say '';
+}
+
+say "        Average time: ", $total_time / $num_days;
 say "Average availability: ", $total_avail / $num_days;
-#say "Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
+#say "      Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
+
+if ($opts->{v})
+{
+	say '';
+	my $num_weeks = $num_days / 5;
+	say "   Number of weeks: $num_weeks";
+	say "Total availability: $total_avail";
+	say "          Avg time: ", $total_time / $num_weeks;
+	say "  Avg availability: ", $total_avail / $num_weeks;
+	my $pct = $total_time / $total_avail;
+	say "              %age: ", 100 * $pct;
+	my $next_week = ($num_weeks+1) * 40 - $total_avail;
+	say "         Next week: $next_week / ", $next_week * $pct;
+}
 
 
-func num_weekdays ($from)
+func num_weekdays ($from, $to)
 {
 	use Date::Gregorian::Business;
 	use Date::Gregorian qw< :weekdays >;
@@ -26,7 +48,7 @@ func num_weekdays ($from)
 	my $date = Date::Gregorian::Business->new([ [ SATURDAY, SUNDAY ], [] ]);
 	$date->set_ymd(split('/', time2str('%Y/%m/%d', $from)));
 
-	return $date->get_businessdays_until(Date::Gregorian->new->set_today);
+	return $date->get_businessdays_until(Date::Gregorian->new->set_ymd(split(' ', time2str('%Y %m %d', $to)))) + 1;
 }
 
 
@@ -35,13 +57,17 @@ func time_and_avail ($file)
 	my ($time, $avail) = (0,0);
 
 	my $min_date = time;
+	my $max_date = time;
 	open(IN, "fake_timer -a total email $file |") or die("can't open pipe");
 	while ( <IN> )
 	{
 		# time from 2013/07/15 to 2013/07/19:
-		if ( m{time from (\d{4}/\d{2}/\d{2})} )
+		my $date = qr{\d{4}/\d{2}/\d{2}};
+		if ( m{time from ($date) to ($date)} )
 		{
+			print "$file : $_" if $opts->{v};
 			$min_date = min($min_date, str2time($1));
+			$max_date = max($max_date, str2time($2));
 		}
 
 		#  0 hrs, 36 mins : cpan
@@ -50,7 +76,7 @@ func time_and_avail ($file)
 
 		if ($opts->{v})
 		{
-			say "$file : $timer $hrs:$mins";
+			say "$file :   $timer $hrs:$mins";
 		}
 		$time += $hrs + $mins / 60 if $timer eq 'GRAND TOTAL';
 		$avail += $hrs + $mins / 60 if $timer eq 'AVAILABILITY';
@@ -58,7 +84,7 @@ func time_and_avail ($file)
 	close(IN);
 
 	debuggit(4 => "for file", $file, "time is", $time, "and avail is", $avail);
-	return wantarray ? ($min_date, $time, $avail) : $time;
+	return wantarray ? ($min_date, $max_date, $time, $avail) : $time;
 }
 
 

@@ -10,7 +10,7 @@ const my $AVAIL => ':AVAILABILITY';
 
 
 my $opts = {};
-getopts('a', $opts);
+getopts('aw:', $opts);
 
 my $cmd = shift;
 my $arg = shift;
@@ -28,14 +28,16 @@ else
 	$tname = $arg;
 }
 
-my ($group_found, $timer_found, $avail_found) = (0,0);
-$today = time2str('%Y/%m/%d', parsedate($today)) if $today;
+my ($group_found, $timer_found, $avail_found) = (0,0,0);
+my ($in_week, $cur_week) = (0,0);
+$today = time2str('%Y/%m/%d', scalar parsedate($today)) if $today;
 my (%totals, @daybreak, %review);
 
 while ( <> )
 {
 	if (/^\s*$/)
 	{
+		$in_week = 0;
 		if ( $cmd ~~ [qw< total eod daybreak >] )
 		{
 			if ($group_found)
@@ -77,6 +79,11 @@ while ( <> )
 	chomp;
 	my ($name, $chunks, @stuff) = split("\t");
 	$chunks ||= '';
+	if ($name and $name !~ /:$/ and !$in_week)
+	{
+		++$cur_week;
+		$in_week = 1;
+	}
 
 	if ($chunks and substr($chunks, -1, 1) eq '-' and ($cmd eq 'start' or $cmd eq 'half' or $cmd eq 'pause'))
 	{
@@ -98,7 +105,7 @@ while ( <> )
 
 	if ($cmd eq 'breakdown')
 	{
-		if ($name eq $tname)
+		if ($name eq $tname and $cur_week == ($opts->{w} // 1))
 		{
 			breakdown(split(',', $chunks));
 			exit;
@@ -122,6 +129,8 @@ while ( <> )
 		}
 		foreach (split(',', $chunks))
 		{
+			warn("no from time on timer $name, line $.") if /^-/;
+			warn("bad time on timer $name, line $.") unless /^\d/;
 			my ($min, $max) = date_range($_);
 			if ($cmd eq 'eod' and $min eq $today)
 			{

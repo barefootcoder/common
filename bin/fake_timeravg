@@ -9,8 +9,8 @@ my $opts = {};
 getopts('v', $opts);
 
 my $num_weeks = shift;
-$num_weeks = date_to_weeks($num_weeks) if $num_weeks =~ m{^ \d+ / \d+ ( / \d+ )? $}x;
-die("usage: $0 num_weeks|date") unless $num_weeks =~ /^\d+$/;
+$num_weeks = date_to_weeks($num_weeks) if $num_weeks and $num_weeks =~ m{^ \d+ / \d+ ( / \d+ )? $}x;
+die("usage: $0 [-v] num_weeks|date") unless $num_weeks and $num_weeks =~ /^\d+$/;
 
 
 my @files = `ls -1r ~/timer/timer.20* | head -n$num_weeks`;
