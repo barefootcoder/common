@@ -1,0 +1,14 @@
+#! /bin/bash
+
+cd /home/buddy/workproj/CE
+log=$(/usr/bin/git log --pretty=format:"%h %an %ar" trunk -- doc/howto/push* | /usr/bin/head -n1)
+if [[ $log != *Buddy* ]]
+then
+	/usr/bin/mail -s "CRAP!" bburden@campusexplorer.com <<END
+		Someone else modified the push instructions!
+
+			$log
+
+		Run your scripts and resync them.
+END
+fi

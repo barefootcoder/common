@@ -1,0 +1,8 @@
+#! /usr/bin/env perl
+
+
+while ( <> )
+{
+	s@\[([0-9a-f]{10})\]@[https://github.com/campus-explorer/CE/commit/$1 $1]@g;
+	print;
+}
