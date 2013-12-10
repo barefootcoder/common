@@ -21,6 +21,12 @@ foreach (qw< for by from into as >)
 	is title_case("test $_ a mouse"), "Test $_ a Mouse", "title case for $_ works";
 }
 
+# make sure some words are _not_ included (that is, they _are_ capitalized)
+foreach (qw< has so >)
+{
+	is title_case("test $_ a mouse"), "Test " . ucfirst $_ . " a Mouse", "title case for $_ works";
+}
+
 # back to default wordlist now?
 require Text::Capitalize;
 is Text::Capitalize::capitalize_title("test from a mouse"), 'Test From a Mouse', "title case is properly localizing";

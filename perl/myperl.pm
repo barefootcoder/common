@@ -135,6 +135,7 @@ sub title_case
 	# perhaps you can't localize variables in other packages?
 	my @save = @Text::Capitalize::exceptions;
 	push @Text::Capitalize::exceptions, qw< from into as on la du un pour des >;
+	@Text::Capitalize::exceptions = grep { not $_ ~~ [ qw< has so > ] } @Text::Capitalize::exceptions;
 	my $t = Unicode::Normalize::NFD(Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1));
 
 	# preserving all caps seems to let the word "A" stay "A" when it should go to "a"
