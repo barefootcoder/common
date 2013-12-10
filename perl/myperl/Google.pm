@@ -308,7 +308,7 @@ class Google::Worksheet
 		foreach my $row (keys %rows)
 		{
 			my $cellrow = $rows{$row};
-			my $key_cell = $cellrow->[$self->key_col];
+			my $key_cell = $self->_key_from($cellrow);
 			next unless $key_cell;
 			my $key = $key_cell->content;
 			next unless $key;
@@ -322,7 +322,8 @@ class Google::Worksheet
 
 	method _build_keymap ()
 	{
-		return +{ map { my $r = $self->_data->[$_]; defined $r ? ($r->[$self->key_col] => $_) : () } 0..$#{ $self->_data } };
+		# builds correspondence between key values and row numbers
+		return +{ map { my $r = $self->_data->[$_]; defined $r ? ($self->_key_from($r) => $_) : () } 0..$#{ $self->_data } };
 	}
 
 
@@ -342,6 +343,32 @@ class Google::Worksheet
 
 
 	# BUILDERS
+
+	method _from_excel_col (Str $col)
+	{
+		use Number::Latin;
+
+		return latin2int($col);
+	}
+
+	method _to_excel_col (Int $col)
+	{
+		use Number::Latin;
+
+		return int2LATIN($col);
+	}
+
+	method _from_excel (Str $cell)
+	{
+		my ($col, $row) = $cell =~ /^[A-Z]+\d+$/ or die("illegal Excel cell format: $cell");
+		return ($self->_from_excel_col($col), $row);
+	}
+
+	method _to_excel (Int $row, Int $col)
+	{
+		return join('!', $self->name, $self->_to_excel_col($col) . $row);
+	}
+
 
 	method _row (Int|Str $rowname)
 	{
@@ -368,6 +395,11 @@ class Google::Worksheet
 		my $row = $self->_row($rowname);
 		my $col = $self->_col($colname);
 		return ($row, $col);
+	}
+
+	method _key_from (HashRef|ArrayRef $datarow)
+	{
+		return ref $datarow eq 'HASH' ? $datarow->{$self->key} : $datarow->[$self->key_col];
 	}
 
 	method _build_datarow (Maybe[ArrayRef] $row)
@@ -425,15 +457,18 @@ class Google::Worksheet
 		}
 	}
 
-	method update_row (HashRef $hash)
+	method update_row (HashRef $hash, HashRef $opts = {})
 	{
-		my $key = $hash->{ $self->key };
+		my $key = $self->_key_from($hash);
 		my $row;
+		my $new_row = 1;
 		if ($self->has_data)
 		{
 			try
 			{
 				$row = $self->_row($key);
+				$new_row = 0;
+				$self->read_row($row);
 			}
 			catch ($e where { /no such row as/ })
 			{
@@ -446,9 +481,30 @@ class Google::Worksheet
 		}
 		debuggit(2 => "updating row", $row, "with header_row", $self->header_row, "and num_data_rows", $self->num_data_rows);
 
-		my @cells = map { +{ row => $row, col => $self->_col($_), input_value => $hash->{$_} } } keys %$hash;
+		my @cells = map
+					{
+						my $col = $self->_col($_);
+						$new_row == 1 || $self->_data->[$row]->[$col] ne $hash->{$_}
+							? +{ row => $row, col => $col, input_value => $hash->{$_} }
+							: ()
+					}
+					keys %$hash;
+		return unless @cells;
 		$self->_sheet->batchupdate_cell(@cells);
 		$self->read_row($row);
+
+		if ($opts->{'ReportMods'})
+		{
+			if ($new_row)
+			{
+				say STDERR "new row: ", $self->_key_from($hash), " [", $self->name, "!$row]";
+			}
+			else
+			{
+				say STDERR "modified cell: $_->{input_value} [", $self->_to_excel($_->{row}, $_->{col}), "]"
+						foreach sort { $a->{col} <=> $b->{col} } @cells;
+			}
+		}
 	}
 
 

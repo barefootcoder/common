@@ -367,6 +367,7 @@ IO::Prompter
 Perl6::Gather
 Data::Printer
 Test::Command
+Number::Latin
 Package::Stash
 Mail::Sendmail
 Module::Install
