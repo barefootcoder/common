@@ -91,6 +91,7 @@ set comments=b:#,b:%,b:--\!\ print,b:--
 " reformat current comment block (using Alt-R)
 nnoremap <Esc>r ^gq/^$\<Bar>^<Tab>*#$\<Bar>^<Tab>*[^<Tab>#]\<Bar>^--! print$<CR>
 nnoremap <Esc>r<Esc>r gqgq
+nnoremap <Esc>r} gq}
 " twiddle line numbers in Perl to correct stupid Devel::Declare modules
 nnoremap <Esc>i<Esc>l m`O<Esc>i# line 0<Esc>:1,$! reset_lines<CR>:w<CR>``
 nnoremap <Esc>r<Esc>l m`:1,$! reset_lines<CR>``
