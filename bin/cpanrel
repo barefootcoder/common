@@ -64,14 +64,14 @@ sub check_version
 	my @Changes = slurp 'Changes';
 	my ($version, $date) = (first { /^$VERSION/ } @Changes) =~ /^ ($VERSION) \s+ (?: - \s+ )? (.*) $/x;
 	debuggit(2 => "version:", $version, "date:", $date);
-	if (time - str2time($date) > 24*60*60)
+	if (not $date or time - str2time($date) > 24*60*60)
 	{
 		say STDERR "Changes file not updated with latest version info";
 		print STDERR "Add a line? [y/N] ";
 		if ( <STDIN> =~ /^y/i )
 		{
 			open(OUT, '>Changes') or die("can't open Changes for writing");
-			say OUT (time2str('%Y%m%d.%H%M_001', time), "\t", `date`);
+			say OUT (time2str('%Y%m%d.%H%M_001', time), "\t", `date -Iseconds`);
 			print OUT @Changes;
 			close(OUT);
 		}
