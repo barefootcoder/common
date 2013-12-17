@@ -18,7 +18,17 @@ function current_branch
 function branched_from
 {
 	branch="$1"
-	git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/ and $1 ne '"'$branch'"
+	# the git-show-branch method seems to only work about half the time, and merges from trunk in
+	# particular freak it out.  let's see if we can make a reasonable guess before we go there.
+	if [[ $branch == feature/* ]]
+	then
+		~/proj/VCtools/bin/vc info %Mainline
+	elif [[ $branch == stgfix/* ]]
+	then
+		~/proj/VCtools/bin/vc info %stg_branch
+	else
+		git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/ and $1 ne '"'$branch'"
+	fi
 }
 
 cmd="git log"
