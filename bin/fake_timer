@@ -105,7 +105,7 @@ while ( <> )
 
 	if ($cmd eq 'breakdown')
 	{
-		if ($name eq $tname and $cur_week == ($opts->{w} // 1))
+		if ($name eq $tname and $cur_week >= ($opts->{w} // 1))
 		{
 			breakdown(split(',', $chunks));
 			exit;
