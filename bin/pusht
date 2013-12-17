@@ -88,6 +88,11 @@ then
 		set -o pipefail
 		blogify "$1" | xclip -selection c
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
+	elif [[ "$1" == *.trac ]]
+	then
+		set -o pipefail
+		ce_commit_link "$1" | xclip -selection c
+		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.md ]]
 	then
 		xclip -selection c "$1"
