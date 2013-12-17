@@ -196,6 +196,7 @@ if ($arg)
 			(my $d = $arg) =~ s{::}{/}g;
 			foreach my $t_dir ( @dirs )
 			{
+				push @possibles, "$WORKDIR/$t_dir/$d/t";
 				push @possibles, "$WORKDIR/$t_dir/$d";
 				push @possibles, "$WORKDIR/$t_dir/$pkg" if $pkg;
 			}
@@ -220,9 +221,6 @@ if (not $dir and not @files)
 die("$0: cannot figure out where test files are\n") unless $dir or @files;
 
 @files = get_files($dir) unless @files;
-
-$ENV{BAIL_ON_FAIL} = 1;
-print "testing @files ...\n";
 
 # use requested modules
 my %req_modules =
@@ -250,6 +248,9 @@ if ($opt->{m})
 		$ENV{TEST_METHOD} = $candidates[0];
 	}
 }
+
+$ENV{BAIL_ON_FAIL} = 1;
+print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n";
 
 
 print "\n" x 10 unless $opt->{s};
@@ -352,7 +353,7 @@ sub get_workenv
 					},
 		CE		=>	{
 						env_var		=>	[ 'CEROOT' ],
-						test_dirs	=>	[qw< t/lib >],
+						test_dirs	=>	[qw< t/lib tlib >],
 						post_args	=>	[qw< :: --database cetest >],
 					},
 	};
