@@ -31,7 +31,7 @@ else
 my ($group_found, $timer_found, $avail_found) = (0,0,0);
 my ($in_week, $cur_week) = (0,0);
 $today = time2str('%Y/%m/%d', scalar parsedate($today)) if $today;
-my (%totals, @daybreak, %review);
+my (%totals, @daybreak, %review, @mondays);
 
 while ( <> )
 {
@@ -49,6 +49,7 @@ while ( <> )
 				else
 				{
 					my $total = my $lines = 0;
+					push @mondays, $totals{':MINDATE'} if $opts->{a};
 					$totals{':MINDATE'} ||= 'N/A';
 					$totals{':MAXDATE'} ||= 'N/A';
 					print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
@@ -179,6 +180,24 @@ if ($cmd eq 'review')
 				sort { $review{$a}->{ticket} cmp $review{$b}->{ticket} }
 				grep { $review{$_}->{total} && $review{$_}->{ticket} }
 				keys %review;
+}
+
+if ($cmd eq 'total' and $opts->{a})
+{
+	my $DAY = 24 * 60 * 60;
+	my $WEEK = 7 * $DAY;
+	my @mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { str2time($_) } @mondays;
+	for (1..$#mondays)
+	{
+		foreach ( ($mondays[$_-1] + 1)..($mondays[$_] - 1) )
+		{
+			# the beginning of the epoch was a Thursday ... in England
+			# in the U.S., it was still Wednesday
+			# so, to get a Monday, we have to add 5 days
+			my $date = time2str("%m/%d/%Y", $_ * $WEEK + $DAY * 5);
+			say STDERR "Missing week: $date";
+		}
+	}
 }
 
 
