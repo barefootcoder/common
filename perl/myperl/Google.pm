@@ -333,7 +333,7 @@ class Google::Worksheet
 
 	# ATTRIBUTES
 
-	has Google		=>	( ro, isa => 'Google::Service', lazy, default => $myperl::Google::GOOGLE, );
+	has Google		=>	( ro, isa => 'Google::Service', lazy, default => method { $myperl::Google::GOOGLE }, );
 
 	has doc			=>	( ro, isa => Str, required );
 	has name		=>	( ro, isa => Str, required );
