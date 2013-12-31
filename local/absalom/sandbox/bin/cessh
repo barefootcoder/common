@@ -1,0 +1,8 @@
+#! /bin/bash
+
+host=$1
+if [[ $host != *.* ]]
+then
+	host=$host.campusexplorer.com
+fi
+ssh -p 8822 $CE_REMOTE_USERNAME@$host
