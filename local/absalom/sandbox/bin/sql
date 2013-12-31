@@ -10,11 +10,13 @@ case $db in
 			;;
 	rpt)	db=ceprod4-tunnel
 			;;
+	rstg)	db=rptstg-tunnel
+			;;
 	log)	db=redshift-ceprod-tunnel
 			;;
 	lstg)	db=redshift-cestg-tunnel
 			;;
-	utest)	db=cetest
+	test)	db=cetest
 			;;
 esac
 echo "$0: connecting to DB: $db"
