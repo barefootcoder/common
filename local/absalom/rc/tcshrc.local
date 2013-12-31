@@ -1,6 +1,8 @@
 setenv CE_REMOTE_USERNAME bburden
 setenv CEROOT ~/workproj/CE
+setenv CE_USE_CONFIG /tmp/cepush
 eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib`
+alias ceflow ~/workproj/CE/bin/ceflow
 
 # AWS setup -- BEGIN
 setenv JAVA_HOME /usr
