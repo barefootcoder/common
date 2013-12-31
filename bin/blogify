@@ -135,12 +135,13 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~CENTER~~(.*?)~~CENTER~~}{<div align=center>$1</div>}msg;					# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
+	s{(\d+)c}{$1&cent;}g;															# cents
+	s{\bTM\b}{&trade;}g;															# trademark
 	s{\^\^\[(.*?)]}{footnote(full => $1)}eg;										# footnote
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
 	s{\\([\[{}\]])}{$1}g;															# literal brackets or braces
-	s{(\d+)c}{$1&cent;}g;															# cents
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
