@@ -5,6 +5,7 @@ complete vcd 'p/1/`vc info project:all`/'
 if ( $?VCTOOLS_SHELL ) then
 	alias st vc stat
 	alias sync vc sync
+	alias vpush vc push
 	alias stg vc stage
 	alias istg git add -i
 	alias commit vc commit
@@ -31,6 +32,5 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vlog git-helper-log
 	alias vbranch git-helper-branch
 	alias vunbranch 'git-helper-branch -u'
-	alias vpush 'git pull --rebase ; git push'
 	alias testclean 'git stash save ; t ; git stash pop'
 endif
