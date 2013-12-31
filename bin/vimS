@@ -40,7 +40,7 @@ do
 	prefixes="$prefixes $prefix"
 done
 
-while getopts ":lh" opt
+while getopts ":lnh" opt
 do
 	case $opt in
 		l)	for prefix in $prefixes
@@ -52,8 +52,11 @@ do
 			done
 			exit
 			;;
+		n)	local=yes
+			;;
 		h)  echo "usage: $me -h | -l | file" >&2
 			echo "    -l : instead of starting a vim session, list possible session files" >&2
+			echo "    -n : do not autosave the session (default: autosave any changes/new files)" >&2
 			echo "    -h : this help message" >&2
 			echo "    file : session file (or partial name)" >&2
 			exit
@@ -79,6 +82,14 @@ done
 if [[ ! -r $sessionfile ]]
 then
 	die "session file $1 not specified, doesn't exist, or is unreadable"
+fi
+
+if [[ $local ]]
+then
+	tmpfile=/tmp/vimS.$$
+	trap "/bin/rm -f $tmpfile" EXIT
+	/bin/cp $sessionfile $tmpfile
+	sessionfile=$tmpfile
 fi
 
 eval $(awk '$1 == "cd"' $sessionfile)
