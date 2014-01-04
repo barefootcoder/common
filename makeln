@@ -58,6 +58,14 @@ do
 	make_link $mydir/dzil/$file $HOME/.dzil/$file
 done
 
+# .vctools dir is a bit like .dzil, only simpler
+[[ -d ~/.vctools ]] || mkdir ~/.vctools
+cd $mydir/vctools
+for file in *
+do
+	make_link $mydir/vctools/$file $HOME/.vctools/$file
+done
+
 # we have a few rc's in a separate place because they have passwords in them
 alt_rcdir=~/Dropbox/sensitive
 if [[ -d $alt_rcdir ]]
