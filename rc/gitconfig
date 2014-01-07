@@ -10,14 +10,3 @@
 	preloadindex = true
 [branch]
 	autosetupmerge  = true
-
-[gitflow "branch"]
-    master = production
-    develop = trunk
-[gitflow "prefix"]
-    feature = feature/
-    release = staging/
-    hotfix = hotfix/
-    support = support/
-	cepatch = cepatch/
-    versiontag = release
