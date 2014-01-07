@@ -31,6 +31,13 @@ done
 cp $CEROOT/tmp/bin/remount ~
 
 
+# if we're just doing a reset, stop right here
+if [[ $1 == "reset" ]]
+then
+	exit
+fi
+
+
 # instructions from doc/howto/vagrant-sandbox.txt
 cd $CEROOT
 make sandbox-puppet
