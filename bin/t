@@ -24,7 +24,7 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-getopts("hnTcvsAPDN:m:", $opt);
+getopts("hnaTcvsAPDN:m:", $opt);
 
 # help message
 if ($opt->{h})
@@ -35,7 +35,8 @@ if ($opt->{h})
 	print "usage: $me -h | [-nTcvsAD] [-Nlrj] [perl_module|t_dir]\n";
 	print "       run tests associated with perl_module\n";
 	print "           -h: this help message\n";
-	print "           -n: only run the newest (most recently modified) test\n";
+	print "           -n: only run the newest (most recently modified) test file\n";
+	print "           -a: run all tests (i.e. don't bail on fail)\n";
 	print "           -T: run tests with taint checking on\n";
 	print "           -c: try to run tests under Devel::Cover and report (forces -Nj)\n";
 	print "           -v: run tests in verbose mode\n";
@@ -249,7 +250,7 @@ if ($opt->{m})
 	}
 }
 
-$ENV{BAIL_ON_FAIL} = 1;
+$ENV{BAIL_ON_FAIL} = 1 unless $opt->{a};
 print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n";
 
 
@@ -270,6 +271,7 @@ push @prove_args, @files;
 push @prove_args, get_workenv('post_args');
 my $command = "prove @prove_args";
 print STDERR "running: $command\n" if $opt->{D};
+print STDERR "         (with BAIL_ON_FAIL=$ENV{BAIL_ON_FAIL})\n" if $opt->{D} and not $opt->{a};
 print STDERR "         (with $HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
 print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and grep { $opt->{$_} } keys %req_modules;
 print STDERR "         (with TEST_METHOD=$ENV{TEST_METHOD})\n" if $opt->{D} and $opt->{m};
