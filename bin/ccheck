@@ -21,7 +21,17 @@ then
 else
 	if realpath "$1" | grep -q blog
 	then
-		wc -w "$1"
+		total=$(wc -w "$1" | awk '{print $1}')
+		in_links=$(( total -  $(perl -0777 -pe 's{\[[^]]*?\|}{[}g' "$1" | wc -w) ))
+		in_quotes=$(( total -  $(perl -0777 -pe 's{//--.*?--//}{}sg' "$1" | wc -w) ))
+		in_notes=$(( total
+			-  $(perl -0777 -pe 's{(?<![\\^])\[(.*?)(\|(.*?))?\]}{$3//$1}eg;s{\^\^\[.*?\]}{}g' "$1" | wc -w)
+			- in_links ))							# cause we took those out too, so don't count them as notes words
+		printf "%-20s %4d\n" "total words" $total
+		printf "%-20s %4d\n" "- in links" $in_links
+		printf "%-20s %4d\n" "- in blockquotes" $in_quotes
+		printf "%-20s %4d\n" "- in footnotes" $in_notes
+		printf "%-20s %4d\n" "net words" $(( total - in_links - in_quotes - in_notes ))
 	elif [[ "$1" == xtrack_posts ]]
 	then
 		scp $1 heroscapers:bin
