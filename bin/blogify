@@ -111,12 +111,13 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^----$}{$section_break}mg;													# section break
 	s{^====$}{<hr/>}mg;																# horizontal rule
 	s{^//---\s*(.*?)\s*---//\n}{fmt(quote => $1) . "\n"}mseg;						# nested blockquotes
+	s{^//--\n(.*?)\n--//\n}{"<pre>" . fmt(quote => $1) . "</pre>\n"}mseg;			# preformatted blockquotes
 	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
 	unless ($blog_type eq 'bbcode')
 	{
 		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
-		s{([.?!])  }{$1&nbsp; }g;													# proper end-of-sentence
+		s{([]).?!:])  }{$1&nbsp; }g;												# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 	}
 	s{--}{$blog{$blog_type}->{dash}}eg;												# em dash
