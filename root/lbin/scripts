@@ -15,8 +15,9 @@ my $ME = basename($0);
 my $mode = 'long';
 my $pattern;
 my $opt = {};
-my $opt_ok = getopts("bg:tfivpsnrqh", $opt);
+my $opt_ok = getopts("bg:tfivpsnrlqh", $opt);
 $mode = 'bare' if $opt->{b};
+$mode = 'list' if $opt->{l};
 $mode = 'grep', $pattern = $opt->{g} if $opt->{g};
 my $perlonly = $opt->{p};
 my $shellonly = $opt->{s};
@@ -29,12 +30,13 @@ $greptype .= 'i' if $opt->{i};
 my $verbosegrep = $opt->{v} ? '-H' : '-l';
 if ($opt->{h} or not $opt_ok)
 {
-	print STDERR "usage: $ME [-qnpsr] [-t | -b | -[fiv]g 'pattern'] [dir]\n";
+	print STDERR "usage: $ME [-qnpsr] [-t | -b | -l | -[fiv]g 'pattern'] [dir]\n";
 	print STDERR "         -q:  quiet (no progress reports)\n";
 	print STDERR "         -n:  include non-executable files as well\n";
 	print STDERR "         -p:  include only Perl scripts\n";
 	print STDERR "         -s:  include only shell (sh/bash/ksh) scripts\n";
 	print STDERR "         -r:  recurse into subdirs\n";
+	print STDERR "         -l:  list (show only subdirs which contain scripts; most useful with -r)\n";
 	print STDERR "         -t:  sort by time (oldest first; doesn't work for >1,000 scripts)\n";
 	print STDERR "         -b:  bare (show only script names)\n";
 	print STDERR "         -g:  show only scripts containing pattern (as grep)\n";
@@ -63,7 +65,7 @@ foreach my $filespec (@ARGV)
 print STDERR "$ME: no scripts found\n" and exit 1 unless @scripts;
 
 $; = " ";
-if ($mode eq 'bare')
+if ($mode eq 'bare' or $mode eq 'list')
 {
 	$, = "\n";
 	print @scripts;
@@ -102,10 +104,10 @@ sub check_dir
 		}
 
 		my @files = glob("$filespec/*");
+		@files = grep { -x } @files unless $nonex;
 		return unless @files;
-		$filespec .= "/*";
 
-		print STDERR "now checking $filespec\n" unless $quiet;
+		print STDERR "now checking $filespec/*\n" unless $quiet;
 		while (@files)
 		{
 			open(FILE, "-|", qw<file -N -->, @files[0..(@files>1000?999:$#files)])
@@ -117,8 +119,16 @@ sub check_dir
 					next if $perlonly and not /\bperl\b/i;
 					next if $shellonly and not /\b(?:ba|k)?sh\b/i and not /\bshell\b/i;
 
-					my ($script) = /^(.+?):/;
-					push @scripts, $script if $nonex or -x $script;
+					if ($mode eq 'list')
+					{
+						push @scripts, $filespec;
+						return;
+					}
+					else
+					{
+						my ($script) = /^(.+?):/;
+						push @scripts, $script;
+					}
 				}
 			}
 			close(FILE);
