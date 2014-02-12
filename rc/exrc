@@ -115,7 +115,7 @@ set sessionoptions=buffers,curdir,globals,unix
 :		echo "No current session"
 :	else
 :		exe "mksession! " . v:this_session
-:		if g:MarksFile != ''
+:		if exists("g:MarksFile")
 :			call SaveMarks()
 :		endif
 :	endif
@@ -136,7 +136,7 @@ set sessionoptions=buffers,curdir,globals,unix
 
 " reload marks (if the file exists)
 :function! LoadMarks()
-:	if g:MarksFile != ''
+:	if exists("g:MarksFile")
 :		exe "rviminfo! " . g:MarksFile
 :	endif
 :endfunction
