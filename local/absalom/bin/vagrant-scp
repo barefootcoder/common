@@ -1,0 +1,20 @@
+#! /bin/bash
+
+srcfile="$1"
+destdir="$2"
+
+if [[ ! -r $srcfile ]]
+then
+	echo "$0: $srcfile doesn't exist or isn't readable" >&2
+	exit 2
+fi
+
+if ! vagrant ssh -c "[[ -d $destdir ]]"
+then
+	echo "$0: $destdir doesn't exist in Vagrant box or isn't a dir" >&2
+	exit 2
+fi
+
+destfile=$destdir/$(basename $srcfile)
+cat $srcfile | vagrant ssh -c "cat >$destfile"
+vagrant ssh -c "chmod $(stat -c %a $srcfile) $destfile"
