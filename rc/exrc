@@ -115,10 +115,31 @@ set sessionoptions=buffers,curdir,globals,unix
 :		echo "No current session"
 :	else
 :		exe "mksession! " . v:this_session
+:		if g:MarksFile != ''
+:			call SaveMarks()
+:		endif
 :	endif
 :endfunction
 :command! SaveSession call SaveSession()
 :autocmd VimLeave * call SaveSession()
+
+" save marks along with session
+:function! SaveMarks()
+:	if v:this_session == ''
+:		echo "Can't save marks without session"
+:	else
+:		let g:MarksFile = v:this_session . ".marks"
+:		exe "wviminfo! " . g:MarksFile
+:	endif
+:endfunction
+:command! SM call SaveMarks()
+
+" reload marks (if the file exists)
+:function! LoadMarks()
+:	if g:MarksFile != ''
+:		exe "rviminfo! " . g:MarksFile
+:	endif
+:endfunction
 
 let loaded_matchparen = 1
 

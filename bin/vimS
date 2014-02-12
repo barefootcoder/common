@@ -40,22 +40,21 @@ do
 	prefixes="$prefixes $prefix"
 done
 
-while getopts ":lnh" opt
+while getopts ":lvenh" opt
 do
 	case $opt in
-		l)	for prefix in $prefixes
-			do
-				for file in $prefix*
-				do
-					echo ${file##$prefix}
-				done
-			done
-			exit
+		l)	list=yes
+			;;
+		v)	verbose=yes
+			;;
+		e)	edit=yes
 			;;
 		n)	local=yes
 			;;
-		h)  echo "usage: $me -h | -l | file" >&2
+		h)  echo "usage: $me -h | -l[v] | -e file | [-n] file" >&2
 			echo "    -l : instead of starting a vim session, list possible session files" >&2
+			echo "    -v : when listing with -l, display full pathnames of session files" >&2
+			echo "    -e : instead of starting a vim session, edit the session file itself" >&2
 			echo "    -n : do not autosave the session (default: autosave any changes/new files)" >&2
 			echo "    -h : this help message" >&2
 			echo "    file : session file (or partial name)" >&2
@@ -68,6 +67,23 @@ do
 	esac
 done
 shift $(( $OPTIND - 1 ))
+
+if [[ $list ]]
+then
+	for prefix in $prefixes
+	do
+		for file in $prefix*
+		do
+			if [[ $verbose ]]
+			then
+				echo $file
+			else
+				echo ${file##$prefix}
+			fi
+		done
+	done
+	exit
+fi
 
 [[ -n $1 ]] || usage_error "sessionfile arg required"
 
@@ -84,6 +100,12 @@ then
 	die "session file $1 not specified, doesn't exist, or is unreadable"
 fi
 
+if [[ $edit ]]
+then
+	vi +/badd $sessionfile
+	exit
+fi
+
 if [[ $local ]]
 then
 	tmpfile=/tmp/vimS.$$
@@ -93,4 +115,4 @@ then
 fi
 
 eval $(awk '$1 == "cd"' $sessionfile)
-eval vim -S $sessionfile $(awk '$1 == "args" { print $2 }' $sessionfile)
+eval vim -S $sessionfile -c '"call LoadMarks()"' $(awk '$1 == "args" { print $2 }' $sessionfile)
