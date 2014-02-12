@@ -11,14 +11,13 @@ if ( $?VCTOOLS_SHELL ) then
 	alias commit vc commit
 	alias unget vc unget
 	alias branches vc show-branches
-	alias unbranch 'git checkout `vc info Mainline`'
+	alias unbranch vc unbranch
 	alias vmerge vc merge
 	alias resolved vc resolved
 	alias stash vc stash
 	alias unstash vc unstash
 
 	alias branch vbranch
-	alias unbranch vunbranch
 
 	alias vd git diff
 	alias vnew git add -N
@@ -31,6 +30,5 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vgl "$top_space ; ack --perl $code_ignore --match \!* | $filter_line_too_long"
 	alias vlog git-helper-log
 	alias vbranch git-helper-branch
-	alias vunbranch 'git-helper-branch -u'
 	alias testclean 'git stash save ; t ; git stash pop'
 endif
