@@ -11,6 +11,8 @@ test
 test
 
 
+y
+n
 END_INPUT
 
 # basic test: does it load, and does it get input?
@@ -42,6 +44,16 @@ is $trap->stdout, $prompt, "default prompt (orig) is okay" or $trap->diag_all;
 trap { $input = prompt $prompt, default => "fred" };
 is $input, "fred", "input with default (enh)";
 is $trap->stdout, "$prompt [fred] ", "default (enh) prompt is okay" or $trap->diag_all;
+
+# make sure -y still works
+$prompt = 'yes or no?';
+trap { $input = prompt $prompt, -yes };
+ok $input, "yesno with yes" or diag("prompt -y spat back: $input");
+is $trap->stdout, "$prompt ", "yesno prompt (yes) is okay" or $trap->diag_all;
+
+trap { $input = prompt $prompt, -yes };
+ok !$input, "yesno with no" or diag("prompt -y spat back: $input");
+is $trap->stdout, "$prompt ", "yesno prompt (no) is okay" or $trap->diag_all;
 
 
 done_testing;

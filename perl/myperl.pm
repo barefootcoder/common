@@ -190,7 +190,7 @@ sub prompt
 		}
 		$answer = IO::Prompter::prompt($prompt, %out_opts);
 	}
-	return "$answer";
+	return $answer ? "$answer" : 0;
 }
 
 
