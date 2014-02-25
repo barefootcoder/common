@@ -2,12 +2,89 @@
 
 . ~/bin/bash_funcs
 
-sql_file=$1
-if [[ $sql_file == ${sql_file%.sql} ]]
+while getopts ":c:h" opt
+do
+	case $opt in
+		c)	create=$OPTARG
+			;;
+		h)  echo "usage: $me -h | [-c old_rpt] rpt_file" >&2
+			echo "    -c : create a new report as a copy of an old one" >&2
+			echo "    -h : this help message" >&2
+			echo "    old_rpt  : the old report to make a copy of" >&2
+			echo "    rpt_file : the report file to load" >&2
+			exit
+			;;
+		:)  usage_erorr "$OPTARG requires an argument"
+			;;
+		\?) usage_error "unknown argument $OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+BASE=database/reports/web
+function normalize_filename
+{
+	file=$1
+	parent=$2										# optional
+
+	# add extension if not there
+	if [[ $file != *.* ]]
+	then
+		file=$file.sql
+	fi
+
+	# add parent if not there
+	if [[ $file != */* ]]
+	then
+		if [[ $parent ]]
+		then
+			file=$parent/$file
+		else
+			die "can't figure out where underneath $BASE $file should live"
+		fi
+	fi
+
+	# add base if not there
+	if [[ $file != */*/* ]]
+	then
+		file=$BASE/$file
+	fi
+
+	# return result
+	echo $file
+}
+
+cd $CEROOT
+if [[ $create ]]
 then
-	die "arg must be a .sql file"
+	create_from=$(normalize_filename $create)
+	sql_file=$(normalize_filename $1 $(basename $(dirname $create_from)))
+else
+	sql_file=$(normalize_filename $1)
+fi
+
+if [[ $sql_file != *.sql ]]
+then
+	die "must supply a .sql file to load"
 fi
 
 export sql_file
 export yml_file=${sql_file%.sql}.yml
+if [[ $create ]]
+then
+	if [[ -r $sql_file ]]
+	then
+		die "report $sql_file exists; won't overwrite it"
+	fi
+
+	/bin/cp -v $create_from $sql_file
+	/bin/cp -v ${create_from%.sql}.yml $yml_file
+else
+	if [[ ! -r $sql_file ]]
+	then
+		die "report $sql_file does not exist or is not readable"
+	fi
+fi
+
 vimS -n report
