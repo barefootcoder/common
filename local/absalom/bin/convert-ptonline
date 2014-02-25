@@ -1,0 +1,64 @@
+#!/usr/bin/env perl
+
+use 5.10.1;
+use strict;
+use autodie qw< :all >;
+use warnings FATAL => 'all';
+
+use Getopt::Std;
+use Perl6::Slurp;
+
+my $opts = {};
+getopts('dr', $opts);
+
+
+my %args;
+$args{'drops_ok'} = $opts->{d};
+$args{'dbname'} = $opts->{r} ? 'cerpt' : 'ceprod';
+
+my $input = slurp \*STDIN;
+if (my $output = convert_alter_table_to_pt_online($input, %args))
+{
+	say $output;
+}
+else
+{
+	die("can't recognize input");
+}
+
+
+sub convert_alter_table_to_pt_online
+{
+	my ($input, %args) = @_;
+	my $dbname = $args{'dbname'} // 'ceprod';
+
+	my $output;
+	if ($input =~ /^ \s* ALTER \s+ TABLE \s+ (\w+) \s+ (.*) \s* ; \s* $/isx)
+	{
+		my ($table, $mods) = ($1,$2);
+		$mods =~ s/(\(\d+),(\d+\))/$1\cA$2/g;							# change commas inside type specs,
+		my @mods = split(/\s*,\s*/, $mods);								# so we don't split on them
+
+		# don't do DROPs, unless we're told it's okay
+		@mods = grep { !/^drop\b/i } @mods unless $args{'drops_ok'};
+
+		$mods = join(", \\\n\t", @mods);								# put it all back together
+		$mods =~ s/\cA/,/g;												# put back commas in type specs
+		if ($mods)
+		{
+			$output = <<END;
+sudo -H pt-online-schema-change --alter "$mods" \\
+	--alter-foreign-keys-method=auto \\
+	--critical-load=Threads_running=200 D=$dbname,t=$table \\
+	--dry-run
+END
+		}
+		else
+		{
+			$output = "# no changes necessary";
+		}
+	}
+
+	# if no alter table was found, we'll just return undef;
+	return $output;
+}
