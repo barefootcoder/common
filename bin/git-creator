@@ -1,0 +1,3 @@
+#! /bin/bash
+
+each 'git log --format=format:%aN --reverse {} | head -n1' "$@"
