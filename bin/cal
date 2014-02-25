@@ -1,0 +1,25 @@
+#! /bin/bash
+
+if which gcal >& /dev/null
+then
+	if [[ $# == 0 ]]
+	then
+		hilite="$(echo -e "\e[7m\e[1m")"
+		normal="$(echo -e "\e[0m")"
+		gcal -s1 -H "$hilite:$normal:$normal:$normal" .
+	elif [[ $# == 1 ]]
+	then
+		gcal -s1 -H no %$(printf "%04d" $1) .
+	elif [[ $# == 2 ]]
+	then
+		gcal -s1 -H no %$(printf "%04d%02d" $2 $1) .
+	elif [[ $# == 3 ]]
+	then
+		gcal -s1 -H no %$(printf "%04d%02d%02d" $3 $2 $1) .
+	else
+		echo "$0: too many args" >&2
+		exit 2
+	fi
+else
+	cal -m3 "$@"
+fi
