@@ -29,7 +29,7 @@ my $version;
 
 # Requires cpan-upload
 # http://search.cpan.org/dist/CPAN-Uploader
-die("must CPAN install CPAN::Uploader") unless `cpan-upload --version`;
+die("must CPAN install CPAN::Uploader") unless `cpan-upload --help`;
 
 
 sub run
