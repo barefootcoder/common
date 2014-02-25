@@ -13,6 +13,8 @@ test
 
 y
 n
+n
+y
 END_INPUT
 
 # basic test: does it load, and does it get input?
@@ -29,21 +31,25 @@ is exists $INC{'IO/Prompter.pm'}, 1, "loaded IO::Prompter now";
 	*IO::Prompter::_null_printer = sub { return sub { shift; print @_ } }
 }
 
+
 # check the prompt output
 my $prompt = 'enter stuff: ';
 trap { $input = prompt $prompt };
 is $input, "test", "input with prompt";
 is $trap->stdout, $prompt, "simple prompt is okay" or $trap->diag_all;
 
+
 # default prompt and output (original syntax)
 trap { $input = prompt $prompt, -default => "fred" };
 is $input, "fred", "input with default (orig)";
 is $trap->stdout, $prompt, "default prompt (orig) is okay" or $trap->diag_all;
 
+
 # default prompt and output (enhanced syntax)
 trap { $input = prompt $prompt, default => "fred" };
 is $input, "fred", "input with default (enh)";
 is $trap->stdout, "$prompt [fred] ", "default (enh) prompt is okay" or $trap->diag_all;
+
 
 # make sure -y still works
 $prompt = 'yes or no?';
@@ -54,6 +60,16 @@ is $trap->stdout, "$prompt ", "yesno prompt (yes) is okay" or $trap->diag_all;
 trap { $input = prompt $prompt, -yes };
 ok !$input, "yesno with no" or diag("prompt -y spat back: $input");
 is $trap->stdout, "$prompt ", "yesno prompt (no) is okay" or $trap->diag_all;
+
+
+# try the new confirm method
+trap { $input = confirm $prompt };
+is $trap->stdout, "$prompt [y/N] ", "confirm prompt (no) is okay" or $trap->diag_all;
+is $input, 0, "confirm with no" or diag("confirm spat back: $input");
+
+trap { $input = confirm $prompt };
+is $trap->stdout, "$prompt [y/N] ", "confirm prompt (yes) is okay" or $trap->diag_all;
+is $input, 1, "confirm with yes" or diag("confirm spat back: $input");
 
 
 done_testing;

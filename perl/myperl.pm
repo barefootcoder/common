@@ -48,7 +48,7 @@ sub import
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
-	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round, \&prompt;
+	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round, \&prompt, \&confirm;
 
 	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
 	# function which loads the module, then passes off to the function.  Thus, if the function is
@@ -58,7 +58,6 @@ sub import
 	(
 		'Date::Parse'	=>	'str2time',
 		'Date::Format'	=>	'time2str',
-		'IO::Prompter'	=>	'prompt',
 		'myperl::Menu'	=>	'menu',
 	);
 	foreach (keys %autoload_funcs)
@@ -193,6 +192,15 @@ sub prompt
 	return $answer ? "$answer" : 0;
 }
 
+sub confirm
+{
+	require IO::Prompter;
+	my ($prompt) = @_;
+
+	undef @ARGV;														# if we don't do this, odd things will happen
+	return IO::Prompter::prompt(-y1, "$prompt [y/N]") ? 1 : 0;
+}
+
 
 1;
 
@@ -247,7 +255,7 @@ Don't make all warnings fatal (but still turn them on).
 
 	use myperl DataDumper => 1;
 
-Don't pass C<DataPrinter => 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
+Don't pass C<DataPrinter =E<gt> 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
 L<Data::Printer>).
 
 
@@ -288,7 +296,9 @@ it will work just like the native IO::Prompter syntax:
 
 	my $thing = prompt "Enter thing:", -default => "nothing";
 
-except that the default value is appended to the prompt.
+except that the default value is appended to the prompt.  So it really is equivalent to:
+
+	my $thing = prompt "Enter thing: [nothing]", -default => "nothing";
 
 =back
 
@@ -296,6 +306,19 @@ Ideally, the wrapper should also always throw exceptions in the case of failure 
 this hasn't been implemented yet.
 
 See L<IO::Prompter> for full details.
+
+=head2 confirm
+
+This is a convenience function for yes/no prompts.  The code:
+
+	my $result = confirm "Are you sure?";
+
+is equivalent to:
+
+	my $result = prompt -y1, "Are you sure? [y/N]" ? 1 : 0;
+
+Note that this uses C<IO::Prompter::prompt> directly instead of going through L</prompt> as
+described above.  See L<IO::Prompter> for how C<prompt> works.
 
 =head2 title_case
 
