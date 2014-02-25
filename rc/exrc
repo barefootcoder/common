@@ -92,6 +92,9 @@ set nocindent
 filetype off
 filetype indent off
 
+" useful in Changes files
+map <C-C><C-D> 0Wy0!!date +\%Y-\%m-\%dT\%H:\%M:\%S\%z<CR>0P
+
 " to make sessions work properly
 set sessionoptions=buffers,curdir,globals,unix
 
