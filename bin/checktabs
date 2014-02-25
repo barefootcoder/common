@@ -40,4 +40,4 @@ then
 	fi
 fi
 
-fgrep $count -rHI '	' $files | grep -v ':0$'
+fgrep $count -srHI '	' $files | grep -v ':0$'
