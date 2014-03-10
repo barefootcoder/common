@@ -1,0 +1,39 @@
+#! /usr/bin/perl
+
+use 5.14.0;
+use autodie ':all';
+use warnings FATAL => 'all';
+
+use File::Spec;
+use Path::Class;
+use Const::Fast;
+
+my %COMMANDS =
+(
+	reset	=>	'=50',
+	up		=>	+2,
+	down	=>	-2,
+);
+
+const my $REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
+
+my $command = shift;
+die("unknown command $command") unless exists $COMMANDS{$command};
+
+
+my $curvol_file = file(File::Spec->tmpdir, 'curvol');
+my $curvol = -e $curvol_file ? $curvol_file->slurp : $COMMANDS{'reset'};
+
+my $adj = $COMMANDS{$command};
+if ($adj =~ s/^=//)
+{
+	$curvol = $adj;
+}
+else
+{
+	$curvol += $adj;
+}
+
+system(python => $REMOTE, volume => $curvol);
+say "voume set to: $curvol";
+$curvol_file->spew($curvol);
