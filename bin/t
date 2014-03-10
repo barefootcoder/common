@@ -47,7 +47,8 @@ if ($opt->{h})
 	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
-	print "                  -Nj: do not parallelize tests (default: prove -j5 [unless -c or -P])\n";
+	print "                  -Nj: do not parallelize tests (default: prove -jN [unless -c or -P])\n";
+	print "                          default N: number of CPU cores + 1\n";
 	print "           -m: only run a single test method in the specified file\n";
 	print "                  this only works with Test::Class-style tests\n";
 	print "                  you can specify a partial name; if it is ambiguous, it is an error\n";
@@ -264,7 +265,13 @@ push @prove_args, '-Q' if $opt->{s};
 push @prove_args, '-T' if $opt->{T};
 push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
 push @prove_args, '-r' unless $opt->{N} =~ /r/;
-push @prove_args, '-j5' unless $opt->{N} =~ /j/ or $opt->{c} or $opt->{P};
+unless ($opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
+{
+	my $cpuinfo = '/proc/cpuinfo';
+	my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
+	my $num_procs = $num_cores + 1;
+	push @prove_args, "-j$num_procs";
+}
 push @prove_args, '-PPretty' if $opt->{P};
 push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 push @prove_args, @files;
