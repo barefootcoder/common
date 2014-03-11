@@ -1,9 +1,0 @@
-#! /bin/bash
-
-query="select user_id from tbluser where email_address='$CE_REMOTE_USERNAME@campusexplorer.com'"
-user_id=$(bin/db ceprod4-tunnel --skip-column-names -e "$query")
-
-system_user_id=$(bin/config-installation-value me system_user_id)
-returnpath_user_id=$(bin/config-installation-value me returnpath_user_id)
-
-bin/copy-user-db-records $system_user_id $returnpath_user_id $user_id
