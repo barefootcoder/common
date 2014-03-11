@@ -12,5 +12,5 @@ for who in $@
 do
 	files="$files ~/.purple/logs/*/*/*$who*/*"
 done
-eval grep $opts -Pie "$pattern" $files																						\
+eval grep $opts -Pie "\"$pattern\"" $files																				\
 		| perl -lpe 's{^/(.+?/){6}}{};s{^(.*?)@.*?(/.*?:)}{$1$2};s{\.\d{6}-\d{4}P[SD]T\.txt:}{:};s{^%2b1}{+}'
