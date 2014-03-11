@@ -10,5 +10,6 @@ for box in $(VBoxManage list runningvms | cut -d_ -f2)
 do
 	echo -e "$box:\n"
 	CE_VAGRANT_BOX=$box vagrant status | perl -lne '$p = 1 if /^Current/; ++$p if /^$/; print "  $_" if $p && $p < 3'
+	echo ''
 done
-echo -e "\n"
+echo ''
