@@ -133,7 +133,7 @@ sub title_case
 	# ought to be able to use local here, but I can't seem to make it work
 	# perhaps you can't localize variables in other packages?
 	my @save = @Text::Capitalize::exceptions;
-	push @Text::Capitalize::exceptions, qw< from into as on la du un pour des >;
+	push @Text::Capitalize::exceptions, qw< from into as on le la du un pour des >;
 	@Text::Capitalize::exceptions = grep { not $_ ~~ [ qw< has so > ] } @Text::Capitalize::exceptions;
 	my $t = Unicode::Normalize::NFD(Text::Capitalize::capitalize_title(@_, PRESERVE_ALLCAPS => 1));
 
