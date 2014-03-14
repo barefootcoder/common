@@ -138,7 +138,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
 	s{(\d+)c}{$1&cent;}g;															# cents
 	s{\bTM\b}{&trade;}g;															# trademark
-	s{\^\^\[(.*?)]}{footnote(full => $1)}eg;										# footnote
+	s{\^\^\[(.*?)]}{footnote(full => $1)}seg;										# footnote
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
