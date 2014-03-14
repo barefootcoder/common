@@ -12,10 +12,11 @@ nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,48-57,_<CR>
 set keywordprg=perlref
 
 " class stuff
-map <C-C><C-H> :!clgrep -a %<CR>
-map <C-C><C-I> :!clgrep -i %<CR>
-map <C-C><C-M> :!clgrep -m %<CR>
-map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>
+map <C-C><C-H> :!clgrep -a %<CR>										" show attributes ("has")
+map <C-C><C-I> :!clgrep -i %<CR>										" show inheritance ("extends" and "with")
+map <C-C><C-M> :!clgrep -m %<CR>										" show method ("method")
+map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>							" find definition of method under cursor
+map <C-C><C-N> :!grep -Pe '^\s*\#\s*[A-Z\s]+$' %<CR>					" find "sections" (all-caps comments)
 
 " make Y same as y$ (matches other operators)
 nmap Y y$
