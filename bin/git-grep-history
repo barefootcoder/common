@@ -1,0 +1,54 @@
+#! /usr/bin/env perl
+
+use 5.010;
+use autodie ':all';
+use warnings FATAL => 'all';
+
+sub print_state ();
+
+
+my ($pattern, $file) = @ARGV;
+
+-r $file or die("$0: cannot read file: $file\n");
+eval { qr/$pattern/ } or $@ =~ s/ at $0.*$// and die("$0: $@\n");
+
+open PIPE, "git log --pretty=%h --follow $file |";
+my ($cur_state, $new_state, $last_rev);
+while ( <PIPE> )
+{
+	chomp;
+	$new_state = !!`git show $_:$file | grep -Pl -e "$pattern"`;
+	if ($. == 1)
+	{
+		$cur_state = $new_state;
+		say "\nCurrent revision ($_) ", print_state;
+		print "\n";
+	}
+	else
+	{
+		print "\r$_";
+
+		if ($new_state ne $cur_state)
+		{
+			$cur_state = $new_state;
+			say "\rRevision $_ ", print_state;
+			if ($cur_state eq '')
+			{
+				say "Last revision which contained it:";
+				$_ = $last_rev;
+			}
+			system("git log -1 $_");
+			print "\n";
+		}
+	}
+	$last_rev = $_;
+}
+close(PIPE);
+
+say "\rInitial revision of $file ($last_rev) ", print_state;
+
+
+sub print_state ()
+{
+	return $cur_state ? "contains pattern" : "does not contain pattern";
+}
