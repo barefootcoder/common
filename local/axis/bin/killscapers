@@ -1,0 +1,10 @@
+#! /bin/bash
+
+if /usr/bin/pgrep -f 'ssh heroscapers' >/dev/null
+then
+	kill $(/usr/bin/pgrep -f 'ssh heroscapers')
+	echo "Killed."
+else
+	echo "$0: can't find ssh session to 'Scapers" >&2
+	exit 1
+fi
