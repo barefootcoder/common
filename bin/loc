@@ -1,3 +1,25 @@
 #! /bin/bash
 
-echo "$(hostname):$(realpath "${1:-.}")"
+. ~/bin/bash_funcs
+
+hostname="$(hostname):"
+while getopts ":sh" opt
+do
+	case $opt in
+		s)	hostname=
+			;;
+		h)  echo "usage: $me -h | [-s] [file]" >&2
+			echo "    -s : short version (don't include hostname)" >&2
+			echo "    -h : this help message" >&2
+			echo "    file : file to return full, absolute path of (defalt: .)" >&2
+			exit
+			;;
+		:)  usage_error "$OPTARG requires an argument"
+			;;
+		\?) usage_error "unknown argument $OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+echo "$hostname$(realpath "${1:-.}")"
