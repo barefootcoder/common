@@ -32,7 +32,7 @@ if ($opt->{h})
 	my $me = $0;
 	$me =~ s@^.*/@@;
 
-	print "usage: $me -h | [-nTcvsAD] [-Nlrj] [perl_module|t_dir]\n";
+	print "usage: $me -h | [-naTcvsAPD] [-Nlrj] [-m method_name] [perl_module|t_dir]\n";
 	print "       run tests associated with perl_module\n";
 	print "           -h: this help message\n";
 	print "           -n: only run the newest (most recently modified) test file\n";
