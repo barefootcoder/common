@@ -1,4 +1,7 @@
 alias vc ~/proj/VCtools/bin/vc
+vc shell-complete >~/.tcshrc.complete.vc
+source ~/.tcshrc.complete.vc
+
 alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
 complete vcd 'p/1/`vc info project:all`/'
 
