@@ -137,6 +137,7 @@ sub process_file
 		$line = expand $line;
 		$line =~ s/\A\n//;
 		$line =~ s/\n/"\n" . ' ' x (length($disp_file) - 1) . "-:"/ge;
+		print ' ' x 60, "\r";
 		say "$disp_file:$line";
 	}
 }
