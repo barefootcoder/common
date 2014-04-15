@@ -10,9 +10,9 @@ use Const::Fast;
 
 my %COMMANDS =
 (
-	reset	=>	'=50',
-	up		=>	+2,
-	down	=>	-2,
+	reset	=>	'=52',
+	up		=>	+4,
+	down	=>	-4,
 );
 
 const my $REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
@@ -23,6 +23,7 @@ die("unknown command $command") unless exists $COMMANDS{$command};
 
 my $curvol_file = file(File::Spec->tmpdir, 'curvol');
 my $curvol = -e $curvol_file ? $curvol_file->slurp : $COMMANDS{'reset'};
+$curvol =~ s/^=//;
 
 my $adj = $COMMANDS{$command};
 if ($adj =~ s/^=//)
