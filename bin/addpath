@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 
 use Getopt::Std;
 use File::Basename;
@@ -47,16 +47,22 @@ else
 my $out = join($opt_s ? ' ' : ':', @dirs);
 if ($opt_e)
 {
-	if ($ENV{SHELL} =~ /csh/)
-	{
-		print "setenv $opt_b $out";
-	}
-	else
-	{
-		print "export $opt_b=$out";
-	}
+	print set_for_shell($opt_b, $out);
 }
 else
 {
 	print $out;
+}
+
+
+sub set_for_shell
+{
+	use Shell::Guess;
+	use Shell::Config::Generate;
+
+	my ($base, $path) = @_;
+
+	my $conf = Shell::Config::Generate->new;
+	$conf->set($base, $path);
+	return $conf->generate;												# should be for the shell that called us
 }
