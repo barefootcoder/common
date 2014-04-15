@@ -7,6 +7,7 @@ mode=switch
 local=0
 force=0
 pretend=0
+master=$(vc info Mainline 2>/dev/null) ; : ${master:=master}
 while getopts ":c:lfusph" opt
 do
 	case $opt in
@@ -20,8 +21,7 @@ do
 		s)	mode=show
 			;;
 		u)	mode=switch
-			branch=$(vc info Mainline 2>/dev/null)
-			: ${branch:=master}
+			branch=$master
 			break
 			;;
 		p)	pretend=1
@@ -29,12 +29,12 @@ do
 		h)  echo "usage: $me -h | [-p] { -c branch [-lf] | -s | -u | [-f] [branch] }" >&2
 			echo "    -c : create a branch" >&2
 			echo "    -s : show branches" >&2
-			echo "    -u : unbranch (same as $me master)" >&2
+			echo "    -u : unbranch (same as $me $master)" >&2
 			echo "    -l : create branch locally (default: create branch on origin)" >&2
 			echo "    -f : force (don't allow unstashed changes to stop create or switch)" >&2
 			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
 			echo "    -h : this help message" >&2
-			echo "    branch : without -c, switch to that branch (default: master)" >&2
+			echo "    branch : without -c, switch to that branch (default: $master)" >&2
 			exit
 			;;
 		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
@@ -73,19 +73,19 @@ fi
 curbranch=$(git branch --contains HEAD | sed 's/^\* //')
 
 case $mode in
-	create)	from_branch=master
-			if [[ $curbranch != "master" ]]
+	create)	from_branch=$master
+			if [[ $curbranch != "$master" ]]
 			then
-				echo -n "$me: current branch is not master; use current ($curbranch) for source branch? "
+				echo -n "$me: current branch is not $master; use current ($curbranch) for source branch? "
 				read yn
 				if [[ $yn == [yY]* ]]
 				then
 					from_branch=$curbranch
 				else
-					echo "$me: using master as source branch"
+					echo "$me: using $master as source branch"
 				fi
 			fi
-			
+
 			if [[ $(vctools-config --project) == rent* ]]
 			then
 				run $WEBROOT/bin/util/create-branch $branch $from_branch
@@ -100,7 +100,7 @@ case $mode in
 				fi
 			fi
 			;;
-	switch)	run git checkout ${branch:-master}
+	switch)	run git checkout ${branch:-$master}
 			;;
 	show)	run git branch
 			;;
