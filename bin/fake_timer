@@ -186,6 +186,7 @@ if ($cmd eq 'total' and $opts->{a})
 {
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
+	debuggit(3 => "mondays:", DUMP => \@mondays);
 	my @mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { str2time($_) } @mondays;
 	for (1..$#mondays)
 	{

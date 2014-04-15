@@ -9,7 +9,8 @@ my $opts = {};
 getopts('vb', $opts);
 
 my $ticket = shift;
-die("don't recoginze Jira ticket num: $ticket") unless $ticket =~ /^[[:upper:]]{2,3}-\d{1,5}$/;
+die("don't recoginze Jira/Trac ticket num: $ticket")
+		unless $ticket =~ /^[[:upper:]]{2,3}-\d{1,5}$/ or $ticket =~ /^\d{4,5}$/;;
 
 
 my $pipe_opened = 0;
@@ -17,15 +18,18 @@ for my $file (@ARGV)
 {
 	my @file = slurp $file;
 	my @lines = grep { /$ticket/ } @file;
+	my %seen;
 
 	foreach (@lines)
 	{
 		my ($timer) = /^([\w-]+):/;
 		die("can't determine timer from line: $_") unless $timer;
+		next if $seen{$timer}++;
 
 		unless ($pipe_opened)
 		{
 			open(PIPE, "| fake_timer total $timer") or die("can't fork");
+			say PIPE '';
 			$pipe_opened = 1;
 		}
 
