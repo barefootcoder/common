@@ -2,5 +2,5 @@
 
 . ~/bin/bash_funcs
 
-export command=$1
+export command=${1//-/_}
 vimS -n ~/.vimS-vctoolscmd
