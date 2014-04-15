@@ -23,6 +23,11 @@ map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>
 	" find "sections" (all-caps comments)
 map <C-C><C-N> :!grep -Pe '^\s*\#\s*[A-Z\s]+$' %<CR>
 
+" jump to next section
+map ]s /^[ <Tab>]*#[ <Tab>]\+[A-Z ]\+[ <Tab>]*#\?$<CR>
+" jump to previous section
+map [s m`/^[ <Tab>]*#[ <Tab>]\+[A-Z ]\+[ <Tab>]*#\?$<CR>``N
+
 " make Y same as y$ (matches other operators)
 nmap Y y$
 " make g same as G (g not used in original vi, so this mapping is ancient)
