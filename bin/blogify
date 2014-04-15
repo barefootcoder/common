@@ -17,6 +17,7 @@ my %blog =
 						big			=>	'span style="font-size: larger;"',
 						small		=>	'span style="font-size: smaller;"',
 						quote		=>	'blockquote',
+						center		=>	'div align=center',
 						code		=>	'code',
 						collapsed	=>	'',
 						dash		=>	'&mdash;',
@@ -28,6 +29,7 @@ my %blog =
 						big			=>	'big',
 						small		=>	'small',
 						quote		=>	'blockquote',
+						center		=>	'div align=center',
 						code		=>	'code class="prettyprint"',
 						collapsed	=>	'',
 						dash		=>	'&mdash;',
@@ -39,6 +41,7 @@ my %blog =
 						big			=>	'size=4',
 						small		=>	'size=1',
 						quote		=>	'quote',
+						center		=>	'center',
 						code		=>	'code',
 						collapsed	=>	'spoiler',
 						dash		=>	'--',
@@ -53,6 +56,7 @@ my @blocks;																# for codeblocks et al
 my @footnotes = (undef);												# footnotes (starting at 1)
 my $footnote_style = '*';												# default style for footnotes
 my $me = '';															# URL to self (mostly not needed)
+my $subtitle = '';														# first line of post (also mostly not needed)
 
 
 my $hash = '#';
@@ -136,7 +140,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
-	s{~~CENTER~~(.*?)~~CENTER~~}{<div align=center>$1</div>}msg;					# centered
+	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
 	s{(\d+)c}{$1&cent;}g;															# cents
@@ -174,28 +178,27 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\cL}{[*]}g if $blog_type eq 'bbcode';
 	# handle initial whitespace according to blog type
 	s{\A\s*}{$blog{$blog_type}->{'initial'}};
+	# handle subtitle, if any (goes in front of initial)
+	s{\A}{fmt(italic => "or, $subtitle") . "\n"}e if $subtitle;
 
 	print;
 }
 
 
-sub change_type
+func change_type ($type, $extra)
 {
-	my ($type, $extra) = @_;
-
 	die("unknown blog type $type") unless exists $blog{$type};
 	$blog_type = $type;
 
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
+	$subtitle = $1 if $extra =~ /subtitle:{(.*?)}/;
 
 	return '';															# for substitution
 }
 
 
-sub block_save
+func block_save ($code)
 {
-	my ($code) = @_;
-
 	# in case we overzealously converted some ->'s to right justification codes inside code blocks
 	$code =~ s/~~RIGHT~~/->/g;
 
@@ -257,10 +260,8 @@ sub url_block
 }
 
 
-sub code_block
+func code_block ($type, $code)
 {
-	my ($type, $code) = @_;
-
 	$code = fmt(code => expand($code));
 	$code =~ s/^$/ /mg			if						$blog_type eq 'perl';
 	$code = "<pre>$code</pre>"	if $type eq 'block' and	$blog_type ne 'bbcode';
@@ -268,9 +269,8 @@ sub code_block
 }
 
 
-sub fmt
+func fmt ($fmt, $text)
 {
-	my ($fmt, $text) = @_;
 	debuggit(3 => "formatting", $text, "in", $fmt);
 
 	my $on = $blog{$blog_type}->{$fmt} or die("unknown formatting $fmt");
@@ -284,10 +284,8 @@ sub fmt
 }
 
 
-sub list
+func list ($type, $text)
 {
-	my ($type, $text) = @_;
-
 	if ($blog_type eq 'bbcode')
 	{
 		$type = $type eq 'ordered' ? 'list=1' : 'list';
@@ -319,25 +317,19 @@ sub list
 }
 
 
-sub footnote_ref
+func footnote_ref ($num)
 {
-	my ($num) = @_;
-
 	return $footnote_style eq '1' ? $num : $footnote_style x $num;
 }
 
-sub save_footnote_and_gen_ref
+func save_footnote_and_gen_ref ($note)
 {
-	my ($note) = @_;
-
 	push @footnotes, $note;
 	return '<sup>' . fmt(small => qq{<a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a>') . '</sup>';
 }
 
-sub footnote
+func footnote ($type, $text, $num)
 {
-	my ($type, $text, $num) = @_;
-
 	if ($type eq 'ref')
 	{
 		save_footnote_and_gen_ref(undef);
