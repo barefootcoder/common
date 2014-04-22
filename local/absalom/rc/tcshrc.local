@@ -22,3 +22,8 @@ setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
 setenv S3CMD_CONFIG /home/buddy/.aws-campusexplorer/s3cfg
 alias s3cmd "s3cmd --config=$S3CMD_CONFIG"
 # AWS setup -- END
+
+if ( $?tcsh_reset ) then
+	ceflow shell-complete >~/local/.tcshrc.complete.ceflow
+endif
+source ~/local/.tcshrc.complete.ceflow

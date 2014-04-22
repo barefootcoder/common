@@ -30,3 +30,6 @@ endif
 if ( -e ~/.login.local ) then
 	source ~/.login.local
 endif
+
+# initial login is same as a reset
+set tcsh_reset

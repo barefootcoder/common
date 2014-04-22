@@ -1,5 +1,8 @@
 alias vc ~/proj/VCtools/bin/vc
-vc shell-complete >~/.tcshrc.complete.vc
+if ( $?tcsh_reset ) then
+	# refresh VCtools shell completion files
+	vc shell-complete >~/.tcshrc.complete.vc
+endif
 source ~/.tcshrc.complete.vc
 
 alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
