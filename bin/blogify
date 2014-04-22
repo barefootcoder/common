@@ -80,8 +80,11 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;								# ]] <-- to keep % from freaking out
 
 	s{\A/(\w+)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
-	s{\\?<}{&lt;}g;																	# literal <'s
-	s{\\?>}{&gt;}g;																	# literal >'s
+	unless ($blog_type eq 'bbcode')
+	{
+		s{\\?<}{&lt;}g;																# literal <'s
+		s{\\?>}{&gt;}g;																# literal >'s
+	}
 	s{^\.\n(.+?)^\.\n}{code_block(block => $1)}smeg;								# code block (only works on Perl blog)
 	s{$front_boundary`(.+?)`}{$1 . code_block(inline => $2)}eg;						# inline code
 	s{e`}{&eacute;}g;																# generalized e accute
@@ -94,11 +97,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
-	if ($blog_type eq 'bbcode')
-	{
-		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
-	}																				# confused with boldface
-	else
+	unless ($blog_type eq 'bbcode')
 	{
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
@@ -123,6 +122,10 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{--}{$blog{$blog_type}->{dash}}eg;												# em dash
 	s{((^\s*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
 	s{((^\s*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
+	if ($blog_type eq 'bbcode')
+	{
+		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
+	}																				# confused with boldface
 	s{${front_boundary}_(\w+)_(?=\w)}{$1 . fmt(italic => $2)}seg;					# partial word italics (front)
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
