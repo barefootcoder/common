@@ -1,7 +1,7 @@
 setenv CE_REMOTE_USERNAME bburden
 setenv CEROOT ~/workproj/CE
 setenv CE_USE_CONFIG /tmp/cepush
-eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib`
+eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
 
 alias cessh ~/workproj/CE/devtools/cessh
 alias ceflow ~/workproj/CE/bin/ceflow
