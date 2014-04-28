@@ -48,7 +48,8 @@ sub import
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
-	Sub::Install::install_sub({ code => $_, into => $calling_package }) foreach \&title_case, \&round, \&prompt, \&confirm;
+	Sub::Install::install_sub({ code => $_, into => $calling_package })
+			foreach \&title_case, \&round, \&expand, \&prompt, \&confirm;
 
 	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
 	# function which loads the module, then passes off to the function.  Thus, if the function is
@@ -167,6 +168,14 @@ sub round
 		return POSIX::floor($num / $to) * $to when 'DOWN';
 		return Math::Round::nearest($to, $num) when 'OFF';
 	}
+}
+
+
+sub expand
+{
+	require Text::Tabs;
+	$Text::Tabs::tabstop = 4;
+	goto &Text::Tabs::expand;
 }
 
 
@@ -319,6 +328,11 @@ is equivalent to:
 
 Note that this uses C<IO::Prompter::prompt> directly instead of going through L</prompt> as
 described above.  See L<IO::Prompter> for how C<prompt> works.
+
+=head2 expand
+
+Autoloads C<expand> from L<Text::Tabs>, but also sets a tabstop to 4 spaces (which it should be) and
+makes sure C<$tabstop> isn't exported into your namespace (which it shouldn't be).
 
 =head2 title_case
 

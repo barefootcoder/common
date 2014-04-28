@@ -2,11 +2,28 @@ use myperl;
 
 use Test::Most 0.25;
 
+use Module::Runtime qw< module_notional_filename >;
 
-# dates in
-is exists $INC{'myperl/Menu.pm'}, '', "haven't loaded myperl::Menu yet";
-lives_ok { menu(undef) } "can call menu()";
-is exists $INC{'myperl/Menu.pm'}, 1, "loaded myperl::Menu now";
+sub loads_ok(&$$);
+
+
+# menu()
+loads_ok { menu(undef) } menu => 'myperl::Menu';
+
+
+# expand()
+loads_ok { expand('') } expand => 'Text::Tabs';
 
 
 done_testing;
+
+
+sub loads_ok (&$$)
+{
+	my ($sub, $function, $module) = @_;
+	my $module_key = module_notional_filename($module);
+
+	is exists $INC{$module_key}, '', "haven't loaded $module yet";
+	lives_ok { $sub->() } "can call $function()";
+	is exists $INC{$module_key}, 1, "loaded $module now";
+}
