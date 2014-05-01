@@ -1,0 +1,94 @@
+#! /bin/bash
+set -o pipefail
+
+if [[ $# -eq 0 ]]
+then
+	dir=bin/sap
+fi
+if [[ -d "$1" ]]
+then
+	dir="$1"
+	shift
+fi
+
+cvsdir=~/proj/rent.com/$dir
+webroot_dir=/company/stg/$dir
+prod_dir=/company/$dir
+
+as_wdev="ssh wdev@myaree"
+
+function check_cvs_stuff
+{
+	cd $cvsdir
+	f=$1
+
+	if ! cvs diff $f >/dev/null
+	then
+		echo -e "WARNING: $f is not checked in!\n"
+	else
+		cvs status -v $f | perl -lne '
+			$currev = $1 if /Working revision:\s+([\d.]+)/;
+			$stgrev = $1 if /stg\s+\(revision: ([\d.]+)\)/;
+			END { print "WARNING: '$f' is not tagged stg!\n" unless $currev eq $stgrev; }
+		'
+	fi
+
+	# check permissions to avoid further moronic losing executable bit problems
+	orig_perms=$(ls -l $webroot_dir/$f | awk '{print $1}')
+	new_perms=$(ls -l $cvsdir/$f | awk '{print $1}')
+	if [[ $new_perms != $orig_perms ]]
+	then
+		echo e "WARNING!!!!  $f has different permissions!"
+		ls -l $webroot_dir/$f $cvsdir/$f
+		echo -e "\n"
+	fi
+
+	cd - >/dev/null
+}
+
+if [[ $# -gt 0 ]]
+then
+	diff_files="$@"
+	count=$#
+else
+	diff_files=""
+	count=0
+	for file in $($as_wdev ls $webroot_dir)
+	do
+		if ! $as_wdev diff -b $webroot_dir/$file $cvsdir/$file >/dev/null
+		then
+			diff_files="$diff_files $file"
+			: $(( ++count ))
+		fi
+	done
+fi
+for file in $diff_files
+do
+	clear
+	( echo -e "File :: $file\n" ; check_cvs_stuff $file ; $as_wdev diff -b $webroot_dir/$file $cvsdir/$file ) | less
+done
+
+echo -ne "\nFix these $count files? [y/N]  "
+read ans
+if [[ $ans != [yY]* ]]
+then
+	exit
+fi
+
+for file in $diff_files
+do
+	$as_wdev rm -f $webroot_dir/$file
+	$as_wdev cp -pv $cvsdir/$file $webroot_dir/$file
+done
+
+echo -ne "\nPush to kew as well? [y/N]  "
+read ans
+if [[ $ans != [yY]* ]]
+then
+	exit
+fi
+
+for file in $diff_files
+do
+	scp -p $webroot_dir/$file root@kew:$prod_dir/$file
+done

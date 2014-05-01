@@ -1,0 +1,67 @@
+#! /usr/bin/env perl
+
+use myperl;
+use autodie;
+
+use Term::ANSIColor;
+use Company::Util::JIRA;
+
+
+const my $TICKET => qr/([A-Z]{2,3}-\d{1,5})/;
+
+my $jira = Company::Util::JIRA::connect();
+my %jstatuses = $jira->get_statuses;
+
+
+my %todo_tickets = map { /$TICKET/ ? ($1 => 1) : () } slurp "$ENV{HOME}/scrum/todo";
+my %timer_tickets = map { /$TICKET/ ? ($1 => 1) : () } slurp "$ENV{HOME}/timer/timer-new";
+
+foreach my $ticket (uniq sort (keys %todo_tickets, keys %timer_tickets))
+{
+	my $issue = $jira->get_issue($ticket);
+	my $status = $jstatuses{$issue->{'status'}};
+	my $color = $status eq 'Resolved' ? 'bright_red' : 'bright_green';
+	$status = colored($status, $color);
+
+	my ($start, $end, $hrs, $mins) = ticket_total($ticket);
+
+	print form("{<<<<<<<} : {<<<<<<<<<<<<<<<<<<<<<<}    {<<<<<<<<}-{>>>>><<<<} {>}:{} {<{15}<}  {<{15}<}\n",
+			$ticket, $status, $start, $end, $hrs, sprintf('%02d', $mins),
+			$todo_tickets{$ticket} ? '' : "(NOT IN TODO!)" ,
+			$timer_tickets{$ticket} ? '' : "(NOT IN TIMER!)" ,
+	);
+}
+
+
+func ticket_total ($ticket)
+{
+	my ($line1, $line2) = `fake_timerttl $ticket $ENV{HOME}/timer/* 2>&1`;
+	debuggit(3 => "line1 from fake_timerttl for ticket", $ticket, ':');
+	debuggit(3 => $line1);
+
+	if (not $line1 or $line1 =~ m{N/A to N/A} and not $line2)
+	{
+		# timers found, but no time logged
+		return ('no time', 'logged', 0, 0);
+	}
+	elsif ($line1 eq "no timers matching ticket $ticket found\n")
+	{
+		# error
+		return ('no timers', 'found', 0, 0);
+	}
+	elsif ($line1 =~ /time from (\S+) to (\S+)/)
+	{
+		die("no second line for ticket $ticket") unless $line2;
+
+		# successful format looks like:
+		#time from 2012/03/15 to 2012/03/20:
+		# 3 hrs, 49 mins : IB-8583
+		my ($start, $end) = ($1, $2);
+		my ($hrs, $mins) = $line2 =~ /(\d+) hrs,\s+(\d+) mins/;
+		return ($start, $end, $hrs, $mins);
+	}
+	else
+	{
+		die("can't figure out what to do with return from fake_timerttl:\n$line1");
+	}
+}

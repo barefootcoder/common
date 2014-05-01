@@ -1,0 +1,33 @@
+#! /bin/bash
+
+function screen_option
+{
+	screenname=$1
+
+	if screen -ls | fgrep -v Dead | grep -q $screenname
+	then
+		echo "-x $screenname"
+	elif screen-session ls | head -n1 | grep -q 'There are matching saved sessions'
+	then
+		echo "-m screen-session load -S base -XF all"
+	else
+		echo "-S $screenname"
+	fi
+}
+#screen_option base
+
+# main terminal on Tyr II
+myterm -s Tyr wasteland 125x50+15+11 screen $(screen_option base)
+
+# volume window
+myterm -D 3 Volume darkness 80x35+942-25 alsamixer
+
+# auxillary terminal on Tyr I
+#myterm -s OldTyr wintertree 125x50+665-35 ssh oldtyr
+
+# auxiliary terminal on Sigil
+#myterm -D3 Sigil lightning_crashes 125x50+15+11 ssh bahamut
+
+# auxiliary terminal for Sedna
+#myterm -D3 Sedna 80x25-34-62 ssh sedna
+#myterm -D3 Sharn cyber_bg.jpg 125x50+15+11 ssh sharn

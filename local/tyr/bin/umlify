@@ -1,0 +1,13 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use UML::Class::Simple;
+
+
+my $class = shift;
+my $tempfile = "/tmp/out$$.png";
+UML::Class::Simple->new([classes_from_runtime($class, qr/^$class/)])->as_png($tempfile);
+system('firefox', $tempfile);
+unlink $tempfile;

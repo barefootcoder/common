@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# update and install POOF
+echo "Building POOF"
+cd ~/proj
+rm -rf POOF/
+
+cvs -d ":ext:johncallender@millaresdesign.com:/var/lib/cvsroot" co -r 'latestworking' POOF
+
+cd POOF/
+perl Makefile.PL 2>&1; make 2>&1; make test 2>&1; sudo make install 2>&1
+cd ..
+
+# update and install POOF-Application-Stateful
+echo "Building POOF-Application-Stateful"
+rm -rf POOF-Application-Stateful/
+
+cvs -d ":ext:johncallender@millaresdesign.com:/var/lib/cvsroot" co -r 'latestworking' POOF-Application-Stateful
+
+cd POOF-Application-Stateful/
+perl Makefile.PL 2>&1; make 2>&1; make test 2>&1; sudo make install 2>&1
+cd ..
+
+# update and install POOF-HTML-Form
+echo "Building POOF-HTML-Form"
+rm -rf POOF-HTML-Form/
+
+cvs -d ":ext:johncallender@millaresdesign.com:/var/lib/cvsroot" co -r 'latestworking' POOF-HTML-Form
+
+cd POOF-HTML-Form/
+perl Makefile.PL 2>&1; make 2>&1; make test 2>&1; sudo make install 2>&1
+cd ..

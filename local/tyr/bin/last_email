@@ -1,0 +1,55 @@
+#! /bin/bash
+
+#maildir=$HOME/.thunderbird/vf1b6dvl.default/ImapMail/localhost
+maildir=$HOME/Maildir
+
+cols=$(perl -MTerm::Size -le 'open TTY, "/dev/tty" and print scalar Term::Size::chars(*TTY{IO}) and close TTY')
+
+me=${0##*/}
+numlines=1
+while getopts ":l:H:h" opt
+do
+	case $opt in
+		l)	numlines=$OPTARG
+			;;
+		H)	hours_ago=$OPTARG
+			;;
+		h)	echo "usage: $me [-h] [-l lines] [-H hours_ago]" >&2
+			echo "    -l : display this many lines (default: $numlines)" >&2
+			echo "    -H : look for mail this many hours ago (default: 0)" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+function exclude_path
+{
+	echo "$folders" | grep -v '/'$1'$'
+}
+
+if [[ -n $hours_ago ]]
+then
+	ago="-cmin +$(( hours_ago * 60 ))"
+fi
+
+#folders="$(find $maildir -name '*.msf' $ago -mtime -7)"
+#folders="$(exclude_path INBOX.msf mlists.msf)"
+
+find $maildir \( -path '*/cur/*' -o -path '*/new/*' \) -type f $ago -ctime -7 -printf '%C@ %Cb %Cd %CH:%CM %P '				\
+		-exec grep -m1 ^Subject: {} \; |																					\
+	sort -n | tail -n$numlines |																							\
+	perl -lane 'shift @F; $F[3] =~ s@^(\.|cur)(.*?)/.*$@sprintf("%-40s",$1 eq "cur" ? "INBOX" : $2)@e; print substr("@F",0,'$cols')'
+
+#ls -cltr $(find $maildir \( -path '*/cur/*' -o -path '*/new/*' \) -type f $ago -ctime -7) | tail -n$numlines				\
+#	| perl -ane 'splice @F, 0, 5; $f=$F[3]; $F[3] = $1 if $f =~ m{^'$maildir'/\.(.*?)/.*?/.*$};
+#			$F[3] = 'INBOX' if $f =~ m{^'$maildir'/(cur|new)/.*$}; printf "%-32s  %s", "@F", `grep ^Subject: $f | head -n1`'
+#ls -dltr $folders | tail -n$numlines | perl -lane 'splice @F, 0, 5; $f=$F[3];
+#		$F[3] =~ s@^'$maildir'/@@; $F[3] =~ s@\.sbd@@g; $F[3] =~ s@\.msf$@@; print "@F\t", `grep ^Subject: $f`'

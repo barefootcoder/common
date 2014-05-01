@@ -1,0 +1,19 @@
+#! /bin/bash
+
+for host in $($WEBROOT/bin/hosts -s | fping -a)
+do
+	echo -n "trying $host .."
+	for user in wdev root
+	do
+		if [[ -n $(ssh -o 'NumberOfPasswordPrompts 0' $user@$host ls -a 2>/dev/null) ]]
+		then
+			echo -n ".. succeeded as $user "
+		else
+			echo -n ".. can't login as $user "
+			badhosts="$badhosts $user@$host"
+		fi
+	done
+	echo ''
+done
+
+echo "bad hosts:$badhosts"

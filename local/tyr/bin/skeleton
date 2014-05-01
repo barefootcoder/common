@@ -1,0 +1,38 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+template_dir=~/local/templates
+
+function USAGE
+{
+	echo "usage: $me template output" >&2
+	echo "  template must exist in $template_dir" >&2
+	echo "  output is name of file to be created" >&2
+	exit 2
+}
+
+if [[ -z $1 ]]
+then
+	USAGE
+fi
+template="$template_dir/$1"
+if [[ ! -r $template ]]
+then
+	USAGE
+fi
+
+output="$2"
+if [[ -z $output ]]
+then
+	USAGE
+fi
+
+case $template in
+	*.pm)	param=${output##*/Company/}
+			param=${param%.pm}
+			param=${param//\//::}
+			;;
+esac
+
+
+sed 's/XXX/'"$param"'/g' <$template >$output

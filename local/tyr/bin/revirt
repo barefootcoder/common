@@ -1,0 +1,111 @@
+#! /bin/bash
+
+force=0
+rebuild=1
+while getopts ":fph" opt
+do
+	case $opt in
+		f)	force=1
+			;;
+		p)	rebuild=0
+			;;
+		h)  echo "usage: $me -h | [-fp] host" >&2
+			echo "    -f : force (don't check validity of host)" >&2
+			echo "    -p : push only (don't actually rebuld the virt, just do initial push)" >&2
+			echo "    -h : this help message" >&2
+			echo "    host : virtual server to rebuild" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+if [[ -z $1 ]]
+then
+	echo "$0: must supply virt to rebuild" >&2
+	exit 2
+fi
+
+
+function attempt_login
+{
+	host=$1
+	ssh -o 'NumberOfPasswordPrompts 0' wdev@$host ls 2>&1 >/dev/null
+}
+
+function run_on_tarpit
+{
+	ssh -t tarpit "$@"
+}
+
+
+host=$1
+if [[ $force == 0 ]]
+then
+	error=$(attempt_login $host)
+	if [[ $error == *"Could not resolve"* ]]
+	then
+		echo "$0: bogus host" >&2
+		exit 2
+	elif [[ $error == *"Permission denied"* ]]
+	then
+		echo "$0: not allowed to mess with that host" >&2
+		exit 2
+	elif [[ -n $error ]]
+	then
+		echo "$0: unknown error contacting host: $error" >&2
+		exit 1
+	fi
+fi
+
+if [[ -z $(grep "$host[^[:space:]]*:/company" proj/rent/lib/Company/Config.pm) ]]
+then
+	echo "$0: no configuration set for host $host (check Company::Config)" >&2
+	exit 1
+fi
+
+if [[ $rebuild == 1 ]]
+then
+	echo -n "Going to completely destroy and rebuild $host.  Proceed?  [y/N] "
+	read ans
+	if [[ $ans != [yY]* ]]
+	then
+		exit
+	fi
+
+	run_on_tarpit sudo /usr/local/bin/build-virt --destroy $host
+	echo "tailing and attempting ..."
+	# escape the pipe so the grep will run on tarpit too
+	run_on_tarpit watch_log $host >/dev/tty &
+	while true
+	do
+		if [[ -z $(attempt_login $host) ]]
+		then
+			break
+		fi
+		sleep 30
+	done
+	kill $!
+	run_on_tarpit pkill -U buddy tail
+fi
+
+echo -n "Push to the new server?  [y/N] "
+read ans
+if [[ $ans != [yY]* ]]
+then
+	exit
+fi
+
+if [[ $host == webapp* ]]
+then
+	~/proj/rent/bin/webservices-admin --target-hosts $host --initial
+else
+	echo "don't know how to push to $host" >&2
+	exit 1
+fi

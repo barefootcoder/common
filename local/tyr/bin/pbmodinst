@@ -1,0 +1,27 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+
+if [[ $# != 1 ]]
+then
+	echo "$me: must specify module to install" >&2
+	exit 2
+fi
+
+mod=$1
+mod=${mod%%.pm}
+mod=${mod//\//::}
+
+if [[ -n $PERLBREW_PERL ]]
+then
+	cpanm -n $mod
+	if perl -M$mod -MTerm::ANSIColor -le 'print colored("installed version $'$mod'::VERSION", bold => "green")'
+	then
+		printf "%-38s  %s\n" $mod $(perl -M$mod -le 'print $'$mod'::VERSION')
+	else
+		perl -MTerm::ANSIColor -le 'print colored("could not install '$mod'", bold => "red")'
+	fi
+else
+	echo "$me: use 'perlbrew switch' before trying to install modules" >&2
+	exit 2
+fi

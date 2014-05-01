@@ -1,0 +1,45 @@
+#! /bin/bash
+
+
+# let's get some blank lines up in hyeah ...
+echo -e "\n\n\n\n\n\n\n\n\n"											# 9 + 1
+
+
+# get path patterns to exclude directly from the VCtools.conf file
+# assumptions:
+# 	*) There is a <Project rent> (and it's closed properly with a corresponding </Project>).
+# 	*) There is a NonCodeRegex section in that project.
+# 	*) This section is defined as a here doc.
+# 	*) That here doc is closed with "END".
+# 	*) The contents of the here doc are preceded by exactly two tabs.
+# 	*) The opening and closing of the here doc have less than two tabs.
+# all of those are currently true, of course
+exclude="$(perl -lne '
+		if ( /<Project rent>/../<\/Project>/ )
+		{
+			print if (/NonCodeRegex/../^\s*END/) && s/^\t\t// && s/\t.*$//;
+		}
+' /usr/local/etc/VCtools/VCtools.conf)"
+
+
+# have to set IFS to *only* newline, otherwise files with spaces aren't handled correctly
+# (this would be one of those places where a stray space at EOL can fuck you)
+IFS='
+'
+# complicated, but here goes:
+# 	*) get all the files that are checked in using git ls-tree (no dirs)
+# 	*) get all files not checked in, but not if they match .gitignore (again, no dirs)
+# 	*) combine those streams with wye
+# 	*) pipe that to perl, which builds an array of regexen out of the $exclude, above, and
+# 	*) then uses smart match to compare each line of STDIN against all the patterns and kick out
+# 		anything that matches
+# 	*) of course, since it uses smart match, this won't work if your Perl is less than 5.10
+# 	*) from all that, we get a list of filenames that we feed to grep
+# 	*) note that the pattern arg ($1) is considered a Perl regex
+# 	*) pass all output back through Perl to throw away any lines that are too long (but warn about it)
+grep -Pe "$1" $(git ls-tree -r HEAD | awk -F'\t' '{print $2}' | wye cat <(git status -su all . | grep "^??" | cut -c4-)	\
+		| perl -lne '
+				BEGIN { @p = map { qr/$_/ } qw<'"$exclude"'> }
+				print unless $_ ~~ @p
+		' )																												\
+	| perl -lpe '$c = index($_, ":") + 1; if (length(substr($_, $c)) > 512) { substr($_, $c) = "<<LINE TOO LONG!!>>" }'

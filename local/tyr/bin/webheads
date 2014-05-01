@@ -1,0 +1,36 @@
+#! /bin/bash
+
+me=${0##*/}
+while getopts ":ph" opt
+do
+	case $opt in
+		p)	prod=prod
+			;;
+		h)	echo "usage: $me [-h] [-p] cmd args" >&2
+			echo "    -p : only run on production webheads" >&2
+			echo "    -h : this help message" >&2
+			echo "    if cmd args contains {}, it will be substituted with each hostname" >&2
+			echo "    otherwise, each command is run with ssh wdev@host" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+for host in $($WEBROOT/bin/hosts -s $prod www)
+do
+	declare -a cmd=(${@//\{\}/$host})
+	[[ "$*" == "${cmd[*]}" ]] && cmd=(ssh wdev@$host "${cmd[@]}")
+	#echo "${cmd[@]}"
+
+	echo $host:
+	"${cmd[@]}"
+	echo ============================================================
+done

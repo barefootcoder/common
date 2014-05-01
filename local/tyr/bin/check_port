@@ -1,0 +1,4 @@
+#! /bin/bash
+
+netstat -ealpn 2>/dev/null | head -n2
+netstat -ealpn 2>/dev/null | grep "$1"

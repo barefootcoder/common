@@ -1,0 +1,4 @@
+#! /bin/bash
+
+netstat -ealpn 2>/dev/null | head -n2
+netstat -ealpn 2>/dev/null | egrep '\<899[567]\>|\<900[012]\>'

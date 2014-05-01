@@ -1,0 +1,15 @@
+#!/bin/bash
+
+case $0 in
+	*t:)	drive=Temp
+			;;
+	*g:)	drive=Group
+			;;
+	*h:)	drive=Home
+			;;
+	*)		echo ERROR: Bad drive letter
+			exit 1
+			;;
+esac
+
+smbclient //smo-entfs-001.corp.ebay.com/$drive -W CORP -U bburden

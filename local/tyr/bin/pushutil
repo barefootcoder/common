@@ -1,0 +1,19 @@
+#! /bin/bash
+
+util=$1
+dir=/usr/local/bin
+
+if [[ ! -x $dir/$util ]]
+then
+	echo "$0: $util does not appear to be a standard utility" >&2
+	exit 2
+fi
+
+for server in qa-01 qa-02 sandbox-01 sandbox-02
+do
+	if ! scp -p $dir/$util root@$server:$dir
+	then
+		echo "$0: failed to copy $util to $server" >&2
+		exit 1
+	fi
+done

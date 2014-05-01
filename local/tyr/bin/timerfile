@@ -1,0 +1,9 @@
+#! /bin/bash
+
+curtimer=~/timer/timer-new
+
+if fake_timerchk $curtimer
+then
+	cp -vi $curtimer ~/timer/timer.$(date -d 'last monday' +%Y%m%d)
+	ticket_save
+fi

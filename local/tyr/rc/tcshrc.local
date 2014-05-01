@@ -1,0 +1,44 @@
+
+setenv FTP_PASSIVE 1
+setenv RSYNC_RSH ssh
+setenv TZ PST8PDT
+if ( ! $?NO_RENT ) then
+	setenv RENT_HOME /home/buddy/rentweb/rearch
+	setenv WEBROOT /home/buddy/proj/rent
+	setenv LEADSROOT /home/buddy/gigamoves
+	setenv PERL5LIB `addpath -B PERL5LIB $RENT_HOME/lib/perl5 $WEBROOT/lib`
+	setenv PATH `addpath -B PATH $WEBROOT/bin/util`
+endif
+
+# let system decide where to print things
+unsetenv LPDEST
+unsetenv PRINTER
+
+# some things I type a lot
+alias dsb 'ssh sandbox-02'
+alias dcv 'ssh dcv'
+alias pcv 'ssh pcv'
+alias tarpit 'ssh -R 2222:localhost:22 tarpit'
+alias up 'sync ; pusht ; st'
+alias info '$WEBROOT/bin/qa/info'
+
+# some help for the local "skeleton" command
+complete skeleton p@1@F:$HOME/local/templates/@
+
+
+
+# trying to get all the SQL stuff working
+
+# want to be able to run QA scripts
+setenv PATH `~/bin/addpath -B PATH $WEBROOT/bin/qa`
+
+alias piqt ~/proj/rent.com/extern/piqt/piqt
+alias vplay 'sql vplay viva'
+alias vdev 'sql vdev viva'
+alias vprod 'sql vprod adhoc'
+alias vstg 'sql vstg1 viva'
+alias vqa 'sql vqa viva'
+alias rprod 'sql rptprod reports'
+alias rdev 'sql rptdev reports'
+
+alias sqlp vprod

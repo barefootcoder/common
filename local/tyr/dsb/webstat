@@ -1,0 +1,10 @@
+#! /bin/bash
+
+$WEBROOT/bin/hosts prod www | each 'ssh wdev@{} '"'"' netstat -an | perl -ne "
+	++\$n{\$1} if /^tcp.*?:(\d+)/;
+	END
+	{
+		qx<uptime> =~ /load average: (\d+\.\d+)/;
+		printf qq{Load: %5.2f  HTTP: %4d  SSL: %4d  Perl: %4d\n}, \$1, @n{80,443,81};
+	}
+" '"'"

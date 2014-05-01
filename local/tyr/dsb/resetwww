@@ -1,0 +1,32 @@
+#! /bin/bash
+
+LOGDIR=~/work/on-call/logs
+
+server=$1
+if [[ -z $server ]]
+then
+	echo "$0: must supply server to reset" >&2
+	exit 2
+fi
+logfile="$LOGDIR/$server.$(date +%Y%m%d%H%M).log"
+
+function runit
+{
+	echo "About to run: $*"
+	echo -n "Continue? (y/N) "
+	read ans
+	if [[ ! $ans == [yY]* ]]
+	then
+		exit
+	fi
+
+	echo -e ">\tAT:\t$(date)\tSTAT:\tSTART\tCMD:\t$*" | tee -a $logfile
+	"$@" 2>&1 | tee -a $logfile
+	echo -e ">\tAT:\t$(date)\tSTAT:\tEND\tCMD:\t$*" | tee -a $logfile
+}
+
+
+runit ~/local/bin/webstat
+runit $WEBROOT/bin/localdirector o:$server
+runit ssh root@$server service httpd restart
+runit $WEBROOT/bin/localdirector i:$server

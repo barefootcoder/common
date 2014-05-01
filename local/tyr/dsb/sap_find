@@ -1,0 +1,13 @@
+#! /bin/bash
+
+awkscript="$1"
+pattern="$2"
+
+if [[ -n $pattern ]]
+then
+	echo "searching $(echo *$pattern*.TXT | wc -w) files ..."
+	awk -F'|' "$awkscript" *$pattern*.TXT
+else
+	echo "searching STDIN ..."
+	awk -F'|' "$awkscript"
+fi

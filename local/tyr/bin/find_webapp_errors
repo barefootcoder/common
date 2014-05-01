@@ -1,0 +1,3 @@
+#! /bin/bash
+
+each 'ssh root@{} grep "\"'"$1"'\"" /var/log/httpd/*error_log' webapp-03 webapp-dev-01 webapp-01 webapp-02

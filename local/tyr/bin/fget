@@ -1,0 +1,3 @@
+#! /bin/bash
+
+perl -MText::Tabs -i -lne 'BEGIN{$tabstop=4} s/\s+$//; print unexpand $_' "$@"

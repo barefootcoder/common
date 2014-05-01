@@ -1,0 +1,30 @@
+#! /bin/bash
+
+maildir=$HOME/Maildir
+tmpfile=/tmp/cme.$$
+trap "/bin/rm -f $tmpfile" EXIT
+
+if [[ -z $1 ]]
+then
+	echo "$0: must supply time to start searching from" >&2
+	exit 2
+fi
+
+touch -d $1 $tmpfile
+find $maildir \( -path '*/cur/*' -o -path '*/new/*' \) -type f -newer $tmpfile | perl -MDate::Format -MDate::Parse -le '
+	while (<>)
+	{
+		local $/ = "\n\n";
+		open IN, $_ and $hdr = <IN>;
+		close(IN);
+
+		($from) = $hdr =~ /^From: (.*?)$/m;
+		$hdr =~ /^Date:\s(.*?)$/m;
+		$date = str2time($1);
+		$hour = time2str("%H", $date);
+		if ($hour >= 6 and $hour <= 12 and ($from =~ /buddy/i or $from =~ /bburden/))
+		{
+			print time2str("%Y/%m/%d", $date);
+		}
+	}
+'

@@ -1,0 +1,59 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+
+force=0
+top=10
+while getopts ":fn:h" opt
+do
+	case $opt in
+		f)  force=1
+			;;
+		n)	top=$OPTARG
+			;;
+		h)  echo "usage: $me -h | [-f] [-n X]" >&2
+			echo "    -f : force regeneration of mail subject list (default: only regen once per hour)" >&2
+			echo "    -n : show top X results (default: 10)" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+dir=~/Maildir/.mlists.cronjobs/cur
+tmpfile=/tmp/count-cron-errs.db
+reffile=/tmp/cce.$$
+trap "/bin/rm -f $reffile" EXIT
+
+filter='
+	if ( /^Subject:/ )
+	{
+		s/^Subject:\s*//;
+		s/20\d\d-\d\d-\d\d/{date}/g;
+		s/qa-\d\d/{qaserver}/g;
+		s/www-\d\d/{webserver}/g;
+		s/(--feedprovider)\s+\w+/$1 {mitsprovider}/g;
+		print;
+		exit;
+	}
+'
+
+
+touch -d "1 hour ago" $reffile
+if [[ $force == 1 || $tmpfile -ot $reffile ]]
+then
+	echo -n "regenerating ..."
+	cd $dir
+	ls -1 | each -q "perl -lne '$filter' {}" | sort >$tmpfile
+	echo " done"
+fi
+
+uniq -c $tmpfile | sort -nr | head -n$top

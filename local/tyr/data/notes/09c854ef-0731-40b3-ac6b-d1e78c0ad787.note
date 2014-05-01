@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<note version="0.3" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size" xmlns="http://beatniksoftware.com/tomboy"><title>Current HSers reply</title><text xml:space="preserve"><note-content version="0.1" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size">Current HSers reply
+
+
+[QUOTE=Viegon;1642334][QUOTE=Xotli;1642283]I wouldn't dream of telling you how to do your job.  I'm just trying to find a solution to the problem you're describing.  Tell me how I should rearrange my thinking on this to make it work.[/QUOTE]
+
+No, now you're going to the exact opposite side of the spectrum. :)[/quote]
+
+Hmmmm ... I'm not sure how to interpret this statement.  What I [I]think[/I] you meant was, &quot;you [I]were[/I] telling me how to do my job, and now you're wanting [I]me[/I] to tell [I]you[/I] how to do my job.&quot;  Which, no: not at all.
+
+It was never my intention the whole time to tell you how to do your job.  I was just going on what appears to be some mistaken assumptions on how playtesting works.
+
+[QUOTE=Viegon;1642334]It is my opinion, and I think a lot agree, that a playtesting sheet should consist of a MINIMUM of 2 games, and encourage 3-4 games. See the difference between 2-4 and your 5-6 (or previous just &quot;1&quot;). For a decent amount of units, 2-4 game should be enough to get them to PPT, depending on their level of complexity and so forth.[/QUOTE]
+
+Okay, so do you understand why that confuses me?  You seem to be saying, essentially, that (to pick two numbers more or less at random) you'd rather have 5 games in a playtest than 8, if those 8 games were all played by different people.  I was approaching it from a strictly statistical standpoint: we're testing something, and, the more test runs you have, the more accurate your results are.  If I write a random number generator program and run it 10 times, I know practically nothing.  If I run it 1,000 times, I'm starting to get some good data.  But I'll run it 100,000 times if I can, and, if that's impractical because the program takes too long to run, I'd happily run it on several computers in parallel.
+
+So it's clear to me that 8 beats 5 quantitatively.  And, in fact, from my naïve perspective as someone who knows little about the practical side of playtesting, it would seem to me, just from a theoretical standpoint, that you could make a decent argument that 8 tests by 8 different people beats 5 tests from the same person [I]qualitatively[/I] as well, because it dilutes whatever human bias you have in the system.  (In fact, given the amount of human bias most of us here seem to believe is in the system, what with not wanting to trust Leads to do their own playtesting, I might even be able to mount a theoretical argument that 5 tests by 5 different people beats 8 tests from the same person.  But I digress.)
+
+So I guess I'd like to know why you think it's more important to have multiple playtests from the same person than multiple playtests from different people.  Because this [I]completely[/I] changes how we can (and/or should) address the Playtesting bottleneck.  We're basically saying that we [I]can't[/I] use this particular part of Bats' plan, for multiple reasons: [list][*] We can't distribute the tests to relieve the playtesting backlog. [*] We're essentially just shifting the burden of initial playtesting from one group to another. [*] We don't give all that extra playtesting experience to everyone in the hopes of making them better designers.  [*] We can't use playtesting as a bar to set for the reward of designing, as there aren't enough playtests to go around (and it doesn't do any good anyway, as part of the point is to alleviate the playtesting backlog).  [*] You put a serious crimp in encouraging other people to take on initial playtesting.  And this one is not theoretical at all: I can tell you right now that I'm seriously rethinking my decision to help with playtesting on Mok.[/list]
+
+I think Bats' ideas have other parts to them that we can still adopt, but, if this is where we are with initial playtesting, I'm starting to think that your alternate idea of let's-just-go-out-and-find-8-playtesters is actually the better one.
+
+[B]Other points:[/B]
+
+On dok's ideas for how things get [I]into[/I] the Design phase:
+
+[QUOTE=dok;1642979][B]Option 3: Design/ERB collaboration.[/B]  Either a collective vote of both groups, or a &quot;working group&quot; formed from members of the two groups, is tasked with going through the most polished brainstorm threads and pushing a nice complimentary set of them into the design room.[/QUOTE]
+
+Yes, this one is the one I was thinking of.
+
+[QUOTE=dok;1642979][B]Option 4: New group/subforum.[/B]  A new room is made, with membership drawn from current Inner Sanctum members, who are tasked with looking through available designs and introducing a stream of designs into the process from brainstorm in ratios consistent with our planned releases.  Membership in this group could be static like our current departments, or a rotating membership.[/QUOTE]
+
+Although I like that one too.
+
+[QUOTE=dok;1642979][B]Option 5: &quot;Working Group&quot; for each release.[/B]  Sort of like the plan above, except that a new group is created for each release we have planned, and they are tasked with introducing designs into the process to fill that wave or that expansion.  Once that release has been introduced, that group goes into hibernation and is only awoken if they need a backup or replacement design.[/QUOTE]
+
+This one, I think is only useful if we worry that the other 2 options might create burnout for some reason.  Or if we don't trust ourselves to pick the right people in the first place, but even then it just means that even after you shuffle the people around enough to finally get them right, your perfect group has a limited shelf life.
+
+[QUOTE=Viegon;1643026]Well, just to be clear we're talking about the same thing, you're saying that as a designer you really don't have much choice in what you get to design, simply you post ideas and the Chosen Group decides what you design and when?[/QUOTE]
+
+That's not what I heard him say.  I think what he was saying was, there's a pool of designs where a) the designer is eligible, whatever we decide that means, and b) the designer is ready, which is entirely up to the designer.  There's a group who votes on everything in that pool, probably pretty much as soon as it gets into the pool.  If the vote passes, the design enters Design (if you follow me).
+
+[B]On ISR:[/B]
+
+I wish we wouldn't try to address that issue here.  That's a [I]completely[/I] different issue than what we're talking about, and most likely has completely different potential solutions.  For instance, one of the ideas that I've been kicking around is to have ISR going on [I]simultaneously[/I] with the other phases.  ANAICT, the primary problem we have with ISR is that some people want more of it because they feel like people are not speaking up soon enough, and some people want less of it because they feel like it takes too long (and some of those people are the same people, even).  If ISR is a process that goes along [I]concurrent with[/I] the other phases, that seems to solve both problems.  Plus it keeps crap from piling up in the dropboxes, which is the main reason I started the whole PTI thing in the first place.  (And, yes, I realize that was a failed initiative.)
+
+But, point being, that's a separate issue from what we're discussing here.  What we're discussing here is a plan for Leads to be a) (potentially, at least) pulled from every possible member, and b) responsible for guiding the design through the whole process, as opposed to getting it through Design and then waiting for someone to prod them to answer a question somewhere down the line.
+
+Perhaps this seems weird, given that I've been the one proposing radical changes.  So, [B]let me clarify my position on radical change vs. small, incremental changes.[/B]
+
+Quite simply, I believe in both.  At once.(*)
+
+Small, incremental changes are disconnected and rarely contribute to overall increases in efficiency or quality.  You get minor gains here and there, but you don't make any serious improvements, and IME the factors that are conspiring to [I]detract[/I] from your efficiency and quality typically work faster than your small, incremental changes, so you're always playing catch-up.  This is practically a cliché in business parlance: you're [I]reactive[/I] instead of [I]proactive[/I].
+
+Radical changes are how you achieve true innovation and, if you can overcome fear-of-change and inertia, how you keep ahead of the inevitable forces of entropy.  But there's a downside: when you throw out everything you've built and start from scratch, you're also throwing out all you've [I]learned[/I] by building what you've built.  You're throwing out experience--throwing out mistakes, true, but mistakes are valuable: they teach us lessons, and they generate fixes, and you're throwing those out too.
+
+So, WTF do we do?  Simple: we [I]implement[/I] radical change--[B]using small, incremental changes to get us there[/B].  In software architecture, we'd call this a &quot;phased implementation,&quot; and, if I had to pick a single thing that I've learned in my long programming career that was the the most useful in terms of being economically successful, that'd be the thing.  You use the advantage of small, incremental changes (the fact that they don't rock the boat too much, or cause too much loss of embedded business knowledge) to achieve the advantage of radical change (the fact that redesign is what drives innovation and allows you to stay proactive) without the disadvantage of small, incremental changes (the lack of cohesion that eventually builds a Frankenstein process without any clear vision) [I]or[/I] the disadvantage of radical change (the tossing aside of accumulated experience and knowledge).
+
+So, while I encourage us to think big, think of how we can redesign our entire process and leave no sacred cows unturned in imagining what could be better, I actually do [B]not[/B] encourage us to rush through it, or try to implement the whole thing at once.  I know it's difficult to keep up with everything I'm writing in this thread, as I'm verbally diarrhetic, :D but here's what I said originally about small, incremental changes vs radical change:
+
+[QUOTE=Xotli;1641678]I've seen more things fail due to fear of change than I have by taking a chance and being truly innovative, [I]if the innovations are introduced gradually[/I], which is a very key point (which I keep making).[/QUOTE]
+
+Emphasis in the original.
+
+I think this is not only important from the POV of making a successful changeover, but also from the POV of the lurkers: look at those last couple posts from robb and SB.  Not everyone is going to want to try to keep up with every crazy idea that's flying around in this thread.  They're waiting to see what comes out the other end (potential unpleasant image mostly intentional :D).  And, if that turns out to be a giant laundry list of radical change, that's going to be a hard sell.  If, OTOH, we decide roughly where we want to go and then start introducing things one at a time, we can quibble over the details then, implement each one as we get it nailed down, then move on to the next.  We'll not only avoid shooting ourselves in the foot by trying to change too much at once, we'll avoid having the gun taken away from us entirely by the bystanders who have no idea what we're aiming at.
+
+Okay, maybe I tortured that last metaphor a little too long.  You see where I'm going though ... right?
+
+
+
+[SIZE=&quot;1&quot;](*) Again, if you wished to hear me blather on about something, you could check how I really feel about [URL=&quot;<link:url>http://barefootcoder.blogspot.com/2010/08/balance-and-paradox.html&quot;]balance</link:url> and paradox[/URL].  That's probably the most useful blog post I've ever written towards undertanding the inner workings of my fevered brain.[/SIZE]</note-content>
+</text><last-change-date>2012-07-17T09:20:21.236486Z</last-change-date><last-metadata-change-date>2012-07-17T09:20:21.236486Z</last-metadata-change-date><create-date>2012-07-17T09:19:52.333635Z</create-date><cursor-position>11</cursor-position><width>450</width><height>360</height><x>0</x><y>0</y><open-on-startup>False</open-on-startup></note>
+

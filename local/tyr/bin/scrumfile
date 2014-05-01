@@ -1,0 +1,3 @@
+#! /bin/bash
+
+cp -vi ~/scrum/todo ~/scrum/$(date +%Y%m%d)

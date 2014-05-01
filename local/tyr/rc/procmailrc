@@ -1,0 +1,320 @@
+UMASK=007
+PATH=/bin:/usr/bin:/usr/local/bin
+MAILDIR=$HOME/Maildir/
+LOGFILE=$MAILDIR/procmail.log
+SHELL=/bin/bash
+
+###############################
+# CPAN email
+###############################
+:0
+* ^To:.*barefoot@cpan.org
+{
+	:0 c
+	!barefootcoder@gmail.com
+}
+
+:0
+* ^From:.*upload@pause.perl.org
+{
+	:0 c
+	!barefootcoder@gmail.com
+}
+
+:0
+* ^From:.*@rt.cpan.org
+{
+	:0 c
+	!barefootcoder@gmail.com
+}
+
+###############################
+# stupid fax messages
+###############################
+:0:
+* ^Subject:.*Successful fax to
+* ^From.*clientcare@villagefax.net
+* ^TOwdev@rent.com
+/dev/null
+
+###############################
+# stupid Linux security  reports
+###############################
+:0:
+* ^Subject:.*Logwatch for d-smo-bburden\.rent\.com
+* ^From.*logwatch@d-smo-bburden\.rent\.com
+/dev/null
+
+###############################
+# bounces
+###############################
+:0:
+* ^Subject: *Undelivered Mail Returned to Sender
+.admin.email.bounces/
+
+###############################
+# commits
+###############################
+:0:
+* ^Subject: *CVS Commit:
+.mlists.commits/
+
+:0:
+* ^Subject: *SVN Commit:
+.mlists.commits/
+
+:0:
+* ^Subject: *Git Commit:
+.mlists.commits/
+
+:0:
+* ^Subject: *Git:
+.mlists.commits/
+
+###############################
+# alerts
+###############################
+:0:
+* ^Subject: *(UP)?ALERT
+* ^From:.*mon
+.mlists.alerts/
+
+:0:
+* ^Subject: *(maintenance|akamai)-(on|off|email|off-noemail)-prod$
+.mlists.alerts/
+
+:0:
+* ^Subject: *GIGAMOVES MAINTENANCE (ON|OFF)$
+.mlists.alerts/
+
+:0:
+* ^Subject: *(GigaMoves: )?QA stgweb$
+.mlists.alerts/
+
+:0:
+* ^Subject:.*dead memcache daemons restarted$
+.mlists.alerts/
+
+:0:
+* ^Subject: *lifecycle-(suspend|resume)-prod$
+.mlists.alerts/
+
+:0:
+* ^Subject: *lifecycle-enqueue(-abl|-returning-renter)? failed$
+.mlists.alerts/
+
+:0:
+* ^Subject:.*.rent.com: lifes?cycle-send( process|-monitor:|-returnpath)
+.mlists.alerts/
+
+:0:
+* ^Subject: *QA (TEXT )?lifecycle emails$
+.mlists.alerts/
+
+:0:
+* ^Subject: *report-property-hotleads [RPTPROD] failed$
+.mlists.alerts/
+
+:0:
+* ^Subject: *fewer than 10 receipts in VIVAPROD$
+.mlists.alerts/
+
+:0:
+* ^Subject: *Gigamoves - only [0-9]+ leads generated in the past hour$
+.mlists.alerts/
+
+:0:
+* ^Subject: *No such FaxID in tblfax:
+.mlists.alerts/
+
+:0:
+* ^Subject: *No FaxID:
+.mlists.alerts/
+
+:0:
+* ^Subject: *filter-fax-status - Unable to process:
+.mlists.alerts/
+
+:0:
+* ^From:.*service.level.reports@keynote.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *people with multiple valid leases
+.mlists.alerts/
+
+:0:
+* ^Subject: *Rent.com AIMCO Property Report for
+.mlists.alerts/
+
+:0:
+* ^Subject: *Unexpected Moving.com API Response
+.mlists.alerts/
+
+:0:
+* ^Subject: *WARNING! Engteam did not receive PHONE data
+.mlists.alerts/
+
+:0:
+* ^Subject: *WARNING! The sap data was not received
+.mlists.alerts/
+
+:0:
+* ^Subject: *https://webservices.*Web Service is Down
+.mlists.alerts/
+
+:0:
+* ^Subject: *(\(Escalation\) +)?www.rent.com *\((Warn|Crit|Now OK)\)
+.mlists.alerts/
+
+:0:
+* ^Subject: *VIVA and RPT Tables .*Compar
+* ^From:.*oracle@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *Email Relay Status
+* ^From:.*engteam@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *filter-returned-lease-confirmation
+* ^To:.*devsupport@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *QwestWS Alert - BURRNTWS01P
+* ^From:.*admin@mrp.net
+.mlists.alerts/
+
+:0:
+* ^Subject: *Gigamoves Motors error report
+.mlists.alerts/
+
+:0:
+* ^Subject: *Cron <wdev@oneweb-0[1-3]> \$RENT_HOME/bin/oneweb-ctl restart
+.mlists.alerts/
+
+:0:
+* ^Subject: *Bill Outsource Results
+* ^From:.*wdev@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *Mail status report \(filter-postfix-logs\)
+* ^From:.*engteam@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *Affiliate Property Listing Results
+* ^From:.*engteam@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *Cron <gitolite@repo-01> */var/lib/gitolite/allgits (fsck|gc --(quiet|aggressive))
+* ^From:.*gitolite@rent.com
+.mlists.alerts/
+
+:0:
+* ^Subject: *\[vivaprod\] Non geocodable
+* ^From:.*wdev@rent.com
+.mlists.alerts/
+
+###############################
+# SAP alerts
+###############################
+:0:
+* ^Subject: *Rent Full Extract Status
+* ^From:.*ebaybatch@EBAY.COM
+.projects.sap-convert.conversion.alerts/
+
+:0:
+* ^Subject: *SAP Validation report
+* ^From:.*returned-mail@rent.com
+.projects.sap-convert.problems.validation-rpt/
+
+###############################
+# cronjob errors
+###############################
+:0:
+* ^Subject:.*cron
+* ^From:.*cron
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *logs-quickstats WARNING:
+.mlists.cronjobs/
+
+:0:
+* ^From:.*noreply@gigamoves.com
+.mlists.cronjobs/
+
+:0:
+* ^From:.*root@nogales2.rent.com
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *Error summary$
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *Mail status report
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *Bill outsource results$
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *Affiliate Property Listing Results$
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *SP 3.5 Disappearing Leads Count For
+.mlists.cronjobs/
+
+:0:
+* ^Subject: *PPL Billing Results
+.mlists.cronjobs/
+
+###############################
+# Akamai
+###############################
+:0:
+* ^From:.*noreply@akamai.com
+.mlists.akamai/
+
+:0:
+* ^Subject: *Your Akamai content removal request
+.mlists.akamai/
+
+###############################
+# I don't want to see Jira crap any more
+# (except for pleas for scrum report)
+###############################
+#:0:
+#* ^Subject: *\[jira\]
+#* ^From:.*\(JIRA\)"
+#* !^Subject:.*Created:.*SCRUM Update
+#.mlists.jira/
+
+###############################
+# Okay, let's try again on the Jira stuff
+# Being a bit more selective in what I filter this time
+###############################
+# remove moronic notifications of my own updates
+:0:
+* ^Subject: *\[jira\]
+* ^From:.*Buddy
+.mlists.jira/
+# get rid of scrum replies
+:0:
+* ^Subject: *\[jira\] Commented:.*SCRUM
+* ^From:.*\(JIRA\)"
+.mlists.jira/
+# and old scrum resolutions
+:0:
+* ^Subject: *\[jira\] Resolved:.*SCRUM
+* ^From:.*\(JIRA\)
+.mlists.jira/
+

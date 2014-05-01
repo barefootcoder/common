@@ -1,0 +1,22 @@
+#! /bin/bash
+
+scrumdir=Maildir/.pm.my-peeps.david.scrum/cur
+success_msg="received scrum today"
+failure_msg="NO SCRUM TODAY!"
+
+filter="$1"
+[[ -n $filter ]] || filter=2010											# default filter
+filter="^Date.*$filter"
+
+perl="perl -MDate::Format -le"
+fmt_date="print time2str(q{%a %m/%d/%Y}, shift), q{ }, shift"
+check_date="exit(time2str(q{%Y%m%d}, shift) ne time2str(q{%Y%m%d}, time))"
+
+grep -h "$filter" $scrumdir/* | sed 's/Date: //' | each -q 'perlsecs -q {}' | sort | each -q "$perl '$fmt_date' {}"
+if $perl "$check_date" $(grep -h "$filter" $scrumdir/* | sed 's/Date: //' | each -q 'perlsecs -q {}' | sort | tail -n1)
+then
+	echo "$success_msg"
+else
+	echo "$failure_msg"
+	exit 1
+fi

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+case $1 in
+	t?)	share=Temp;;
+	g?)	share=Group;;
+	h?)	share=Home;;
+	*)	echo ERROR: Bad drive letter; exit 1;;
+esac
+smbclient //smo-entfs-001.corp.ebay.com/$share -W CORP -U bburden

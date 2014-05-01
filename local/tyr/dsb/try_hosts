@@ -1,0 +1,20 @@
+#! /bin/bash
+
+for login
+do
+	host=${login#*@}
+	if ping -c1 $host >/dev/null 2>&1
+	then
+		echo -n "trying $login .."
+		if [[ -n $(ssh -o 'NumberOfPasswordPrompts 0' $login ls -a 2>/dev/null) ]]
+		then
+			echo -n ".. succeeded "
+			goodhosts="$goodhosts $login"
+		else
+			echo -n ".. can't login "
+		fi
+		echo ''
+	fi
+done
+
+echo "good hosts:$goodhosts"

@@ -1,0 +1,3 @@
+#! /bin/bash
+
+/bin/ls -1 /home | grep -v wdev | each -l 'sudo find /home/{} -name pages.txt'

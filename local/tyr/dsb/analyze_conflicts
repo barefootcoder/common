@@ -1,0 +1,108 @@
+#! /usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use List::Util qw< max >;
+
+
+my $SVN_ROOT = 'svn+ssh://svnhost.rent.com/company/svn';
+
+die("must supply branch merging from") unless $ARGV[0];
+
+
+my $output = `svn propget svnmerge-integrated`;
+unless ($output)
+{
+	die("can't get svnmerge info: either you're not in the root of a merge candidate, " .
+			"or you haven't run svnmerge.py init yet");
+}
+my @branches = map { s/:.*$//; $_ } split(' ', $output);
+#print STDERR "branches are @branches\n";
+my @candidates = grep { /$ARGV[0]/ } @branches;
+die("can't get svnmerge info on branch $ARGV[0]; did you run svnmerge.py init?") unless @candidates;
+die("branch $ARGV[0] is ambiguous; branches are @branches") unless @candidates == 1;
+my $merge_from = $candidates[0];
+
+my ($merge_to) = `svn info .` =~ m{^URL: \Q$SVN_ROOT\E(.*?)$}m;
+
+my $merge_to_created = get_creation($merge_to);
+my $merge_from_created = get_creation($merge_from);
+my $branch_point = max($merge_to_created, $merge_from_created);
+
+print <<END;
+
+current branch is: $merge_to (created at revno $merge_to_created)
+merging from: $merge_from (created at revno $merge_from_created)
+using branchpoint: $branch_point
+
+
+END
+
+my @conflicted_files;
+my @conflicted_properties;
+open(IN, "svn status |") or die("can't open pipe to svn status");
+while ( <IN> )
+{
+	chomp;
+	my ($flags, $filename) = split(' ');
+	push @conflicted_files, $filename if substr($flags, 0, 1) eq 'C';
+	push @conflicted_properties, $filename if substr($flags, 1, 1) eq 'C';
+}
+close(IN);
+
+print "Conflicted files :\n";
+my (@take_from, @take_to);
+foreach (@conflicted_files)
+{
+	my $last_rev_from = get_revno(run_command("svn log -ql1 $SVN_ROOT/$merge_from/$_@ 2>/dev/null")) || 'N/A';
+	my $last_rev_to = get_revno(run_command("svn log -ql1 $SVN_ROOT/$merge_to/$_@ 2>/dev/null")) || 'N/A';
+
+	my $status = "genuine conflict";
+	if ($last_rev_to <= $branch_point)
+	{
+		$status = "unchanged on $merge_to";
+		push @take_from, $_;
+	}
+	if ($last_rev_from <= $branch_point)
+	{
+		$status = "unchanged on $merge_from";
+		push @take_to, $_;
+	}
+	print "\t$_ :: $status";
+	print " ($merge_from : $last_rev_from / $merge_to : $last_rev_to)";
+	print "\n";
+}
+
+print "\n\n";
+print "recommended commands:\n";
+print "  svn resolve --accept working $_\n" foreach @take_to;
+print "  /bin/cp -pv ../trunk/$_ $_ ; svn resolved $_\n" foreach @take_from;
+print "\nGood luck.\n\n\n";
+
+
+sub run_command
+{
+	my ($command) = @_;
+
+	my $output = `$command`;
+	return $output;
+}
+
+
+sub get_revno
+{
+	my ($log) = @_;
+
+	$log =~ /^r(\d+)/m;
+	return $1;
+}
+
+
+sub get_creation
+{
+	my ($branch) = @_;
+
+	return 1 if $branch =~ m{/trunk$};
+	return get_revno(run_command("svn log -q --stop-on-copy $SVN_ROOT/$branch | tail -n3"));
+}

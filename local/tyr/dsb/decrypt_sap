@@ -1,0 +1,19 @@
+#! /bin/bash
+
+if [[ $(pwd) != /company/data/sap/in ]]
+then
+	echo "$0: doesn't make sense to run this from anywhere but SAP indir" >&2
+	exit 1
+fi
+
+for file in "$@"
+do
+	if [[ $file == *.GPG ]]
+	then
+		outfile="${file%.GPG}.TXT"
+		gpg --batch --yes -d ./$file >./$outfile
+	else
+		echo "$0: I only know how to handle .GPG files" >&2
+		exit 2
+	fi
+done

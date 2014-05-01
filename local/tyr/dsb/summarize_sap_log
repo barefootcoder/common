@@ -1,0 +1,187 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use POSIX;
+use Tie::IxHash;
+use File::Basename;
+
+
+our ($day, $when, $curprog, $baseprog, %problems, $infail, @failures, @fail_check, %substats);
+tie our %stats, 'Tie::IxHash';
+
+while ( <> )
+{
+	if (m{logging stdout & stderr to: /company/data/sap/logs/master_200709(\d\d)(.*?)?.log})
+	{
+		$day = $1;
+		$when = $2 eq '_morn' ? "morning" : $2 eq '_aftn' ? "afternoon" : "nightly";
+	}
+	elsif (m{[=-]{10}})
+	{
+		undef $curprog;
+	}
+	elsif ($infail and not /^$/)
+	{
+		chomp;
+		my $progfail = extract_progname();
+		$stats{$progfail} = 'N/A' if exists $stats{$progfail};
+		push @failures, $_;
+	}
+	elsif (m{--database})
+	{
+		($curprog, $baseprog) = extract_progname();
+		$stats{$curprog} = '???';
+	}
+	elsif (m{(Wrote|Generated|[Pp]rocessed) (\d+ (records|payment records|payments))\.?})
+	{
+		$stats{$curprog} = $2;
+	}
+	elsif (m{(\d+) records (purged|remain) (from|in) (\w+)})
+	{
+		my $tag = "$1 records $2";
+		$substats{$curprog}->{$4} = $substats{$curprog}->{$4} ? join(', ', $substats{$curprog}->{$4}, $tag) : $tag;
+	}
+	elsif ($curprog)
+	{
+		next if /^$/;
+		next if /^Connecting to/;
+		next if /^$baseprog: Running against/;
+		next if /^$baseprog v\d+/;
+		next if /^$baseprog: (<.*?> )?Succeeded\.$/;
+		next if /^Processing payment records for/;
+		next if /^$baseprog: [Pp]rocessing file/;
+
+		if (/Reverting changes/)
+		{
+			push @fail_check, $baseprog;
+			next;
+		}
+
+		if (s/'/'/g % 2 == 1 or s/"/"/g % 2 == 1)
+		{
+			$_ .= <>;
+			redo;
+		}
+
+		chomp;
+		s/^$baseprog: //;
+		push @{$problems{$curprog}}, $_;
+	}
+	elsif (m{WARNING!!! The following steps failed:})
+	{
+		$infail = 1;
+	}
+}
+
+FAILURE: foreach my $failed (@fail_check)
+{
+	foreach (@failures)
+	{
+		my (undef, $base) = extract_progname();
+		next FAILURE if $failed eq $base;
+	}
+	die("cannot find failure for $failed");
+}
+
+
+print tab_48("SAP EXPORT SUMMARY:"), "9/$day, $when run\n\n\n";
+
+print "FAILURES:\n\n";
+if (@failures)
+{
+	print "> $_\n\n" foreach @failures;
+}
+else
+{
+	print "NONE! :-)\n\n";
+}
+print "\n";
+
+print "PROBLEMS:\n\n";
+foreach my $prog (keys %stats)
+{
+	my $probs = $problems{$prog};
+	if ($probs)
+	{
+		tie my %msg, 'Tie::IxHash';
+		foreach (@$probs)
+		{
+			my @ids;
+			unless (length($_) > 120)
+			{
+				my $id_regex = qr/(-?\d+(?:\.\d+)?)/;
+				s/$id_regex/$1\cC/g;
+				$id_regex = qr/$id_regex\cC/;
+				s/'$id_regex'/'$1'/g;
+				s/line $id_regex,/line $1,/g;
+				s/0\cC rows/0 rows/g;
+				@ids = /$id_regex/g;
+				s/$id_regex/XXX/g;
+			}
+			++$msg{$_}->{count};
+			push @{$msg{$_}->{ids}}, join('/', @ids) if @ids;
+		}
+
+		foreach (keys %msg)
+		{
+			print tab_48("$prog:"), problem_tag($msg{$_}), "\n";
+			print "\t$_\n\n";
+		}
+	}
+}
+print "\n\n";
+
+print "VALIDATION:\n\n";
+print `/home/buddy/proj/rent.com/bin/sap/validate_SAP_integrity -s -q --database vivastg | tail -n +6`;
+print "\n\n";
+
+print "STATISTICS:\n\n";
+foreach (keys %stats)
+{
+	print "$_: $stats{$_}\n";
+	my $sub = $substats{$_};
+	if ($sub)
+	{
+		print "\t$_: $sub->{$_}\n" foreach keys %$sub;
+	}
+}
+
+
+sub tab_48
+{
+	local $_ = shift;
+
+	return $_ . "\t" x ceil((48 - length($_)) / 8);
+}
+
+sub extract_progname
+{
+	my @w = split(' ');
+	if ($w[0] eq 'Failed' and $w[1] eq 'to' and $w[2] eq 'execute')
+	{
+		shift @w;
+		shift @w;
+		shift @w;
+	}
+	my $gmov = 0;
+	if ($w[0] eq 'leads@jindalee:')
+	{
+		shift @w;
+		$gmov = 1;
+	}
+	my $base = basename($w[0]);
+	my $full = "$base, " . ($gmov ? 'Gigamoves' : 'Rent');
+	return wantarray ? ($full, $base) : $full;
+}
+
+
+sub problem_tag
+{
+	local $_ = shift;
+
+	my $ids = $_->{ids};
+	my $id_tag = $ids && @$ids < 7 ? ' (' . join(', ', @$ids) . ')' : '';
+	return "*x$_->{count}*$id_tag";
+}

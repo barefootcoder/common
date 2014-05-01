@@ -1,0 +1,30 @@
+#! /bin/bash
+
+verbose=0
+if [[ $1 == -v ]]
+then
+	verbose=1
+	shift
+fi
+
+maildir=~/Maildir
+newdate=${1:-tomorrow}
+echo "Meetings on $newdate:"
+echo "====================="
+
+# DTSTART;TZID="(GMT-07.00) Mountain Time (US & Canada)":20080728T160000
+# DTSTART;TZID=America/Los_Angeles:20090422T140000
+# DTSTART:20090422T210000Z
+# DTSTART:20090813T200000Z
+for file in $(echo $maildir/cur/* $maildir/.*meeting*/cur/* | xargs grep -l "^DTSTART.*:$(date -d $newdate +%Y%m%d)")
+do
+	# From: Buddy Burden <bburden@rent.com>
+	#if ! grep -q '^From:.*bburden' $file
+	#then
+		[[ $verbose == 1 ]] && echo "{$(ls -l $file | awk '{print $6, $7, $8, $9}')}"
+		echo -n "$(grep '^SUMMARY:' $file | sed 's/^SUMMARY://') :: "
+		perl -MDate::Format -MDate::Parse -lne 'sub d { $tz = "$2$3" || "GMT"; return time2str("%l:%M%P", str2time("$4 $5:$6:$7 $tz") + (0 ? -3600 : 30)) }
+				$d{$1} = d() if /^DT(START|END)(?:;.*GMT(.\d\d)\.(\d\d).*)?:(\d{8})T(\d\d)(\d\d)(\d\d)?/;
+				END { print "$d{START} - $d{END}" }' $file
+	#fi
+done

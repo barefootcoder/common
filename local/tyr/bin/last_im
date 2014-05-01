@@ -1,0 +1,9 @@
+#! /bin/bash
+
+log_dir=~/.purple/logs/aim/barefootcoder
+christy_dir=$log_dir/cmbrunker
+status_dir=$log_dir/.system
+for dir in $christy_dir $status_dir
+do
+	egrep '(buddy|barefootcoder)' $dir/$(ls -tr1 $dir | tail -n1) | tail
+done

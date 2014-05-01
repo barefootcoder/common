@@ -1,0 +1,67 @@
+#! /bin/bash
+
+readonly me=${0##*/}													# slightly prettier than $0
+
+verbose=0
+while getopts ":fvh" opt
+do
+	case $opt in
+		f)	folder=1
+			;;
+		v)	verbose=1
+			;;
+		h)  echo "usage: $me -h | [-fv] condition [...]" >&2
+			echo "    -f : put results in Search folder" >&2
+			echo "    -v : verbose (show mail filenames)" >&2
+			echo "    -h : this help message" >&2
+			echo "    condition : condition (see 'man mairix' for examples)" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+searchdir=~/Maildir/.Search
+[[ -d $searchdir ]] && /bin/rm -rf $searchdir
+
+dbfile=~/.mairixdb
+if perl -e 'exit((time - (stat shift)[9]) / 60 < 15)' $dbfile
+then
+	[[ $verbose ]] && echo "rebuilding index ..."
+	mairix 2>/dev/null
+fi
+
+if [[ $folder ]]
+then
+	shift
+	mairix "$@"
+else
+	mairix -r "$@" | sort | perl -e '
+		use feature q<:5.10>;
+		use Perl6::Slurp;
+		while ( <> )
+		{
+			chomp;
+			if (m{$ENV{HOME}/Maildir/+(\.([\w.-]+)/)?(?:cur|new)})
+			{
+				my $folder = $2 || "INBOX";
+				$folder =~ s{\.}{/}g;
+				my $h = "\nIn folder $folder:";
+				say $h;
+				say $_ if '$verbose';
+				say "-" x length($h);
+				map { /^(From|Subject|Date):/ and print "\t$_" } slurp;
+			}
+			else
+			{
+				say "could not parse $_";
+			}
+		}
+	'
+fi

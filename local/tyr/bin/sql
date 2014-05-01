@@ -1,0 +1,51 @@
+#! /bin/bash
+
+me=${0##*/}
+db=vplay																# default db if none specified
+user=viva																# default user if none specified
+
+piqt=$WEBROOT/extern/piqt/piqt
+if which rlwrap >/dev/null 2>&1
+then
+	sqlplus="rlwrap sqlplus"
+else
+	sqlplus=sqlplus
+fi
+cmd="$piqt"
+
+while getopts ":pidvh" opt
+do
+	case $opt in
+		p)	cmd="$sqlplus"
+			;;
+		i)	ignore_rc="-i"
+			;;
+		d)	full_dates="-d"
+			;;
+		v)	verbose="-v"
+			;;
+		h)	echo "usage: $me [-h] [-pidv] [db user]" >&2
+			echo "    -p : connect using sqlplus (default: $cmd)" >&2
+			echo "    -i : don't read .piqtrc (no effect with -p)" >&2
+			echo "    -d : show full dates in output (no effect with -p)" >&2
+			echo "    -v : pass verbose switch to piqt or sqlplus" >&2
+			echo "    -h : this help message" >&2
+			echo "    default db is $db, default user is $user" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+[[ -n $1 ]] && db="$1"
+[[ -n $2 ]] && user="$2"
+shift 2
+
+
+$cmd $verbose $ignore_rc $full_dates "$user/$(cat $WEBROOT/passwords/oracle:$user@$db)@$db" "$@"

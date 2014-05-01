@@ -1,0 +1,13 @@
+#! /bin/bash
+
+home=/home/buddy
+backupdir=/mnt/net/group/share/Technology/EngTeam/Backups/
+backupfile=bburden.backup.tgz 
+smbdir=share/Technology/EngTeam/Backups
+smb_passwd="$(tail -n1 .fetchmailrc | perl -lne '/password "(.*?)"/ and print $1')"
+smb_cmd="smbclient //smo-entfs-001.corp.ebay.com/Group -W CORP -U bburden%$smb_passwd -D $smbdir"
+
+
+cd $home
+/bin/tar cpjf /tmp/$backupfile oldwork local/bin local/dsb timer scrum Maildir proj
+$smb_cmd -c "put /tmp/$backupfile $backupfile ; dir $backupfile"

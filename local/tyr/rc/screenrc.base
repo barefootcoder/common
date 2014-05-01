@@ -1,0 +1,7 @@
+screen -t base
+screen -t timer
+	stuff "timer\015"
+screen -t man
+	stuff "man screen\015"
+screen -t top top
+screen -t root sudo su -

@@ -1,0 +1,39 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+use Math::Round;
+
+
+while ( <> )
+{
+	if ( /^(IB-\d{4}).*([ \d]\d\.\d+)\s+(\d+)$/ )
+	{
+		my ($ticket, $last_hrs, $points) = ($1, $2, $3);
+		my $total_line = `fake_timerttl $ticket $ENV{HOME}/timer/timer-new $ENV{HOME}/timer/timer.* | fgrep -e $ticket`;
+		if ($total_line)
+		{
+			$total_line =~ /(\d+) hrs,\s+(\d+) mins/ or die("unknown line: $total_line");
+			my ($hrs, $mins) = ($1, $2);
+			$hrs += nearest(.25, $mins / 60);
+			$hrs = sprintf("%5.2f", $hrs);
+			$hrs =~ s/0$//;
+			unless ($last_hrs eq $hrs)
+			{
+				debuggit("replacing", $last_hrs, "with", $hrs);
+				s/$last_hrs/$hrs/;
+				s/$/\t*/;
+				s/$/ !!/ if $hrs / 6 > $points;
+			}
+			print;
+		}
+		else
+		{
+			print;
+		}
+	}
+	else
+	{
+		print;
+	}
+}

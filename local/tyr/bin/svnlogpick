@@ -1,0 +1,22 @@
+#! /usr/bin/perl
+
+use Toolkit;
+
+
+my ($file) = @ARGV;
+my $url = 'https://svnhost.rent.com/svn/main/rent/trunk/' . $file;
+
+
+open(IN, "svn log -g -r1:HEAD $url |") or die("can't fork");
+my $rev = '';
+while ( <IN> )
+{
+	$rev = "\nRevision $1 - $2\n\n" if /^r(\d+)\s*\|\s*\w+\s*\|\s*(.*?)\s*\|/;
+	if (/^=>/)
+	{
+		print $rev;
+		$rev = '';
+		print;
+	}
+}
+close(IN);

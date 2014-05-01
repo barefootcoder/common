@@ -1,0 +1,82 @@
+#! /bin/bash
+
+cat <<END
+
+WARNING! This script is designed to do small updates to the "special branch" QA machine (qa-02).
+You should not run this script for establishing the initial QA environment; use
+
+	make CONTINUETEST=1 qa2
+
+for that.  Only after you have at least one working full push (via the command line above) should
+you attempt to use this script to refresh the QA environment.  Additionally, if you run into any
+problems after using this script, you may consider doing a full push again to see if that fixes it.
+
+This script does not run any tests or check any object compilation.  Caveat codor.
+
+You need to have \$WEBROOT set to a clean working copy (i.e. no local modifications) containing the
+branch you want to push.  This script will run an svn update for first, so you don't have to worry
+about doing that ahead of time.  It will barf if it detects any modifications at all, or any unknown
+files other than the few expected directories that it knows about.
+
+You must also have access to log into the qa-02 box as both root and wdev, but then that's true of
+a full push as well.
+
+END
+echo -n "Continue? [y/N] "
+read ans
+[[ $ans == [yY]* ]] || exit 2
+echo ""
+
+
+# make sure $WEBROOT is correct
+if [[ -z $WEBROOT ]]
+then
+	echo 'you have not set $WEBROOT'
+	exit 2
+fi
+cd $WEBROOT
+if [[ ! -d .svn ]]
+then
+	echo '$WEBROOT is not a Subversion working copy'
+	exit 1
+fi
+if [[ ! ( -d web && -d mason && -d etc && -f Makefile ) ]]
+then
+	echo '$WEBROOT does not look like a TLD for the Rent web site to me'
+	exit 1
+fi
+if [[ ! -d etc/apache/modules ]]
+then
+	echo 'it looks like you haven'"'"'t done a "make setup" in your $WEBROOT'
+	exit 1
+fi
+
+# set up exclusions from bogus svn status output
+# IOW, those lines below are expected, and they should be the *only* lines we see
+tmpfile=/tmp/$$.excl
+trap "/bin/rm -f $tmpfile" EXIT
+cat <<END >$tmpfile
+\? +lib/Company/t/out
+\? +etc/apache/modules
+\? +etc/mon/t/out
+\? +web/viva/mapquest/mapquest.cgi
+\? +web/viva/mapquest/mqtrip.cgi
+END
+
+svn update
+statoutput="$(svn status | egrep -f $tmpfile)"
+if [[ -n $statoutput ]]
+then
+	echo "Cannot continue because of the following lines from svn status:"
+	echo "$statoutput"
+	exit 1
+fi
+exit
+
+for e in lost+found web/local ssl passwords mason logs etc/apache/httpd-*.conf
+do
+	excludes="$excludes --exclude=$e"
+done
+rsync -Crplgvz --delete $excludes . wdev@qa-02:/company
+
+ssh root@qa-02 service httpd restart

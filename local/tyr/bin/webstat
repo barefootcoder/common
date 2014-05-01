@@ -1,0 +1,84 @@
+#! /bin/bash
+
+
+loadlimit=10
+lcycle_susp_file=/company/LIFECYCLE-SUSPEND.txt
+
+readonly me=${0##*/}													# slightly prettier than $0
+force=0
+while getopts ":fh" opt
+do
+	case $opt in
+		f)  force=1
+			;;
+		h)  echo "usage: $me -h | [-f]" >&2
+			echo "    -f : force (don't ask about suspending lifecycle, just do it)" >&2
+			echo "    -h : this help message" >&2
+			echo "    will ask (or not, with -f) to suspend lifecycle if load average is >= $loadlimit" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+#for host in $($WEBROOT/bin/hosts prod www)
+for host in $(ssh sandbox-02 '$WEBROOT/bin/localdirector' 2>/dev/null | awk '$0 ~ /IS/ {print $1}')
+do
+	stat=$(ssh wdev@$host 'ps aux | perl -ne "
+		++\$n{\$1} if /httpd-(.*?)\.conf/;
+		END
+		{
+			\$lifecycle_stat = -e q{'$lcycle_susp_file'} ? q{suspended} : q{runnable};
+			qx<uptime> =~ /load average: (\d+\.\d+)/;
+			\$mpstat = (split(q{ }, qx<mpstat | tail -n1>))[6];
+			printf qq{Load: %5.2f  HTTP: %4d  SSL: %4d  Perl: %4d  %%sys: %5.2f  Lifecycle: %-10s\n},
+					\$1, @n{qw<open-proxy secure-proxy perl>}, \$mpstat, \$lifecycle_stat;
+		}
+	"' 2>/dev/null)
+	echo "$host: $stat"
+
+	load=$(echo "$stat" | awk '{print $2}' | cut -d. -f1)
+	if [[ $load -ge $loadlimit ]]
+	then
+		msg="Load average on $host is greater than limit of $loadlimit"
+
+		if echo "$stat" | fgrep -q suspended
+		then
+			echo "WARNING! WARNING! WARNING! $msg, but lifecyle is already suspended!!"
+		else
+			if [[ $force == 1 ]]
+			then
+				ans=yes
+			else
+				echo -n "$msg; suspend lifecycle?  (y/N) "
+				read ans
+			fi
+
+			if [[ $ans == [yY]* ]]
+			then
+				ssh wdev@$host $lcycle_susp_file
+				echo "  Lifecycle suspended on $host"
+			fi
+		fi
+	fi
+done
+
+
+# THE OLD WAY:
+#
+#
+#$WEBROOT/bin/hosts prod www | each 'ssh wdev@{} '"'"' ps aux | perl -ne "
+#	++\$n{\$1} if /httpd-(.*?)\.conf/;
+#	END
+#	{
+#		qx<uptime> =~ /load average: (\d+\.\d+)/;
+#		printf qq{Load: %5.2f  HTTP: %4d  SSL: %4d  Perl: %4d\n}, \$1, @n{qw<open-proxy secure-proxy perl>};
+#	}
+#" '"'"
