@@ -7,11 +7,12 @@ do
 	case $opt in
 		c)	create=$OPTARG
 			;;
-		h)  echo "usage: $me -h | [-c old_rpt] rpt_file" >&2
+		h)  echo "usage: $me -h | [-c old_rpt] rpt_file [alt_rpt_file]" >&2
 			echo "    -c : create a new report as a copy of an old one" >&2
 			echo "    -h : this help message" >&2
-			echo "    old_rpt  : the old report to make a copy of" >&2
-			echo "    rpt_file : the report file to load" >&2
+			echo "    old_rpt      : the old report to make a copy of" >&2
+			echo "    rpt_file     : the report file to load (buffers 1 & 2)" >&2
+			echo "    alt_rpt_file : a second report file to load (buffers 6 & 7)" >&2
 			exit
 			;;
 		:)  usage_erorr "$OPTARG requires an argument"
@@ -87,4 +88,16 @@ else
 	fi
 fi
 
-vimS -n report
+report=report
+if [[ $2 ]]
+then
+	export alt_sql_file=$(normalize_filename $2)
+	export alt_yml_file=${alt_sql_file%.sql}.yml
+	if [[ ! -r $alt_sql_file ]]
+	then
+		die "report $alt_sql_file does not exist or is not readable"
+	fi
+	report=report2
+fi
+
+vimS -n $report
