@@ -282,21 +282,25 @@ print STDERR "         (with BAIL_ON_FAIL=$ENV{BAIL_ON_FAIL})\n" if $opt->{D} an
 print STDERR "         (with $HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
 print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and grep { $opt->{$_} } keys %req_modules;
 print STDERR "         (with TEST_METHOD=$ENV{TEST_METHOD})\n" if $opt->{D} and $opt->{m};
-#!system("$command 2>&1 | grep -v '^Devel::Cover' | grep -v '^Can.t find digest for accessor'") or exit 1;
-open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
-while ( <PIPE> )
+if ($opt->{c})
 {
-	# ignore errors from Devel::Cover
-	next if /^Devel::Cover: Can't open accessor/;
-	next if /^Can't find digest for accessor/;
-	next if /^Deep recursion on subroutine "B::Deparse::deparse".*Devel\/Cover\.pm/;
-	$opt->{compile_error} = $1 if /^Can't load module (\S+)/;
-	print;
+	open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
+	while ( <PIPE> )
+	{
+		# ignore errors from Devel::Cover
+		next if /^Devel::Cover: Can't open accessor/;
+		next if /^Can't find digest for accessor/;
+		next if /^Deep recursion on subroutine "B::Deparse::deparse".*Devel\/Cover\.pm/;
+		print;
+	}
+	close(PIPE);
 }
-close(PIPE);
+else
+{
+	system($command);
+}
 if ($?)
 {
-	system("perl -M$opt->{compile_error} -c") if $opt->{compile_error};
 	print_color red => "\nTEST FAILURE\n";
 	exit 1;
 }
