@@ -19,8 +19,10 @@ map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
-map [[ ][%
-map ]] 2][%
+map [] k$][%?}
+map [[ ?{w99[{
+map ]] j0[[%/{
+map ][ /}b99]}
 nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
@@ -48,18 +50,18 @@ set textwidth=100
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
 silent only
-cd ~/
+cd ~/Dropbox/proj/VCtools
 if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +98 .vctoolsrc
-badd +71 .vctools/vctools.conf
-badd +217 .tcshrc
-badd +69 ~/proj/VCtools/share/conf/git.conf
-badd +48 ~/workproj/CE/etc/ceflow/CE.conf
-args .vctoolsrc
-edit .vctools/vctools.conf
+badd +1 lib/App/VC/Command/$command.pm
+badd +0 lib/App/VC/Command.pm
+badd +5 bin/vc
+badd +1 share/conf/git.conf
+badd +1 share/conf/svn.conf
+args lib/App/VC/Command/$command.pm
+edit lib/App/VC/Command.pm
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
@@ -166,12 +168,12 @@ setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-let s:l = 71 - ((48 * winheight(0) + 24) / 49)
+let s:l = 1 - ((0 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-71
-normal! 09l
+1
+normal! 0
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

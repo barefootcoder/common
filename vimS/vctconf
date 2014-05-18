@@ -1,47 +1,82 @@
 let SessionLoad = 1
 if &cp | set nocp | endif
+let s:cpo_save=&cpo
+set cpo&vim
+map! <BS> 
+map  0Wy0!!date +\%Y-\%m-\%dT\%H:\%M:\%S\%z0P
 nmap  :w:!ccheck %
+map  :!grep -Pe '^\s*\#\s*[A-Z\s]+$' %					" find "sections" (all-caps comments)
+map  :!clgrep -mn  %
+map  :!clgrep -m %
+map 	 :!clgrep -i %
+map  :!clgrep -a %
 nmap  1Gn
 map  
 nmap  :w:!pusht %
 map  :files
+map  :w:!vcpatchws -f %:e!
 map  :%s/[ 	]\+$//
-nnoremap r ^gq/^$\|^	*#$\|^--! print$
-nmap  /
+nnoremap cl :%g/^# line/d:w
+nnoremap rl m`:1,$! reset_lines``
+nnoremap il m`Oi# line 0:1,$! reset_lines:w``
+nnoremap r} gq}
+nnoremap rr gqgq
+nnoremap r ^gq/^$\|^	*#$\|^	*[^	#]\|^--! print$
+nmap d :w:!perldoc %
+nmap  /\<\>
+nmap % :call FindMatching()
+nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:K:set iskeyword=@,48-57,_
 map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
+map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
+map [] k$][%?}
+map [[ ][%
+map [s m`/^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$``N
+map ]] 2][%
+map ][ /}b99]}
+map ]s /^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$
+nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
-map!  
+nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
+let &cpo=s:cpo_save
+unlet s:cpo_save
 set autoindent
 set background=dark
 set backspace=indent,eol,start
+set comments=b:#,b:%,b:*,b:--!\ print,b:--
 set equalprg=tfmt\ -t4\ -w100
-set formatoptions=tcql
-set guicursor=n-v-c:block,o:hor50,i-ci:hor15,r-cr:hor30,sm:block,a:blinkon0
+set fileencodings=ucs-bom,utf-8,default,latin1
+set formatoptions=croqv
+set helplang=en
 set history=50
-set isfname=@,48-57,/,.,-,_,+,,,#,$,%,~,=,:
+set keywordprg=perlref
+set nomodeline
+set printoptions=paper:letter
 set ruler
+set runtimepath=~/.vim,/var/lib/vim/addons,/usr/share/vim/vimfiles,/usr/share/vim/vim73,/usr/share/vim/vimfiles/after,/var/lib/vim/addons/after,~/.vim/after
 set sessionoptions=buffers,curdir,globals,options,unix
 set shiftwidth=4
+set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc
 set tabstop=4
-set viminfo='20,\"50
+set textwidth=100
 let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
 let v:this_session=expand("<sfile>:p")
 silent only
-cd ~/docs/blog
+cd ~/
 if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +82 common.pm
-badd +96 ~/bin/blogify
-badd +133 read_story
-badd +1 topics
-edit topics
-args common.pm
+badd +2 .vctoolsrc
+badd +6 .vctools/vctools.conf
+badd +217 .tcshrc
+badd +95 ~/proj/VCtools/share/conf/git.conf
+badd +542 ~/workproj/CE/etc/ceflow/CE.conf
+args .vctoolsrc
+edit .vctools/vctools.conf
 set splitbelow splitright
 set nosplitbelow
 set nosplitright
@@ -60,8 +95,8 @@ setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
 setlocal cinoptions=
 setlocal cinwords=if,else,while,do,for,switch
 setlocal colorcolumn=
-setlocal comments=:#
-setlocal commentstring=#%s
+setlocal comments=b:#,b:%,b:*,b:--!\ print,b:--
+setlocal commentstring=/*%s*/
 setlocal complete=.,w,b,u,t,i
 setlocal concealcursor=
 setlocal conceallevel=0
@@ -71,14 +106,14 @@ setlocal cryptmethod=
 setlocal nocursorbind
 setlocal nocursorcolumn
 setlocal nocursorline
-setlocal define=[^A-Za-z_]
+setlocal define=
 setlocal dictionary=
 setlocal nodiff
 setlocal equalprg=
 setlocal errorformat=
 setlocal noexpandtab
-if &filetype != 'perl'
-setlocal filetype=perl
+if &filetype != ''
+setlocal filetype=
 endif
 setlocal foldcolumn=0
 setlocal foldenable
@@ -91,31 +126,31 @@ setlocal foldminlines=1
 setlocal foldnestmax=20
 setlocal foldtext=foldtext()
 setlocal formatexpr=
-setlocal formatoptions=tlcrq
+setlocal formatoptions=croqv
 setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
 setlocal grepprg=
 setlocal iminsert=0
 setlocal imsearch=0
-setlocal include=\\<\\(use\\|require\\)\\>
-setlocal includeexpr=substitute(substitute(v:fname,'::','/','g'),'$','.pm','')
+setlocal include=
+setlocal includeexpr=
 setlocal indentexpr=
 setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
 setlocal noinfercase
 setlocal iskeyword=@,48-57,_,192-255
-setlocal keywordprg=perldoc\ -f
+setlocal keywordprg=
 set linebreak
 setlocal linebreak
 setlocal nolisp
 setlocal nolist
 setlocal makeprg=
 setlocal matchpairs=(:),{:},[:]
-setlocal modeline
+setlocal nomodeline
 setlocal modifiable
 setlocal nrformats=octal,hex
 setlocal nonumber
 setlocal numberwidth=4
 setlocal omnifunc=
-setlocal path=~/common/perl,/usr/local/lib64/perl5,/usr/local/share/perl5,/usr/lib64/perl5/vendor_perl,/usr/share/perl5/vendor_perl,/usr/lib64/perl5,/usr/share/perl5,,
+setlocal path=
 setlocal nopreserveindent
 setlocal nopreviewwindow
 setlocal quoteescape=\\
@@ -141,19 +176,19 @@ setlocal syntax=
 endif
 setlocal tabstop=4
 setlocal tags=
-set textwidth=0
+setlocal textwidth=100
 setlocal thesaurus=
 setlocal noundofile
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-let s:l = 82 - ((34 * winheight(0) + 24) / 49)
+let s:l = 179 - ((24 * winheight(0) + 24) / 49)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-82
-normal! 01l
+179
+normal! 019l
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif
