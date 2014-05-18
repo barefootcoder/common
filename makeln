@@ -56,6 +56,14 @@ then
 	done
 fi
 
+# do pidgin.layout, if any
+p_layout=$mydir/local/$LOCALHOSTNAME/data/pidgin.layout
+if [[ -f $p_layout ]]
+then
+	dest=$HOME/local/data/pidgin.layout
+	make_link $p_layout $dest
+fi
+
 # .dzil dir will be built in three parts:
 #	# the directory itself will be made if it's not there
 #		(it can't be a symlink because it needs to contains files symlinked from

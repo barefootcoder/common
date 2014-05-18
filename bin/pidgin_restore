@@ -1,0 +1,126 @@
+#! /usr/bin/env perl
+
+use myperl DEBUG => 1;
+use autodie ':all';
+
+
+const our $PANEL_HEIGHT	=>  24;
+const our $WIN_WIDTH	=> 720;
+const our $WIN_HEIGHT	=> 518;
+
+
+our ($SCREEN_WIDTH, $SCREEN_HEIGHT) = get_screen_size();
+debuggit("screen size is $SCREEN_WIDTH x $SCREEN_HEIGHT");
+
+my $data = read_layout();
+debuggit(4 => "layout data:", DUMP => $data);
+
+foreach my $name (keys %$data)
+{
+	my $window = `xdotool search --name '^$name\$'`; chomp $window;
+	die("got multiple windows for $name!") if $window =~ /\s/;
+	if ($window)
+	{
+		my ($x, $y) = convert_pos_to_pixel($data->{$name}->{xpos}, $data->{$name}->{ypos});
+		my $d = $data->{$name}->{desktop} - 1;
+		debuggit("moving", $name, "to", $d, '/', $x, ',', $y);
+		system("xdotool windowmove $window $x $y set_desktop_for_window $window $d");
+	}
+	else
+	{
+		# could do something along the lines of:
+		# (Warning! untested)
+		# system(q{ xdotool search "Buddy List" windowactivate mousemove --window %1 125 424 click 1 type $name });
+		# system('xdotool key Return');
+	}
+}
+
+
+func get_screen_size
+{
+	open(IN, "xrandr |");
+	while ( <IN> )
+	{
+		if ( /current \s+ (\d+) \s* x \s* (\d+) /x )
+		{
+			close(IN);
+			return ($1, $2);
+		};
+	}
+	close(IN);
+	return (undef, undef);
+}
+
+
+func read_layout
+{
+	my $data = {};
+
+	my $cur_desktop = 0;
+	my $in_layout = 0;
+	open(IN, "$ENV{HOME}/local/data/pidgin.layout");
+	while ( <IN> )
+	{
+		if ( /^ [A-Z]+ : /x )						# start new desktop
+		{
+			++$cur_desktop;
+			$in_layout = 0;
+		}
+		elsif ( /^ \s* $/x )						# blank line
+		{
+			++$in_layout if $in_layout;
+		}
+		elsif ( /^ \t (\s* \w+.*) \s* $/x )
+		{
+			my $content = $1;
+			$content = expand($content);
+
+			++$in_layout;
+			foreach my $name ( split(' ', $content) )
+			{
+				my $xpos = index($content, $name) / 16 + 1;
+				my $ypos = ($in_layout + 1) / 2;
+
+				if (exists $data->{$name})
+				{
+					die("conflicting desktop for $name") unless $cur_desktop == $data->{$name}->{desktop};
+					die("conflicting horizontal for $name") unless $xpos == $data->{$name}->{xpos};
+					die("conflicting vertical for $name") unless $ypos >= $data->{$name}->{ypos};
+					$data->{$name}->{height} = $ypos;
+				}
+				else
+				{
+					$data->{$name} =
+					{
+						desktop		=>	$cur_desktop,
+						xpos		=>	$xpos,
+						ypos		=>	$ypos,
+						height		=>	$ypos,
+					};
+				}
+			}
+		}
+		else
+		{
+			die("don't know how to parse: $_");
+		}
+	}
+	close(IN);
+
+	return $data;
+}
+
+
+func convert_pos_to_pixel ($x, $y)
+{
+	# convert to 0-based
+	--$x; --$y;
+
+	my $usable_width = $SCREEN_WIDTH - $WIN_WIDTH;
+	$x = int($usable_width / 2 * $x);
+
+	my $usable_height = $SCREEN_HEIGHT - $PANEL_HEIGHT * 2 - $WIN_HEIGHT;
+	$y = int($usable_height / 2 * $y) + $PANEL_HEIGHT;
+
+	return ($x, $y);
+}
