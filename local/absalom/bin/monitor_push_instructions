@@ -4,11 +4,18 @@ cd /home/buddy/workproj/CE
 log=$(/usr/bin/git log --pretty=format:"%h %an %ar" trunk -- doc/howto/push* | /usr/bin/head -n1)
 if [[ $log != *Buddy* ]]
 then
-	/usr/bin/mail -s "CRAP!" bburden@campusexplorer.com <<END
-		Someone else modified the push instructions!
+	tester=/home/buddy/work/ceflow/test_push_instr_format
+	if ! $tester >/dev/null
+	then
+		/usr/bin/mail -s "CRAP!" bburden@campusexplorer.com <<END
+			Someone else modified the push instructions,
+			and the formats are no longer in sync!
 
-			$log
+				$log
 
-		Run your scripts and resync them.
+			Run your scripts and resync them.
+
+$($tester)
 END
+	fi
 fi
