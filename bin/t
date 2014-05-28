@@ -6,7 +6,7 @@ use warnings FATAL => 'all';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class Perl6::Slurp List::MoreUtils >)
+	foreach (qw< Getopt::Std Path::Class Perl6::Slurp Time::Duration List::MoreUtils Time::HiRes >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -16,7 +16,12 @@ BEGIN { check_prereqs() }
 use Getopt::Std;
 use Path::Class;
 use Perl6::Slurp;
+use Time::Duration;
 use List::MoreUtils qw< uniq >;
+use Time::HiRes qw< gettimeofday tv_interval >;
+
+my $start_time; BEGIN { $start_time = [gettimeofday]; }
+END { local $Time::Duration::MILLISECOND = 1; say "Runtime: ", duration_exact(tv_interval($start_time)); }
 
 sub print_color(@);
 
