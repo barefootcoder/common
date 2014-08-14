@@ -107,7 +107,7 @@ filetype indent off
 map <C-C><C-D> 0Wy0!!date +\%Y-\%m-\%dT\%H:\%M:\%S\%z<CR>0P
 
 " to make sessions work properly
-set sessionoptions=buffers,curdir,globals,unix
+set sessionoptions=buffers,curdir,globals,options,unix
 
 " check for differences in session
 :function! SessionDiffs()
