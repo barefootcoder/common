@@ -146,15 +146,22 @@ install () {
 
 	if [[ -d $distdir ]]
 	then
-		echo "Dropbox already installed; won't reinstall" >&2
-		exit 1
+		echo "1st arg is $1"
+		if [[ $1 == "force" ]]
+		then
+			shift 1
+			/bin/rm -rf $distdir
+		else
+			echo "Dropbox already installed; won't reinstall without \`force'" >&2
+			exit 1
+		fi
 	fi
 
 	arch=${1:-$(uname -i)}
 	case $arch in
 		x86)	;;
 		x86_64)	;;
-		*)		echo "usage: $0 install [x86|x86_64]" >&2
+		*)		echo "usage: $0 install [force] [x86|x86_64]" >&2
 				exit 2
 				;;
 	esac
@@ -168,7 +175,7 @@ install () {
 	mkdir $distdir/run
 	mkdir $distdir/sysconfig
 	echo "DROPBOX_USERS=buddy" >$config
-	echo 'Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion `GDK_IS_WINDOW (window)'"' failed" >$filter
+	echo "Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion \`GDK_IS_WINDOW (window)' failed" >$filter
 
 	rm $tarfile
 
@@ -227,7 +234,8 @@ case "$1" in
         start
         ;;
   install)
-  		install
+		shift 1
+		install "$@"
 		;;
   *)
         echo $"Usage: $0 {start|status|stop|restart|install}"
