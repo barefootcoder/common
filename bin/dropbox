@@ -161,7 +161,7 @@ install () {
 
 	cd ~
 	tarfile=dropbox.tar.gz
-	wget -O$tarfile "http://www.dropbox.com/download/?plat=lnx.$arch"
+	wget -O$tarfile --no-check-certificate "http://www.dropbox.com/download/?plat=lnx.$arch"
 	tar xvpzf $tarfile
 
 	mkdir $distdir/lock
