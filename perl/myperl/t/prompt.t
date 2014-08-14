@@ -24,7 +24,7 @@ is $input, "test", "can input data";
 is ref($input), '', "get real string back from prompt()";
 is exists $INC{'IO/Prompter.pm'}, 1, "loaded IO::Prompter now";
 
-# IO::Prompter normall won't print prompts when the output isn't a term
+# IO::Prompter normally won't print prompts when the output isn't a term
 # but we can totally override that
 {
 	no warnings 'redefine';

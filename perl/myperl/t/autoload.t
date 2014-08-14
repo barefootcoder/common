@@ -15,6 +15,12 @@ loads_ok { menu(undef) } menu => 'myperl::Menu';
 loads_ok { expand('') } expand => 'Text::Tabs';
 
 
+# basename()
+# can't really test for it being unloaded/loaded, because something-or-other we depend on is already
+# using it; therefore, just make sure we can call the method
+lives_ok { basename('') } "can call basename()";
+
+
 done_testing;
 
 

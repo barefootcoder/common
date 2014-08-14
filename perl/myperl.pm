@@ -57,9 +57,10 @@ sub import
 	# function had been exported.
 	my %autoload_funcs =
 	(
-		'Date::Parse'	=>	'str2time',
-		'Date::Format'	=>	'time2str',
-		'myperl::Menu'	=>	'menu',
+		'Date::Parse'		=>	'str2time',
+		'Date::Format'		=>	'time2str',
+		'File::Basename'	=>	'basename',
+		'myperl::Menu'		=>	'menu',
 	);
 	foreach (keys %autoload_funcs)
 	{
