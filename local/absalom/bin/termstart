@@ -1,5 +1,21 @@
 #!/bin/bash
 
+. ~/bin/bash_funcs
+
+ssh-add
+ssh-add -l
+
+if ! dropbox start
+then
+	if yn "Reinstall dropbox?"
+	then
+		dropbox install force
+	fi
+fi
+
+cd ~/workproj/CE
+vagrant up
+
 if screen -ls | grep base
 then
 	cmd="screen -x base"

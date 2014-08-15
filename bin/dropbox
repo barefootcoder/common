@@ -50,10 +50,9 @@ start() {
 
         if [ -z $DROPBOX_USERS ] ; then
                 echo -n ": unconfigured: $config"
-                echo_failure
                 echo
                 rm -f ${lockfile} ${pidfile}
-                RETURN=6
+                RETVAL=6
                 return $RETVAL
         fi
 

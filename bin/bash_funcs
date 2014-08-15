@@ -22,3 +22,16 @@ function usage_error
 	echo "$me: $1 ($me -h for help)" >&2
 	exit 2
 }
+
+
+function yn
+{
+	echo -n "$1 [y/N] "
+	read yn
+	if [[ $yn == [yY]* ]]
+	then
+		return 0
+	else
+		return 1
+	fi
+}
