@@ -1,0 +1,44 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+
+my $post = slurp;
+my $total = wc($post);
+
+# quotes
+$post =~ s{^>>}{//--}; $post =~ s{<<$}{--//}g;
+$post =~ s{^//---\s*.*?\s*---//\n}{}msg;
+$post =~ s{^//--\n.*?\n--//\n}{}msg;
+$post =~ s{^//--\s*.*?\s*--//\n}{}msg;
+my $in_quotes = $total - wc($post);
+
+# links
+$post =~ s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ $3 // $1 }seg;
+$post =~ s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ $3 // $1 }seg;
+my $in_links = $total - $in_quotes - wc($post);
+
+# footnotes
+$post =~ s{\^\^\[.*?]}{}sg;
+$post =~ s{\^\^}{}g;
+$post =~ s{\^\d+\s+.*?$}{}mg;
+my $net = wc($post);
+my $in_notes = $total - $in_quotes - $in_links - $net;
+
+
+report("total words", $total);
+report("- in links", $in_links);
+report("- in blockquotes", $in_quotes);
+report("- in footnotes", $in_notes);
+report("net words", $net);
+
+
+func wc ($str)
+{
+	return scalar grep { /\w/ } split(/[\s|]+/, $str);
+}
+
+func report ($label, $count)
+{
+	printf "%-20s %4d\n", $label, $count;
+}
