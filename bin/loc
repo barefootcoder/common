@@ -22,4 +22,12 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-echo "$hostname$(realpath "${1:-.}")"
+if [[ $# -eq 0 ]]
+then
+	exec $0 .
+fi
+
+for file in "$@"
+do
+	echo "$hostname$(realpath "$file")"
+done
