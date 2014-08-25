@@ -20,6 +20,7 @@ my %blog =
 						center		=>	'div align=center',
 						code		=>	'code',
 						collapsed	=>	'',
+						dialog		=>	'div style="margin-left: 1em; line-height: 150%"',
 						dash		=>	'&mdash;',
 						initial		=>	"\n",
 					},
@@ -32,6 +33,7 @@ my %blog =
 						center		=>	'div align=center',
 						code		=>	'code class="prettyprint"',
 						collapsed	=>	'',
+						dialog		=>	'div style="margin-left: 1em; line-height: 150%"',
 						dash		=>	'&mdash;',
 						initial		=>	'',
 					},
@@ -44,6 +46,7 @@ my %blog =
 						center		=>	'center',
 						code		=>	'code',
 						collapsed	=>	'spoiler',
+						dialog		=>	'code',
 						dash		=>	'--',
 						initial		=>	'',
 					},
@@ -98,6 +101,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
+	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
@@ -117,6 +121,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^//--\n(.*?)\n--//\n}{"<pre>" . fmt(quote => $1) . "</pre>\n"}mseg;			# preformatted blockquotes
 	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
+	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcipt-type blocks
 	unless ($blog_type eq 'bbcode')
 	{
 		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
@@ -143,7 +148,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
-	s{(\d+)c}{$1&cent;}g;															# cents
+	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
+	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
 	s{\bTM\b}{&trade;}g;															# trademark
 	s{\^\^\[(.*?)]}{footnote(full => $1)}seg;										# footnote
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
@@ -178,6 +184,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\cL}{[*]}g if $blog_type eq 'bbcode';
 	# handle initial whitespace according to blog type
 	s{\A\s*}{$blog{$blog_type}->{'initial'}};
+	# an initial blockquote needs a bit of extra space
+	s{\A(\s*[[<]$blog{$blog_type}->{'quote'})}{\n$1};
 	# handle subtitle, if any (goes in front of initial)
 	s{\A}{fmt(italic => "or, $subtitle") . "\n"}e if $subtitle;
 
@@ -189,6 +197,7 @@ func change_type ($type, $extra)
 {
 	die("unknown blog type $type") unless exists $blog{$type};
 	$blog_type = $type;
+	$footnote_style = '1' if $blog_type eq 'perl';
 
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
 	$subtitle = $1 if $extra =~ /subtitle:{(.*?)}/;
@@ -328,7 +337,7 @@ func save_footnote_and_gen_ref ($note)
 	return '<sup>' . fmt(small => qq{<a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a>') . '</sup>';
 }
 
-func footnote ($type, $text, $num)
+func footnote ($type, $text, $num?)
 {
 	if ($type eq 'ref')
 	{
