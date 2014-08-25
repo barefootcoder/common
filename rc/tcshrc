@@ -110,7 +110,7 @@ else
 	set cdpath=($cdpath_dirs)
 endif
 
-setenv PAGER "less -raF -x4 -j4"
+setenv PAGER "less -RaF -x4 -j4"
 setenv EDITOR /home/buddy/bin/fe_vi
 eval `addpath -eb PERL5LIB /usr/barefoot/perl ~/common/perl`
 setenv DATE_MANIP DM5
@@ -137,7 +137,7 @@ alias cp cp -piv
 alias mv mv -iv
 alias scp scp -pC
 alias ps 'ps -wwwo user,group,pid,ppid,pgid,stime,tty8,stat,time,cmd'
-alias time /usr/bin/time
+alias time '/usr/bin/time -f "\nWallclock: %e (%UU, %SS)"'
 unalias psf #alias psf 'echo TTY is $tty ; /bin/ps ft$tty -o pid -o ppid -o stat=S -o command'
 alias psg '/usr/bin/pgrep -f \!* >/dev/null && ps -p `/usr/bin/pgrep -f \!*`'
 alias dfk df -h .
@@ -208,6 +208,7 @@ unset nonomatch
 
 # programmed completions
 complete cd 'p/1/d/' 'p/*/x/'
+complete rmdir 'p/1/d/' 'p/*/x/'
 complete setenv 'p/1/e/'
 complete unsetenv 'p/*/e/'
 complete which 'p/*/c/'
