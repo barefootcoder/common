@@ -5,10 +5,12 @@ readonly me=${0##*/}													# slightly prettier than $0
 privatedir=~/common/perl
 
 mode=add
-while getopts ":rtdh" opt
+while getopts ":retdh" opt
 do
 	case $opt in
 		r)	mode=remove
+			;;
+		e)	mode=edit
 			;;
 		t)	mode=temp
 			;;
@@ -16,6 +18,7 @@ do
 			;;
 		h)  echo "usage: $me -h | [-r | -t | -d] Perl::Module" >&2
 			echo "    -r : remove a previously privatized copy" >&2
+			echo "    -e : edit (privatize, then edit)" >&2
 			echo "    -t : temp (privatize, edit, then remove)" >&2
 			echo "    -d : diff the currently privatized copy (if any)" >&2
 			echo "    -h : this help message" >&2
@@ -72,7 +75,7 @@ elif [[ $module == $newmod && $mode == 'diff' ]]
 then
 	# Find the Perl module which:
 	# *		isn't the first result (that'll be the privatized one), and
-	# *		doesn't start with ./ (those will almost certinaly be dups), and
+	# *		doesn't start with ./ (those will almost certainly be dups), and
 	# *		is the shortest from among what's left (most likely the right one).
 	# In the Perl snippet below, you might think you need `next if $. == 1`, but you don't.
 	# Think about it.  (Hint: What's the length of $l before it's ever set?)
@@ -83,15 +86,19 @@ elif [[ $module == $newmod ]]
 then
 	echo "$me: looks like $1 is already privatized [$newmod]" >&2
 	exit 1
-elif [[ $mode == 'add' || $mode == 'temp' ]]
+elif [[ $mode == 'add' || $mode == 'temp' || $mode == 'edit' ]]
 then
 	mkdir -p $(dirname $newmod) 2>/dev/null
 	cp -pv $module $newmod
 	chmod ug+w $newmod
 
-	if [[ $mode == 'temp' ]]
+	if [[ $mode == 'temp' || $mode == 'edit' ]]
 	then
 		${EDITOR:-vim} $newmod
+	fi
+
+	if [[ $mode == 'temp' ]]
+	then
 		remove_mod
 	fi
 else
