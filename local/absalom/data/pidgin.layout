@@ -1,9 +1,9 @@
 MAIN:
 
 	steve			evaldas			eric
-							ben
+			leadops			ben
 	jnap			jcal			kate
-			matthew			walter
+			matthew			deploy
 	jennine			mike			arya
 
 
@@ -12,9 +12,9 @@ MAIN:
 COMMS:
 
 	team			technology		juan
-			karen			jared
+			qa				jared
 	mateu			technology		amiri
-
+			sage			ether
 	craig			technology		offtopic
 
 
@@ -31,4 +31,4 @@ PERSONAL:
 
 	
 
-	chuck
+	chuck							david_hand

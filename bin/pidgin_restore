@@ -7,6 +7,7 @@ use autodie ':all';
 const our $PANEL_HEIGHT	=>  24;
 const our $WIN_WIDTH	=> 720;
 const our $WIN_HEIGHT	=> 518;
+const our $WIN_BORDER	=>  27;
 
 
 our ($SCREEN_WIDTH, $SCREEN_HEIGHT) = get_screen_size();
@@ -22,9 +23,10 @@ foreach my $name (keys %$data)
 	if ($window)
 	{
 		my ($x, $y) = convert_pos_to_pixel($data->{$name}->{xpos}, $data->{$name}->{ypos});
+		my $h = convert_height_to_pixel($data->{$name}->{height} - $data->{$name}->{ypos} + 1);
 		my $d = $data->{$name}->{desktop} - 1;
 		debuggit("moving", $name, "to", $d, '/', $x, ',', $y);
-		system("xdotool windowmove $window $x $y set_desktop_for_window $window $d");
+		system("xdotool windowsize $window $WIN_WIDTH $h windowmove $window $x $y set_desktop_for_window $window $d");
 	}
 	else
 	{
@@ -123,4 +125,11 @@ func convert_pos_to_pixel ($x, $y)
 	$y = int($usable_height / 2 * $y) + $PANEL_HEIGHT;
 
 	return ($x, $y);
+}
+
+func convert_height_to_pixel ($h)
+{
+	my $unit = ($SCREEN_HEIGHT - $PANEL_HEIGHT * 2 - $WIN_HEIGHT) / 2;
+	my $base = $WIN_HEIGHT - $WIN_BORDER - $unit;
+	return $base + $unit * $h;
 }
