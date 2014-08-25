@@ -29,7 +29,8 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-getopts("hnaTcvsAPDN:m:", $opt);
+exit 2 unless getopts("hnaTcpvsAPDRN:m:", $opt);
+$opt->{R} = 1 if $opt->{p};
 
 # help message
 if ($opt->{h})
@@ -44,11 +45,13 @@ if ($opt->{h})
 	print "           -a: run all tests (i.e. don't bail on fail)\n";
 	print "           -T: run tests with taint checking on\n";
 	print "           -c: try to run tests under Devel::Cover and report (forces -Nj)\n";
+	print "           -p: try to run tests under Devel::NYTProf and report (forces -R)\n";
 	print "           -v: run tests in verbose mode\n";
 	print "           -s: show only test summary\n";
 	print "           -A: load Carp::Always to get full stack traces on errors\n";
 	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
+	print "           -R: raw mode (don't use prove; run test file with perl directly); implies -a -Nlrj\n";
 	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
@@ -263,32 +266,51 @@ print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n
 print "\n" x 10 unless $opt->{s};
 $precommand->() if $precommand;
 
-my @prove_args;
-push @prove_args, '-c' if -t STDOUT;
-push @prove_args, '-v', '--merge' if $opt->{v};
-push @prove_args, '-Q' if $opt->{s};
-push @prove_args, '-T' if $opt->{T};
-push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
-push @prove_args, '-r' unless $opt->{N} =~ /r/;
-unless ($opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
+my $command;
+if ($opt->{R})
 {
-	my $cpuinfo = '/proc/cpuinfo';
-	my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
-	my $num_procs = $num_cores + 1;
-	push @prove_args, "-j$num_procs";
+	# if we're in raw mode, most switches won't mean much
+	my @incompatible_switches = qw< c v s P >;
+	die("$0: the following switches are incompatible with -R: " . join(', ', map { "-$_" } @incompatible_switches) . "\n")
+		if grep { $opt->{$_} } @incompatible_switches;
+
+	# also, in raw mode, can't run on directories
+	die("$0: must specify only individual test files with -R\n") if grep { -d } @files;
+
+	my @perl_args;
+	push @perl_args, '-d:NYTProf' if $opt->{p};
+	push @perl_args, '-T' if $opt->{T};
+	push @perl_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
+	push @perl_args, '%f';												# placeholder for filenames
+	push @perl_args, get_workenv('post_args');
+	$command = "perl @perl_args";
 }
-push @prove_args, '-PPretty' if $opt->{P};
-push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
-push @prove_args, @files;
-push @prove_args, get_workenv('post_args');
-my $command = "prove @prove_args";
-print STDERR "running: $command\n" if $opt->{D};
-print STDERR "         (with BAIL_ON_FAIL=$ENV{BAIL_ON_FAIL})\n" if $opt->{D} and not $opt->{a};
-print STDERR "         (with $HARNESS=$ENV{$HARNESS})\n" if $opt->{D} and $opt->{c};
-print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if $opt->{D} and grep { $opt->{$_} } keys %req_modules;
-print STDERR "         (with TEST_METHOD=$ENV{TEST_METHOD})\n" if $opt->{D} and $opt->{m};
+else
+{
+	my @prove_args;
+	push @prove_args, '-c' if -t STDOUT;
+	push @prove_args, '-v', '--merge' if $opt->{v};
+	push @prove_args, '-Q' if $opt->{s};
+	push @prove_args, '-T' if $opt->{T};
+	push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
+	push @prove_args, '-r' unless $opt->{N} =~ /r/;
+	unless ($opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
+	{
+		my $cpuinfo = '/proc/cpuinfo';
+		my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
+		my $num_procs = $num_cores + 1;
+		push @prove_args, "-j$num_procs";
+	}
+	push @prove_args, '-PPretty' if $opt->{P};
+	push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
+	push @prove_args, @files;
+	push @prove_args, get_workenv('post_args');
+	$command = "prove @prove_args";
+}
+
 if ($opt->{c})
 {
+	print_command_if_debug($command);
 	open(PIPE, "$command 2>&1 |") or die("$0: can't run prove\n");
 	while ( <PIPE> )
 	{
@@ -300,8 +322,19 @@ if ($opt->{c})
 	}
 	close(PIPE);
 }
+elsif ($opt->{R})
+{
+	foreach (@files)
+	{
+		my $cmd = $command;
+		$cmd =~ s/%f/$_/;
+		print_command_if_debug($cmd);
+		system($cmd);
+	}
+}
 else
 {
+	print_command_if_debug($command);
 	system($command);
 }
 if ($?)
@@ -351,6 +384,14 @@ if ($opt->{c})
 		print;
 	}
 	close(PIPE);
+}
+
+
+# Devel::NYTProf reporting
+
+if ($opt->{p})
+{
+	system("nytprofhtml --open");
 }
 
 
@@ -492,7 +533,7 @@ sub get_files
 	}
 	else
 	{
-		my $glob = $opt->{N} =~ /r/ ? "$_/*.t" : `find $_ -name '*.t'`;
+		my $glob = $opt->{N} =~ /r/ ? "$_/*.t" : `find -H $_ -name '*.t'`;
 		$glob =~ s/\n/ /g;
 
 		if ($opt->{n})
@@ -507,6 +548,19 @@ sub get_files
 			return $_;
 		}
 	}
+}
+
+
+sub print_command_if_debug
+{
+	my ($command) = @_;
+	return unless $opt->{D};
+
+	print STDERR "running: $command\n";
+	print STDERR "         (with BAIL_ON_FAIL=$ENV{BAIL_ON_FAIL})\n" unless $opt->{a} or $opt->{R};
+	print STDERR "         (with $HARNESS=$ENV{$HARNESS})\n" if $opt->{c};
+	print STDERR "         (with PERL5OPT=$ENV{PERL5OPT})\n" if grep { $opt->{$_} } keys %req_modules;
+	print STDERR "         (with TEST_METHOD=$ENV{TEST_METHOD})\n" if $opt->{m};
 }
 
 
