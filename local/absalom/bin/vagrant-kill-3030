@@ -1,0 +1,10 @@
+#! /bin/bash
+
+source ~/bin/bash_funcs
+
+socket=$(netstat -plane 2>/dev/null | grep 3030 | awk '{print $8}')
+[[ -z $socket ]] && die "nothing appears to be listening on port 3030"
+#echo "$me: found socket $socket"
+pid=$(sudo find /proc -name 25 -ls 2>/dev/null | grep $socket | perl -lne 'print $1 and exit if m{/proc/(\d+)/}')
+#echo "$me: found pid $pid"
+kill $pid && echo "killed"
