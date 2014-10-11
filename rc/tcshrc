@@ -215,7 +215,7 @@ complete which 'p/*/c/'
 complete inf 'p/*/c/'
 complete man 'p/*/c/'
 complete sudo 'p/1/c/' 'n/chown/u/'
-complete tar 'n/*f/f:*{.tar,.tgz,.tbz,[._-]tar.*}/'
+complete tar 'n/*f/f:*{.tar,.tgz,.tbz,.tlz,[._-]tar.*}/'
 complete unison 'C@*@`/bin/ls -1 ~/.unison/*.prf | each -q "basename {} .prf"`@' 'n/-path/d/'
 
 alias installed-packages 'dep -g "[a-z]" | perl -lne '"'"'m{[^/]+/([^/]+?)(-\d.*)} and print $1'"'"
