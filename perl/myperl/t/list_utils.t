@@ -28,7 +28,7 @@ done_testing;
 
 
 our $result;
-sub calc_result { $result = $_[0] * @_ }
+sub calc_result { $result = $_[0] * @_ }			# IOW, the first element of @results, and verify that there _is_ only 1
 sub test_snippet
 {
 	my $class = shift;

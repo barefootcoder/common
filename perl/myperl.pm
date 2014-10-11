@@ -236,6 +236,7 @@ is pretty much the same thing as:
 	use Method::Signatures;
 
 	use Class::Load 'load_class';
+	use Scalar::Util qw< blessed >;
 	use List::Util qw< first max min reduce shuffle sum >;
 	use List::MoreUtils qw< apply zip uniq >;
 

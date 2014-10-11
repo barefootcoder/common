@@ -54,6 +54,8 @@ class myperl::Declare extends MooseX::Declare
 			'MooseX::Has::Sugar'			=>
 			'MooseX::ClassAttribute'		=>	0.26		=>
 			'MooseX::StrictConstructor'		=>
+			# don't have to actually do this one; Moose gives it to us for free
+			#'Scalar::Util'					=>					[ qw< blessed > ],
 			'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
 			'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
 			'Class::Load'					=>					[ 'load_class' ],
