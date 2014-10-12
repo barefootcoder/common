@@ -59,6 +59,7 @@ automatic_cddb 1
 automatic_reshuffle 1
 no_lower_case 1
 no_underscore 1
+non_posix_m3u_directory_paths 0
 allow_high_bits 0
 escape 0
 allow_these_chars !~'"-:?
@@ -69,6 +70,7 @@ selected_encoder 2
 selected_ripper 0
 play_mode 0
 playloop 1
+no_none_selected_prompt 0
 win_width 415
 win_height 450
 win_height_edit 600
@@ -78,3 +80,8 @@ vol_vis 0
 track_edit_vis 1
 track_prog_vis 0
 volume 255
+disable_paranoia 0
+disable_extra_paranoia 0
+disable_scratch_detect 0
+disable_scratch_repair 0
+calc_gain 0
