@@ -262,11 +262,13 @@ fi
 
 # 2: .ssh/config
 # the pieces of this file are in little chunks
+# if the file is completely missing, start if off with the base config
 # for each chunk, we need to know if that chunk is already in the config file
 # if it is, do nothing
 # if it isn't, add it
 ssh_config=~/.ssh/config
 cd $mydir
+[[ -r $ssh_config ]] || cp ssh/config $ssh_config
 for file in ssh/config.*
 do
 	host=${file#ssh/config.}
