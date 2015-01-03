@@ -1,0 +1,13 @@
+#! /bin/bash
+source ~/bin/bash_funcs
+
+for file
+do
+	if [[ $file != *.[to]tf ]]
+	then
+		die "must have a .ttf or .otf file to work with"
+	fi
+
+	cp "$file" ~/.fonts
+done
+fc-cache -fv
