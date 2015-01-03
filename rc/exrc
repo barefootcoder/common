@@ -61,6 +61,8 @@ map!  
 nmap <C-W> :w<CR>:!pusht %<CR>
 " compile check
 nmap <C-C> :w<CR>:!ccheck %<CR>
+" VC blame + jump to current line
+nmap <Esc>b :exe "!git blame % <Bar> less +" . line(".") . "G"<CR>
 " show doco
 nmap <Esc>d :w<CR>:!perldoc %<CR>
 " swap artist/title in a mix file
