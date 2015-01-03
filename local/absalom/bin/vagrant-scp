@@ -1,20 +1,7 @@
 #! /bin/bash
 
-srcfile="$1"
-destdir="$2"
+args="${*/#v:/vagrant@localhost:}"
 
-if [[ ! -r $srcfile ]]
-then
-	echo "$0: $srcfile doesn't exist or isn't readable" >&2
-	exit 2
-fi
+options=$(vagrant ssh-config | sed -n '/HostName/,$p' | awk -v ORS=' ' '$1 {print "-o " $1 "=" $2}')
 
-if ! vagrant ssh -c "[[ -d $destdir ]]"
-then
-	echo "$0: $destdir doesn't exist in Vagrant box or isn't a dir" >&2
-	exit 2
-fi
-
-destfile=$destdir/$(basename $srcfile)
-cat $srcfile | vagrant ssh -c "cat >$destfile"
-vagrant ssh -c "chmod $(stat -c %a $srcfile) $destfile"
+scp -p $options $args
