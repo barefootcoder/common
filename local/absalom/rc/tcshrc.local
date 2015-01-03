@@ -1,24 +1,37 @@
 setenv CE_REMOTE_USERNAME bburden
 setenv CEROOT ~/workproj/CE
+setenv CHEOPSROOT ~/workproj/cheops
 setenv CE_USE_CONFIG /tmp/cepush
 eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
 
 alias cessh ~/workproj/CE/devtools/cessh
+alias cescp ~/workproj/CE/devtools/cescp
 alias ceflow ~/workproj/CE/bin/ceflow
 alias vbounce 'cd $CEROOT ; vagrant reload'
+
+# Vagrant environment stuff
+alias vagrant-push-box 'setenv CE_VAGRANT_BOX ce-push-sandbox ; \
+							setenv CE_VAGRANT_PORT_WEB 3003 ; setenv CE_VAGRANT_PORT_ES 9202'
+
+# Vagrant testing stuff
+alias vagrant-latest-test 'vagrant box list | perl -lane '\''print $F[0] if $F[0] =~ /ce-dev-sandbox-2014/'\'' \
+							| sort | tail -n1'
+alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
+							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 
 # AWS setup -- BEGIN
 setenv JAVA_HOME /usr
 setenv EC2_HOME /usr/local/aws
 setenv AWS_ELB_HOME $EC2_HOME
 eval `~/bin/addpath -e $EC2_HOME/bin`
+#complete -C aws_completer aws
 
 # AWS credentials for Campus Explorer
-setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
-setenv EC2_PRIVATE_KEY `echo /home/buddy/.aws-campusexplorer/pk-*.pem`
-setenv EC2_CERT `echo /home/buddy/.aws-campusexplorer/cert-*.pem`
-setenv BOTO_CONFIG /home/buddy/.aws-campusexplorer/boto.cfg
 setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
+	setenv AWS_ACCESS_KEY AKIAID5YSWB4FWNJGXXQ
+	setenv AWS_SECRET_KEY 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
+setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
+setenv BOTO_CONFIG /home/buddy/.aws-campusexplorer/boto.cfg
 setenv S3CMD_CONFIG /home/buddy/.aws-campusexplorer/s3cfg
 alias s3cmd "s3cmd --config=$S3CMD_CONFIG"
 # AWS setup -- END
