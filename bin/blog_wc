@@ -6,30 +6,40 @@ use myperl;
 my $post = slurp;
 my $total = wc($post);
 
+# type line
+$post =~ s{\A/\w+/.*?$}{}m;
+my $typeline = $total - wc($post);
+
 # quotes
 $post =~ s{^>>}{//--}; $post =~ s{<<$}{--//}g;
 $post =~ s{^//---\s*.*?\s*---//\n}{}msg;
 $post =~ s{^//--\n.*?\n--//\n}{}msg;
 $post =~ s{^//--\s*.*?\s*--//\n}{}msg;
-my $in_quotes = $total - wc($post);
+my $in_quotes = $total - $typeline - wc($post);
 
 # links
 $post =~ s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ $3 // $1 }seg;
 $post =~ s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ $3 // $1 }seg;
-my $in_links = $total - $in_quotes - wc($post);
+my $in_links = $total - $typeline - $in_quotes - wc($post);
 
 # footnotes
 $post =~ s{\^\^\[.*?]}{}sg;
 $post =~ s{\^\^}{}g;
 $post =~ s{\^\d+\s+.*?$}{}mg;
+my $in_notes = $total - $typeline - $in_quotes - $in_links - wc($post);
+
+# code blocks
+$post =~ s{^\.\n.+?^\.\n}{}smg;
 my $net = wc($post);
-my $in_notes = $total - $in_quotes - $in_links - $net;
+my $in_code = $total - $typeline - $in_quotes - $in_links - $in_notes - $net;
 
 
 report("total words", $total);
-report("- in links", $in_links);
-report("- in blockquotes", $in_quotes);
-report("- in footnotes", $in_notes);
+report("- type line", $typeline) if $typeline;
+report("- in links", $in_links) if $in_links;
+report("- in blockquotes", $in_quotes) if $in_quotes;
+report("- in footnotes", $in_notes) if $in_notes;
+report("- in code blocks", $in_code) if $in_code;
 report("net words", $net);
 
 
