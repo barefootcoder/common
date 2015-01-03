@@ -101,6 +101,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
+	s{\b(a)e(sthetic(s|ally)?)\b}{ "&${\({a=>'ae',A=>'AE'}->{$1})}lig;$2" }ige;		# aesthetic/s/ally, preserving case
 	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
@@ -272,8 +273,8 @@ sub url_block
 func code_block ($type, $code)
 {
 	$code = fmt(code => expand($code));
-	$code =~ s/^$/ /mg			if						$blog_type eq 'perl';
-	$code = "<pre>$code</pre>"	if $type eq 'block' and	$blog_type ne 'bbcode';
+	$code =~ s/^$/ /mg				if						$blog_type eq 'perl';
+	$code = "<pre>$code</pre>\n"	if $type eq 'block' and	$blog_type ne 'bbcode';
 	return block_save($code);
 }
 
