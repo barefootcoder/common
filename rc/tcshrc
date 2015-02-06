@@ -249,6 +249,11 @@ if ( -e ~/perl5/perlbrew/etc/cshrc ) then
 	source ~/perl5/perlbrew/etc/cshrc
 endif
 
+setenv PINTO_HOME /home/buddy/opt/local/pinto
+if ( -d $PINTO_HOME ) then
+	alias pinto $PINTO_HOME/bin/pinto
+endif
+
 if ( $?tcsh_reset ) then
 	# this will start dropbox if not started, and not do anything if it is
 	if ( -d ~/.dropbox-dist ) then
