@@ -1,0 +1,41 @@
+#! /usr/bin/env perl
+
+use v5.14;
+use autodie ':all';
+use warnings FATAL => 'all';
+
+use Getopt::Std;
+use File::Basename;
+
+
+my $opts = {};
+getopts('qh', $opts);
+my $quiet = defined $opts->{q};
+my $me = basename($0);
+print <<USAGE and exit if $opts->{h};
+usage: $me [-h] | [-q] <date> <date>
+    -h: this help message
+    -q: quiet (only print number of days)
+USAGE
+
+
+my ($from, $to) = @ARGV;
+foreach ($from, $to)
+{
+	my $converted = `perlsecs -q $_`;
+	die("unkown time $_") unless $converted;
+	$_ = $converted;
+}
+
+
+my $days = int(($to - $from) / (60*60*24)) + 1;
+if ($quiet)
+{
+	say $days;
+}
+else
+{
+	say "from ", scalar(localtime($from)), " to ", scalar(localtime($to));
+	say "  in days:  $days";
+	say "  in weeks: ", $days / 7;
+}
