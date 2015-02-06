@@ -18,37 +18,39 @@ function current_branch
 function branched_from
 {
 	branch="$1"
-	# the git-show-branch method seems to only work about half the time, and merges from trunk in
-	# particular freak it out.  let's see if we can make a reasonable guess before we go there.
-	if [[ $branch == feature/* ]]
-	then
-		~/proj/VCtools/bin/vc info %Mainline
-	elif [[ $branch == stgfix/* ]]
-	then
-		~/proj/VCtools/bin/vc info %stg_branch
-	else
-		git show-branch | perl -lne 'print $1 and exit if /^\s*\*[ -]*\+[ +-]*\s+\[([^^~\]]+).*?\]/ and $1 ne '"'$branch'"
-	fi
+	# this will not work properly if a branch was somehow branched from multiple branches
+	# however, I can't think this could possibly happen
+	# additonally, it might be slow for branches with lots and lots of commits
+	git rev-list --no-merges HEAD | perl -lne '@b = grep { s/^  // } `git branch --contains $_` and print $b[0] and exit'
 }
 
 cmd="git log"
 
 args=''
-verbose=0
+show_merges=0
 pretend=0
+grep_diffs=0
 date_format=local
-while getopts ":vdscpbln:LmU:g:Gh" opt
+while getopts ":vdscNpbln:LmU:g:RGh" opt
 do
 	case $opt in
-		v)	verbose=1
+		v)	show_merges=1
 			args="$args --stat"
 			;;
 		d)	args="$args -p"
+			if [[ $grep_diffs != 0 ]]
+			then
+				args="$args -G $grep_diffs"
+			fi
+			grep_diffs=1
 			;;
 		s)	args="$args --oneline"
 			;;
 		c)  args="$args --oneline"
 			post="wc -l"
+			;;
+		N)  show_merges=1
+			post="perl -lpe 's/^((commit )?[0-9a-f]{7,})/sprintf(q{%3d %s}, ++\$n, \$1)/e' | ${PAGER:-less}"
 			;;
 		p)	pretend=1
 			;;
@@ -81,24 +83,34 @@ do
 			;;
 		U)  args="$args --author $OPTARG"
 			;;
-		g)	args="$args --grep $OPTARG"
+		g)	if [[ $grep_diffs == 0 ]]
+			then
+				args="$args --grep $OPTARG"
+			else
+				args="$args -G $OPTARG"
+			fi
+			grep_diffs="$OPTARG"
+			;;
+		R)	args="$args --reverse"
 			;;
 		G)	date_format=gmt
 			;;
-		h)  echo "usage: $me -h | [-{v|d|s} [-G] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
+		h)  echo "usage: $me -h | [-{v|d|s} [-NG] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
 			echo "    -v : verbose (show files changed, include merge commits)" >&2
 			echo "    -d : show diffs of changed files" >&2
 			echo "    -s : show short (one-line) format for commits" >&2
+			echo "    -N : number commits (first commit marked 1, second 2, etc; includes merge commits)" >&2
 			echo "    -G : display dates in GMT/UTC format" >&2
 			echo "    -c : don't show commits, just count them" >&2
 			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
-			echo "    -b : show only commits on the current branch (no merges unless -v)" >&2
-			echo "    -L : show only commits not yet pushed to server (no merges unless -v)" >&2
+			echo "    -b : show only commits on the current branch (no merges unless -v or -N)" >&2
+			echo "    -L : show only commits not yet pushed to server (no merges unless -v or -N)" >&2
 			echo "    -l : show only latest commit (same as -n1)" >&2
 			echo "    -n : show only X commits (default: show all)" >&2
 			echo "    -m : show only my commits (commits by current user)" >&2
 			echo "    -U : show only commits by user" >&2
 			echo "    -g : show only commits with log messages containing regex" >&2
+			echo "    -R : show commits in reverse order (oldest to newest)" >&2
 			echo "    -h : this help message" >&2
 			echo "    user : either name or email; can be partial, but is case-sensitive" >&2
 			echo "    file : source file (default: entire working tree)" >&2
@@ -113,7 +125,7 @@ do
 	esac
 done
 shift $(( $OPTIND - 1 ))
-[[ $verbose == 0 ]] && args="$args --no-merges"
+[[ $show_merges == 0 ]] && args="$args --no-merges"
 [[ $date_format == local ]] && args="$args --date=local"
 
 
@@ -128,6 +140,6 @@ then
 	echo "$me: would run"
 	echo -e "\n    $cmd\n"
 else
-	echo -e "\n\n\n\n"
+	[[ -t 1 ]] && echo -e "\n\n\n\n"
 	eval $cmd
 fi

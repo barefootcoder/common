@@ -1,3 +1,7 @@
 #! /bin/bash
 
-each 'git log --format=format:%aN --reverse {} | head -n1' "$@"
+# changing it to use `--reverse -n1` to save the tail makes this much faster but wrong :-(
+# apparently, the `-n1` is applied *before* the `--reverse` :-/
+# using `--reverse` only and using `head` instead of `tail` is no faster
+# and `--reverse` has issues (obviously), so leaving it this way for now
+each 'git log --format=format:%aN {} | tail -n1' "$@"
