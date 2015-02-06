@@ -5,12 +5,68 @@ use autodie qw< :all >;
 use warnings FATAL => 'all';
 
 use MP3::Info;
+use Getopt::Std;
+use File::Basename;
 
-foreach (@ARGV)
+$MP3::Info::try_harder = 1;
+
+
+# now check options
+my $opt = {};
+getopts("vAh", $opt);
+
+# help message
+if ($opt->{h})
 {
-	my $info = get_mp3info($_) or die("$_ doesn't look like an MP3 file");
+	my $me = $0;
+	$me =~ s@^.*/@@;
+
+	print STDERR "usage: $me -h | [-vA] file [...]\n";
+	print STDERR "       prints minutes and seconds of MP3 file(s)\n";
+	print STDERR "           -h: this help message\n";
+	print STDERR "           -v: print other info too (bitrate, frequency)\n";
+	print STDERR "           -A: alternate format (strip artist, track name first, don't die on missing file)\n";
+	exit 2;
+}
+
+
+print_results($_) foreach @ARGV;
+
+
+sub print_results
+{
+	my ($file) = @_;
+	state $track = 0;
+	my $status = 'GOOD';
+	my $info = get_mp3info($file) or $opt->{A} ? ($status = 'MISSING!!') : die("$file appears to be missing");
+	my $line_fmt = $opt->{A} ? "%2d. %-50s     %-9s     %s\n" : $opt->{v} ? "%2d. %-30s  ::  %s\n" : "%2d. %-6s  ::  %s\n";
+	my $data_fmt = $opt->{v} ? "%3d:%02d  ::  %3dkbps  ::  %2dkHz" : "%3d:%02d";
+	my @args;
+
+	$file = basename($file);
+	$file =~ s/^.*? - // if $opt->{A};
 	my $total_secs = $info->{SECS};
-	my $mins = int( $total_secs / 60 );
-	my $secs = $total_secs % 60;
-	printf("%3d:%02d :: $_\n", $mins, $secs);
+	my $data;
+	if ($total_secs)
+	{
+		my $mins = int( $total_secs / 60 );
+		my $secs = $total_secs % 60;
+		$data = sprintf($data_fmt, $mins, $secs, $info->{BITRATE}, $info->{FREQUENCY});
+	}
+	else
+	{
+		$status = 'BAD!!';
+		if ($opt->{A})
+		{
+			$data = '';
+		}
+		else
+		{
+			$data = " $status";
+			$data .= '         ::         ::  ' if $opt->{v};
+		}
+	}
+	push @args, $opt->{A} ? (++$track, $file, $status, $data) : (++$track, $data, $file);
+
+	printf($line_fmt, @args);
 }
