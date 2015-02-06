@@ -387,6 +387,7 @@ local::lib
 Test::Most
 Term::Size
 File::Stat
+Data::Rmap
 Const::Fast
 Path::Class
 Tie::IxHash
