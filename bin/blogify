@@ -284,7 +284,7 @@ func fmt ($fmt, $text)
 	debuggit(3 => "formatting", $text, "in", $fmt);
 
 	my $on = $blog{$blog_type}->{$fmt} or die("unknown formatting $fmt");
-	my $off = (split(' ', $on))[0];
+	my $off = (split(/\s+|=/, $on))[0];
 
 	my $open = $blog_type eq 'bbcode' ? '[' : '<';
 	my $close = $blog_type eq 'bbcode' ? ']' : '>';
