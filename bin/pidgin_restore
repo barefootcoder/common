@@ -19,7 +19,11 @@ debuggit(4 => "layout data:", DUMP => $data);
 foreach my $name (keys %$data)
 {
 	my $window = `xdotool search --name '^$name\$'`; chomp $window;
-	die("got multiple windows for $name!") if $window =~ /\s/;
+	if ($window =~ /\s/)
+	{
+		warn("got multiple windows for $name!");
+		$window =~ s/^.*\s//;
+	}
 	if ($window)
 	{
 		my ($x, $y) = convert_pos_to_pixel($data->{$name}->{xpos}, $data->{$name}->{ypos});

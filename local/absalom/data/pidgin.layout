@@ -1,9 +1,9 @@
 MAIN:
 
 	steve			juan			eric
-			leadops
+			leadops			george
 	matthew			jcal			amiri
-
+							steve-S
 	jennine			jared			arya
 
 
@@ -13,8 +13,8 @@ COMMS:
 
 	team			technology		qa
 
-	deploy			technology		ether
-
+	deploy			technology		cerpt
+			ether
 	sage			technology		offtopic
 
 

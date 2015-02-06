@@ -2,8 +2,8 @@
 
 . ~/bin/bash_funcs
 
-ssh-add
-ssh-add -l
+#ssh-add
+#ssh-add -l
 
 if ! dropbox start
 then

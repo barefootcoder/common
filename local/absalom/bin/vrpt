@@ -32,7 +32,7 @@ function normalize_filename
 	# add extension if not there
 	if [[ $file != *.* ]]
 	then
-		file=$file.sql
+		file=${file%/}.sql							# remove trailing slash, if any
 	fi
 
 	# add parent if not there

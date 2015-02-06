@@ -1,3 +1,4 @@
 #!/bin/bash
+ssh-add-if-necessary
 cd ~/workproj/CE
 vagrant ssh

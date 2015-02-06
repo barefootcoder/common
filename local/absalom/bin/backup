@@ -1,0 +1,92 @@
+#! /bin/bash -e
+. ~/bin/bash_funcs
+
+backup_dir=/mnt/GreatHall/backup/absalom
+[[ -d $backup_dir ]] || die "you have to mount the backup drive first, pal"
+
+while [[ $# -ge 1 ]]
+do
+	case $1 in
+		-n)			dryrun_switch="-n"
+					shift
+					;;
+		-h|--help)	echo "usage: $me [-n]"
+					exit
+					;;
+		*)			die "unknown option $1"
+					;;
+	esac
+done
+
+function announce
+{
+	echo ""
+	echo ""
+	echo "$1"
+	echo "starting at $(date)"
+	echo "========================================"
+}
+
+
+announce "base home dir"
+rsync $dryrun_switch -lptgoD -vhz ~/* $backup_dir/base
+
+for dir in common Downloads faxproject
+do
+	announce "home subdir $dir/"
+	rsync $dryrun_switch -avhz --delete ~/$dir/ $backup_dir/$dir
+done
+
+announce "vimS sessions"
+rsync $dryrun_switch -avhz --delete ~/local/data/vimS/ $backup_dir/vimS
+
+announce "main work dir"
+rsync $dryrun_switch -avhz --delete --exclude "*-mounted" ~/workproj/ $backup_dir/workproj
+
+announce "work dir (sans logs)"
+rsync $dryrun_switch -avhz --delete --exclude "*.log*" --exclude "*.full" --exclude "*.json" ~/work/ $backup_dir/work
+
+announce "install dir"
+rsync $dryrun_switch -avhz --delete ~/$dir/ $backup_dir/$dir
+
+announce "home dir dot dirs"
+for fulldir in $backup_dir/dot/*
+do
+	dir=$(basename $fulldir)
+	echo $dir
+	rsync $dryrun_switch -avhz --delete ~/.$dir/ $backup_dir/dot/$dir
+done
+
+
+
+exit 0
+
+
+
+export PASSPHRASE=...
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export GPG_KEY=04DA914E
+SOURCE=/
+
+DEST=s3+http://backup.7d.com/backup1
+
+
+# Use explicit /u# names;  otherwise it might not match
+# and think files were deleted.
+
+duplicity incremental                       \
+    --encrypt-key ${GPG_KEY}                \
+    --sign-key ${GPG_KEY}                   \
+    --archive-dir=/u3/tmp/duplicitycache    \
+    --exclude=/**/cyrus.cache --exclude /**/cyrus.index --exclude /**/cyrus.squat \
+    --include=/var/lib/imap                 \
+    --include=/var/spool/imap               \
+...
+    --include=/u1/git                       \
+    --include=/u1/websites                  \
+    --exclude=/**                           \
+    --volsize 250                           \
+    ${SOURCE} ${DEST}
+
+unset PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY GPG_KEY

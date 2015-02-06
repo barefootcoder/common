@@ -1,0 +1,46 @@
+#! /bin/bash
+
+maildir=$HOME/.thunderbird/8x5nqh5f.default/ImapMail/imap.googlemail-1.com
+
+cols=$(perl -MTerm::Size -le 'open TTY, "/dev/tty" and print scalar Term::Size::chars(*TTY{IO}) and close TTY')
+
+me=${0##*/}
+numlines=1
+while getopts ":l:H:h" opt
+do
+	case $opt in
+		l)	numlines=$OPTARG
+			;;
+		H)	hours_ago=$OPTARG
+			;;
+		h)	echo "usage: $me [-h] [-l lines] [-H hours_ago]" >&2
+			echo "    -l : display this many lines (default: $numlines)" >&2
+			echo "    -H : look for mail this many hours ago (default: 0)" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+function exclude_path
+{
+	egrep -v "$(perl -e 'print q{/(}.join("|",map{"$_\\.msf"}@ARGV).q{)$}' "$@")"
+}
+
+if [[ -n $hours_ago ]]
+then
+	ago="-cmin +$(( hours_ago * 60 ))"
+fi
+
+readarray -t folders < <(find $maildir -name '*.msf' $ago -mtime -7														\
+		| exclude_path INBOX mlists Starred Drafts "All Mail" "Sent Mail")
+
+ls -dltr "${folders[@]}" | tail -n$numlines | perl -lane 'splice @F, 0, 5; $f=$F[3];
+		$F[3] =~ s@^'$maildir'/@@; $F[3] =~ s@\.sbd@@g; $F[3] =~ s@\.msf$@@; print "@F\t", `grep ^Subject: $f`'

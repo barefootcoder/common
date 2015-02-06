@@ -8,24 +8,38 @@ use Text::Tabs; $tabstop = 4;
 
 
 my $in_pre = 0;
+my $in_list = 0;
 while (<>)
 {
 	$_ = expand($_);
-	s/^  (\s*\*\s+)/$1/;												# bullet lists
-	s/^  (\s*)#(\s+)/${1}1.$2/;											# numbered lists
 
-	s/\*\b(.+?)\b\*/'''$1'''/g;											# bold
-	s/(^|\W)_(.+?)_(\W|$)/$1''$2''$3/g;									# italics
-
-	if (/^\s+(.)/ and $1 ne '*' and not $in_pre)
+	if (/^\s+(.)/ and $1 ne '*' and not $in_pre and not $in_list)
 	{
 		say '{{{';
 		$in_pre = 1;
+		s/^    //;
 	}
 	elsif ($in_pre and /^$/)
 	{
 		say '}}}';
 		$in_pre = 0;
+	}
+	elsif ($in_list and /^$/)
+	{
+		$in_list = 0;
+	}
+	elsif ($in_pre)
+	{
+		s/^    //;
+	}
+	else
+	{
+		s/^  (\s*\*\s+)/$1/ and $in_list = 1;							# bullet lists
+		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
+		s/^  // if $in_list and not /^\s+[*#]/;							# continuation of bullet items
+
+		s/\*\b(.+?)\*(?=\W)/'''$1'''/g;									# bold
+		s/(^|\W)_(.+?)_(\W|$)/$1''$2''$3/g;								# italics
 	}
 
 	print;

@@ -1,0 +1,30 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+while [[ $# -ge 1 ]]
+do
+	case $1 in
+		-n)			dryrun_switch="-n"
+					shift
+					;;
+		-h|--help)	echo "usage: $me [-n]"
+					exit
+					;;
+		*)			die "unknown option $1"
+					;;
+	esac
+done
+
+
+src_dir=/export/music
+backup_dir=/media/buddy/GreatHall/backup/music 
+[[ -d $backup_dir ]] || die "you have to mount the backup drive first, pal"
+
+for dir in $backup_dir/*
+do
+	[[ -d $dir ]] || die "I can only handle dirs; $dir is not a dir"
+	subdir=$(basename "$dir")
+	echo -e "\n\nbacking up $subdir ..."
+	rsync $dryrun_switch -avhz --delete "$src_dir/$subdir/" "$dir"
+done
