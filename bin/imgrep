@@ -3,6 +3,11 @@
 while [[ $1 == -* ]]
 do
 	opts="$opts $1"
+	if [[ $1 == "-e" ]]
+	then
+		shift 1
+		break
+	fi
 	shift 1
 done
 
@@ -12,5 +17,5 @@ for who in $@
 do
 	files="$files ~/.purple/logs/*/*/*$who*/*"
 done
-eval grep $opts -Pie "\"$pattern\"" $files																				\
+eval grep -Pi $opts "\"$pattern\"" $files																				\
 		| perl -lpe 's{^/(.+?/){6}}{};s{^(.*?)@.*?(/.*?:)}{$1$2};s{\.\d{6}-\d{4}P[SD]T\.txt:}{:};s{^%2b1}{+}'
