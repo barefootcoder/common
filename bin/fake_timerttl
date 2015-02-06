@@ -17,7 +17,7 @@ my $pipe_opened = 0;
 for my $file (@ARGV)
 {
 	my @file = slurp $file;
-	my @lines = grep { /$ticket/ } @file;
+	my @lines = grep { /$ticket$/ } @file;
 	my %seen;
 
 	foreach (@lines)
