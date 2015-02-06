@@ -50,7 +50,7 @@ my %KEYWORDS =
 (
 	attributes		=>	[qw< has class_has mk_accessors >],
 	methods			=>	[qw< sub func method before after around override augment >],
-	inheritance		=>	[qw< base parent extends with >],
+	inheritance		=>	[qw< base parent extends with >, '(parent\s*=>)', '(ISA\s*=)', ],
 );
 my $keywords = join('|', @{ $KEYWORDS{$mode} });
 $keywords = qr/$keywords/;
