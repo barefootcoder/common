@@ -51,7 +51,7 @@ if ($opt->{h})
 	print "           -A: load Carp::Always to get full stack traces on errors\n";
 	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
-	print "           -R: raw mode (don't use prove; run test file with perl directly); implies -a -Nlrj\n";
+	print "           -R: raw mode (don't use prove; run test file with perl directly); implies -a -Nrj\n";
 	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
@@ -281,6 +281,7 @@ if ($opt->{R})
 	push @perl_args, '-d:NYTProf' if $opt->{p};
 	push @perl_args, '-T' if $opt->{T};
 	push @perl_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
+	push @perl_args, -d 'blib' ? '-Iblib/lib' : '-Ilib' unless $opt->{N} =~ /l/;
 	push @perl_args, '%f';												# placeholder for filenames
 	push @perl_args, get_workenv('post_args');
 	$command = "perl @perl_args";
