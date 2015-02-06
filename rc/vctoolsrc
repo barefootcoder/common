@@ -9,7 +9,7 @@ alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
 complete vcd 'p/1/`vc info project:all`/'
 
 if ( $?VCTOOLS_SHELL ) then
-	alias st vc stat
+	alias st 'vc stat ; vlog -LNs | perl -0777 -e '\''$o = <STDIN> and print "\nUnpushed commits:\n$o\n"'\'
 	alias sync vc sync
 	alias vpush vc push
 	alias stg vc stage
@@ -31,7 +31,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vdel git rm
 	set top_space='echo "\n\n\n\n\n\n\n\n\n"'
 	set filter_line_too_long="perl -pe 's/:.{512,}/:<<LINE TOO LONG!>>/'"
-	set always_ignore="--ignore-dir tmp --ignore-dir extlib --ignore-dir var --ignore-dir nytprof"
+	set always_ignore="--ignore-dir tmp --ignore-dir extlib --ignore-dir perl5 --ignore-dir var --ignore-dir nytprof"
 	set code_ignore="$always_ignore --ignore-dir t --ignore-dir tlib"
 	alias vg "$top_space ; ack $always_ignore --match \!* | $filter_line_too_long"
 	alias vgl "$top_space ; ack --perl $code_ignore --match \!* | $filter_line_too_long"
