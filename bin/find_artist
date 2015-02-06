@@ -1,0 +1,17 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use warnings FATAL => 'all';
+
+use Perl6::Slurp;
+
+
+my $artist;
+given (shift)
+{
+	$artist = $1 when /^ .? \t (.*?) \s-\s  .*?  (\s+ [[{] .*)? \s* $/x;
+	$artist = $1 when /^ ... \s .*?  \s-\s (.*?) (\s+ [[{] .*)? \s* $/x;
+}
+
+say "searching for: $artist";
+print foreach map { s/^... //r } grep { / - (the )?\Q$artist/i } slurp shift;
