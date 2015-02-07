@@ -116,6 +116,16 @@ then
 fi
 make_link $mydir/bin $dir
 
+# ditto for .purple, Pidgin's directory of stuff, except it's in Dropbox, not GitHub
+dir=~/.purple
+if [[ -d $dir && ! -L $dir ]]
+then
+	echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+	echo "$0: please fix that and rerun" >&2
+	exit 1
+fi
+make_link ~/Dropbox/purple $dir
+
 # certain repos we want to symlink files in their bin into our bin
 for repo in jsonp
 do
