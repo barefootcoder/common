@@ -260,6 +260,9 @@ fi
 if [[ ! -e ~/.screenrc.base ]]
 then
 	cat >~/.screenrc.base <<END
+bind ^_ source .screenrc.search
+bind ^v source .screenrc.vctools
+
 screen -t base
 screen -t timer
 	stuff "timer\015"

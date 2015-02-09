@@ -1,0 +1,2 @@
+stuff "setenv VCTOOLS_SHELL git\015"
+stuff "resrc\015"
