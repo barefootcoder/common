@@ -1,0 +1,64 @@
+bind ^y source .screenrc.sandbox
+bind ^_ source .screenrc.search
+bind ^v source .screenrc.vctools
+
+screen -t base
+screen -t timer
+	stuff "timer\015"
+screen -t man
+	stuff "man screen\015"
+screen -t top top
+screen -t root sudo su -
+screen -t launch
+screen -t task
+	stuff "todo\015"
+screen -t notes
+	number 9
+	stuff "vi ~/Dropbox/notes\015"
+screen -t bc
+	stuff "bc\015"
+screen -t st
+	source .screenrc.vctools
+	stuff "vcd CE\015"
+screen -t proj
+	stuff "cd workproj/CE\015"
+screen -t sandbox
+	source .screenrc.sandbox
+screen -t sql
+	source .screenrc.sandbox
+	stuff "sqlr\015"
+screen -t server
+	source .screenrc.devserver
+screen -t work
+	stuff "cda qsift\015"
+screen -t common
+	source .screenrc.vctools
+	stuff "vcd common\015"
+screen -t lib
+	source .screenrc.vctools
+	stuff "vcd method-signatures\015"
+screen -t test
+	source .screenrc.vctools
+	stuff "vcd VCtools\015"
+screen -t vctools
+	stuff "vcd VCtools\015"
+screen -t copy
+screen -t music
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+	stuff "vims music\015"
+screen -t mixes
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+	stuff "vims mixes\015"
+screen -t mtest
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+screen -t push
+	stuff "cd workproj/cheops\015"
+	stuff "vagrant-push-box\015"
+	stuff "vagrant up\015"
+	stuff "vagrant ssh\015"
+screen -t vagrant
+	stuff "cd workproj/cheops\015"
+	stuff "vims vagrant\015"
