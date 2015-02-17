@@ -1,6 +1,5 @@
 #! /bin/bash
 
-killall firefox
 killall thunderbird
 killall pidgin
 kill `pgrep -f timer-new`
