@@ -414,7 +414,7 @@ sub get_workenv
 		CE		=>	{
 						env_var		=>	[ 'CEROOT' ],
 						test_dirs	=>	[qw< t/lib tlib >],
-						post_args	=>	[qw< :: --database cetest >],
+						post_args	=>	[qw< :: --dbconfig utest-main >],
 					},
 	};
 	state $CURENV;
