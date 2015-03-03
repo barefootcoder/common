@@ -40,3 +40,5 @@ if ( $?tcsh_reset ) then
 	ceflow shell-complete >~/local/.tcshrc.complete.ceflow
 endif
 source ~/local/.tcshrc.complete.ceflow
+alias br 'ceflow switch'
+complete br 'p@1@`git branch | awk -F/ '\''$1 == "  feature" {print $2}'\''`@'
