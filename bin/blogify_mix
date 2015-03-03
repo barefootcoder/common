@@ -1,0 +1,34 @@
+#! /usr/bin/env perl
+
+use myperl;
+
+
+while ( <> )
+{
+	chomp;
+	given ($_)
+	{
+		when ($. == 1)
+		{
+			say "\t-> ^= *$_* =^";
+		}
+
+		when ($. == 2)
+		{
+			/^\[/ or die("subtitle not formatted correctly");
+			say "\t_\\${_}_ <-";
+		}
+
+		when ($. == 3)
+		{
+			say '';
+		}
+
+		default
+		{
+			s/^....//;								# remove leading symbols
+			my ($title, $artist) = /^(.*?) - (.*)$/ or die("song title not formatted correctly");
+			say qq{\t"$title" by $artist, off [|__]};
+		}
+	}
+}

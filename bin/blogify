@@ -60,6 +60,7 @@ my @footnotes = (undef);												# footnotes (starting at 1)
 my $footnote_style = '*';												# default style for footnotes
 my $me = '';															# URL to self (mostly not needed)
 my $subtitle = '';														# first line of post (also mostly not needed)
+my $subtitle_type;														# one of: alt, vol
 
 
 my $hash = '#';
@@ -188,7 +189,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	# an initial blockquote needs a bit of extra space
 	s{\A(\s*[[<]$blog{$blog_type}->{'quote'})}{\n$1};
 	# handle subtitle, if any (goes in front of initial)
-	s{\A}{fmt(italic => "or, $subtitle") . "\n"}e if $subtitle;
+	s{\A}{fmt(italic => { alt => "or, $subtitle", vol => qq{"$subtitle"}, }->{$subtitle_type}) . "\n"}e if $subtitle;
 
 	print;
 }
@@ -201,7 +202,11 @@ func change_type ($type, $extra)
 	$footnote_style = '1' if $blog_type eq 'perl';
 
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
-	$subtitle = $1 if $extra =~ /subtitle:{(.*?)}/;
+	if ($extra =~ /(\w+):{(.*?)}/)
+	{
+		$subtitle_type = { subtitle => 'alt', volume => 'vol' }->{$1} or die "unknown subtitle type $1";
+		$subtitle = $2;
+	}
 
 	return '';															# for substitution
 }
@@ -335,7 +340,10 @@ func footnote_ref ($num)
 func save_footnote_and_gen_ref ($note)
 {
 	push @footnotes, $note;
-	return '<sup>' . fmt(small => qq{<a href="$me#note$#footnotes">} . footnote_ref($#footnotes) . '</a>') . '</sup>';
+	my $ref = footnote_ref($#footnotes);
+	my $size = $ref =~ /^\*+$/ ? 'big' : 'small';
+	my $text_and_link = fmt($size => qq{<a href="$me#note$#footnotes">} . $ref . '</a>');
+	return '<sup>' . $text_and_link . '</sup>';
 }
 
 func footnote ($type, $text, $num?)
