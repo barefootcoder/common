@@ -1,8 +1,8 @@
 #! /bin/bash
 
-if [[ $(hostname) != vagrant-sandbox ]]
+if [[ $(id -un) != "vagrant" ]]
 then
-	echo "you should run this from the sandbox (do `vagrant ssh` first)" >&2
+	echo 'you should run this from the sandbox (do `vagrant ssh` first)' >&2
 	exit 1
 fi
 
@@ -27,8 +27,8 @@ do
 	fi
 done
 
-# can't run remount from $CEROOT/tmp/bin
-cp $CEROOT/tmp/bin/remount ~
+# copy our bin scripts
+cp $CEROOT/tmp/bin/* ~/bin
 
 
 # if we're just doing a reset, stop right here

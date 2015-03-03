@@ -15,3 +15,6 @@ for script in t
 do
 	/bin/cp -pfv ~/bin/$script tmp/bin
 done
+
+echo "now switch to your sandbox and run:"
+echo '    $CEROOT/tmp/bin/new_sandbox reset'

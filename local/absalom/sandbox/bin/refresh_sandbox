@@ -1,5 +1,11 @@
 #! /bin/bash
 
+if [[ $(id -un) != "vagrant" ]]
+then
+	echo "must run this from your sandbox, stupid" >&2
+	exit 1
+fi
+
 # need this for practically everything
 bin/ssh-tunnels
 
