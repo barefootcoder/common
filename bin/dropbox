@@ -58,7 +58,7 @@ start() {
 
         for dbuser in $DROPBOX_USERS; do
 			if [ $USER = $dbuser ] ; then
-				mkdir -p $logdir 2>/dev/null
+				mkdir -p $logdir
 				/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
 			fi
         done
@@ -170,11 +170,7 @@ install () {
 	wget -O$tarfile --no-check-certificate "http://www.dropbox.com/download/?plat=lnx.$arch"
 	tar xvpzf $tarfile
 
-	mkdir $distdir/lock
-	mkdir $distdir/run
-	mkdir $distdir/sysconfig
-	echo "DROPBOX_USERS=buddy" >$config
-	echo "Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion \`GDK_IS_WINDOW (window)' failed" >$filter
+	configure										# defined below
 
 	rm $tarfile
 
@@ -217,6 +213,14 @@ install () {
 	fi
 }
 
+configure() {
+	mkdir $distdir/lock
+	mkdir $distdir/run
+	mkdir $distdir/sysconfig
+	echo "DROPBOX_USERS=buddy" >$config
+	echo "Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion \`GDK_IS_WINDOW (window)' failed" >$filter
+}
+
 # See how we were called.
 case "$1" in
   start)
@@ -236,6 +240,8 @@ case "$1" in
 		shift 1
 		install "$@"
 		;;
+  configure)
+        configure
   *)
         echo $"Usage: $0 {start|status|stop|restart|install}"
         RETVAL=3
