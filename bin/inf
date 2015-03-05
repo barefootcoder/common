@@ -56,6 +56,11 @@ fi
 filetype=$(file -L $fullpath)
 echo $filetype
 
+if [[ $filetype == *text* || $filetype == *"Lisp data"* ]]
+then
+	wc -l $fullpath
+fi
+
 if [[ $edit ]]
 then
 	if [[ $filetype == *script* ]]
