@@ -4,8 +4,8 @@
 # description: Startup script for dropbox daemon
 #
 # processname: dropboxd
-# pidfile: ~/.dropbox-dist/run/dropbox.pid
-# config: ~/.dropbox-dist/sysconfig/dropbox
+# pidfile: ~/.dropbox-ctl/run/dropbox.pid
+# config: ~/.dropbox-ctl/sysconfig/dropbox
 #
 
 ### BEGIN INIT INFO
@@ -25,16 +25,18 @@
 # Make sure umask is sane
 umask 022
 
+basedir=~/.dropbox
 prog=dropboxd
+ctldir=~/.dropbox-ctl
 distdir=~/.dropbox-dist
-piddir=$distdir/run
+piddir=$ctldir/run
 pidfile=$piddir/dropbox.pid
-lockdir=$distdir/lock
+lockdir=$ctldir/lock
 lockfile=${LOCKFILE-$lockdir/$prog}
-config=${CONFIG-$distdir/sysconfig/dropbox}
-filter=$distdir/sysconfig/output_filter
-logdir=$distdir/log
-logfile=$logdir/dropbox.log
+config=${CONFIG-$ctldir/sysconfig/dropbox}
+filter=$ctldir/sysconfig/output_filter
+logdir=$ctldir/log
+logfile=$logdir/dropboxd.log
 RETVAL=0
 
 # To configure, add line with DROPBOX_USERS="user1 user2" to $config
@@ -181,7 +183,7 @@ install () {
 	then
 		~/bin/dropbox start
 	else
-		/bin/sh -c "/home/$USER/.dropbox-dist/dropboxd &"
+		/bin/sh -c "$distdir/dropboxd &"
 	fi
 
 	if [[ -r .login ]]
@@ -214,9 +216,13 @@ install () {
 }
 
 configure() {
-	mkdir $distdir/lock
-	mkdir $distdir/run
-	mkdir $distdir/sysconfig
+	mkdir -p $ctldir/lock
+	mkdir -p $ctldir/run
+	mkdir -p $ctldir/sysconfig
+
+	mkdir -p $logdir
+	ln -sf $basedir/logs/*/* $logdir
+
 	echo "DROPBOX_USERS=buddy" >$config
 	echo "Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion \`GDK_IS_WINDOW (window)' failed" >$filter
 }
@@ -242,6 +248,7 @@ case "$1" in
 		;;
   configure)
         configure
+		;;
   *)
         echo $"Usage: $0 {start|status|stop|restart|install}"
         RETVAL=3
