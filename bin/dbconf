@@ -1,0 +1,4 @@
+#! /bin/bash
+
+cd ~/Dropbox
+find . -iname "*(*conflict*)*"

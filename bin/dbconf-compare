@@ -1,0 +1,20 @@
+#! /bin/bash -e
+. ~/bin/bash_funcs
+
+swapfile="$1"
+origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print "$1/$2"' "$swapfile")"
+if [[ -z $origfile ]]
+then
+	die "$me: $swapfile does not appear to be a valid vim swapfile"
+fi
+origfile="$(realpath "$origfile")"
+base="$(basename "$origfile")"
+
+tmpdir=$(mktemp -d)
+trap "/bin/rm -rf $tmpdir" EXIT
+
+/bin/cp "$swapfile" "$tmpdir/.$base.swp"
+cd $tmpdir
+touch "$base"
+vim -r "$base" +'w "$tmpdir/$base"' +q >/dev/null 2>&1
+diff "$tmpdir/$base" "$origfile" | ${PAGER:-less}
