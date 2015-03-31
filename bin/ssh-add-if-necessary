@@ -1,6 +1,6 @@
 #! /bin/bash
 
-if ! ssh-add -l | grep -q ssh/id_dsa
+if ! ssh-add -l | grep -q ssh/id_.sa
 then
 	ssh-add
 fi

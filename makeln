@@ -79,12 +79,15 @@ do
 done
 
 # .vctools dir is a bit like .dzil, only simpler
-[[ -d ~/.vctools ]] || mkdir ~/.vctools
-cd $mydir/vctools
-for file in *
-do
-	make_link $mydir/vctools/$file $HOME/.vctools/$file
-done
+if [[ $1 != refresh ]]
+then
+	[[ -d ~/.vctools ]] || mkdir ~/.vctools
+	cd $mydir/vctools
+	for file in *
+	do
+		make_link $mydir/vctools/$file $HOME/.vctools/$file
+	done
+fi
 
 # we have a few rc's in a separate place because they have passwords in them
 alt_rcdir=~/Dropbox/sensitive
@@ -117,14 +120,17 @@ fi
 make_link $mydir/bin $dir
 
 # ditto for .purple, Pidgin's directory of stuff, except it's in Dropbox, not GitHub
-dir=~/.purple
-if [[ -d $dir && ! -L $dir ]]
+if [[ $1 != refresh ]]
 then
-	echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-	echo "$0: please fix that and rerun" >&2
-	exit 1
+	dir=~/.purple
+	if [[ -d $dir && ! -L $dir ]]
+	then
+		echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+		echo "$0: please fix that and rerun" >&2
+		exit 1
+	fi
+	make_link ~/Dropbox/purple $dir
 fi
-make_link ~/Dropbox/purple $dir
 
 # certain repos we want to symlink files in their bin into our bin
 for repo in jsonp
@@ -143,19 +149,22 @@ done
 
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
-dir=~/.cddb
-if [[ -d $dir ]]
+if [[ $1 != refresh ]]
 then
-	if [[ ! -L $dir ]]
+	dir=~/.cddb
+	if [[ -d $dir ]]
 	then
-		echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-		echo "$0: please fix that before you rerun" >&2
-	fi
-else
-	srcdir=$(find_dir ~/Dropbox/music/cddb $mydir/cddb)
-	if [[ -d $srcdir ]]
-	then
-		make_link $srcdir $dir
+		if [[ ! -L $dir ]]
+		then
+			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+			echo "$0: please fix that before you rerun" >&2
+		fi
+	else
+		srcdir=$(find_dir ~/Dropbox/music/cddb $mydir/cddb)
+		if [[ -d $srcdir ]]
+		then
+			make_link $srcdir $dir
+		fi
 	fi
 fi
 

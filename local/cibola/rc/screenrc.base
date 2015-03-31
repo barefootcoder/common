@@ -1,0 +1,51 @@
+bind ^y source .screenrc.sandbox
+bind ^_ source .screenrc.search
+bind ^v source .screenrc.vctools
+
+screen -t base
+screen -t timer
+	stuff "timer\015"
+screen -t man
+	stuff "man screen\015"
+screen -t top top
+screen -t root sudo su -
+screen -t launch
+screen -t copy
+screen -t notes
+	number 9
+	stuff "vi ~/Dropbox/notes\015"
+screen -t common
+	source .screenrc.vctools
+	stuff "vcd common\015"
+screen -t task
+	stuff "todo\015"
+screen -t bc
+	stuff "bc\015"
+screen -t vagrant
+	stuff "vcd cheops\015"
+	stuff "vims vagrant\015"
+screen -t st
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
+screen -t proj
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
+screen -t sandbox
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
+screen -t sql
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
+screen -t push
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
+screen -t work
+	stuff "cd ~/work\015"
+screen -t lib
+	source .screenrc.vctools
+	stuff "vcd method-signatures\015"
+screen -t test
+	source .screenrc.vctools
+	stuff "vcd VCtools\015"
+screen -t vctools
+	stuff "vcd VCtools\015"

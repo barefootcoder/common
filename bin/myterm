@@ -115,7 +115,7 @@ case $termprog in
 					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
-					args="-title $title $image $icon -fg white -bg black -geometry $geometry +sb -e"
+					args="-title $title $image $icon -fg white -bg black -geometry $geometry +sb"
 					;;
 	Eterm)
 					if [[ $scaled == 1 ]]
@@ -133,7 +133,7 @@ case $termprog in
 					#font="-*-andale mono-*-*-*-*-$fontsize-*-*-*-*-*-*-*"
 					font_switch=--default-font-index
 					font=$(( fontsize - 11))
-					args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off -e"
+					args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off"
 					;;
 	gnome-terminal)
 					args="--geometry=$geometry"
@@ -143,4 +143,9 @@ case $termprog in
 					;;
 esac
 
-$termprog $font_switch "$font" $args "$@" &
+if [[ $# -ge 1 ]]
+then
+	$termprog $font_switch "$font" $args -e "$@" &
+else
+	$termprog $font_switch "$font" $args &
+fi

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. ~/bin/bash_funcs
+
+if [[ -z $(dropbox status) ]] && ! dropbox start
+then
+	if yn "Reinstall dropbox?"
+	then
+		dropbox install force
+	fi
+fi
+
+#cd ~/workproj/CE
+#vagrant up
+
+if screen -ls | grep base
+then
+	cmd="screen -x base"
+else
+	cmd="screen -S base"
+fi
+myterm -s Cibola cityofgold 125x50+7+30 $cmd
+myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk

@@ -1,0 +1,31 @@
+# make locate work even though my home dir is encrypted
+setenv LOCATE_PATH ~/local/var/mlocate.db
+
+setenv CE_REMOTE_USERNAME bburden
+setenv CEROOT ~/workproj/CE-mounted
+setenv CHEOPSROOT ~/workproj/cheops
+#setenv CE_USE_CONFIG /tmp/cepush
+#eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
+
+alias cessh $CEROOT/devtools/cessh
+alias cescp $CEROOT/devtools/cescp
+#alias ceflow ~/workproj/CE/bin/ceflow
+alias vbounce 'cd $CEROOT ; vagrant reload'
+
+# Vagrant environment stuff
+alias vagrant-push-box 'setenv CE_VAGRANT_BOX ce-push-sandbox ; setenv CE_VAGRANT_SSHFS_MOUNTPOINT ../CE-push ; \
+							setenv CE_VAGRANT_PORT_WEB 3003 ; setenv CE_VAGRANT_PORT_ES 9202'
+
+# Vagrant testing stuff
+alias vagrant-latest-test 'vagrant box list | perl -lane '\''print $F[0] if $F[0] =~ /ce-dev-sandbox-201/'\'' \
+							| sort | tail -n1'
+alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
+							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
+
+# AWS setup -- BEGIN
+#complete -C aws_completer aws
+
+# AWS credentials for Campus Explorer
+setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
+setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
+# AWS setup -- END

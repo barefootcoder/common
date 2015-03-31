@@ -1,4 +1,5 @@
-alias vc ~/proj/VCtools/bin/vc
+eval "set "`grep VCtoolsDir ~/.vctools/vctools.conf`
+alias vc $VCtoolsDir/bin/vc
 if ( $?tcsh_reset ) then
 	# refresh VCtools shell completion files
 	vc shell-complete >~/.tcshrc.complete.vc
