@@ -1,0 +1,6 @@
+#! /bin/bash
+
+for win in team leadops deploy technology offtopic qa ".*Mozilla Thunderbird"
+do
+	xdotool search --name "$win" windowactivate
+done
