@@ -4,7 +4,7 @@ use Getopt::Std;
 use File::Basename;
 
 
-getopts('fseb:Bh');
+getopts('fseb:BDh');
 
 if ($opt_h)
 {
@@ -14,6 +14,7 @@ if ($opt_h)
 	print STDERR "       -e : output shell commands suitable for eval'ing\n";
 	print STDERR "       -b : use this env_var's value as the base list to add to [default: \$PATH]\n";
 	print STDERR "       -B : start with a blank base list\n";
+	print STDERR "       -D : print some debugging messages (to stderr)\n";
 	print STDERR "       -h : this help message\n";
 	print STDERR "     dirs that do not exist and duplicate dirs are removed from the list\n";
 	print STDERR "     this is true even if the dirs are in the base list instead of the supplied list\n";
@@ -37,10 +38,12 @@ foreach $dir (@ARGV)
 }
 if ($opt_f)
 {
+	$opt_D and print "unshifting ", scalar(@dirs), " dirs into $opt_b\n";
 	unshift @dirs, @newdirs;
 }
 else
 {
+	$opt_D and print "pushing ", scalar(@dirs), " dirs onto $opt_b\n";
 	push @dirs, @newdirs;
 }
 
@@ -57,12 +60,32 @@ else
 
 sub set_for_shell
 {
-	use Shell::Guess;
-	use Shell::Config::Generate;
-
 	my ($base, $path) = @_;
 
-	my $conf = Shell::Config::Generate->new;
-	$conf->set($base, $path);
-	return $conf->generate;												# should be for the shell that called us
+	eval
+	{
+		require Shell::Guess;
+		require Shell::Config::Generate;
+		$opt_D and print "using Shell:Guess et al\n";
+
+		my $conf = Shell::Config::Generate->new;
+		$conf->set($base, $path);
+		return $conf->generate;											# should be for the shell that called us
+	};
+	if ($@ =~ /Can't locate Shell/)										# fallback to old stupid way
+	{																	# if we don't have the cool modules installed
+		$opt_D and print "guessing at shell based on $ENV{SHELL}\n";
+		if ($ENV{SHELL} =~ /csh/)
+		{
+			return "setenv $base $path";
+		}
+		else
+		{
+			return "export $base=$path";
+		}
+	}
+	elsif ($@)
+	{
+		die;
+	}
 }
