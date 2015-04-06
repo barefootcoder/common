@@ -1,0 +1,3 @@
+#! /bin/bash
+
+ls -lh ~/timer/timer-new ~/timer/.timer-new.sw? ~/.purple/*.xml

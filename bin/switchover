@@ -3,3 +3,6 @@
 killall thunderbird
 killall pidgin
 kill `pgrep -f timer-new`
+
+sleep 1
+$(basename $0)-status
