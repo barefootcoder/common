@@ -102,9 +102,9 @@ set path_dirs = ( /usr/local/bin /bin /usr/bin /usr/X11R6/bin $sybase_bin $oracl
 set cdpath_dirs = ( . $APACHE ~ /export/usr/buddy )
 if ( -x ~/bin/addpath ) then
 	eval `~/bin/addpath -eB $path_dirs`
-	set cdpath = ( `addpath -sB $cdpath_dirs` )
+	set cdpath = ( `~/bin/addpath -sB $cdpath_dirs` )
 	if ( -d $HOME/man ) then
-		eval `addpath -eb MANPATH $HOME/man`
+		eval `~/bin/addpath -eb MANPATH $HOME/man`
 		echo "MANPATH is $MANPATH"
 		[ -z "$MANPATH" ] && unsetenv MANPATH
 	endif
@@ -116,7 +116,7 @@ if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished path/cdpath fiddling"
 
 setenv PAGER "less -RaF -x4 -j4"
 setenv EDITOR `which fe_vi`
-eval `addpath -eb PERL5LIB /usr/barefoot/perl ~/common/perl`
+eval `~/bin/addpath -eb PERL5LIB /usr/barefoot/perl ~/common/perl`
 setenv DATE_MANIP DM5
 setenv BC_ENV_ARGS ~/.bcrc
 setenv PGLIB /usr/local/pgsql/lib
