@@ -1,9 +1,9 @@
-# THIS IS THE DEFAULT FILE FOR ALL MACHINES
-# (IF YOU WANT TO MODIFY, CREATE A HOST-SPECIFIC VERSION)
+# THIS CONFIG IS HOST-SPECIFIC
 
 VCtoolsDir=~/proj/VCtools
 
 WorkingDir=~/proj
+WorkingDir=~/workproj
 
 DefaultVC=git
 <<include ~/proj/VCtools/share/conf/git.conf>>

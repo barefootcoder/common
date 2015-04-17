@@ -1,0 +1,12 @@
+# THIS CONFIG IS HOST-SPECIFIC
+
+VCtoolsDir=/var/local/VCtools
+<<include /var/local/VCtools/share/conf/git.conf>>
+<<include /home/vagrant/CE/etc/ceflow/CE.conf>>
+<Project CE>
+    ProjectDir=/home/vagrant/CE
+    VC=git
+</Project>
+
+<<include ~/.vctools/custom.conf>>
+<<include ~/.vctools/CE-custom.conf>>

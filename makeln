@@ -78,14 +78,25 @@ do
 	make_link $mydir/dzil/$file $HOME/.dzil/$file
 done
 
-# .vctools dir is a bit like .dzil, only simpler
+# .vctools dir is a bit like .dzil, only (mostly) simpler
+# the only tricky bit is that the main vctools.conf file *might* have a
+# host-specific override
 if [[ $1 != refresh ]]
 then
 	[[ -d ~/.vctools ]] || mkdir ~/.vctools
 	cd $mydir/vctools
+	if [[ -r vctools.conf.$LOCALHOSTNAME ]]
+	then
+		make_copy vctools.conf.$LOCALHOSTNAME $HOME/.vctools/vctools.conf
+	else
+		make_copy vctools.conf $HOME/.vctools/vctools.conf
+	fi
 	for file in *
 	do
-		make_link $mydir/vctools/$file $HOME/.vctools/$file
+		if [[ $file != vctools.conf* ]]
+		then
+			make_link $mydir/vctools/$file $HOME/.vctools/$file
+		fi
 	done
 fi
 

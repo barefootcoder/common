@@ -46,14 +46,53 @@ function make_link
 		/bin/ls -l $2
 		echo -n "$2 exists; overwrite? " >&2
 		read yn
-		case $yn in
-			[yY]*)
-				/bin/rm -f $2
-				ln -s $1 $2
-				;;
-		esac
+		if [[ $yn == [yY]* ]]
+		then
+			/bin/rm -f $2
+			ln -s $1 $2
+		fi
 	else
 		ln -s $1 $2
+	fi
+}
+
+
+# copy a file, as safely as possible
+function make_copy
+{
+	# $1 == source file
+	# $2 == destination (will be the symlink)
+
+	if [[ ! -e $1 ]]
+	then
+		# thing we want to copy isn't there
+		echo "$1 doesn't exist; skipping copy" >&2
+	elif [[ -L $2 ]]
+	then
+		# dest is a symlink; need to handle that first
+		echo -n "$2 exists as a symlink; remove? " >&2
+		read yn
+		if [[ $yn == [yY]* ]]
+		then
+			/bin/rm -f $2
+			/bin/cp -p $1 $2
+		fi
+	elif [[ -e $2 ]] && diff $1 $2 >/dev/null
+	then
+		# don't bother if the content is already correct
+		:
+	elif [[ -e $2 ]]
+	then
+		# would overwrite something; better get permission first
+		echo -n "$2 exists (not a symlink); overwrite? " >&2
+		read yn
+		if [[ $yn == [yY]* ]]
+		then
+			/bin/rm -f $2
+			/bin/cp -p $1 $2
+		fi
+	else
+		/bin/cp -pi $1 $2
 	fi
 }
 
