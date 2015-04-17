@@ -1,0 +1,87 @@
+VCtoolsDir=~/proj/VCtools
+
+WorkingDir=~/proj
+WorkingDir=~/workproj
+
+# Policy file for CE
+<<include /home/buddy/workproj/CE/etc/ceflow/CE.conf>>
+
+DefaultVC=git
+<<include ~/proj/VCtools/share/conf/git.conf>>
+<<include ~/proj/VCtools/share/conf/svn.conf>>
+
+DefaultSourcePath=git@github.com:%user/%project.git
+
+
+<Project VCtools.svn>
+    VC = svn
+</Project>
+
+<Project common>
+	ProjectDir = ~/common
+</Project>
+
+
+# for testing purposes
+# (a non-destructive custom command)
+<CustomCommand fred>
+    Verify = project
+	#Verify = clean
+    Argument = author		<the author of the commit>
+	<Trailing coolfiles>
+		singular = coolfile
+		qty = 1..
+	</Trailing>
+
+    action <<---
+		TEST=1
+		$TEST -> { say "hi!" }
+		? stop now?
+		> %is_dirty
+		{ bmoogle }
+		= dols
+		? keep going
+        git log --author %author %coolfiles
+    ---
+</CustomCommand>
+<CustomCommand dols>
+	action <<---
+		echo "checking that \\$vars are not eaten"
+		ls
+	---
+</CustomCommand>
+<CustomInfo lsout>
+	action <<---
+		= dols
+	---
+</CustomInfo>
+
+
+
+<<include ~/.vctools/custom.conf>>
+<<include ~/.vctools/CE-custom.conf>>
+
+
+# overrides for CE
+<Policy CE>
+	<CustomCommand push-cibola>
+		Verify = project
+		Files = 0
+
+		action <<---
+			%cur_branch !~ m{^feature/}							->	! This doesn't look like an appropriate branch.
+			`git log trunk..HEAD` !~ /DO NOT PUSH TO GITHUB/	->	! This doesn't look like an appropriate branch.
+
+			CIBOLA_BRANCH=`ssh cibola 'cd ~/workproj/CE-mounted ; git rev-parse --abbrev-ref HEAD'` =~ s/\n$//r
+			"$CIBOLA_BRANCH" eq %cur_branch						->	! Have to change branches on Cibola first.
+
+			%is_dirty											->	vcpatchws -f `checktabs -nb`
+			%is_dirty											->	git add %mod_files
+			%is_dirty											->	git commit -v --amend
+
+			git diff --stat HEAD^
+			? Push this to Cibola?
+			git push --force-with-lease
+		---
+	</CustomCommand>
+</Policy>

@@ -87,7 +87,7 @@ then
 	cd $mydir/vctools
 	if [[ -r vctools.conf.$LOCALHOSTNAME ]]
 	then
-		make_copy vctools.conf.$LOCALHOSTNAME $HOME/.vctools/vctools.conf
+		make_link $mydir/vctools/vctools.conf.$LOCALHOSTNAME $HOME/.vctools/vctools.conf
 	else
 		make_copy vctools.conf $HOME/.vctools/vctools.conf
 	fi
