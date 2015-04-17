@@ -117,7 +117,7 @@ sub use_and_import_into
 	my $args = ref $_[-1] eq 'ARRAY' ? pop : undef;
 	my ($class, $to_pkg, $from_pkg, $version) = @_;
 
-	use_module($from_pkg, $version);
+	$version ? use_module($from_pkg, $version) : use_module($from_pkg);
 	$from_pkg->import::into($to_pkg, @{ $args || [] }) unless $args and @$args == 0;
 }
 
