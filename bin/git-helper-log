@@ -24,6 +24,22 @@ function branched_from
 	git rev-list --no-merges HEAD | perl -lne '@b = grep { s/^  // } `git branch --contains $_` and print $b[0] and exit'
 }
 
+function how_many_unpushed
+{
+	local MAX=50
+	for count in $(seq 1 $MAX)
+	do
+		ref=$(perl -le 'print "HEAD" . "^" x shift' $count)
+		if [[ $(git branch -r --contains $ref) ]]
+		then
+			echo $count
+			return
+		fi
+	done
+	echo "$me: more than $MAX unpushed commits" >&2
+	exit 1
+}
+
 cmd="git log"
 
 args=''
@@ -58,22 +74,7 @@ do
 			from=$(branched_from $branch)
 			args="$args $from..$branch"
 			;;
-		L)	branch=$(current_branch)
-			pushed=origin/$branch
-			if ! git show-ref --quiet $pushed
-			then
-				# perhaps this is a new branch, never pushed anywhere
-				# let's try to find where it was branched from
-				pushed=$(branched_from $branch)
-				if ! git show-ref --quiet $pushed
-				then
-					# WTF? it was branched from something that doesn't exist?
-					# that should never happen
-					echo "$me: branch never pushed and can't determine where branched from"
-					exit 1
-				fi
-			fi
-			args="$args $pushed..HEAD"
+		L)	args="$args -n$(how_many_unpushed)"
 			;;
 		l)	args="$args -n1"
 			;;
