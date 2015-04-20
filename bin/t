@@ -1,6 +1,9 @@
 #! /usr/bin/env perl
 
-use 5.010;
+# we're not requiring any Modern Perl features here
+# because we want to remain backwards compatible at least back to 5.8.9
+# this helps uses such as ~/bin/test_all_perls (q.v.)
+use strict;
 use autodie qw< :all >;
 use warnings FATAL => 'all';
 
@@ -21,7 +24,9 @@ use List::MoreUtils qw< uniq >;
 use Time::HiRes qw< gettimeofday tv_interval >;
 
 my $start_time; BEGIN { $start_time = [gettimeofday]; }
-END { local $Time::Duration::MILLISECOND = 1; say "Runtime: ", duration_exact(tv_interval($start_time)); }
+END { local $Time::Duration::MILLISECOND = 1; print "Runtime: ", duration_exact(tv_interval($start_time)), "\n"; }
+
+our $WORKDIR;
 
 sub print_color(@);
 
@@ -401,23 +406,25 @@ if ($opt->{p})
 ###########################
 
 
-our $WORKDIR;
+my ($WORKENV, $CURENV);
 sub get_workenv
 {
 	my ($param) = @_;
-	state $WORKENV =
+	unless (defined $WORKENV)
 	{
-		Rent	=>	{
-						env_var		=>	[ 'WEBROOT', 'RENT_HOME' ],
-						test_dirs	=>	[qw< lib/Test/t lib/Company/t >],
-					},
-		CE		=>	{
-						env_var		=>	[ 'CEROOT' ],
-						test_dirs	=>	[qw< t/lib tlib >],
-						post_args	=>	[qw< :: --dbconfig utest-main >],
-					},
-	};
-	state $CURENV;
+		$WORKENV =
+		{
+			Rent	=>	{
+							env_var		=>	[ 'WEBROOT', 'RENT_HOME' ],
+							test_dirs	=>	[qw< lib/Test/t lib/Company/t >],
+						},
+			CE		=>	{
+							env_var		=>	[ 'CEROOT' ],
+							test_dirs	=>	[qw< t/lib tlib >],
+							post_args	=>	[qw< :: --dbconfig utest-main >],
+						},
+		};
+	}
 
 	unless (defined $CURENV)
 	{
@@ -436,7 +443,7 @@ sub get_workenv
 			}
 			last if $CURENV;
 		}
-		$CURENV //= 0;													# i.e., false but not undefined
+		$CURENV = 0 unless defined $CURENV;								# i.e., false but not undefined
 	}
 
 	return $CURENV ? @{ $WORKENV->{$CURENV}->{$param} } : ();
@@ -450,6 +457,7 @@ sub get_pkgname
 		print STDERR "opening file: $_\n" if $opt->{D};
 		open(IN, $_) or return undef;
 		print STDERR "reading file: $_\n" if $opt->{D};
+		no warnings 'once';												# for older Perls
 		while ( <IN> )
 		{
 			# skip pod
