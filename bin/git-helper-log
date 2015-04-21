@@ -27,14 +27,15 @@ function branched_from
 function how_many_unpushed
 {
 	local MAX=50
-	for count in $(seq 1 $MAX)
+	local count=0
+	for ref in $(git log -n$MAX --pretty=%h)
 	do
-		ref=$(perl -le 'print "HEAD" . "^" x shift' $count)
 		if [[ $(git branch -r --contains $ref) ]]
 		then
 			echo $count
 			return
 		fi
+		count=$(( $count + 1 ))
 	done
 	echo "$me: more than $MAX unpushed commits" >&2
 	exit 1
