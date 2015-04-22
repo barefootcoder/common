@@ -1,12 +1,17 @@
 #! /usr/bin/perl
 
+use strict;
+use warnings;
+use autodie ':all';
+
 use Getopt::Std;
 use File::Basename;
 
 
-getopts('fseb:BDh');
+my $opts = {};
+getopts('fseb:BDh', $opts);
 
-if ($opt_h)
+if ($opts->{h})
 {
 	print STDERR "usage: ", basename($0), " -h | [-sfe] [-B | -b env_var] [dir ...]\n";
 	print STDERR "       -s : return dirs separated by space (default: colon)\n";
@@ -21,36 +26,43 @@ if ($opt_h)
 	exit;
 }
 
-$opt_b ||= 'PATH';
-unless ($opt_B)
+$opts->{b} ||= 'PATH';
+my (@dirs, %dirs);
+unless ($opts->{B})
 {
-	@dirs = split(':', $ENV{$opt_b});
+	@dirs = split(':', $ENV{$opts->{b}} || '');
 	%dirs = map { $_ => 1 } @dirs;
 }
+$opts->{D} and print "starting with ", scalar @dirs, " dirs\n";
 
-foreach $dir (@ARGV)
+my @newdirs;
+my ($before, $after) = (0,0);
+foreach my $dir (@ARGV)
 {
+	++$before;
 	if ($dir and not exists $dirs{$dir} and -d $dir)
 	{
 		push @newdirs, $dir;
 		$dirs{$dir} = 1;
+		++$after;
 	}
 }
-if ($opt_f)
+$opts->{D} and print "winnowed $before dirs down to $after\n";
+if ($opts->{f})
 {
-	$opt_D and print "unshifting ", scalar(@dirs), " dirs into $opt_b\n";
+	$opts->{D} and print "unshifting ", scalar(@newdirs), " dirs into $opts->{b}\n";
 	unshift @dirs, @newdirs;
 }
 else
 {
-	$opt_D and print "pushing ", scalar(@dirs), " dirs onto $opt_b\n";
+	$opts->{D} and print "pushing ", scalar(@newdirs), " dirs onto $opts->{b}\n";
 	push @dirs, @newdirs;
 }
 
-my $out = join($opt_s ? ' ' : ':', @dirs);
-if ($opt_e)
+my $out = join($opts->{s} ? ' ' : ':', @dirs);
+if ($opts->{e})
 {
-	print set_for_shell($opt_b, $out);
+	print set_for_shell($opts->{b}, $out);
 }
 else
 {
@@ -62,21 +74,23 @@ sub set_for_shell
 {
 	my ($base, $path) = @_;
 
+	my $output;
 	eval
 	{
 		require Shell::Guess;
 		require Shell::Config::Generate;
-		$opt_D and print "using Shell:Guess et al\n";
+		$opts->{D} and print "using Shell::Guess et al\n";
 
 		my $conf = Shell::Config::Generate->new;
 		$conf->set($base, $path);
-		return $conf->generate;											# should be for the shell that called us
+		$output = $conf->generate;									# should be for the shell that called us
+		$opts->{D} and print "Shell::* generated: $output\n";
 	};
 	if ($@ =~ /Can't locate Shell/)										# fallback to old stupid way
 	{																	# if we don't have the cool modules installed
-		$opt_D and print "guessing at shell based on $ENV{SHELL}\n";
-		if ($ENV{SHELL} =~ /csh/)
-		{
+		$opts->{D} and print "guessing at shell based on $ENV{SHELL}\n";
+		if ($ENV{SHELL} =~ /csh/)										# crappier guess than Shell::Guess
+		{																# likely login shell, not shell that called us
 			return "setenv $base $path";
 		}
 		else
@@ -88,4 +102,6 @@ sub set_for_shell
 	{
 		die;
 	}
+
+	return $output;
 }
