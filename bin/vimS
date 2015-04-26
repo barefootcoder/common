@@ -72,23 +72,37 @@ if [[ $list ]]
 then
 	[[ $verbose ]] && echo "Name               Marks? Path"
 	[[ $verbose ]] && echo "============================================================================="
+
+	function print_file
+	{
+		local base="$1"
+		local file="$2"
+		local marks
+
+		if [[ ${file%%.marks} != $file && -e ${file%%.marks} ]]
+		then
+			continue
+		fi
+
+		if [[ $verbose ]]
+		then
+			marks=" "
+			[[ -r $file.marks ]] && marks="X"
+			printf "%-20s  $marks  %s\n" $base $file
+		else
+			echo $base
+		fi
+	}
+
+	for file in ./*.vimS
+	do
+			print_file $(basename $file .vimS) $file
+	done
 	for prefix in $prefixes
 	do
 		for file in $prefix*
 		do
-			if [[ ${file%%.marks} != $file && -e ${file%%.marks} ]]
-			then
-				continue
-			fi
-
-			if [[ $verbose ]]
-			then
-				marks=" "
-				[[ -r $file.marks ]] && marks="X"
-				printf "%-20s  $marks  %s\n" ${file##$prefix} $file
-			else
-				echo ${file##$prefix}
-			fi
+			print_file ${file##$prefix} $file
 		done
 	done
 	exit
@@ -98,13 +112,20 @@ fi
 
 
 sessionfile=$1
-for prefix in $prefixes
-do
-	[[ -f $sessionfile ]] && break
-	sessionfile=$prefix$1
-done
+if [[ ! -f $sessionfile ]]
+then
+	sessionfile=$1.vimS
+fi
+if [[ ! -f $sessionfile ]]
+then
+	for prefix in $prefixes
+	do
+		[[ -f $sessionfile ]] && break
+		sessionfile=$prefix$1
+	done
+fi
 
-if [[ ! -r $sessionfile ]]
+if [[ ! -f $sessionfile ]]
 then
 	die "session file $1 not specified, doesn't exist, or is unreadable"
 fi
