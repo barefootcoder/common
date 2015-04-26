@@ -35,7 +35,7 @@
 #		line, we'll have to expand that ourselves.  Also, there might be tildes which need expanding
 #		(this applies to the "cd" line as well).  Thus the `eval`s below.
 
-for prefix in ~/.vimS- ~/local/data/vimS/
+for prefix in ~/.vimS- ~/local/data/vimS/ ./vimS/
 do
 	prefixes="$prefixes $prefix"
 done

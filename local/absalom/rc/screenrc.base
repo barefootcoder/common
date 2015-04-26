@@ -62,3 +62,6 @@ screen -t push
 screen -t vagrant
 	stuff "cd workproj/cheops\015"
 	stuff "vims vagrant\015"
+screen -t blog
+	stuff "cd Dropbox/personal/blog\015"
+	stuff "vims blog\015"
