@@ -12,7 +12,7 @@ MAIN:
 COMMS:
 
 	team			technology		qa
-							george
+			james			george
 	deploy			technology		cerpt
 							steve-S
 	leadops			technology		offtopic
