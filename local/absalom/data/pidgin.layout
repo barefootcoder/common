@@ -1,10 +1,10 @@
 MAIN:
 
-	steve			juan			eric
+	steve			juan			+eric
 							amiri
 	sage			jcal			ether
 							karen
-	jennine			jared			arya
+	+jennine		jared			+arya
 
 
 
@@ -27,7 +27,7 @@ MUSIC:
 
 PERSONAL:
 
-	christy							random
+	+christy						+random
 
 
 

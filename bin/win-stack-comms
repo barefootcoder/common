@@ -1,6 +1,38 @@
 #! /bin/bash
 
-for win in team leadops deploy technology offtopic qa ".*Mozilla Thunderbird"
+
+# Desktop 1 == Comms (desktops are zero-based)
+
+ThunderbirdWindow=".*Mozilla Thunderbird"
+if ! /usr/bin/pgrep thunderbird >/dev/null
+then
+	thunderbird &
+	while ! xdotool search --name "$ThunderbirdWindow" >/dev/null
+	do
+		sleep 1
+	done
+	xdotool search --name "$ThunderbirdWindow" windowmove 150 55 set_desktop_for_window 1
+fi
+
+PidginWindow="Buddy List"
+if ! /usr/bin/pgrep pidgin >/dev/null
+then
+	pidgin &
+	while ! xdotool search --name "$PidginWindow" >/dev/null
+	do
+		sleep 1
+	done
+	xdotool search --name "$PidginWindow" set_desktop_for_window 1
+
+	# have to give it time to connect to the various IM servers
+	sleep 3											# somewhat arbitrary, but it seems to work
+fi
+
+# do this regardless of whether we had to start Pidgin or not
+# stacking them doesn't do much good if they're in the wrong positions
+pidgin_restore
+
+for win in team leadops deploy technology offtopic qa "$ThunderbirdWindow"
 do
 	xdotool search --name "$win" windowactivate
 done

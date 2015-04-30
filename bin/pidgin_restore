@@ -9,6 +9,8 @@ const our $WIN_WIDTH	=> 720;
 const our $WIN_HEIGHT	=> 518;
 const our $WIN_BORDER	=>  27;
 
+const our $PidginWindow	=>	"Buddy List";
+
 
 our ($SCREEN_WIDTH, $SCREEN_HEIGHT) = get_screen_size();
 debuggit("screen size is $SCREEN_WIDTH x $SCREEN_HEIGHT");
@@ -16,13 +18,29 @@ debuggit("screen size is $SCREEN_WIDTH x $SCREEN_HEIGHT");
 my $data = read_layout();
 debuggit(4 => "layout data:", DUMP => $data);
 
+# make sure Pidgin is running, or else there's *really* no point
+unless (get_window_id($PidginWindow))
+{
+	die("Pidgin not running, or I can't find the $PidginWindow");
+}
+
+# if we don't click somewhere in the list of contacts, autospawn won't work
+goto_window($PidginWindow);
+system('xdotool mousemove 1710 135 click 1');
+
 foreach my $name (keys %$data)
 {
-	my $window = `xdotool search --name '^$name\$'`; chomp $window;
-	if ($window =~ /\s/)
+	my $window = get_window_id($name);
+	if (!$window and $data->{$name}->{autospawn})
 	{
-		warn("got multiple windows for $name!");
-		$window =~ s/^.*\s//;
+		goto_window($PidginWindow);
+		# the `search` is most likely unnecessary here
+		system(qq{ xdotool search --name "$PidginWindow" type "$name\n" });
+
+		# hopefully that gets us a window at this point
+		# although we might have to wait a second for it to show up
+		sleep 1;
+		$window = get_window_id($name);
 	}
 	if ($window)
 	{
@@ -58,6 +76,24 @@ func get_screen_size
 }
 
 
+func get_window_id ($name)
+{
+	my $window = `xdotool search --name '^$name\$'`; chomp $window;
+	if ($window =~ /\s/)
+	{
+		warn("got multiple windows for $name!");
+		$window =~ s/^.*\s//;
+	}
+	return $window;
+}
+
+func goto_window ($name)
+{
+	system(qq{ xdotool search --name "$name" windowactivate });
+	sleep 1 while `xdotool getwindowfocus` != get_window_id($name);
+}
+
+
 func read_layout
 {
 	my $data = {};
@@ -76,7 +112,7 @@ func read_layout
 		{
 			++$in_layout if $in_layout;
 		}
-		elsif ( /^ \t (\s* \w+.*) \s* $/x )
+		elsif ( /^ \t (\s* \+? \w+.*) \s* $/x )
 		{
 			my $content = $1;
 			$content = expand($content);
@@ -86,6 +122,7 @@ func read_layout
 			{
 				my $xpos = index($content, $name) / 16 + 1;
 				my $ypos = ($in_layout + 1) / 2;
+				my $spawn = $name =~ s/^\+//;
 
 				if (exists $data->{$name})
 				{
@@ -102,6 +139,7 @@ func read_layout
 						xpos		=>	$xpos,
 						ypos		=>	$ypos,
 						height		=>	$ypos,
+						autospawn	=>	$spawn ? 1 : 0,
 					};
 				}
 			}
