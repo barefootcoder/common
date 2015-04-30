@@ -100,9 +100,6 @@ then
 	elif [[ "$1" == xtrack_posts ]]
 	then
 		scp $1 heroscapers:bin
-	elif [[ -x "$1" ]]
-	then
-		"$1"
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
@@ -115,6 +112,9 @@ then
 	then
 		xclip -selection c "$1"
 		echo "copied to X clipboard"
+	elif [[ -x "$1" ]]
+	then
+		"$1"
 	else
 		echo "$me: don't know how to push this file to testing" >&2
 		exit 2
