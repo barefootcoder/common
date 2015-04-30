@@ -1,0 +1,37 @@
+#! /bin/bash -e
+. ~/bin/bash_funcs
+
+file="$1"
+dir="$2"
+
+[[ -r $file ]] || die "no such file: $file"
+[[ -d $dir ]]  || die "no such dir: $dir"
+
+base="$(basename "$file")"
+
+list="$(/bin/ls -1 $(dirname "$file")/.$(basename "$file").sw?)"
+count=$(echo "$list" | wc -l)
+echo "saving $count swap files ..."
+
+IFS=$'\n'
+count=0
+for swapfile in $list
+do
+	date=$(date -r $swapfile +%Y%m%d)
+	newfile="$dir/$base.$date"
+	if [[ -e $newfile ]]
+	then
+		echo "$me: skipping $swapfile because $newfile exists ..." >&2
+	else
+		vim -r $swapfile +"w $newfile" +q! >/dev/null 2>&1
+		if touch -r $swapfile $newfile
+		then
+			/bin/rm -f $swapfile
+			count=$(( $count + 1 ))
+			echo "saved $newfile"
+		else
+			echo "$me: skipping $swapfile because recovery failed ..." >&2
+		fi
+	fi
+done
+echo "saved $count swap files."
