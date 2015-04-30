@@ -1,4 +1,5 @@
 :help
 :wincmd j
 :wincmd c
+:map <Space> <C-F>
 
