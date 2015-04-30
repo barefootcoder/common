@@ -236,6 +236,7 @@ if (not $dir and not @files)
 die("$0: cannot figure out where test files are\n") unless $dir or @files;
 
 @files = get_files($dir) unless @files;
+print STDERR "file(s): @files\n" if $opt->{D};
 
 # use requested modules
 my %req_modules =
