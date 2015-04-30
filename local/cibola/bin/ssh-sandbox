@@ -1,0 +1,4 @@
+#!/bin/bash
+ssh-add-if-necessary
+cd $CHEOPSROOT
+vagrant ssh

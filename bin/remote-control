@@ -1,0 +1,34 @@
+#! /usr/bin/perl
+
+use v5.14;
+use warnings;
+use autodie ':all';
+use Try::Tiny;
+
+my $self = `hostname`; chomp $self;
+my $file = glob("~/Dropbox/control.$self");
+my $outfile = glob("~/Dropbox/output.$self");
+
+if (-r $file)
+{
+	try
+	{
+		open(CTL, $file);
+		my $cmd = <CTL>; chomp $cmd;
+		close(CTL);
+
+		system("{ $cmd ; } >$outfile 2>&1");
+		unlink $file if -f $file;
+	}
+	catch
+	{
+		open(OUT, ">>$outfile");
+		say OUT '=== ERR ===';
+		say OUT $_;
+		close(OUT);
+	};
+
+	open(OUT, ">>$outfile");
+	say OUT '=== END ===';
+	close(OUT);
+}

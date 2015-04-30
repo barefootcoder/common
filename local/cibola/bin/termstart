@@ -10,8 +10,8 @@ then
 	fi
 fi
 
-#cd ~/workproj/CE
-#vagrant up
+cd $CHEOPSROOT
+vagrant up
 
 if screen -ls | grep base
 then

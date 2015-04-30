@@ -1,0 +1,18 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+sandbox="$(vagrant box list | perl -lane 'print $F[0] if $F[0] =~ /ce-dev-sandbox-201/')"
+if [[ $sandbox == "" ]]
+then
+	die "$ME: no previous --test-base candidate to cleanup"
+elif [[ $( echo "$sandbox" | wc -l ) -gt 1 ]]
+then
+	die "$ME: too many previous --test-base candidates; remove all but one"
+fi
+
+vagrant-kill-3030
+
+export CE_VAGRANT_BOX=$sandbox
+vagrant destroy --force
+vagrant box remove $CE_VAGRANT_BOX
