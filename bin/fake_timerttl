@@ -14,6 +14,7 @@ die("don't recoginze Jira/Trac ticket num: $ticket")
 
 
 my $pipe_opened = 0;
+my @comments;
 for my $file (@ARGV)
 {
 	my @file = slurp $file;
@@ -25,6 +26,7 @@ for my $file (@ARGV)
 		my ($timer) = /^([\w-]+):/;
 		die("can't determine timer from line: $_") unless $timer;
 		next if $seen{$timer}++;
+		push @comments, $_;
 
 		unless ($pipe_opened)
 		{
@@ -41,6 +43,8 @@ for my $file (@ARGV)
 
 if ($pipe_opened)
 {
+	say PIPE '';
+	print PIPE @comments;
 	say PIPE '';
 	close(PIPE);
 }

@@ -33,43 +33,47 @@ my ($in_week, $cur_week) = (0,0);
 $today = time2str('%Y/%m/%d', scalar parsedate($today)) if $today;
 my (%totals, @daybreak, %review, @mondays);
 
+my $processed_labels = 0;
 while ( <> )
 {
 	if (/^\s*$/)
 	{
-		$in_week = 0;
-		if ( $cmd ~~ [qw< total eod daybreak >] )
+		if ( $processed_labels )
 		{
-			if ($group_found)
+			$in_week = 0;
+			if ( $cmd ~~ [qw< total eod daybreak >] )
 			{
-				if ($cmd eq 'daybreak')
+				if ($group_found)
 				{
-					breakdown(sort @daybreak);
+					if ($cmd eq 'daybreak')
+					{
+						breakdown(sort @daybreak);
+					}
+					else
+					{
+						my $total = my $lines = 0;
+						push @mondays, $totals{':MINDATE'} if $opts->{a};
+						$totals{':MINDATE'} ||= 'N/A';
+						$totals{':MAXDATE'} ||= 'N/A';
+						print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
+						foreach (sort keys %totals)
+						{
+							next if /^:/;
+							$total += $totals{$_};
+							++$lines;
+							print_time($_, $totals{$_});
+						}
+						print_time("GRAND TOTAL", $total) if $lines > 1;
+						print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
+					}
+					exit unless $opts->{a};
+					say '';
+					$group_found = 0;
 				}
 				else
 				{
-					my $total = my $lines = 0;
-					push @mondays, $totals{':MINDATE'} if $opts->{a};
-					$totals{':MINDATE'} ||= 'N/A';
-					$totals{':MAXDATE'} ||= 'N/A';
-					print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
-					foreach (sort keys %totals)
-					{
-						next if /^:/;
-						$total += $totals{$_};
-						++$lines;
-						print_time($_, $totals{$_});
-					}
-					print_time("GRAND TOTAL", $total) if $lines > 1;
-					print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
+					undef %totals;
 				}
-				exit unless $opts->{a};
-				say '';
-				$group_found = 0;
-			}
-			else
-			{
-				undef %totals;
 			}
 		}
 
@@ -80,10 +84,21 @@ while ( <> )
 	chomp;
 	my ($name, $chunks, @stuff) = split("\t");
 	$chunks ||= '';
-	if ($name and $name !~ /:$/ and !$in_week)
+	if ( $name )
 	{
-		++$cur_week;
-		$in_week = 1;
+		if ( $name =~ /:$/ )
+		{
+			$processed_labels = 1;
+		}
+		else
+		{
+			if ( !$in_week )
+			{
+				++$cur_week;
+				$in_week = 1;
+			}
+			$processed_labels = 0;
+		}
 	}
 
 	if ($chunks and substr($chunks, -1, 1) eq '-' and ($cmd eq 'start' or $cmd eq 'half' or $cmd eq 'pause'))
@@ -115,13 +130,16 @@ while ( <> )
 	}
 	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
-		next if $name =~ /:$/;
-
 		$group_found = 1 if $cmd eq 'total' and $name eq $tname;
 		my $sub;
-		if (@stuff)
+		if ( $name =~ s/:$// )
 		{
-			$sub = $stuff[-1];
+			if (@stuff)
+			{
+				$sub = sprintf("%-20s  [%s]", $name, $stuff[-1]);
+				$totals{$sub} = delete $totals{$name} if exists $totals{$name} and not exists $totals{$sub};
+			}
+			next;
 		}
 		else
 		{
