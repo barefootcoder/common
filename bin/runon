@@ -1,0 +1,31 @@
+#! /bin/bash
+. ~/bin/bash_funcs
+
+host=$1
+shift
+
+ctl_file=~/Dropbox/control.$host
+out_file=~/Dropbox/output.$host
+[[ -e $out_file ]] && die "output file already exists"
+
+function is_done
+{
+	if [[ -e $out_file ]]
+	then
+		[[ $(tail -n1 $out_file) == '=== END ===' ]]
+	else
+		false
+	fi
+}
+
+echo "$*" >$ctl_file
+echo -n "waiting ." >&2
+while ! is_done
+do
+	sleep 5
+	echo -n "." >&2
+done
+echo "" >&2
+${PAGER:-less -F} $out_file
+/bin/rm -f $out_file
+[[ -e $ctl_file ]] && /bin/rm -f $ctl_file
