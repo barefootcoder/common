@@ -15,7 +15,7 @@ sub run_command();
 my $format = '%f:%l';
 
 my $opt = {};
-getopts("qlF:vcdh", $opt);
+getopts("qlF:vcCPDh", $opt);
 usage() if $opt->{h};
 
 $format = '%l' if $opt->{q};
@@ -39,9 +39,9 @@ sub usage
 {
 	my $me = basename($0);
 	print STDERR <<END;
-usage: $me [-q|-l|-v|-c|-F FORMAT] [-Cdh] 'command to run on {}' [files ...]
+usage: $me [-q|-l|-v|-c|-F FORMAT] [-CPDh] 'command to run on {}' [files ...]
     command is run on every provided filename
-    in command, {} is replaced by filename
+    in command, {} is replaced by "filename" (including double quotes)
     if no files are given, STDIN is treated as a list of filenames
     -q : do not precede output by filename (shortcut for -F %l)
     -l : print filenames which have output, but not output (not same as -F %f)
@@ -49,7 +49,11 @@ usage: $me [-q|-l|-v|-c|-F FORMAT] [-Cdh] 'command to run on {}' [files ...]
     -c : print count of output lines for each filename
     -F : print filename/output according to supplied FORMAT (default: $format)
     -C : for each filename, chdir to `dirname filename` before running command
-    -d : debugging (print commands to be run to STDERR)
+    -P : treat command as Perl code, not a shell command
+            in this case, evaluation of code is output
+            value is split into lines
+            no output if evaluation is false
+    -D : debugging (print commands to be run to STDERR)
     -h : this help message
   in FORMATs:
     %f : filename
@@ -78,24 +82,50 @@ sub run_command ()
 	$run_file =~ s/\\\{\}/\cC\0/g;
 	$run_file =~ s/\{\}/"$cfile"/g;
 	$run_file =~ s/\cC\0/{}/g;
-	print STDERR "$run_file\n" if $opt->{d};
+	print STDERR "$run_file\n" if $opt->{D};
 
 	my $count = 0;
-	open(PIPE, "$run_file |") or die("can't open pipe");
-	while ( <PIPE> )
+	if ($opt->{P})
 	{
-		++$count;
-		last if $opt->{v};
+		local $@;
+		my $out = eval $run_file;
+		die("syntax error: $@") if $@;
 
-		if ($opt->{l})
+		if ($out)
 		{
-			print "$file\n";
-			last;
-		}
+			foreach ( split("\n", $out) )
+			{
+				++$count;
+				last if $opt->{v};
 
-		print_output($file, $_) unless $opt->{c};
+				if ($opt->{l})
+				{
+					print "$file\n";
+					last;
+				}
+
+				print_output($file, $_) unless $opt->{c};
+			}
+		}
 	}
-	close(PIPE);
+	else
+	{
+		open(PIPE, "$run_file |") or die("can't open pipe");
+		while ( <PIPE> )
+		{
+			++$count;
+			last if $opt->{v};
+
+			if ($opt->{l})
+			{
+				print "$file\n";
+				last;
+			}
+
+			print_output($file, $_) unless $opt->{c};
+		}
+		close(PIPE);
+	}
 	print "$file\n" if $opt->{v} and !$count;
 	print "$file:$count\n" if $opt->{c} and $count;
 

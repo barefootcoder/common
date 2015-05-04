@@ -55,10 +55,6 @@ then
 	mkdir ~/common
 fi
 
-cd $buddy/common
-git pull --rebase
-cd $OLDPWD
-
 src_dir=$buddy/common/root
 if [[ -d $src_dir ]]
 then
