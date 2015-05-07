@@ -11,6 +11,7 @@ then
 	do
 		sleep 1
 	done
+	sleep 1											# not sure why this is necessary, but it appears to be
 	xdotool search --name "$ThunderbirdWindow" windowmove 150 55 set_desktop_for_window 1
 fi
 
