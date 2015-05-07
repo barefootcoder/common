@@ -35,7 +35,7 @@
 #		line, we'll have to expand that ourselves.  Also, there might be tildes which need expanding
 #		(this applies to the "cd" line as well).  Thus the `eval`s below.
 
-for prefix in ~/.vimS- ~/local/data/vimS/ ./vimS/
+for prefix in ~/.vimS- ~/local/data/vimS/ ~/proj/vimS/ ./vimS/
 do
 	prefixes="$prefixes $prefix"
 done
@@ -96,13 +96,19 @@ then
 
 	for file in ./*.vimS
 	do
+		if [[ $file != *"*"* ]]
+		then
 			print_file $(basename $file .vimS) $file
+		fi
 	done
 	for prefix in $prefixes
 	do
 		for file in $prefix*
 		do
-			print_file ${file##$prefix} $file
+			if [[ $file != *"*" ]]
+			then
+				print_file ${file##$prefix} $file
+			fi
 		done
 	done
 	exit
