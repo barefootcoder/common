@@ -24,5 +24,6 @@ else
 fi
 myterm -s Absalom city-spires 125x50+7+30 $cmd
 
+myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
 #myterm -s Tyr wasteland 125x50-0-30 ssh tyr
 #myterm -s AWS Neopolis-horizon 125x50-33-30 ssh nami-aws
