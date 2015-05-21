@@ -10,7 +10,7 @@ alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
 complete vcd 'p/1/`vc info project:all`/'
 
 if ( $?VCTOOLS_SHELL ) then
-	alias st 'vc stat ; vlog -LNs | perl -0777 -e '\''$o = <STDIN> and print "\nUnpushed commits:\n$o\n"'\'
+	alias st 'vc stat-plus'
 	alias sync vc sync
 	alias vpush vc push
 	alias stg vc stage
