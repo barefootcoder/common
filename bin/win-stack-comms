@@ -6,19 +6,19 @@
 ThunderbirdWindow=".*Mozilla Thunderbird"
 if ! /usr/bin/pgrep thunderbird >/dev/null
 then
-	thunderbird &
+	thunderbird >/dev/null 2>&1 &
 	while ! xdotool search --name "$ThunderbirdWindow" >/dev/null
 	do
 		sleep 1
 	done
 	sleep 1											# not sure why this is necessary, but it appears to be
-	xdotool search --name "$ThunderbirdWindow" windowmove 150 55 set_desktop_for_window 1
+	xdotool search --name "$ThunderbirdWindow" windowmove 175 55 set_desktop_for_window 1
 fi
 
 PidginWindow="Buddy List"
 if ! /usr/bin/pgrep pidgin >/dev/null
 then
-	pidgin &
+	pidgin >/dev/null 2>&1 &
 	while ! xdotool search --name "$PidginWindow" >/dev/null
 	do
 		sleep 1
