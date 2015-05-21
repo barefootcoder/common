@@ -1,0 +1,5 @@
+#! /bin/bash
+
+rmmod psmouse
+modprobe psmouse
+lsmod | grep mouse
