@@ -72,7 +72,6 @@ my $section_break = <<EOT;
 EOT
 
 #while ( <> )
-$/ = undef;
 $_ = slurp;
 $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of footnotes
 {
@@ -99,12 +98,14 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{a`}{&agrave;}g;																# generalized a grave
 	s{u`}{&uacute;}g;																# generalized u accute
 	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
+	s{\bcafe\b}{caf&eacute;}g;														# cafe (w/ accent)
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{\b(a)e(sthetic(s|ally)?)\b}{ "&${\({a=>'ae',A=>'AE'}->{$1})}lig;$2" }ige;		# aesthetic/s/ally, preserving case
 	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
+	s{Appelknyckarjazz}{&Auml;ppelknyckarjazz}g;									# proper spelling of the Movits! album
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
 	unless ($blog_type eq 'bbcode')
