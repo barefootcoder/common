@@ -7,6 +7,7 @@ use Text::Tabs; $tabstop = 4;
 
 use lib "$ENV{'HOME'}/Dropbox/personal";
 use blog::common;
+use blog::mixes;
 
 
 my %blog =
@@ -66,6 +67,7 @@ my $subtitle_type;														# one of: alt, vol
 my $hash = '#';
 my $front_boundary = qr/(^|\W)/;
 my $back_boundary = qr/(?=\W|$)/;
+my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
 my $section_break = <<EOT;
 
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
@@ -142,15 +144,16 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
-	s[{img (.*?)}][<img src="$1">]g;												# embedded images
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
-	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
+	s[{img(\d+x\d+)? (.*?)}][image($2, $1)]eg;										# embedded images
+	s[{mix (.*?) ($roman_numeral)(\n\s*(.*?)\s*)?}][mix_block($1, $2, $4)]seg;		# mix volume
+	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
 	s{\bTM\b}{&trade;}g;															# trademark
@@ -297,6 +300,56 @@ func fmt ($fmt, $text)
 	$on = "$open$on$close";
 	$off = "$open/$off$close";
 	return "$on$text$off";
+}
+
+
+func image ($source, $size)
+{
+	my %props = ( src => $source );
+	@props{qw< width height >} = split('x', $size) if $size;
+	return '<img ' . join(' ', map { qq{$_="$props{$_}"} } keys %props) . '>';
+}
+
+
+func mix_block ($mix_name, $vol, $extra?)
+{
+	my $file = "mixes/$mix_name.m3u";
+	debuggit(2 => "creating mix block for", $mix_name, "volume", $vol, "file", $file);
+	my $mix = MixVolume->new($file, volume => $vol);
+
+	my $block = $mix->gen_html =~ s/\s+$//r;
+	if ($extra)
+	{
+		my $space = qr/(?:\s|&nbsp;)/;
+		my %mods;
+		foreach (split("\n", $extra))
+		{
+			s/^$space*(\d+):$space*// or die("don't know how to handle mix block line: $_");
+			debuggit(4 => "code will be", "sub { $_ }");
+			my $code = eval "sub { $_ }" || die("compilation error in mix block: $@");
+			$mods{$1} = $code;
+		}
+		my $track = 0;
+		my @newblock;
+		foreach (split("\n", $block))
+		{
+			if (/^\s*(<.*?>)?&ldquo;/)				# then it's a track line
+			{
+				debuggit(5 => "checking track", $track + 1);
+				if (my $code = $mods{++$track})
+				{
+					unless ( $code->() )
+					{
+						debuggit("track line: $_");
+						die("code block for track $track failed");
+					}
+				}
+			}
+			push @newblock, $_;
+		}
+		$block = join("\n", @newblock);
+	}
+	return $block;
 }
 
 
