@@ -25,7 +25,7 @@ my $nonex = $opt->{n};
 my $recursive = $opt->{r};
 my $quiet = $opt->{q};
 my $lstime = $opt->{t} ? '-tr' : '-1';
-my $greptype = $opt->{f} ? '-F' : '-G';
+my $greptype = $opt->{f} ? '-F' : '-P';
 $greptype .= 'i' if $opt->{i};
 my $verbosegrep = $opt->{v} ? '-H' : '-l';
 if ($opt->{h} or not $opt_ok)
@@ -39,8 +39,8 @@ if ($opt->{h} or not $opt_ok)
 	print STDERR "         -l:  list (show only subdirs which contain scripts; most useful with -r)\n";
 	print STDERR "         -t:  sort by time (oldest first; doesn't work for >1,000 scripts)\n";
 	print STDERR "         -b:  bare (show only script names)\n";
-	print STDERR "         -g:  show only scripts containing pattern (as grep)\n";
-	print STDERR "         -f:  fast search with -g (as fgrep instead of grep)\n";
+	print STDERR "         -g:  show only scripts containing pattern (as `grep -P`)\n";
+	print STDERR "         -f:  fast search with -g (as `fgrep` instead of `grep -P`)\n";
 	print STDERR "         -i:  case insensitive search with -g\n";
 	print STDERR "         -v:  show matching lines of search with -g\n";
 	print STDERR "         searches . if dir not specified\n";
