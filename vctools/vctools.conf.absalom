@@ -64,24 +64,51 @@ DefaultSourcePath=git@github.com:%user/%project.git
 
 # overrides for CE
 <Policy CE>
+	<CustomInfo cur_branch_remote>
+		action <<---
+			{ (grep /^\*/, `git branch -vv`)[0] =~ m{\[(\w+)/} and $1 }
+		---
+	</CustomInfo>
 	<CustomCommand push-cibola>
 		Verify = project
 		Files = 0
 
 		action <<---
 			%cur_branch !~ m{^feature/}							->	! This doesn't look like an appropriate branch.
-			`git log trunk..HEAD` !~ /DO NOT PUSH TO GITHUB/	->	! This doesn't look like an appropriate branch.
+			%cur_branch_remote ne 'cibola'						->	! This doesn't look like an appropriate branch.
 
 			CIBOLA_BRANCH=`ssh cibola 'cd ~/workproj/CE-mounted ; git rev-parse --abbrev-ref HEAD'` =~ s/\n$//r
 			"$CIBOLA_BRANCH" eq %cur_branch						->	! Have to change branches on Cibola first.
 
-			%is_dirty											->	vcpatchws -f `checktabs -nb`
-			%is_dirty											->	git add %mod_files
-			%is_dirty											->	git commit -v --amend
+			COMMIT_PREPPED=`git log trunk..HEAD` =~ /DO NOT PUSH TO GITHUB/ ? 1 : 0
+			HAS_CHANGES=`git status -s --untracked=all` ? 1 : 0
+			$HAS_CHANGES										->	vcpatchws -f `checktabs -nb`
+			$HAS_CHANGES										->	git add %mod_files
+			$HAS_CHANGES and $COMMIT_PREPPED					->	git commit -v --amend
+			$HAS_CHANGES and not $COMMIT_PREPPED				->	git commit -m "work in progress; DO NOT PUSH TO GITHUB"
 
 			git diff --stat HEAD^
 			? Push this to Cibola?
 			git push --force-with-lease
+		---
+	</CustomCommand>
+	<CustomCommand pull-cibola>
+		Verify = project
+		Files = 0
+
+		action <<---
+			%cur_branch !~ m{^feature/}							->	! This doesn't look like an appropriate branch.
+			%cur_branch_remote ne 'cibola'						->	! This doesn't look like an appropriate branch.
+			%is_dirty											->	! You really shouldn't have any uncommitted work.
+
+			git reset --hard origin/trunk
+			git stash save -u 'FOR DROPPING'
+			`git stash list | head -n1` =~ /FOR DROPPING/		->	git stash drop
+
+			= branch-update
+			git fetch cibola
+			git pull --rebase
+			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/	->	git reset HEAD^
 		---
 	</CustomCommand>
 </Policy>
