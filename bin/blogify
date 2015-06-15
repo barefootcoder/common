@@ -65,7 +65,7 @@ my $subtitle_type;														# one of: alt, vol
 
 
 my $hash = '#';
-my $front_boundary = qr/(^|\W)/;
+my $front_boundary = qr/(^|[^\w\\])/;
 my $back_boundary = qr/(?=\W|$)/;
 my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
 my $section_break = <<EOT;
@@ -142,8 +142,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	}																				# confused with boldface
 	s{${front_boundary}_(\w+)_(?=\w)}{$1 . fmt(italic => $2)}seg;					# partial word italics (front)
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
-	s{${front_boundary}_(.+?)_$back_boundary}{$1 . fmt(italic => $2)}seg;			# italics
+	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
+	s[{img (.*?)}][<img src="$1">]g;												# embedded images
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
@@ -161,7 +162,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
-	s{\\([\[{*}\]])}{$1}g;															# literal brackets, braces, or *
+	s{\\([\[{*_}\]])}{$1}g;															# literal brackets, braces, or */_
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
@@ -239,12 +240,13 @@ sub url_block
 	{
 		die("can't do forward links in bbcode") if $forward;
 		state $bbcodes = [ map { qr{^/?$_\b}i }
-				qw< b i u s quote list code img size font spoiler center color url indent > ];
+				qw< b i u s quote list code img size font spoiler center color url indent mention > ];
 		if (($url eq '*' or $url ~~ @$bbcodes) and not $alt_text)
 		{
 			return "[$url]";
 		}
 
+		die("no alt text for $url!") unless defined $alt_text;
 		return qq{[url="$url"]${alt_text}[/url]};
 	}
 
