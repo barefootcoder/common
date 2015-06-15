@@ -10,7 +10,7 @@ screen -t man
 screen -t top top
 screen -t root sudo su -
 screen -t launch
-screen -t task
+screen -t todo
 	stuff "todo\015"
 screen -t notes
 	number 9

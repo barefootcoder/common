@@ -17,7 +17,7 @@ screen -t notes
 screen -t common
 	source .screenrc.vctools
 	stuff "vcd common\015"
-screen -t task
+screen -t todo
 	stuff "todo\015"
 screen -t bc
 	stuff "bc\015"
