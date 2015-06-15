@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 
 use 5.14.0;
 use autodie ':all';
@@ -7,21 +7,23 @@ use warnings FATAL => 'all';
 use Text::Tabs; $tabstop = 4;
 
 
+my $pre_re = qr/^\.$/;
+
 my $in_pre = 0;
 my $in_list = 0;
 while (<>)
 {
 	$_ = expand($_);
 
-	if (/^\s+(.)/ and $1 ne '*' and not $in_pre and not $in_list)
+	if (( /$pre_re/ or /^\s+(.)/ and !($1 ~~ ['*','#']) ) and not $in_pre and not $in_list)
 	{
-		say '{{{';
+		/$pre_re/ ? ($_ = "{{{\n") : say '{{{';
 		$in_pre = 1;
 		s/^    //;
 	}
-	elsif ($in_pre and /^$/)
+	elsif ($in_pre and ( /^$/ or /$pre_re/ ))
 	{
-		say '}}}';
+		/$pre_re/ ? ($_ = "}}}\n") : say '}}}';
 		$in_pre = 0;
 	}
 	elsif ($in_list and /^$/)
