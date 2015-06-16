@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 
-use myperl;
+use myperl DEBUG => 1;
 
 use Getopt::Std;
 
@@ -30,13 +30,15 @@ for my $file (@ARGV)
 
 		unless ($pipe_opened)
 		{
-			open(PIPE, "| fake_timer total $timer") or die("can't fork");
+			my $cmd = "fake_timer total $timer";
+			debuggit(2 => "about to run:", $cmd);
+			open(PIPE, "| $cmd") or die("can't fork");
 			say PIPE '';
 			$pipe_opened = 1;
 		}
 
 		print "$file: $_" if $opts->{v};
-		print map { "$file: $_" } `fake_timer breakdown $timer $file` if $opts->{b};
+		print map { "$file: $_" } `fake_timer -a breakdown $timer $file` if $opts->{b};
 		print PIPE map { s/$/\t$ticket/; $_ } grep { /^$timer\t/ } @file;
 	}
 }

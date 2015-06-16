@@ -5,12 +5,13 @@ use myperl DEBUG => 1;
 use Getopt::Std;
 use Time::Local;
 use Time::ParseDate qw<parsedate>;
+use List::Util qw< minstr maxstr >;
 
 const my $AVAIL => ':AVAILABILITY';
 
 
 my $opts = {};
-getopts('aw:', $opts);
+getopts('avw:', $opts);
 
 my $cmd = shift;
 my $arg = shift;
@@ -124,7 +125,7 @@ while ( <> )
 		if ($name eq $tname and $cur_week >= ($opts->{w} // 1))
 		{
 			breakdown(split(',', $chunks));
-			exit;
+			exit unless $opts->{a};
 		}
 		next;
 	}
@@ -176,12 +177,22 @@ while ( <> )
 		{
 			if ($name =~ s/:$//)
 			{
-				$chunks =~ s/\s*\((IB-\d+)\)// and $review{$name}->{ticket} = $1;
+				$review{$name}->{ticket} = $stuff[-1] if $stuff[-1];
 				$review{$name}->{descr} = $chunks;
 			}
 			else
 			{
-				$review{$name}->{total} += sum map { scalar total_chunk($_) } split(',', $chunks) if $chunks;
+				if ($chunks)
+				{
+					my $total = sum map { scalar total_chunk($_) } split(',', $chunks);
+					$review{$name}->{total} += $total;
+					if ($opts->{v})
+					{
+						my $min = minstr map { $_ ? (date_range($_))[0] : () } split(',', $chunks);
+						my $max = maxstr map { $_ ? (date_range($_))[1] : () } split(',', $chunks);
+						print_time("time from $min to $max", $total);
+					}
+				}
 			}
 		}
 		next;
@@ -223,6 +234,7 @@ if ($cmd eq 'total' and $opts->{a})
 sub get_date
 {
 	my ($time) = @_;
+	debuggit(4 => "get_date: got time", $time);
 
 	# times before 6am are considered "yesterday", so just subtract 6 hours from the actual time
 	return time2str("%Y/%m/%d", $time - 60 * 60 * 6);
@@ -232,8 +244,9 @@ sub get_date
 sub date_range
 {
 	my ($chunks) = @_;
+	debuggit(4 => "date_range: got chunk", $chunks);
 
-	$chunks =~ m{^(?:2/)?(\d+)-.*(?:(\d+),?)?$};
+	$chunks =~ m{^(?:2/)?(\d+).*-(?:(\d+),?)?$};
 	return (get_date($1), get_date($2 || time()));
 }
 
