@@ -83,7 +83,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 
 	# temporary conversion so -> and <- aren't considered literal > or <
 	my %align = ( '-><-' => 'CENTER', '->->' => 'RIGHT', '<-<-' => 'LEFT' );
-	s{(->|<-)(.+?)(->|<-)}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}sg;
+	s{^\s*(->|<-)(.+?)(->|<-)\s*$}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;
 
 	# save URLs so they don't get messed with later
 	s{\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;								# ]] <-- to keep % from freaking out
@@ -129,8 +129,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcipt-type blocks
 	unless ($blog_type eq 'bbcode')
 	{
+		no warnings 'uninitialized';
 		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
-		s{([]).?!:])  }{$1&nbsp; }g;												# proper end-of-sentence
+		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 	}
 	s{--}{$blog{$blog_type}->{dash}}eg;												# em dash
