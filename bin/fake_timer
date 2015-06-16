@@ -131,42 +131,45 @@ while ( <> )
 	}
 	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
-		$group_found = 1 if $cmd eq 'total' and $name eq $tname;
-		my $sub;
-		if ( $name =~ s/:$// )
+		if ($cur_week >= ($opts->{w} // 1))
 		{
-			if (@stuff)
+			$group_found = 1 if $cmd eq 'total' and $name eq $tname;
+			my $sub;
+			if ( $name =~ s/:$// )
 			{
-				$sub = sprintf("%-20s  [%s]", $name, $stuff[-1]);
-				$totals{$sub} = delete $totals{$name} if exists $totals{$name} and not exists $totals{$sub};
+				if (@stuff)
+				{
+					$sub = sprintf("%-20s  [%s]", $name, $stuff[-1]);
+					$totals{$sub} = delete $totals{$name} if exists $totals{$name} and not exists $totals{$sub};
+				}
+				next;
 			}
-			next;
-		}
-		else
-		{
-			$sub = $name;
-			$sub =~ s/(-nw)+$//;
-		}
-		foreach (split(',', $chunks))
-		{
-			warn("no from time on timer $name, line $.") if /^-/;
-			warn("bad time on timer $name, line $.") unless /^\d/;
-			my ($min, $max) = date_range($_);
-			if ($cmd eq 'eod' and $min eq $today)
+			else
 			{
-				$group_found = 1;
-				$totals{$sub} += total_chunk($_);
+				$sub = $name;
+				$sub =~ s/(-nw)+$//;
 			}
-			elsif ($cmd eq 'daybreak' and $min eq $today and $name ne $AVAIL)
+			foreach (split(',', $chunks))
 			{
-				$group_found = 1;
-				push @daybreak, "$_:$name";
-			}
-			elsif ($cmd eq 'total')
-			{
-				$totals{$sub} += total_chunk($_);
-				$totals{':MINDATE'} = $min if not $totals{':MINDATE'} or $min lt $totals{':MINDATE'};
-				$totals{':MAXDATE'} = $min if not $totals{':MAXDATE'} or $min gt $totals{':MAXDATE'};
+				warn("no from time on timer $name, line $.") if /^-/;
+				warn("bad time on timer $name, line $.") unless /^\d/;
+				my ($min, $max) = date_range($_);
+				if ($cmd eq 'eod' and $min eq $today)
+				{
+					$group_found = 1;
+					$totals{$sub} += total_chunk($_);
+				}
+				elsif ($cmd eq 'daybreak' and $min eq $today and $name ne $AVAIL)
+				{
+					$group_found = 1;
+					push @daybreak, "$_:$name";
+				}
+				elsif ($cmd eq 'total')
+				{
+					$totals{$sub} += total_chunk($_);
+					$totals{':MINDATE'} = $min if not $totals{':MINDATE'} or $min lt $totals{':MINDATE'};
+					$totals{':MAXDATE'} = $min if not $totals{':MAXDATE'} or $min gt $totals{':MAXDATE'};
+				}
 			}
 		}
 		next;
