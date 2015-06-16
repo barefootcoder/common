@@ -115,7 +115,7 @@ case $termprog in
 					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
-					args="-title $title $image $icon -fg white -bg black -geometry $geometry +sb"
+					args="-title $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
 					;;
 	Eterm)
 					if [[ $scaled == 1 ]]
