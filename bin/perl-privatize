@@ -79,7 +79,8 @@ then
 	# *		is the shortest from among what's left (most likely the right one).
 	# In the Perl snippet below, you might think you need `next if $. == 1`, but you don't.
 	# Think about it.  (Hint: What's the length of $l before it's ever set?)
-	oldmod=$(perlfind -f $1 | perl -lne '$l = $_ if $. == 2 or m{^/} && length() < length $l; END { print $l }')
+	#oldmod=$(perlfind -f $1 | perl -lne '$l = $_ if $. == 2 or m{^/} && length() < length $l; END { print $l }')
+	oldmod=$(PERL5LIB= perlfind $1)
 	echo "diffing $newmod against $oldmod"
 	diff $oldmod $newmod
 elif [[ $module == $newmod ]]
