@@ -1,0 +1,12 @@
+#! /bin/bash
+. ~/bin/bash_funcs
+
+tarfile=$1
+[[ $tarfile ]] || die "must supply tarfile name"
+
+ferrydir=~/work/ferry
+[[ -d $ferrydir ]] || die "ferry dir $ferrydir doesn't exist"
+
+[[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
+
+tar cvpzf $ferrydir/$tarfile.tgz $(vc info %mod_files)
