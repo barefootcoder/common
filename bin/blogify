@@ -103,6 +103,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bcafe\b}{caf&eacute;}g;														# cafe (w/ accent)
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
+	s{\b(jalape)n(os?)\b}{$1&ntilde;$2}gi;											# jalapeno (w/ tilde), preserving case
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{\b(a)e(sthetic(s|ally)?)\b}{ "&${\({a=>'ae',A=>'AE'}->{$1})}lig;$2" }ige;		# aesthetic/s/ally, preserving case
 	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
