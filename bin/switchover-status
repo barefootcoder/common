@@ -1,3 +1,4 @@
 #! /bin/bash
 
-ls -lh ~/timer/timer-new ~/timer/.timer-new.sw? ~/.purple/*.xml
+timerfile=timer-new
+ls -lh `find ~/timer/ -name $timerfile -o -name ".$timerfile.sw?" ; find ~/.purple/ -name '[abs]*.xml' | grep -v ' '`
