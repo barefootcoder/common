@@ -143,21 +143,6 @@ then
 	make_link ~/Dropbox/purple $dir
 fi
 
-# certain repos we want to symlink files in their bin into our bin
-for repo in jsonp
-do
-	bindir=~/proj/$repo/bin
-	if [[ -d $bindir ]]
-	then
-		for file in $bindir/*
-		do
-			make_link $file $mydir/bin/$(basename $file)
-		done
-	else
-		echo "$0: can't find repo for $repo"
-	fi
-done
-
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
 if [[ $1 != refresh ]]

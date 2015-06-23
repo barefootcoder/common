@@ -196,6 +196,28 @@ endif
 
 alias pack 'tar --same-owner -cvzpf \!^.tgz \!^'
 alias unpack 'tar --same-owner -xvzpf'
+
+# repos where we want aliases for everything in their bin/
+foreach repo (jsonp)
+	set bindir=~/proj/$repo/bin
+	if ( -d ~/proj/$repo/bin ) then
+		foreach prog ($bindir/*)
+			set progname=`basename $prog`
+			set existing_alias=:`alias $progname`
+			if ( $existing_alias == :$prog ) then
+				# alias already set correctly; nothing to do
+			else if ( $existing_alias == : ) then
+				# no alias; create one
+				# note that if you use `basename $prog` directly, instead of going through
+				# the $progname var, you'd have to use `eval` here ... not sure why
+				alias $progname $prog
+			else
+				# have an alias, but not the one we expect
+				echo "already have an alias for $progname; can't set"
+			endif
+		end
+	endif
+end
 if ( $?TCSHRC_DEBUG ) echo "DEBUG: set vars and aliases"
 
 # this should be a list of the hosts that we typically keep sync'ed up
