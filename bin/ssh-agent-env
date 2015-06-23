@@ -1,7 +1,9 @@
 #! /bin/bash
 
 # oldest copy of ssh-agent running
-pid=$(/bin/ps -o pid= --sort -stime -p $(/usr/bin/pgrep -x ssh-agent) | head -n1)
+pid=$(/usr/bin/pgrep -x ssh-agent)
+[[ $pid ]] || exit									# no agent running; probably a sandbox
+pid=$(/bin/ps -o pid= --sort -stime -p $pid | head -n1)
 
 # find the socket(s)
 sockets=$(/bin/ls -1 /tmp/ssh-*/agent.*)
