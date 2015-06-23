@@ -1,5 +1,4 @@
 #!/bin/bash
-
 . ~/bin/bash_funcs
 
 count=-c
@@ -7,6 +6,7 @@ while getopts ":nvbh" opt
 do
 	case $opt in
 		n)	files=$(git status -s | awk '{print $2}')
+			[[ -z $files ]] && exit
 			;;
 		v)	count=-n
 			;;
@@ -43,4 +43,27 @@ then
 	fi
 fi
 
-fgrep $count -srHI '	' $files | grep -v ':0$' | egrep -v '^Makefile(\..*)?:'
+out=$(fgrep $count -srHI $'\t' $files | grep -v ':0$')
+for pattern in '^Makefile(\..*)?$' '\.tsv$'
+do
+	[[ $count != -l ]] && pattern=${pattern/$/:}
+	out=$(echo "$out" | grep -Pv $pattern)
+done
+echo -n "$out"
+exit
+
+# first simplistic try to convert this multi-process bash algo over to single-process Perl
+# but it seems to take about 5x as long, so I'm temporarily abandoning it
+perl -MFile::Next -MPath::Tiny -le '
+	$files = File::Next::files(@ARGV);
+	while (defined($_ = $files->()))
+	{
+		next if /^Makefile(\..*)?$/;
+		next if /\.tsv$/;
+		next if -B;
+
+		my $contents = path($_)->slurp;
+		my $count = $contents =~ tr/\t//;
+		print "$_:$count" if $count;
+	}
+' $files
