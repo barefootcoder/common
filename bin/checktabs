@@ -49,7 +49,7 @@ do
 	[[ $count != -l ]] && pattern=${pattern/$/:}
 	out=$(echo "$out" | grep -Pv $pattern)
 done
-echo -n "$out"
+[[ $out ]] && echo "$out"
 exit
 
 # first simplistic try to convert this multi-process bash algo over to single-process Perl
