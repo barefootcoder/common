@@ -20,6 +20,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias unget vc unget
 	alias branches vc show-branches
 	alias unbranch vc unbranch
+	alias rebranch vc rebranch
 	alias vmerge vc merge
 	alias resolved vc resolved
 	alias stash vc stash
