@@ -37,6 +37,7 @@ if ( $?VCTOOLS_SHELL ) then
 	set code_ignore="$always_ignore --ignore-dir t --ignore-dir tlib"
 	alias vg "$top_space ; ack $always_ignore --match \!* | $filter_line_too_long"
 	alias vgl "$top_space ; ack --perl $code_ignore --match \!* | $filter_line_too_long"
+	alias vf "$top_space ; ack $always_ignore -f | ack --match \!*"
 	alias vlog git-helper-log
 	alias vbranch git-helper-branch
 	alias testclean 'git stash save ; t ; git stash pop'
