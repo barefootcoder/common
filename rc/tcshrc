@@ -302,6 +302,11 @@ if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	#source /usr/local/etc/VCtools/vctools.cshrc
 endif
 source ~/.vctoolsrc
+	set pbtest_path=~/proj/Pb.testing/bin:$PATH
+	set pbtest_lib=$HOME/proj/Pb.testing/lib:$HOME/proj/perlx-bash/lib:$PERL5LIB
+	set pbtest_setup="unalias vc ; setenv PATH $pbtest_path ; setenv PERL5LIB $pbtest_lib"
+	complete pbtest "p/1/(`vc info --oneline project:all`)/"
+alias pbtest "vcd \!^ ; set prompt='[Pb.testing: \!^] ' ; $pbtest_setup"
 if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished VCtools"
 
 # allow local overrides to shared .tcshrc
