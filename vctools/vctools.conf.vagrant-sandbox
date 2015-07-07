@@ -8,6 +8,7 @@ VCtoolsDir=/var/local/VCtools
     VC=git
 </Project>
 
+DefaultVC=git
 <<include ~/.vctools/custom.conf>>
 <<include ~/.vctools/CE-custom.conf>>
 
