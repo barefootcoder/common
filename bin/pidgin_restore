@@ -24,18 +24,12 @@ unless (get_window_id($PidginWindow))
 	die("Pidgin not running, or I can't find the $PidginWindow");
 }
 
-# if we don't click somewhere in the list of contacts, autospawn won't work
-goto_window($PidginWindow);
-system('xdotool mousemove 1710 135 click 1');
-
 foreach my $name (keys %$data)
 {
 	my $window = get_window_id($name);
 	if (!$window and $data->{$name}->{autospawn})
 	{
-		goto_window($PidginWindow);
-		# the `search` is most likely unnecessary here
-		system(qq{ xdotool search --name "$PidginWindow" type "$name\n" });
+		type_in_contact_window("$name\n");
 
 		# hopefully that gets us a window at this point
 		# although we might have to wait a second for it to show up
@@ -50,14 +44,11 @@ foreach my $name (keys %$data)
 		debuggit("moving", $name, "to", $d, '/', $x, ',', $y);
 		system("xdotool windowsize $window $WIN_WIDTH $h windowmove $window $x $y set_desktop_for_window $window $d");
 	}
-	else
-	{
-		# could do something along the lines of:
-		# (Warning! untested)
-		# system(q{ xdotool search "Buddy List" windowactivate mousemove --window %1 125 424 click 1 type $name });
-		# system('xdotool key Return');
-	}
 }
+
+# for some super-bizarre reason, my work group gets closed sometimes
+# this will guarantee it's left in the open state
+type_in_contact_window("work\n+");
 
 
 func get_screen_size
@@ -91,6 +82,22 @@ func goto_window ($name)
 {
 	system(qq{ xdotool search --name "$name" windowactivate });
 	sleep 1 while `xdotool getwindowfocus` != get_window_id($name);
+}
+
+func type_in_contact_window ($string)
+{
+	state $done_yet = 0;
+	unless ($done_yet)
+	{
+		# if we don't click somewhere in the list of contacts, typing won't work
+		goto_window($PidginWindow);
+		system('xdotool mousemove 1710 135 click 1');
+		$done_yet = 1;
+	}
+
+	goto_window($PidginWindow);
+	# the `search` is most likely unnecessary here
+	system(qq{ xdotool search --name "$PidginWindow" type "$string" });
 }
 
 
