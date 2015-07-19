@@ -5,11 +5,14 @@
 #ssh-add
 #ssh-add -l
 
-if ! dropbox start
+if dropbox status | grep -q 'not running'
 then
-	if yn "Reinstall dropbox?"
+	if ! dropbox start
 	then
-		dropbox install force
+		if yn "Reinstall dropbox?"
+		then
+			dropbox install force
+		fi
 	fi
 fi
 
