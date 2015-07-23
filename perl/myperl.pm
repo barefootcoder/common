@@ -83,7 +83,7 @@ sub import
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 
 		#CLASS							=>	1.00		=>				# handled by myperl::Declare
-		TryCatch						=>
+		TryCatch						=>	1.003001	=>
 		'Const::Fast'					=>
 		'Path::Class'					=>
 		'Perl6::Slurp'					=>
@@ -376,6 +376,7 @@ I<After> that, if you want to make sure you have all the necessary prereqs, try 
 # ignore this section if you're reading the man page
 
 CLASS
+Moops
 Roman
 parent
 version
@@ -383,6 +384,7 @@ Debuggit
 TryCatch
 Template
 #MP3::Tag																# constantly reinstalls itself :-(
+MP3::Info
 local::lib
 Test::Most
 Term::Size
@@ -391,6 +393,7 @@ Data::Rmap
 Const::Fast
 Path::Class
 Tie::IxHash
+Tie::CPHash
 Date::Parse
 Perl6::Form
 Dist::Zilla
