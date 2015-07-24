@@ -1,0 +1,35 @@
+#! /usr/bin/env perl
+
+use v5.14;
+use warnings;
+use autodie ':all';
+
+use Path::Tiny;
+
+
+my $md = shift;
+$md and -r $md or die("file not supplied, non-existent, or not readable");
+
+my $contents = path($md)->slurp;
+
+$contents =~ s{(^|[^\w\\])_(.+?)_(?=\W|$)}{$1//$2//}sg;					# italics
+$contents =~ s{^(.+?)\n=+\n}{= $1 =\n}mg;								# header 1
+$contents =~ s{^(.+?)\n-+\n}{== $1 ==\n}mg;								# header 2
+
+# tables
+my $cell = qr/[^|\n]+/;
+my $row = qr/($cell\|)+$cell\n/;
+while ( $contents =~ m{^($row\s*(-+?\|)+-+\s*\n$row+?)\n}mg )
+#while ( $contents =~ m{^($row\s*(-+?\|)+-+\s*\n)\n}mg )
+{
+warn("found a table");
+	my ($start, $end) = ($-[1], $+[1]);
+warn("start: $start, end: $end");
+	my ($header, undef, @rows) = split("\n", $1);
+	my $table = '';
+	$table = '||= ' . join(' =||= ', split(/\s*\|\s*/, $header =~ s/^\s+//r =~ s/\s+$//r)) . " =||\n";
+	$table .= '|| ' . join(' || ', split(/\s*\|\s*/, s/^\s+//r =~ s/\s+$//r)) . " ||\n" foreach @rows;
+	substr($contents, $start, $end - $start) = $table;
+}
+
+print $contents;
