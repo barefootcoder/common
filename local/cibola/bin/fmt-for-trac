@@ -9,7 +9,7 @@ use Text::Tabs; $tabstop = 4;
 
 my $pre_re = qr/^\.$/;
 
-my $in_pre = 0;
+my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block
 my $in_list = 0;
 while (<>)
 {
@@ -17,20 +17,28 @@ while (<>)
 
 	if (( /$pre_re/ or /^\s+(.)/ and !($1 ~~ ['*','#']) ) and not $in_pre and not $in_list)
 	{
-		/$pre_re/ ? ($_ = "{{{\n") : say '{{{';
-		$in_pre = 1;
-		s/^    //;
+		if ( /$pre_re/ )
+		{
+			$_ = "{{{\n";
+			$in_pre = 2;
+		}
+		else
+		{
+			say '{{{';
+			s/^    //;
+			$in_pre = 1;
+		}
 	}
-	elsif ($in_pre and ( /^$/ or /$pre_re/ ))
+	elsif ($in_pre == 1 and /^$/ or $in_pre == 2 and /$pre_re/ )
 	{
-		/$pre_re/ ? ($_ = "}}}\n") : say '}}}';
+		$in_pre == 1 ? say '}}}' : ($_ = "}}}\n");
 		$in_pre = 0;
 	}
 	elsif ($in_list and /^$/)
 	{
 		$in_list = 0;
 	}
-	elsif ($in_pre)
+	elsif ($in_pre == 1)
 	{
 		s/^    //;
 	}
