@@ -198,7 +198,7 @@ alias pack 'tar --same-owner -cvzpf \!^.tgz \!^'
 alias unpack 'tar --same-owner -xvzpf'
 
 # repos where we want aliases for everything in their bin/
-foreach repo (jsonp)
+foreach repo (pjawk)
 	set bindir=~/proj/$repo/bin
 	if ( -d ~/proj/$repo/bin ) then
 		foreach prog ($bindir/*)
