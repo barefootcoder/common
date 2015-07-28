@@ -80,7 +80,11 @@ elif [[ -n $1 ]]
 then
 	base=$(basename "$1")
 	first_line="$(head -n1 "$1")"
-	if [[ "$first_line" == '==>'* ]]
+	second_line="$(head -n2 "$1" | tail -n1)"
+	if [[ "$second_line" == "# pusht: "* ]]
+	then
+		eval ${second_line#*pusht: }
+	elif [[ "$first_line" == '==>'* ]]
 	then
 		wikify "$1"
 	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || "$first_line" == "/bbcode/" ]]
@@ -116,7 +120,7 @@ then
 	then
 		"$1"
 	else
-		echo "$me: don't know how to push this file to testing" >&2
+		echo "$me: don't know how or where to push this file" >&2
 		exit 2
 	fi
 fi
