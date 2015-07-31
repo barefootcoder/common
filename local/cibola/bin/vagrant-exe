@@ -1,0 +1,13 @@
+#! /usr/bin/tcsh
+
+# prepare environment
+eval `ssh-agent-env`
+cd $CHEOPSROOT
+
+# fire off the command
+set tcsh=/usr/bin/tcsh
+set echo
+#eval 'set command="'`echo "$*" | perl -pe 's/"/"'\''"'\''"/g;'"s/'/'\\''/g"`'"'
+#echo "/$command/"
+echo "/$*/"
+vagrant ssh -c 'cd $CEROOT ;'"SHELL=$tcsh VCTOOLS_SHELL=git $tcsh -c '$*'"
