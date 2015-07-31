@@ -1,0 +1,9 @@
+#! /bin/bash
+
+rsync -n -avz Copy/purple/ cibola:Copy/purple/
+echo -n "run for real? [y/N] " >&2
+read yn
+if [[ $yn == [yY]* ]]
+then
+	rsync -avz Copy/purple/ cibola:Copy/purple/
+fi
