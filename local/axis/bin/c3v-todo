@@ -1,0 +1,5 @@
+#! /bin/bash
+. ~/bin/bash_funcs
+
+cd ~/rpg/Heroscape/C3V || die "can't find my dir!"
+vim -s .vim-c3vtodo todo
