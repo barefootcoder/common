@@ -127,7 +127,7 @@ setenv T3_WORKGROUP Barefoot
 setenv T3_USER buddy
 setenv CDA_EXCLUDE /usr/src/kernels:/export/arc/laptop/hold
 
-alias pd pushd .
+alias pd pushd
 alias cda 'cd "`$HOME/bin/cda \!*`"'
 alias ls ls -CFL
 alias ll ls -lh
@@ -142,7 +142,6 @@ alias mv mv -iv
 alias scp scp -pC
 alias ps 'ps -wwwo user,group,pid,ppid,pgid,stime,tty8,stat,time,cmd'
 alias time '/usr/bin/time -f "\nWallclock: %e (%UU, %SS)"'
-unalias psf #alias psf 'echo TTY is $tty ; /bin/ps ft$tty -o pid -o ppid -o stat=S -o command'
 alias psg '/usr/bin/pgrep -f \!* >/dev/null && ps -p `/usr/bin/pgrep -f \!*`'
 alias dfk df -h .
 	set mfawk='{ mem = $2 / 1024; t = "Mb"; if (mem > 1024) { mem = mem / 1024; t = "Gb" } }'
@@ -166,6 +165,7 @@ alias xpath "perl -le 'print foreach split(q/:/, @ENV{qw<PATH>})' | each -q 'ls 
 alias ed "vim -u ~/.edrc"
 alias wvi "vim -u ~/.viwebrc"
 alias vimhelp "vim -s ~/.vim-help"
+alias deparse "perl -MO=Deparse,-p \!*"
 alias perlfunc "perldoc -f"
 alias pdoc perldoc
 alias pfunc perlfunc
