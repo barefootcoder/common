@@ -369,7 +369,7 @@ You will probably need the following packages, which might not be installed alre
 
 I<After> that, if you want to make sure you have all the necessary prereqs, try this:
 
-	podselect -section PREREQS `perlfind -f myperl` | grep '^[a-zA-Z]' | cpanm -n
+	podselect -section PREREQS `perlfind myperl` | grep '^[a-zA-Z]' | cpanm -n
 
 =head1 PREREQS
 
@@ -383,6 +383,7 @@ version
 Debuggit
 TryCatch
 Template
+JSON::XS
 #MP3::Tag																# constantly reinstalls itself :-(
 MP3::Info
 local::lib
@@ -390,6 +391,7 @@ Test::Most
 Term::Size
 File::Stat
 Data::Rmap
+File::Next
 Const::Fast
 Path::Class
 Tie::IxHash
