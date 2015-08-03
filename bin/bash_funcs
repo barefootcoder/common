@@ -11,6 +11,22 @@ readonly me=${0##*/}													# slightly prettier than $0
 function vc { ~/proj/VCtools/bin/vc "$@" ; }							# in case we need to get to vc
 
 
+# pseudo-aliases
+# This code is almost identical to that in rc/tcshrc.  Which bugs me.  But since that has to be tcsh
+# syntax and this has to be bash, there ain't much to be done about it.
+for repo in pjawk
+do
+    bindir=~/proj/$repo/bin
+    if [[ -d ~/proj/$repo/bin ]]
+	then
+        for prog in $bindir/*
+		do
+			eval "function $(basename $prog) { $prog "'"$@" ; }'
+        done
+    fi
+done
+
+
 function die
 {
 	echo "$me: $1" >&2
