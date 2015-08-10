@@ -33,7 +33,7 @@ fi
 # stacking them doesn't do much good if they're in the wrong positions
 pidgin_restore
 
-for win in team leadops deploy technology offtopic qa "$ThunderbirdWindow"
+for win in team leadops lambda technology offtopic qa "$ThunderbirdWindow"
 do
 	xdotool search --name "$win" windowactivate
 done

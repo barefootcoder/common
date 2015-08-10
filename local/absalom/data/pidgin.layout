@@ -11,11 +11,11 @@ MAIN:
 
 COMMS:
 
-	team			technology		qa
+	+team			+technology		qa
 			james			george
-	deploy			technology		cerpt
+	+lambda			+technology
 							steve-S
-	leadops			technology		offtopic
+	+leadops		+technology		+offtopic
 
 
 
