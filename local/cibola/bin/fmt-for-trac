@@ -42,7 +42,7 @@ while (<>)
 	{
 		s/^    //;
 	}
-	else
+	elsif (not $in_pre)
 	{
 		s/^  (\s*\*\s+)/$1/ and $in_list = 1;							# bullet lists
 		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
