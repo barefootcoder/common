@@ -4,9 +4,30 @@ me=${0##*/}																# slightly prettier than $0
 readonly me
 
 
+function capture_git
+{
+	do_git $pretend 0 "now running:" "$1"
+}
+
+function run_git
+{
+	do_git $pretend $pretend "would run:  " "$1"
+}
+
+function do_git
+{
+	local say_it=$1
+	local skip_it=$2
+	local msg=$3
+	local cmd="git $4"
+	[[ $say_it == 1 ]] && echo -e "\e[96m\e[1m$msg\e[0m\e[1m $cmd\e[0m" >&2
+	[[ $skip_it == 0 ]]  && eval $cmd
+}
+
+
 function current_branch
 {
-	branch=$(git branch --contains HEAD | perl -lne 'print if s/^\* //')
+	branch=$(capture_git "branch --contains HEAD | perl -lne 'print if s/^\* //'")
 	if [[ $branch == *"no branch"* ]]
 	then
 		echo "$me: can't show branch logs with a detached HEAD" >&2
@@ -21,16 +42,17 @@ function branched_from
 	# this will not work properly if a branch was somehow branched from multiple branches
 	# however, I can't think this could possibly happen
 	# additonally, it might be slow for branches with lots and lots of commits
-	git rev-list --no-merges HEAD | perl -lne '@b = grep { s/^  // } `git branch --contains $_` and print $b[0] and exit'
+	local proglet='@b = grep { s/^  // } `git branch --contains $_` and print $b[0] and exit'
+	capture_git "rev-list --no-merges HEAD | perl -lne '$proglet'"
 }
 
 function how_many_unpushed
 {
 	local MAX=50
 	local count=0
-	for ref in $(git log -n$MAX --pretty=%h)
+	for ref in $(capture_git "log -n$MAX --pretty=%h")
 	do
-		if [[ $(git branch -r --contains $ref) ]]
+		if [[ $(capture_git "branch -r --contains $ref | grep origin/") ]]
 		then
 			echo $count
 			return
@@ -41,10 +63,13 @@ function how_many_unpushed
 	exit 1
 }
 
-cmd="git log"
+cmd="log"
 
 args=''
 show_merges=0
+show_branch=0
+show_local=0
+show_me=0
 pretend=0
 grep_diffs=0
 date_format=local
@@ -71,17 +96,15 @@ do
 			;;
 		p)	pretend=1
 			;;
-		b)	branch=$(current_branch)
-			from=$(branched_from $branch)
-			args="$args $from..$branch"
+		b)	show_branch=1
 			;;
-		L)	args="$args -n$(how_many_unpushed)"
+		L)	show_local=1
 			;;
 		l)	args="$args -n1"
 			;;
 		n)	args="$args -n$OPTARG"
 			;;
-		m)  args="$args --author $(git config user.email)"
+		m)  show_me=1
 			;;
 		U)  args="$args --author $OPTARG"
 			;;
@@ -127,8 +150,16 @@ do
 	esac
 done
 shift $(( $OPTIND - 1 ))
-[[ $show_merges == 0 ]] && args="$args --no-merges"
-[[ $date_format == local ]] && args="$args --date=local"
+   [[ $date_format == local ]] && args="$args --date=local"
+   [[ $show_me     == 1     ]] && args="$args --author $(capture_git "config user.email")"
+   [[ $show_merges == 0     ]] && args="$args --no-merges"
+   [[ $show_local  == 1     ]] && args="$args -n$(how_many_unpushed)"
+if [[ $show_branch == 1     ]]
+then
+	branch=$(current_branch)
+	from=$(branched_from $branch)
+	args="$args $from..$branch"
+fi
 
 
 cmd="$cmd $args $*"
@@ -137,11 +168,5 @@ then
 	cmd="$cmd | $post"
 fi
 
-if [[ $pretend == 1 ]]
-then
-	echo "$me: would run"
-	echo -e "\n    $cmd\n"
-else
-	[[ -t 1 ]] && echo -e "\n\n\n\n"
-	eval $cmd
-fi
+[[ -t 1 && $pretend == 0 ]] && echo -e "\n\n\n\n"
+run_git "$cmd"
