@@ -6,7 +6,7 @@ pid=$(/usr/bin/pgrep -x ssh-agent)
 pid=$(/bin/ps -o pid= --sort -stime -p $pid | head -n1)
 
 # find the socket(s)
-sockets=$(/bin/ls -1 /tmp/ssh-*/agent.*)
+sockets=$(/bin/ls -1 /run/user/`id -u`/keyring*/ssh /tmp/ssh-*/agent.*)
 if [[ $(echo "$sockets" | wc -l) == 1 ]]
 then
 	socket=$sockets
