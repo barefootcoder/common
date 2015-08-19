@@ -36,6 +36,9 @@ screen -t sandbox
 screen -t sql
 	stuff "cd workproj/cheops\015"
 	source .screenrc.sandbox
+screen -t server
+	stuff "cd workproj/cheops\015"
+	source .screenrc.sandbox
 screen -t push
 	stuff "cd workproj/cheops\015"
 	stuff "vagrant-push-box\015"
