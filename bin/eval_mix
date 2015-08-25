@@ -1,0 +1,105 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use autodie ':all';
+use warnings FATAL => 'all';
+
+use Debuggit;
+use Const::Fast;
+use List::Util qw< max >;
+use File::Glob qw< bsd_glob>;
+
+
+my %WEIGHTS =
+(
+	SOURCE			=>	{
+							' '		=>	1,
+							'.'		=>	1,
+							'>'		=>	.8,
+							'<'		=>	.25,
+							'F'		=>	.1,
+						},
+	POSITION		=>	{
+							'*'		=>	1,
+							'>'		=>	1,
+							'~'		=>	.75,
+							'?'		=>	.5,
+							'X'		=>	.1,
+							' '		=>	.1,
+						},
+	SUITABILITY		=>	{
+							':'		=>	1,
+							'V'		=>	1,
+							'*'		=>	1,
+							'='		=>	1,
+							'?'		=>	.4,
+						},
+);
+
+
+my $named = 0;
+my $running_score = 0;
+my $in_header = 1;
+my ($volume, $subtitle, @tracks);
+while ( <> )
+{
+	chomp;
+	if ($in_header)
+	{
+
+		given ($_)
+		{
+			$volume = $_		when /^[A-Z]/;		# mix name and volume
+			$subtitle = $_		when /^\[.*\]$/;	# volume subtitle
+			''					when /^\{/;			# old statistics; throw these away
+			$in_header = 0		when /^===/;		# end of header
+			# otherwise:
+			die("can't understand header line: $_");
+		}
+
+		next;
+	}
+
+	push @tracks, $_;
+	my ($src, $pos, $vocal, $suit, $track) = /(.)(.)(.)(.) (.*?)(\t|$)/ or die("illegal track format");
+	$named = 1 if $suit eq '=';
+	my $score = weight(SOURCE => $src) * weight(POSITION => $pos) * weight(SUITABILITY => $suit);
+	debuggit("##", $score, ":", $track);
+	$running_score += $score;
+}
+
+my $stats = @tracks . " tracks, time: " . get_time($volume) . ", named: " . ($named ? 'yes' : 'no') . ", score: "
+		. sprintf("%5.2f%%", $running_score / @tracks * 100);
+my @headers = ( $volume, $subtitle || (), "{$stats}" );
+
+say foreach @headers;
+say '=' x (max map { length } @headers);
+say foreach @tracks;
+
+
+sub weight
+{
+	my ($type, $symbol) = @_;
+
+	return $WEIGHTS{$type}->{$symbol} // die("unknown symbol $symbol for $type");
+}
+
+
+sub get_time
+{
+	const my $MUSICHOME => '/export/music';
+	const my $ROMAN_NUMERAL => qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
+
+	my ($volume) = @_;
+
+	my ($mix_name, $vol_num) = $volume =~ /^(.*?)\s+($ROMAN_NUMERAL)$/
+			or die("don't yet know how to deal with volumes with no numbers");
+	my ($mix_file) = bsd_glob("$MUSICHOME/tracklists/*/$mix_name.m3u");
+	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
+	while ( <PIPE> )
+	{
+		close(PIPE) and return $1 if /^ $vol_num \s+ .*? (\d\d:\d\d) /x;
+	}
+	close(PIPE);
+	die("couldn't find total for volume $vol_num");
+}
