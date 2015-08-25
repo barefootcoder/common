@@ -1,0 +1,6 @@
+#! /bin/bash
+
+ps h -p `/usr/bin/pgrep -f bin/vimS`
+
+echo "===="
+bin/ceflow stat-plus | fgrep -v '(use "git' | egrep -v '^#?$' 

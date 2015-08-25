@@ -10,3 +10,13 @@
 	preloadindex = true
 [branch]
 	autosetupmerge  = true
+[color]
+	ui = always
+[color "diff"]
+	commit = cyan
+[color "status"]
+	branch = "bold cyan"
+	added = "bold magenta"
+	changed = "bold yellow"
+	deleted = "bold red"
+	untracked = "bold green"

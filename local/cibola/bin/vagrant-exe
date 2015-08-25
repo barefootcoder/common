@@ -6,8 +6,9 @@ cd $CHEOPSROOT
 
 # fire off the command
 set tcsh=/usr/bin/tcsh
-set echo
+#set echo
 #eval 'set command="'`echo "$*" | perl -pe 's/"/"'\''"'\''"/g;'"s/'/'\\''/g"`'"'
 #echo "/$command/"
-echo "/$*/"
-vagrant ssh -c 'cd $CEROOT ;'"SHELL=$tcsh VCTOOLS_SHELL=git $tcsh -c '$*'"
+#echo "/$*/"
+vagrant ssh -c 'cd $CEROOT ;'"SHELL=$tcsh VCTOOLS_SHELL=git $tcsh -c '$*'" |& grep -v '^Loading vagrant/'		\
+		| fgrep -v 'Connection to 127.0.0.1 closed.'
