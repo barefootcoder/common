@@ -92,7 +92,7 @@ do
 			post="wc -l"
 			;;
 		N)  show_merges=1
-			post="perl -lpe 's/^((commit )?[0-9a-f]{7,})/sprintf(q{%3d %s}, ++\$n, \$1)/e' | ${PAGER:-less}"
+			post="perl -lpe 's/^((\e.+m)?(commit )?[0-9a-f]{7,})/sprintf(q{%3d %s}, ++\$n, \$1)/e' | ${PAGER:-less}"
 			;;
 		p)	pretend=1
 			;;
