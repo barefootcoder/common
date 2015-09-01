@@ -50,7 +50,7 @@ while ( <> )
 		given ($_)
 		{
 			$volume = $_		when /^[A-Z]/;		# mix name and volume
-			$subtitle = $_		when /^\[.*\]$/;	# volume subtitle
+			$subtitle = $_		when /^\[.*\]\??$/;	# volume subtitle
 			''					when /^\{/;			# old statistics; throw these away
 			$in_header = 0		when /^===/;		# end of header
 			# otherwise:
@@ -68,8 +68,10 @@ while ( <> )
 	$running_score += $score;
 }
 
-my $stats = @tracks . " tracks, time: " . get_time($volume) . ", named: " . ($named ? 'yes' : 'no') . ", score: "
-		. sprintf("%5.2f%%", $running_score / @tracks * 100);
+my $time = get_time($volume);
+my $final_score = final_score($running_score / @tracks, $time, $named);
+my $stats = @tracks . " tracks, time: " . $time . ", named: " . ($named ? 'yes' : 'no') . ", score: "
+		. sprintf("%5.2f%%", $final_score * 100);
 my @headers = ( $volume, $subtitle || (), "{$stats}" );
 
 say foreach @headers;
@@ -85,6 +87,16 @@ sub weight
 }
 
 
+sub final_score
+{
+	my ($score, $time, $named) = @_;
+	$time =~ /^(\d)\d:/;
+	my $factor = (7 - $1) ** 2 * 2;
+	my $weight = 1 - $factor / 100;
+	return ($score == 1 ? $score : $score * $weight) * ($named ? 1 : .75);
+}
+
+
 sub get_time
 {
 	const my $MUSICHOME => '/export/music';
@@ -92,8 +104,9 @@ sub get_time
 
 	my ($volume) = @_;
 
-	my ($mix_name, $vol_num) = $volume =~ /^(.*?)\s+($ROMAN_NUMERAL)$/
-			or die("don't yet know how to deal with volumes with no numbers");
+	my ($mix_name, $vol_num) = $volume =~ /^(.*?)\s+($ROMAN_NUMERAL)$/;
+	($mix_name, $vol_num) = ($volume, '') unless $mix_name;
+
 	my ($mix_file) = bsd_glob("$MUSICHOME/tracklists/*/$mix_name.m3u");
 	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
 	while ( <PIPE> )
