@@ -25,10 +25,17 @@ function do_git
 }
 
 
+function Mainline
+{
+	eval "local $(grep VCtoolsDir ~/.vctools/vctools.conf)"
+	$VCtoolsDir/bin/vc info %Mainline
+}
+
 function current_branch
 {
-	branch=$(capture_git "branch --contains HEAD | perl -lne 'print if s/^\* //'")
-	if [[ $branch == *"no branch"* ]]
+	eval "local $(grep VCtoolsDir ~/.vctools/vctools.conf)"
+	branch=$($VCtoolsDir/bin/vc info %cur_branch)
+	if [[ $branch == "HEAD" ]]
 	then
 		echo "$me: can't show branch logs with a detached HEAD" >&2
 		exit 1
@@ -36,36 +43,33 @@ function current_branch
 	echo $branch
 }
 
+
 function branched_from
 {
 	branch="$1"
 	# this will not work properly if a branch was somehow branched from multiple branches
 	# however, I can't think this could possibly happen
 	# additonally, it might be slow for branches with lots and lots of commits
-	local proglet='@b = grep { s/^  // } `git branch --contains $_` and print $b[0] and exit'
+	local proglet='@b = grep { s/^  // } `git branch --no-color --contains $_` and print $b[0] and exit'
 	capture_git "rev-list --no-merges HEAD | perl -lne '$proglet'"
 }
 
-function how_many_unpushed
+function all_unpushed
 {
-	local MAX=50
-	local count=0
-	for ref in $(capture_git "log -n$MAX --pretty=%h")
+	for ref in $(capture_git "log --pretty=%h origin/$(Mainline)..HEAD")
 	do
-		if [[ $(capture_git "branch -r --contains $ref | grep origin/") ]]
+		if [[ ! $(capture_git "branch -r --contains $ref | grep origin/") ]]
 		then
-			echo $count
-			return
+			commits="$commits $ref"
 		fi
-		count=$(( $count + 1 ))
 	done
-	echo "$me: more than $MAX unpushed commits" >&2
-	exit 1
+	echo "$commits"
 }
 
 cmd="log"
 
 args=''
+patcharg='-s'
 show_merges=0
 show_branch=0
 show_local=0
@@ -77,9 +81,19 @@ while getopts ":vdscNpbln:LmU:g:RGh" opt
 do
 	case $opt in
 		v)	show_merges=1
-			args="$args --stat"
+			if [[ $patcharg == "-p" ]]
+			then
+				patcharg='-p --stat'
+			else
+				patcharg='--stat'
+			fi
 			;;
-		d)	args="$args -p"
+		d)	if [[ $patcharg == "--stat" ]]
+			then
+				patcharg='-p --stat'
+			else
+				patcharg='-p'
+			fi
 			if [[ $grep_diffs != 0 ]]
 			then
 				args="$args -G $grep_diffs"
@@ -153,7 +167,11 @@ shift $(( $OPTIND - 1 ))
    [[ $date_format == local ]] && args="$args --date=local"
    [[ $show_me     == 1     ]] && args="$args --author $(capture_git "config user.email")"
    [[ $show_merges == 0     ]] && args="$args --no-merges"
-   [[ $show_local  == 1     ]] && args="$args -n$(how_many_unpushed)"
+if [[ $show_local  == 1     ]]
+then
+	cmd="show"
+	args="$args $(all_unpushed)"
+fi
 if [[ $show_branch == 1     ]]
 then
 	branch=$(current_branch)
@@ -162,7 +180,7 @@ then
 fi
 
 
-cmd="$cmd $args $*"
+cmd="$cmd $patcharg $args $*"
 if [[ -n $post ]]
 then
 	cmd="$cmd | $post"
