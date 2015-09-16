@@ -1,0 +1,19 @@
+#! /bin/bash
+. ~/bin/bash_funcs
+
+tarfile=$1
+[[ $tarfile ]] || die "must supply tarfile name"
+
+ferrydir=~/work/ferry
+tarfile=$ferrydir/$tarfile.tgz
+[[ -r $tarfile ]] || die "ferry file $tarfile doesn't exist"
+
+[[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
+
+tar xvpzf $tarfile
+echo -n "remove ferry file? [y/N] "
+read yn
+if [[ $yn == [yY]* ]]
+then
+	rm $tarfile
+fi
