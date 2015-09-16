@@ -9,4 +9,4 @@ ferrydir=~/work/ferry
 
 [[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
 
-tar cvpzf $ferrydir/$tarfile.tgz $(vc info %mod_files)
+tar cvpzf $ferrydir/$tarfile.tgz $($CEROOT/bin/ceflow info %mod_files)
