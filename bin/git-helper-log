@@ -56,7 +56,12 @@ function branched_from
 
 function all_unpushed
 {
-	for ref in $(capture_git "log --pretty=%h origin/$(Mainline)..HEAD")
+	origin_branch=origin/$(current_branch)
+	if ! git branch -r | fgrep -q $origin_branch
+	then
+		origin_branch=origin/$(Mainline)
+	fi
+	for ref in $(capture_git "log --pretty=%h $origin_branch..HEAD")
 	do
 		if [[ ! $(capture_git "branch -r --contains $ref | grep origin/") ]]
 		then
@@ -170,7 +175,9 @@ shift $(( $OPTIND - 1 ))
 if [[ $show_local  == 1     ]]
 then
 	cmd="show"
-	args="$args $(all_unpushed)"
+	commits="$(all_unpushed)"
+	[[ -z $commits ]] && exit						# no commits to show
+	args="$args $commits"
 fi
 if [[ $show_branch == 1     ]]
 then
