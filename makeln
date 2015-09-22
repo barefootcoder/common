@@ -164,6 +164,22 @@ then
 	fi
 fi
 
+# stuff to symlink in from ~/Dropbox/personal
+if [[ $1 != refresh ]]
+then
+	for dir in ~/.local/share/tomboy
+	do
+		if [[ -d $dir && ! -L $dir ]]
+		then
+			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
+			echo "$0: please fix that and rerun" >&2
+			exit 1
+		fi
+		srcdir=~/Dropbox/personal/$(basename $dir)
+		make_link $srcdir $dir
+	done
+fi
+
 # Unison configuration files
 # just symlink in what we've got
 if [[ -d $mydir/unison ]]
@@ -176,7 +192,7 @@ then
 fi
 
 # THIS IS OBSOLETE
-# part of relates to IceWM, which I don't use any more
+# part of it relates to IceWM, which I don't use any more
 # and the rest is for Gaim, which is now Pidgin, so it doesn't work any more
 #
 ## X-windows stuff

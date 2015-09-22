@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<note version="0.3" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size" xmlns="http://beatniksoftware.com/tomboy"><title>CPAN RT reply</title><text xml:space="preserve"><note-content version="0.1" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size">CPAN RT reply
-
-
-I'm going to resolve the ticket; look for a fix as of dev version 1.31_02 (later tonight), which I will promote to prod release 1.32 hopefully next week, barring CPAN Testers issues.
-
-Thanks for the report.</note-content>
-</text><last-change-date>2012-02-12T03:57:33.037182Z</last-change-date><last-metadata-change-date>2012-02-12T03:57:33.037182Z</last-metadata-change-date><create-date>2012-02-12T03:57:15.204419Z</create-date><cursor-position>222</cursor-position><width>450</width><height>360</height><x>0</x><y>0</y><open-on-startup>False</open-on-startup></note>
-
