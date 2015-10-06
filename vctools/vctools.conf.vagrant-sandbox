@@ -32,12 +32,86 @@ DefaultVC=git
 		Files = 0
 
 		action <<---
-			%cur_branch !~ /^feature/	->	BRANCH=`git branch -v | grep 'DO NOT PUSH TO GITHUB'` =~ /^\s*(.*?)\s+/ and $1
+			IP_MESSAGE='DO NOT PUSH TO GITHUB'
+			%cur_branch !~ /^feature/	->	BRANCH=`git branch --no-color -v | grep "$IP_MESSAGE"` =~ /^\s*(.*?)\s+/ and $1
 			%cur_branch !~ /^feature/	->	not "$BRANCH"		->	! Can't figure out what branch to go to.
 			%cur_branch !~ /^feature/	->	git checkout $BRANCH
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->  git log --format=format: --stat -n1
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->	git reset HEAD^
 			git-helper-log -LNs
+		---
+	</CustomCommand>
+</Policy>
+
+
+# overrides for CE
+<Policy CE>
+	<CustomInfo cur_branch_remote>
+		action <<---
+			{ (grep /^\*/, `git branch --no-color -vv`)[0] =~ s{\e\[\d+m}{}gr =~ m{\[(\w+)/} and $1 }
+		---
+	</CustomInfo>
+	<CustomCommand cibola-branch>
+		Verify = project
+		Verify = clean
+		<Trailing ticket>
+			singular = ticket
+			qty = 1
+		</Trailing>
+
+		action <<---
+			git fetch cibola
+			CIBOLA_BRANCH=`git branch --no-color -r --list 'cibola/feature/*%ticket*'`
+			not "$CIBOLA_BRANCH"								->	! Can't find a branch for ticket %ticket.
+			LOCAL_BRANCH="$CIBOLA_BRANCH" =~ s{^\s*cibola/}{}r
+			git checkout -b $LOCAL_BRANCH $CIBOLA_BRANCH
+		---
+	</CustomCommand>
+	<CustomCommand push-cibola>
+		Verify = project
+		Files = 0
+
+		action <<---
+			%cur_branch !~ m{^feature/}							->	! This doesn't look like an appropriate branch.
+			%cur_branch_remote ne 'cibola'						->	! This doesn't look like an appropriate branch.
+
+			CIBOLA_BRANCH=`ssh cibola 'cd ~/workproj/CE-mounted ; git rev-parse --abbrev-ref HEAD'` =~ s/\n$//r
+			"$CIBOLA_BRANCH" eq %cur_branch						->	! Have to change branches on Cibola first.
+
+			COMMIT_PREPPED=`git log trunk..HEAD` =~ /DO NOT PUSH TO GITHUB/ ? 1 : 0
+			HAS_CHANGES=`git status -s --untracked=all` ? 1 : 0
+			$HAS_CHANGES										->	vcpatchws -f `checktabs -nb`
+			$HAS_CHANGES										->	git add %mod_files
+			$HAS_CHANGES and $COMMIT_PREPPED					->	git commit -v --amend
+			$HAS_CHANGES and not $COMMIT_PREPPED				->	git commit -m "work in progress; DO NOT PUSH TO GITHUB"
+
+			git diff --stat HEAD^
+			? Push this to Cibola?
+			git push --force-with-lease
+		---
+	</CustomCommand>
+	<CustomCommand pull-cibola>
+		Verify = project
+		Files = 0
+
+		action <<---
+			%cur_branch !~ m{^feature/}							->	! This doesn't look like an appropriate branch.
+			%cur_branch_remote ne 'cibola'						->	! This doesn't look like an appropriate branch.
+			%is_dirty											->	! You really shouldn't have any uncommitted work.
+
+            REMOTE='origin'
+            git fetch $REMOTE
+            RESET_TO=join('/', "$REMOTE", %cur_branch)
+            not "$RESET_TO" ~~ [%remote_branches]				->	RESET_TO=join('/', "$REMOTE", %Mainline)
+
+			git reset --hard $RESET_TO
+			git stash save -u 'FOR DROPPING'
+			`git stash list | head -n1` =~ /FOR DROPPING/		->	git stash drop
+
+			# = branch-update									# this is probably unnecessary
+			git fetch cibola
+			git pull --rebase
+			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/	->	git reset HEAD^
 		---
 	</CustomCommand>
 </Policy>
