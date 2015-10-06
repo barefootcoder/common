@@ -71,6 +71,7 @@ my $hash = '#';
 my $front_boundary = qr/(^|[^\w\\])/;
 my $back_boundary = qr/(?=\W|$)/;
 my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
+my $endnote_header = '<div style="line-height: 70%;">' . "\n" . '_' x 10 . "\n\n";
 my $section_break = <<EOT;
 
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
@@ -86,7 +87,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 
 	# temporary conversion so -> and <- aren't considered literal > or <
 	my %align = ( '-><-' => 'CENTER', '->->' => 'RIGHT', '<-<-' => 'LEFT' );
-	s{^\s*(->|<-)(.+?)(->|<-)\s*$}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;
+	s{\h*(->|<-)(.+?)(->|<-)\h*}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;
 
 	# save URLs so they don't get messed with later
 	s{\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;								# ]] <-- to keep % from freaking out
@@ -107,14 +108,18 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\ba la\b}{&agrave;&nbsp;la}g;													# a la (w/ accent)
+	s{\braison detre\b}{raison d'&ecirc;tre}g;										# raison d'etre (w/ circumflex (and '))
 	s{\b(jalape)n(os?)\b}{$1&ntilde;$2}gi;											# jalapeno (w/ tilde), preserving case
 	s{\b(pl)a(tanos?)\b}{$1&aacute;$2}gi;											# platanos (w/ accent), preserving case
 	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
 	s{\b(a)e(sthetic(s|ally)?)\b}{ "&${\({a=>'ae',A=>'AE'}->{$1})}lig;$2" }ige;		# aesthetic/s/ally, preserving case
 	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
 	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
+	s{Gabor Szabo}{G&aacute;bor Szab&oacute;}g;										# proper spelling of Gabor's name
+	s{Szabo}{Szab&oacute;}g;														# ... even if it's only the last name
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
+	s{\b1/([234])\b}{&frac1$1;}g;													# stand-alone fractions
 	s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;						# a Monty Python quote, preserving case
 	unless ($blog_type eq 'bbcode')
 	{
@@ -137,6 +142,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	{
 		no warnings 'uninitialized';
 		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
+		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 	}
@@ -170,7 +176,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
-	s{\\([\[{*_}\]])}{$1}g;															# literal brackets, braces, or */_
+	s{\\([\[{*_/}\]])}{$1}g;														# literal brackets, braces, or */_
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
@@ -191,7 +197,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		{
 			push @notes, footnote(final => $footnotes[$f], $f) if defined $footnotes[$f];
 		}
-		$_ .= '<div style="line-height: 70%;">' . fmt(small => join('', map { "<p>$_</p>\n" } @notes)) . '</div>';
+		$_ .= $endnote_header . fmt(small => join('', map { "<p>$_</p>\n" } @notes)) . '</div>';
 	}
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
@@ -215,6 +221,7 @@ func change_type ($type, $extra)
 	die("unknown blog type $type") unless exists $blog{$type};
 	$blog_type = $type;
 	$footnote_style = '1' if $blog_type eq 'perl';
+	$section_break = '\_' x 10 if $blog_type eq 'bbcode';
 
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
 	if ($extra =~ /(\w+):{(.*?)}/)
@@ -260,6 +267,10 @@ sub url_block
 		return qq{[url="$url"]${alt_text}[/url]};
 	}
 
+	$alt_text //= $url;													# no alt text
+	$url =~ s/&[lr]squo;/'/g;											# fixup single quotes
+	$url =~ s/&[lr]dquo;/"/g;											# fixup double quotes
+
 	if ($url =~ /^(\w+):/)												# external link
 	{
 		die("can't do forward links for external links") if $forward;
@@ -268,7 +279,7 @@ sub url_block
 			when ('cpan')												# shortcut for links to CPAN modules
 			{
 				$url =~ s/^cpan://;
-				$alt_text //= $url;
+				$alt_text =~ s/^cpan://;
 				$url = 'https://metacpan.org/module/' . $url;
 			}
 			default
@@ -277,11 +288,9 @@ sub url_block
 				# no need to do anything here
 			}
 		}
-		$alt_text ||= $url;												# no alt text
 	}
 	else																# internal link
 	{
-		$alt_text ||= $url;												# no alt text
 		return qq{<span style="color: gray;">$alt_text</span>}			# forward link
 				if $forward;
 		$url = get_blog($url);
