@@ -5,13 +5,46 @@ use warnings FATAL => 'all';
 
 use Perl6::Slurp;
 
+sub save_group_title();
+
 
 my $artist;
 given (shift)
 {
-	$artist = $1 when /^ .? \t (.*?) \s-\s  .*?  (\s+ [[{] .*)? \s* $/x;
-	$artist = $1 when /^ ... \s .*?  \s-\s (.*?) (\s+ [[{] .*)? \s* $/x;
+	$artist =       $1 when /^ .?   \t (.*?) \s-\s  .*?                        (\s+ [[{] .*)? \s* $/x;
+	$artist = $3 // $1 when /^ .... \s  .*?  \s-\s (.*?) (\s+ \[ (.{3,}?) \])? (\s+ [[{] .*)? \s* $/x;
 }
 
-say "searching for: $artist";
-print foreach map { s/^... //r } grep { / - (the )?\Q$artist/i } slurp shift;
+my $group_title = '';
+say "searching for: $artist\n";
+say foreach
+		map { s/^.... / /r }
+		grep { / - .*? \[(the )?\Q$artist/i or / - (the )?\Q$artist/i }
+		map { save_group_title }
+		slurp shift;
+
+
+sub save_group_title ()
+{
+	state $last_line_was_blank = 0;
+
+	chomp;
+	s/([^\t])\t+.*$/$1/;
+
+	if ( /^\s*$/ )
+	{
+		$last_line_was_blank = 1;
+	}
+	else
+	{
+		if ($last_line_was_blank)
+		{
+			$group_title = $1 if /^([a-zA-Z0-9]{2,}.*)$/;
+			$group_title = $1 if /^\t?\{(.*)\}/;
+
+		}
+		$last_line_was_blank = 0;
+	}
+
+	return $group_title eq 'Push Songs' ? () : "$_  [$group_title]";
+}
