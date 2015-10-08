@@ -19,14 +19,19 @@ PidginWindow="Buddy List"
 if ! /usr/bin/pgrep pidgin >/dev/null
 then
 	pidgin >/dev/null 2>&1 &
+
+	# have to give Pidgin time to connect to the various IM servers
+	# but need to start this monitoring proglet before the program actually starts
+	wait-for-pidgin-connect
+
+	# make sure window is there before we try to move it to the proper desktop
+	# (although now that we've moved the wait for connection above this,
+	# it's probably unlikely that the window isn't up by now)
 	while ! xdotool search --name "$PidginWindow" >/dev/null
 	do
 		sleep 1
 	done
 	xdotool search --name "$PidginWindow" set_desktop_for_window 1
-
-	# have to give it time to connect to the various IM servers
-	sleep 3											# somewhat arbitrary, but it seems to work
 fi
 
 # do this regardless of whether we had to start Pidgin or not
@@ -35,5 +40,11 @@ pidgin_restore
 
 for win in team leadops lambda technology offtopic qa "$ThunderbirdWindow"
 do
-	xdotool search --name "$win" windowactivate
+	# using anchors to enforce no partial matching of window titles
+	# this mostly seems to limit it to only finding Pidgin windows
+	# *if* we needed to limit it more, though, could do:
+	#		pidgin_pid=$(/bin/ps -o pid=,cmd= -C pidgin | grep -v defunct | awk '{print $1}')
+	#		xdotool search --all --pid $pidgin_pid --name "^$win\$" windowactivate
+	# (except hoist the pid var out of the loop, of course)
+	xdotool search --name "^$win\$" windowactivate
 done

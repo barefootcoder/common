@@ -384,6 +384,7 @@ Debuggit
 TryCatch
 Template
 JSON::XS
+MCE::Map
 #MP3::Tag																# constantly reinstalls itself :-(
 MP3::Info
 local::lib
@@ -392,6 +393,7 @@ Term::Size
 File::Stat
 Data::Rmap
 File::Next
+XML::MyXML
 Const::Fast
 Path::Class
 Tie::IxHash

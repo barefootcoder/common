@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+
+use v5.14.0;
+use warnings;
+use autodie ':all';
+
+use MCE::Map;
+use Path::Tiny;
+use Const::Fast;
+use XML::MyXML qw< xml_to_object >;
+
+
+const my $PIDGIN_DIR => path($ENV{HOME}, '.purple');
+
+
+my $x = xml_to_object($PIDGIN_DIR->child('accounts.xml')->slurp);
+my @dirs =
+	map { $PIDGIN_DIR->child('logs', $_, '.system') }
+	map { join("/", @$_) }
+	map { [ $_->[0] =~ s/^prpl-//r, $_->[1] =~ s|/.*$||r ] }
+	grep { $_->[2] == 1 }
+	map { [ $_->path("protocol")->value, $_->path("name")->value, 
+			map { $_->value }
+			grep { $_->attr("name") eq "auto-login" }
+			map { $_->path("setting") }
+			$_->path("settings")
+		] }
+	$x->path("account");
+
+my %file_counts =
+	map { $_ => scalar $_->children }
+	@dirs;
+
+alarm(30);
+mce_map { sleep 1 until connected($_) } keys %file_counts;
+
+
+sub connected
+{
+	my $dir = path(shift);
+
+	my $old_count = $file_counts{$dir};
+	my @files = sort $dir->children;
+	my $new_count = @files;
+	return $new_count > $old_count and grep /connected/, $files[-1]->slurp;
+}
