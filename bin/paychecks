@@ -2,7 +2,21 @@
 
 use myperl DEBUG => 1;
 
+use Getopt::Std;
 use Tie::IxHash;
+
+
+my $opts = {};
+getopts('vh', $opts);
+
+if ($opts->{h})
+{
+	say STDERR "usage: ", file($0)->basename, " -h | [-v] startdate [enddate]";
+	say STDERR "       -v : print each paycheck separately (may cause voluminous output)";
+	say STDERR "     default end date is 3 days from today";
+	say STDERR "     date format is anything understood by Date::Parse";
+	exit;
+}
 
 
 tie my %FAMILY, 'Tie::IxHash' =>
@@ -22,6 +36,8 @@ const my $YEAR => 365.25 * $DAY;
 
 
 my $last_date = str2time(shift) or die("must supply last paycheck date");
+# target can be specified as a hard cutoff, or defaults to a point about 3 days from now
+my $target = str2time(shift) // str2time(time2str('%m/%d/%Y', time)) + 3 * $DAY;
 foreach (keys %FAMILY)
 {
 	my $dow = time2str('%A', $FAMILY{$_});
@@ -35,18 +51,19 @@ foreach (keys %FAMILY)
 	{
 	}
 
-	# now go forwards from previous payday until we hit a point later than about 3 days from now,
+	# now go forwards from previous payday until we hit a point later than the target,
 	# and pay attention to if we pass any birthdays
-	my $target = str2time(time2str('%m/%d/%Y', time)) + 3 * $DAY;
 	# bump it by 2 hours to deal with DST
-	my $last_payday;
-	for ($last_payday = $prev_payday + 2 * $HOUR + $WEEK; $last_payday < $target; $last_payday += $WEEK)
+	# and then bump the target to deal with the adjustment above
+	my ($final_payday, $last_payday);
+	for ($last_payday = $prev_payday + 2 * $HOUR + $WEEK; $last_payday < $target + $DAY; $last_payday += $WEEK)
 	{
 		calc_paycheck($last_payday, $data);
+		$final_payday = $last_payday;
 	}
-	calc_paycheck($last_payday, $data);									# don't forget the final paycheck!
 
 	say "    last paycheck : ", time2str('%m/%d/%Y', $prev_payday);
+	say "   final paycheck : ", time2str('%m/%d/%Y', $final_payday);
 	say "    next paycheck : ", time2str('%m/%d/%Y', $last_payday);
 	say "    weekly owed   : $data->{weeks_owed} weeks totalling \$$data->{weekly_total}";
 	say "    bday bonus    : $data->{num_bdays} bdays totalling \$$data->{bday_total}";
@@ -55,15 +72,19 @@ foreach (keys %FAMILY)
 
 func calc_paycheck ($payday, $data)
 {
-	debuggit(4 => "payday:", time2str('%m/%d/%y', $payday));
-	++$data->{weeks_owed};
+	state $fmt = "*** \$%7.2f paid on %s ***\n";
+	my $pay_date = time2str('%m/%d/%y', $payday);
+	debuggit(4 => "payday:", $pay_date);
 
-	my $birthday = str2time(join('/', time2str('%m/%d', $FAMILY{$_}), time2str('%Y', $payday)));
+	my $birthday_date = join('/', time2str('%m/%d', $FAMILY{$_}), time2str('%Y', $payday));
+	my $birthday = str2time($birthday_date);
 	if ($payday > $birthday and $payday - $birthday < $WEEK)			# if birthday is less than a week prior ...
 	{
 		# ... then we passed a birthday: up the weekly amount and add a bonus
+		my $amount = $data->{age} * 25;
+		printf $fmt, $amount, $birthday_date if $opts->{v};
 		++$data->{num_bdays};
-		$data->{bday_total} += $data->{age} * 25;
+		$data->{bday_total} += $amount;
 		++$data->{age};
 		debuggit(3 => "think last bday", time2str('%m/%d/%y', $birthday), "was this week:",
 				"difference", ($payday - $birthday) / $DAY);
@@ -71,11 +92,12 @@ func calc_paycheck ($payday, $data)
 		if (time2str('%m/%d', $payday) eq time2str('%m/%d', $FAMILY{$_}))
 		{
 			# birthday falls on a payday; this week doesn't count
-			--$data->{weeks_owed};
-			# and don't add to the total this week
+			# so don't add to the total this week
 			next;
 		}
 	}
 
+	printf $fmt, $data->{age}, $pay_date if $opts->{v};
+	++$data->{weeks_owed};
 	$data->{weekly_total} += $data->{age};
 }
