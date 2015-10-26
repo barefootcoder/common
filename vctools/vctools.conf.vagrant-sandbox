@@ -32,9 +32,9 @@ DefaultVC=git
 		Files = 0
 
 		action <<---
-			BRANCH=`git branch -v | grep 'DO NOT PUSH TO GITHUB'` =~ /^\s*(.*?)\s+/ and $1
-			not "$BRANCH"		->	! Can't figure out what branch to go to.
-			git checkout $BRANCH
+			%cur_branch !~ /^feature/	->	BRANCH=`git branch -v | grep 'DO NOT PUSH TO GITHUB'` =~ /^\s*(.*?)\s+/ and $1
+			%cur_branch !~ /^feature/	->	not "$BRANCH"		->	! Can't figure out what branch to go to.
+			%cur_branch !~ /^feature/	->	git checkout $BRANCH
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->  git log --format=format: --stat -n1
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->	git reset HEAD^
 			git-helper-log -LNs
