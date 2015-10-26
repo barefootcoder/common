@@ -32,6 +32,8 @@ map [s m`/^[ <Tab>]*#[ <Tab>]\+[A-Z ]\+[ <Tab>]*#\?$<CR>``N
 nmap Y y$
 " make g same as G (g not used in original vi, so this mapping is ancient)
 map g G
+" but remove unused gx mapping, because it causes a delay when you hit g
+let loaded_netrwPlugin = 1
 " make [[ et al work for Perl-style curly brace placement (according to vim help)
 map [[ ?{<CR>w99[{
 map ][ /}<CR>b99]}

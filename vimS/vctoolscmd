@@ -23,7 +23,6 @@ map [] k$][%?}
 map [[ ?{w99[{
 map ]] j0[[%/{
 map ][ /}b99]}
-nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)

@@ -37,7 +37,6 @@ map [s m`/^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$``N
 map ]] 2][%
 map ][ /}b99]}
 map ]s /^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$
-nmap gx <Plug>NetrwBrowseX
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
