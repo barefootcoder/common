@@ -17,6 +17,7 @@ if ($opts->{v})
 	say "Time from: ", time2str('%m/%d/%Y', $min_date);
 	say "       to: ", time2str('%m/%d/%Y', $max_date);
 	say "     days: $num_days";
+	say "     time: $total_time";
 	say '';
 }
 
@@ -78,8 +79,8 @@ func time_and_avail ($file)
 		{
 			say "$file :   $timer $hrs:$mins";
 		}
-		$time += $hrs + $mins / 60 if $timer eq 'GRAND TOTAL';
-		$avail += $hrs + $mins / 60 if $timer eq 'AVAILABILITY';
+		$time = $hrs + $mins / 60 if $timer eq 'GRAND TOTAL';
+		$avail = $hrs + $mins / 60 if $timer eq 'AVAILABILITY';
 	}
 	close(IN);
 
