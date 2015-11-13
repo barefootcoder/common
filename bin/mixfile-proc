@@ -1,0 +1,113 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use autodie ':all';
+use warnings FATAL => 'all';
+
+use Debuggit DEBUG => 1;
+use Path::Class;
+use List::Util qw< max >;
+
+
+my $MODES =
+{
+	'mix-stats'		=>	{
+							end_of_block	=>	\&gather_stats,
+							block_line		=>	\&check_for_blogged,
+							end_of_file		=>	\&print_mix_summary,
+						},
+};
+
+my $mode = shift;
+die("unrecognized mode: $mode") unless exists $MODES->{$mode};
+my $process = $MODES->{$mode};
+
+my $file = file(shift);
+say "going to load file $file";
+
+my %header;
+my $in_header = 0;
+foreach ( $file->slurp )
+{
+	chomp;
+	if ($in_header)
+	{
+		given ($_)
+		{
+			next						when '';						# blank line
+			$header{volume} = $_		when /^[A-Z]/;					# mix name and volume
+			$header{subtitle} = $_		when /^\[.*\]\??$/;				# volume subtitle
+			$header{stats} = $1			when /^\{(.*)\}/;				# statistics
+			$in_header = 0				when /^[=-]{3,}$/;				# end of header
+			# otherwise:
+			# 	this appears to be a "continution block"
+			# 	keep volume, ditch everything else, drop out of header, retry current line
+			reset_header( keep => 'volume' );
+			redo;
+		}
+
+		next;
+	}
+
+	if ( $_ eq '' )									# blank line
+	{
+		$process->{end_of_block}->();
+		# prepare to read another header
+		reset_header();
+		$in_header = 1;
+	}
+	else
+	{
+		$process->{block_line}->();
+	}
+}
+$process->{end_of_file}->();
+
+
+sub reset_header
+{
+	my %args = @_;
+	$in_header = 0;
+	foreach (keys %header)
+	{
+		$header{$_} = undef unless ($args{keep} // '') eq $_;
+	}
+}
+
+
+#############
+# mix-stats #
+#############
+
+my (@mixes, $blogged);
+
+sub gather_stats
+{
+	debuggit(4 => "gathering:", DUMP => \%header);
+	# push what we found so far onto our list, if we have stats
+	if ($header{stats})
+	{
+		my ($complete) = $header{stats} =~ /score:\h+(\d+\.\d+)%/;
+		push @mixes, { name => $header{volume}, score => $complete, blogged => $blogged };
+		$blogged = 0;
+	}
+}
+
+sub check_for_blogged
+{
+	if ( /^\./ )
+	{
+		$blogged = 1;
+	}
+}
+
+sub print_mix_summary
+{
+	debuggit(3 => "found:", DUMP => \@mixes);
+	my $maxlen = max map { length $_->{name} } @mixes;
+
+	foreach ( sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged} } @mixes )
+	{
+		printf("(%s) %-*s || %6s%%\n", $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
+	}
+}
