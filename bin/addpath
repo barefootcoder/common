@@ -83,7 +83,7 @@ sub set_for_shell
 
 		my $conf = Shell::Config::Generate->new;
 		$conf->set($base, $path);
-		$output = $conf->generate;									# should be for the shell that called us
+		$output = $conf->generate;										# should be for the shell that called us
 		$opts->{D} and print "Shell::* generated: $output\n";
 	};
 	if ($@ =~ /Can't locate Shell/)										# fallback to old stupid way
