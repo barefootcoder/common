@@ -29,12 +29,6 @@ function normalize_filename
 	file=$1
 	parent=$2										# optional
 
-	# add extension if not there
-	if [[ $file != *.* ]]
-	then
-		file=${file%/}.sql							# remove trailing slash, if any
-	fi
-
 	# add parent if not there
 	if [[ $file != */* ]]
 	then
@@ -46,11 +40,8 @@ function normalize_filename
 		fi
 	fi
 
-	# add base if not there
-	if [[ $file != */*/* ]]
-	then
-		file=$BASE/$file
-	fi
+	# farm the rest of the work out to get-report-files
+	file=$(get-report-files -i1 $file)
 
 	# return result
 	echo $file
