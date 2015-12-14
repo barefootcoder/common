@@ -520,6 +520,10 @@ sub find_dest
 		{
 			return prettify_dir("$_.pm");
 		}
+		elsif (-f "$_.t")
+		{
+			return prettify_dir("$_.t");
+		}
 		elsif (-d)
 		{
 			return prettify_dir($_);
