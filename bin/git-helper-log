@@ -82,7 +82,7 @@ show_me=0
 pretend=0
 grep_diffs=0
 date_format=local
-while getopts ":vdscNpbln:LmU:g:RGh" opt
+while getopts ":vdscHNpbln:LmU:g:RGh" opt
 do
 	case $opt in
 		v)	show_merges=1
@@ -106,6 +106,8 @@ do
 			grep_diffs=1
 			;;
 		s)	args="$args --oneline"
+			;;
+		H)	args="$args --pretty=%h"
 			;;
 		c)  args="$args --oneline"
 			post="wc -l"
@@ -139,10 +141,11 @@ do
 			;;
 		G)	date_format=gmt
 			;;
-		h)  echo "usage: $me -h | [-{v|d|s} [-NG] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
+		h)  echo "usage: $me -h | [-{v|d|s|H} [-NG] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
 			echo "    -v : verbose (show files changed, include merge commits)" >&2
 			echo "    -d : show diffs of changed files" >&2
 			echo "    -s : show short (one-line) format for commits" >&2
+			echo "    -H : show only SHA1s (even shorter than short format)" >&2
 			echo "    -N : number commits (first commit marked 1, second 2, etc; includes merge commits)" >&2
 			echo "    -G : display dates in GMT/UTC format" >&2
 			echo "    -c : don't show commits, just count them" >&2
