@@ -22,9 +22,13 @@ usage: $me [-h] [-g | -q] date args
 USAGE
 
 
-s{(?:^| )(\d+)[.:/-](\d+)$}{$1:$2} foreach @ARGV;
-s{(?:^| )(\d+)([.:/-])(\d+)(?:\2(\d+))?([ap])m?}{"$1:$3:". ($4 // '00') . "$5m"}e foreach @ARGV;
-s{(?:^| )(\d+)([ap])m?}{$1:00$2m} foreach @ARGV;
+foreach (@ARGV)
+{
+	s{(?:^| )(\d+)[.:/-](\d+)$}{$1:$2};
+	s{(?:^| )(\d+)([.:/-])(\d+)(?:\2(\d+))?([ap])m?}{"$1:$3:". ($4 // '00') . "$5m"}e;
+	s{(?:^| )(\d+)([ap])m?}{$1:00$2m};
+	s{^y$}{yesterday};
+}
 
 my $perlsecs = @ARGV ? parsedate("@ARGV") : time();
 $perlsecs = str2time("@ARGV") unless $perlsecs;
