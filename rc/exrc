@@ -53,7 +53,7 @@ map <C-Z> :%s/[ 	]\+$//<CR>
 map <C-Z><C-Z> :w<CR>:!vcpatchws -f %<CR>:e!<CR>
 
 " search for the word under the cursor
-nmap <C-_> /\<<C-R><C-W>\><CR>																" Ctrl-/
+nmap <C-_> :set isk=@,_,-,48-57<CR>/\<<C-R><C-W>\><CR>:set isk=@,_,48-57<CR>				" Ctrl-/
 " start search from top of file
 nmap <C-N> 1Gn
 " stop the hideously annoying shift+backspace problem
@@ -163,3 +163,22 @@ let loaded_matchparen = 1
 " restore last known position when opening a new file
 " (this used to happen automatically, but something I did turned it off)
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+
+" grep all buffers
+:function! GrepBuffs()
+:	let g:grepregex=input("Regex to search for:")
+":	bufdo silent !echo % >>/tmp/vims.grepbuffs
+":	execute "!grep -Pe \"" . g:grepregex . "\" `cat /tmp/vims.grepbuffs`"
+":	!rm -f /tmp/vims.grepbuffs
+:	let buffs = []
+:	let bufnums = range(1, bufnr('$'))
+:	for b in bufnums
+:		if buflisted(b)
+:			call add(buffs, bufname(b))
+:		endif
+:	endfor
+:	execute "vimgrep /" . g:grepregex . "/ " . join(buffs, ' ')
+:endfunction
+:map <Esc>/ :call GrepBuffs()<CR>															" Alt-/
+:map <Esc>Oc :cn<CR>																		" Ctrl-Right
+:map <Esc>Od :cp<CR>																		" Ctrl-Left
