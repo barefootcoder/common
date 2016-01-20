@@ -6,5 +6,7 @@ timerfile=timer-new
 ls -lh `find ~/timer/ -name $timerfile -o -name ".$timerfile.sw?" ; find ~/.purple/ -name '[abs]*.xml' | grep -v ' '`
 
 echo "===="
-ps -p `/usr/bin/pgrep -f bin/vimS`
+ps | head -n1
+vims_pids=$(/usr/bin/pgrep -f bin/vimS)
+[[ $vims_pids ]] && ps h -p "$vims_pids"
 vagrant-exe switchover-status-part2
