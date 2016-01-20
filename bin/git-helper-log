@@ -131,7 +131,7 @@ do
 			;;
 		g)	if [[ $grep_diffs == 0 ]]
 			then
-				args="$args --grep $OPTARG"
+				args="$args --grep '$OPTARG'"
 			else
 				args="$args -G $OPTARG"
 			fi
