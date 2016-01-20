@@ -1,0 +1,30 @@
+#! /usr/bin/env perl
+
+use v5.14.0;
+use warnings;
+use autodie ':all';
+
+
+my $pub = shift // die "must supply publisher (name or ID) as sole arg";
+my %errors;
+my $full_pubname;
+while ( <> )
+{
+	chomp;
+	if ( s/^Error for publisher ([^:]*$pub[^:]*)://i )
+	{
+		$full_pubname //= $1;
+		s/\[.+\]//;
+		++$errors{$_};
+	}
+}
+
+if (%errors)
+{
+	say "Error counts for $full_pubname:";
+	printf " %4d : %s\n", $errors{$_}, $_ foreach sort { $errors{$b} <=> $errors{$a} } keys %errors;
+}
+else
+{
+	say "No errors found for $pub.";
+}
