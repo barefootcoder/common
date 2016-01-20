@@ -157,7 +157,7 @@ do
 			echo "    -m : show only my commits (commits by current user)" >&2
 			echo "    -U : show only commits by user" >&2
 			echo "    -g : show only commits with log messages containing regex" >&2
-			echo "    -R : show commits in reverse order (oldest to newest)" >&2
+			echo "    -R : show commits in reverse order (oldest to newest; doesn't work across renames)" >&2
 			echo "    -h : this help message" >&2
 			echo "    user : either name or email; can be partial, but is case-sensitive" >&2
 			echo "    file : source file (default: entire working tree)" >&2
@@ -187,6 +187,10 @@ then
 	branch=$(current_branch)
 	from=$(branched_from $branch)
 	args="$args $from..$branch"
+fi
+if [[ $# -eq 1 && $args != *--reverse* ]]			# has to be a single file and not -R
+then
+	args="$args --follow"
 fi
 
 
