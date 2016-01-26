@@ -1,7 +1,7 @@
 #! /bin/bash
 
 vims_pids=$(/usr/bin/pgrep -f bin/vimS)
-[[ $vims_pids ]] && ps h -p "$vims_pids"
+[[ $vims_pids ]] && ps h -p $vims_pids
 
 echo "===="
 bin/ceflow stat-plus | fgrep -v '(use "git' | egrep -v '^#?$' 

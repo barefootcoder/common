@@ -8,5 +8,5 @@ ls -lh `find ~/timer/ -name $timerfile -o -name ".$timerfile.sw?" ; find ~/.purp
 echo "===="
 ps | head -n1
 vims_pids=$(/usr/bin/pgrep -f bin/vimS)
-[[ $vims_pids ]] && ps h -p "$vims_pids"
+[[ $vims_pids ]] && ps h -p $vims_pids
 vagrant-exe switchover-status-part2
