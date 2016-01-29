@@ -178,8 +178,9 @@ shift $(( $OPTIND - 1 ))
 if [[ $show_local  == 1     ]]
 then
 	cmd="show"
-	commits="$(all_unpushed)"
+	commits=$(all_unpushed)
 	[[ -z $commits ]] && exit						# no commits to show
+	[[ $args == *--reverse* ]] && commits=$(echo $commits | tac -s' ')
 	args="$args $commits"
 fi
 if [[ $show_branch == 1     ]]
