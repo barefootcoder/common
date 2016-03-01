@@ -99,10 +99,10 @@ DefaultVC=git
 			%cur_branch_remote ne 'cibola'						->	! This doesn't look like an appropriate branch.
 			%is_dirty											->	! You really shouldn't have any uncommitted work.
 
-            REMOTE='origin'
-            git fetch $REMOTE
-            RESET_TO=join('/', "$REMOTE", %cur_branch)
-            not "$RESET_TO" ~~ [%remote_branches]				->	RESET_TO=join('/', "$REMOTE", %Mainline)
+			REMOTE='origin'
+			git fetch $REMOTE
+			RESET_TO=join('/', "$REMOTE", %cur_branch)
+			not "$RESET_TO" ~~ [%remote_branches]				->	RESET_TO=join('/', "$REMOTE", %Mainline)
 
 			git reset --hard $RESET_TO
 			git stash save -u 'FOR DROPPING'

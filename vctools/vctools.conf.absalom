@@ -21,6 +21,11 @@ DefaultSourcePath=git@github.com:%user/%project.git
 	ProjectDir = ~/common
 </Project>
 
+<Project CE-cibola>
+    ProjectPolicy = CE
+    Mainline = trunk
+</Project>
+
 
 # for testing purposes
 # (a non-destructive custom command)
