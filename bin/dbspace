@@ -6,7 +6,8 @@ used=$(du -bs $excludes ~/Dropbox | awk '{print $1}')
 # Dropbox itself was reporting, so this seems to fix it <shrug>
 # (after getting more space, it appears to be 85Mb off now; thus, changed)
 # (after getting even more space (for some reason), it now appears to be exactly correct ... weird)
-echo $(( (7168 - $used / 1024 / 1024) + 0 ))Mb left
+# (after upgrading to Dropbox Pro (1Tb!!), you have to add the 6.5Gb extra that I earned, plus it's still 2Gb off)
+echo $(( (1024 + 65 / 10 - $used / 1024 / 1024 / 1024) + 2 ))Gb left
 
 if [[ $1 == -v ]]
 then

@@ -1,9 +1,9 @@
 #! /bin/bash
 
-rsync -n -avz cibola:Copy/purple/ Copy/purple/
+rsync -n -avz cibola:Dropbox/purple/ ~/Dropbox/purple/
 echo -n "run for real? [y/N] " >&2
 read yn
 if [[ $yn == [yY]* ]]
 then
-	rsync -avz cibola:Copy/purple/ Copy/purple/
+	rsync -avz cibola:Dropbox/purple/ ~/Dropbox/purple/
 fi
