@@ -55,6 +55,7 @@ do
 			echo "    -l : instead of starting a vim session, list possible session files" >&2
 			echo "    -v : when listing with -l, display full pathnames of session files" >&2
 			echo "    -e : instead of starting a vim session, edit the session file itself" >&2
+			echo "         (with -l, edit all known vimS session files)" >&2
 			echo "    -n : do not autosave the session (default: autosave any changes/new files)" >&2
 			echo "    -h : this help message" >&2
 			echo "    file : session file (or partial name)" >&2
@@ -98,7 +99,12 @@ then
 	do
 		if [[ $file != *"*"* ]]
 		then
-			print_file $(basename $file .vimS) $file
+			if [[ $edit ]]
+			then
+				edit_files="$edit_files $file"
+			else
+				print_file $(basename $file .vimS) $file
+			fi
 		fi
 	done
 	for prefix in $prefixes
@@ -107,10 +113,16 @@ then
 		do
 			if [[ $file != *"*" ]]
 			then
-				print_file ${file##$prefix} $file
+				if [[ $edit ]]
+				then
+					edit_files="$edit_files $file"
+				else
+					print_file ${file##$prefix} $file
+				fi
 			fi
 		done
 	done
+	[[ $edit ]] && vi $edit_files
 	exit
 fi
 
