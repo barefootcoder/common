@@ -1,5 +1,31 @@
 #! /bin/bash
 
+
+###########
+# NEW WAY #
+###########
+# Just find the socket; who cares about the PID?
+
+socket=$(/bin/ls -1 /run/user/`id -u`/keyring*/ssh /tmp/ssh-*/agent.* | head -n1)
+
+if [[ -z $socket ]]
+then
+	echo "$0: can't find the socket!" >&2
+	exit 1
+fi
+
+echo "unsetenv SSH_AGENT_PID;"						# you don't really need this at all, it turns out ...
+echo "setenv SSH_AUTH_SOCK $socket;"
+
+
+exit
+
+
+###########
+# OLD WAY #
+###########
+# Find both socket and PID; make sure they match.
+
 # oldest copy of ssh-agent running
 pid=$(/usr/bin/pgrep -x ssh-agent)
 [[ $pid ]] || exit									# no agent running; probably a sandbox
