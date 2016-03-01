@@ -7,7 +7,7 @@ eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
 alias cessh ~/workproj/CE/devtools/cessh
 alias cescp ~/workproj/CE/devtools/cescp
 alias ceflow ~/workproj/CE/bin/ceflow
-alias vbounce 'cd $CEROOT ; vagrant reload'
+alias vbounce 'cd $CHEOPSROOT ; vagrant reload'
 
 # Vagrant environment stuff
 alias vagrant-push-box 'setenv CE_VAGRANT_BOX ce-push-sandbox ; setenv CE_VAGRANT_SSHFS_MOUNTPOINT ~/workproj/CE-push ; \

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-cd $CEROOT
+cd $CHEOPSROOT
 
 echo -e "\nExisting boxes:\n"
 vagrant box list | grep -v '^Loading '
