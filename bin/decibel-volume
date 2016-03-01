@@ -1,18 +1,19 @@
 #! /usr/bin/perl
 
 use 5.14.0;
+use warnings;
 use autodie ':all';
-use warnings FATAL => 'all';
 
 use File::Spec;
-use Path::Class;
+use Path::Tiny;
 use Const::Fast;
 
 my %COMMANDS =
 (
-	reset	=>	'=52',
-	up		=>	+4,
-	down	=>	-4,
+	reset	=>	'=49',
+	set		=>	'=',
+	up		=>	'+',
+	down	=>	'-',
 );
 
 const my $REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
@@ -21,11 +22,15 @@ my $command = shift;
 die("unknown command $command") unless exists $COMMANDS{$command};
 
 
-my $curvol_file = file(File::Spec->tmpdir, 'curvol');
+my $curvol_file = path(File::Spec->tmpdir, 'curvol');
 my $curvol = -e $curvol_file ? $curvol_file->slurp : $COMMANDS{'reset'};
 $curvol =~ s/^=//;
 
 my $adj = $COMMANDS{$command};
+unless ($adj =~ /\d+$/)
+{
+	fill_in_adj($adj, $curvol);
+}
 if ($adj =~ s/^=//)
 {
 	$curvol = $adj;
@@ -34,7 +39,47 @@ else
 {
 	$curvol += $adj;
 }
+$curvol = force_into_range($curvol, 0, 100);
 
 system(python => $REMOTE, volume => $curvol);
 say "voume set to: $curvol";
 $curvol_file->spew($curvol);
+
+
+sub force_into_range
+{
+	my ($n, $min, $max) = @_;
+	return $n < $min ? $min : $n > $max ? $max : $n;
+}
+
+
+sub fill_in_adj
+{
+	my ($adj, $curvol) = @_;
+	$_[0] .= shift @ARGV, return if $adj eq '=';
+
+	my $is_below = sub { my $n = shift; return $curvol < $n || $curvol == $n && $adj eq '-'; };
+	if ($is_below->(10))
+	{
+		$adj .= 1;
+	}
+	elsif ($is_below->(30))
+	{
+		$adj .= 2;
+	}
+	elsif ($is_below->(45))
+	{
+		$adj .= 3;
+	}
+	elsif ($is_below->(65))
+	{
+		$adj .= 4;
+	}
+	else
+	{
+		$adj .= 5;
+	}
+
+	# adjust in place
+	$_[0] = $adj;
+}
