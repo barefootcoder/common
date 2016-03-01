@@ -87,7 +87,7 @@ then
 	elif [[ "$first_line" == '==>'* ]]
 	then
 		wikify "$1"
-	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || "$first_line" == "/bbcode/" ]]
+	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		set -o pipefail
 		blogify "$1" | xclip -selection c

@@ -1,8 +1,16 @@
 #! /usr/bin/env perl
 
-use myperl;
+use 5.14.0;
+use warnings;
+use autodie ':all';
+use Debuggit;
+use Const::Fast;
+use Perl6::Slurp;
+use Method::Signatures;
 
-use List::Util qw< first >;
+use HTML::Entities;
+use List::MoreUtils qw< after >;
+use List::Util qw< first pairmap >;
 use Text::Tabs; $tabstop = 4;
 
 use lib "$ENV{'HOME'}/Dropbox/personal";
@@ -15,6 +23,7 @@ my %blog =
 	blogspot	=>	{
 						italic		=>	'span style="font-style: italic;"',
 						bold		=>	'b',
+						strike		=>	's',
 						big			=>	'span style="font-size: larger;"',
 						small		=>	'span style="font-size: smaller;"',
 						quote		=>	'blockquote',
@@ -29,6 +38,7 @@ my %blog =
 	perl		=>	{
 						italic		=>	'em',
 						bold		=>	'strong',
+						strike		=>	's',
 						big			=>	'big',
 						small		=>	'small',
 						quote		=>	'blockquote',
@@ -43,6 +53,7 @@ my %blog =
 	bbcode		=>	{
 						italic		=>	'i',
 						bold		=>	'b',
+						strike		=>	's',
 						big			=>	'size=4',
 						small		=>	'size=1',
 						quote		=>	'quote',
@@ -57,7 +68,12 @@ my %blog =
 );
 $blog{'html'} = { %{$blog{'blogspot'}} };
 $blog{'html'}->{'para'} = sub { s{^(.*?)\n\n}{<p>$1</p>\n}mg };
+$blog{'article'} = { %{$blog{'bbcode'}} };
+$blog{'article'}->{$_} = $blog{'html'}->{$_} foreach grep { $blog{'html'}->{$_} =~ /^\&/ } keys $blog{'html'};
+
+
 my $blog_type = 'blogspot';												# default blog type
+sub bbstyle () { $blog_type ~~ [qw< bbcode article >] }					# [tag] instead of <tag>
 
 my @blocks;																# for codeblocks et al
 my @footnotes = (undef);												# footnotes (starting at 1)
@@ -90,10 +106,10 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\h*(->|<-)(.+?)(->|<-)\h*}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;
 
 	# save URLs so they don't get messed with later
-	s{\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;								# ]] <-- to keep % from freaking out
+	s{(?<![\\^])\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;					# ]] <-- to keep % from freaking out
 
 	s{\A/(\w+)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
-	unless ($blog_type eq 'bbcode')
+	unless (bbstyle)
 	{
 		s{\\?<}{&lt;}g;																# literal <'s
 		s{\\?>}{&gt;}g;																# literal >'s
@@ -108,6 +124,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
 	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
 	s{\ba la\b}{&agrave;&nbsp;la}g;													# a la (w/ accent)
+	s{\b(fa)c(ade)\b}{$1&ccedil;$2}gi;												# facade (w/ cedilla), preserving case
 	s{\braison detre\b}{raison d'&ecirc;tre}g;										# raison d'etre (w/ circumflex (and '))
 	s{\b(jalape)n(os?)\b}{$1&ntilde;$2}gi;											# jalapeno (w/ tilde), preserving case
 	s{\b(pl)a(tanos?)\b}{$1&aacute;$2}gi;											# platanos (w/ accent), preserving case
@@ -137,8 +154,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^//--\n(.*?)\n--//\n}{"<pre>" . fmt(quote => $1) . "</pre>\n"}mseg;			# preformatted blockquotes
 	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
-	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcipt-type blocks
-	unless ($blog_type eq 'bbcode')
+	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcript-type blocks
+	unless (bbstyle)
 	{
 		no warnings 'uninitialized';
 		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
@@ -146,12 +163,12 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 	}
-	s{--}{$blog{ $blog_type}->{dash} }g;											# em dash
+	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
-	s{^h(\d+)\.\s*(.*?)$}{<h$1>$2</h$1>}mg;											# headers
 	s{((^\h*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
 	s{((^\h*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
-	if ($blog_type eq 'bbcode')
+	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
+	if (bbstyle)
 	{
 		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
 	}																				# confused with boldface
@@ -159,6 +176,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
+	s{(?<!-)$front_boundary-(.+?)_$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;	# strikethrough
 	s[{img (.*?)}][<img src="$1">]g;												# embedded images
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
@@ -188,6 +206,36 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 			substr($_, $-[1], $+[1] - $-[1]) =~ s/font-style: italic;/font-style: normal;/g;
 		}
 	}
+	# handle header lines (article only)
+	if ($blog_type eq 'article')
+	{
+		const my %STYLE =>
+		(
+			title       =>  '[font="Arial Narrow"][size=6][b]',
+			subtitle    =>  '[font="Arial Narrow"][size=5][b][i]',
+			header1     =>  '[font="Arial Narrow"][size=5]',
+			header2     =>  '[font="Arial Narrow"][size=4][i]',
+			header3     =>  '[font="Times New Roman"][size=4][b]',
+			header4     =>  '[font="Times New Roman"][size=3][b][i]',
+			normal      =>  '[font="Times New Roman"][size=3]',
+			endnote     =>  '[font="Times New Roman"][size=1]',
+		);
+
+		s/^(=+)\s*(.*?)\s*\1\s*\n/"{\cSheader" . length($1) . "}$2\n"				# header level styles
+				. "{\cSnormal}"/megx;												#	(back to normal afterwads)
+		s/^(\^{2})\s*(.*?)\s*\1\s*\n/{\cSsubtitle}$2\n{\cSnormal}/mg;				# same for subtitles
+		s/^(\^)\s*(.*?)\s*\1\s*\n/{\cStitle}$2\n{\cSnormal}/mg;						# same for titles
+		$_ = "{\cSnormal}$_";														# start with normal style
+
+		s/\{\cS\w+?\}(\{\cS\w+?\})/$1/g;											# eliminate styles w/ empty content
+		$_ = join("\n",
+			pairmap	{ spanify($STYLE{$a}, $b) }										# add formatting codes for styles
+			after	{ $_ eq '' }													# skip first (empty) field
+					split(/\{\cS(\w+?)\}/)											# split into style name and content
+		);
+		# special fixup for list items
+		s/ (\cL) (.*?) (?=\n[[\cL]) / $1 . spanify( $STYLE{'normal'}, $2) /sgex;
+	}
 	# append footnotes
 	if (first { defined } @footnotes)
 	{
@@ -201,10 +249,12 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	}
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
+	# in-place HTML entity replacement (certain types only)
+	decode_entities($_) if $blog_type eq 'article';
 	# now put all blocks back
 	s{\cQ(\d+)}{$blocks[$1]}g;
 	# put BBcode lists items back
-	s{\cL}{[*]}g if $blog_type eq 'bbcode';
+	s{\cL}{[*]}g if bbstyle;
 	# handle initial whitespace according to blog type
 	s{\A\s*}{$blog{$blog_type}->{'initial'}};
 	# an initial blockquote needs a bit of extra space
@@ -221,7 +271,7 @@ func change_type ($type, $extra)
 	die("unknown blog type $type") unless exists $blog{$type};
 	$blog_type = $type;
 	$footnote_style = '1' if $blog_type eq 'perl';
-	$section_break = '\_' x 10 if $blog_type eq 'bbcode';
+	$section_break = '\_' x 10 if bbstyle;
 
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
 	if ($extra =~ /(\w+):{(.*?)}/)
@@ -253,7 +303,7 @@ sub url_block
 	$url = $blocks[$1] if $url =~ /^\cQ(\d+)$/;
 	debuggit(4 => "url_block:", $url, "=>", $alt_text);
 
-	if ($blog_type eq 'bbcode')
+	if (bbstyle)
 	{
 		die("can't do forward links in bbcode") if $forward;
 		state $bbcodes = [ map { qr{^/?$_\b}i }
@@ -304,7 +354,7 @@ func code_block ($type, $code)
 {
 	$code = fmt(code => expand($code));
 	$code =~ s/^$/ /mg				if						$blog_type eq 'perl';
-	$code = "<pre>$code</pre>\n"	if $type eq 'block' and	$blog_type ne 'bbcode';
+	$code = "<pre>$code</pre>\n"	if $type eq 'block' and	not bbstyle;
 	return block_save($code);
 }
 
@@ -314,13 +364,23 @@ func fmt ($fmt, $text)
 	debuggit(3 => "formatting", $text, "in", $fmt);
 
 	my $on = $blog{$blog_type}->{$fmt} or die("unknown formatting $fmt");
-	my $off = (split(/\s+|=/, $on))[0];
 
-	my $open = $blog_type eq 'bbcode' ? '[' : '<';
-	my $close = $blog_type eq 'bbcode' ? ']' : '>';
+	my $open = bbstyle ? '[' : '<';
+	my $close = bbstyle ? ']' : '>';
 	$on = "$open$on$close";
-	$off = "$open/$off$close";
-	return "$on$text$off";
+
+	return spanify($on, $text);
+}
+
+func spanify ($open, $content)
+{
+	my $close = closing_of($open);
+	return join('', $open, $content, $close);
+}
+
+func closing_of ($opening)
+{
+	return $opening =~ s{ ([[<]) (\w+) .*? ([]>]) }{$1/$2$3}grx;
 }
 
 
@@ -334,7 +394,7 @@ func image ($source, $size)
 
 func mix_block ($mix_name, $vol, $extra?)
 {
-	my $file = "mixes/$mix_name.m3u";
+	my $file = "$mix_name.m3u";
 	debuggit(2 => "creating mix block for", $mix_name, "volume", $vol, "file", $file);
 	my $mix = MixVolume->new($file, volume => $vol);
 
@@ -376,7 +436,7 @@ func mix_block ($mix_name, $vol, $extra?)
 
 func list ($type, $text)
 {
-	if ($blog_type eq 'bbcode')
+	if (bbstyle)
 	{
 		$type = $type eq 'ordered' ? 'list=1' : 'list';
 		$text =~ s/^\s+//;
