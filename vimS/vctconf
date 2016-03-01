@@ -31,11 +31,7 @@ map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 
 map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
-map [] k$][%?}
-map [[ ][%
 map [s m`/^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$``N
-map ]] 2][%
-map ][ /}b99]}
 map ]s /^[ 	]*#[ 	]\+[A-Z ]\+[ 	]*#\?$
 map g G
 map q :s/^/\/\* /:s/$/ \*\//

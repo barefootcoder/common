@@ -33,10 +33,11 @@ map g G
 " but remove unused gx mapping, because it causes a delay when you hit g
 let loaded_netrwPlugin = 1
 " make [[ et al work for Perl-style curly brace placement (according to vim help)
-map [[ ?{<CR>w99[{
-map ][ /}<CR>b99]}
-map ]] j0[[%/{<CR>
-map [] k$][%?}<CR>
+" this doesn't really work worth a crap
+"map [[ ?{<CR>w99[{
+"map ][ /}<CR>b99]}
+"map ]] j0[[%/{<CR>
+"map [] k$][%?}<CR>
 " turn "add" into "plus" (because ^A conflicts with screen, and ^P is the same as k)
 map <C-P> <C-A>
 " easy comment

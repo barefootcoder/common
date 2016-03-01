@@ -19,10 +19,6 @@ map Lock :map ZZ LockZZ:echo "Locked"
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2):if choice == 1:x:endif
 map Q :s/^\/\* //:s/ \*\/$//
 nmap Y y$
-map [] k$][%?}
-map [[ ?{w99[{
-map ]] j0[[%/{
-map ][ /}b99]}
 map g G
 map q :s/^/\/\* /:s/$/ \*\//
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
