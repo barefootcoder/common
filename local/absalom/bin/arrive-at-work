@@ -1,0 +1,35 @@
+#!/bin/bash
+. ~/bin/bash_funcs
+
+
+function current-timer
+{
+	grep -e '-$' ~/timer/timer-new | cut -d$'\t' -f1 | head -n1
+}
+
+if [[ $(current-timer) != "switchover" ]]
+then
+	die "Must start the switchover timer first!"
+fi
+
+echo "Check your network connection!"
+echo -n "Enter to continue "
+read
+
+switchover
+echo -n "waiting for timerfile sync "
+while true
+do
+	echo -n "."
+	localtime=$(perl -le 'print ((stat shift)[9])' ~/timer/timer-new)
+	remotetime=$(ssh cibola "perl -le 'print ((stat shift)[9])' ~/timer/timer-new")
+	if [[ $localtime -eq $remotetime ]]
+	then
+		break
+	else
+		sleep 2
+	fi
+done
+echo ''
+echo "timerfiles sync'ed"
+copy-to-cibola
