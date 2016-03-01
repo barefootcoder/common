@@ -309,6 +309,9 @@ source ~/.vctoolsrc
 alias pbtest "vcd \!^ ; set prompt='[Pb.testing: \!^] ' ; $pbtest_setup"
 if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished VCtools"
 
+# Heroscapers stuff
+alias hsreply 'vimS hsreply'
+
 # allow local overrides to shared .tcshrc
 if ( -e ~/.tcshrc.local ) then
 	source ~/.tcshrc.local
