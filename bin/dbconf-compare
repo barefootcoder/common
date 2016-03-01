@@ -2,7 +2,7 @@
 . ~/bin/bash_funcs
 
 swapfile="$1"
-origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print "$1/$2"' "$swapfile")"
+origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print join("/", $1//".", $2)' "$swapfile")"
 if [[ -z $origfile ]]
 then
 	die "$me: $swapfile does not appear to be a valid vim swapfile"
