@@ -1,4 +1,4 @@
 #!/bin/bash
 ssh-add-if-necessary
-cd ~/workproj/CE
+cd ~/workproj/cheops
 vagrant ssh

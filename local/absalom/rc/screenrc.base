@@ -18,10 +18,9 @@ screen -t notes
 screen -t bc
 	stuff "bc\015"
 screen -t st
-	source .screenrc.vctools
-	stuff "vcd CE\015"
+	source .screenrc.sandbox
 screen -t proj
-	stuff "cd workproj/CE\015"
+	source .screenrc.sandbox
 screen -t sandbox
 	source .screenrc.sandbox
 screen -t sql
@@ -30,7 +29,7 @@ screen -t sql
 screen -t server
 	source .screenrc.devserver
 screen -t work
-	stuff "cda qsift\015"
+	stuff "cd ~/work/qsift\015"
 screen -t common
 	source .screenrc.vctools
 	stuff "vcd common\015"
@@ -65,3 +64,5 @@ screen -t vagrant
 screen -t blog
 	stuff "cd Dropbox/personal/blog\015"
 	stuff "vims blog\015"
+screen -t heroscapers
+	stuff "cd rpg/Heroscape/glasq\015"
