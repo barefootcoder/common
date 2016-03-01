@@ -1,0 +1,23 @@
+#! /usr/bin/tcsh
+
+#echo "1:$1"
+#echo "2:$2"
+#echo "3:$3"
+#echo "4:$4"
+#echo "5:$5"
+#echo "6:$6"
+#echo "7:$7"
+#echo "8:$8"
+#echo "9:$9"
+
+# prepare environment
+eval `ssh-agent-env`
+setenv VCTOOLS_SHELL vc								# to guarantee we get VCtools aliases
+source ~/.tcshrc
+
+# fire off the command
+#set echo
+#eval 'set command="'`echo "$*" | perl -pe 's/"/"'\''"'\''"/g;'"s/'/'\\''/g"`'"'
+#echo "/$command/"
+#echo "/$*/"
+eval "$*"
