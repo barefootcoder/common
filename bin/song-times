@@ -1,6 +1,6 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 
-use Toolkit;
+use myperl;
 
 
 our @FACTORS = (60, 60, 24);
