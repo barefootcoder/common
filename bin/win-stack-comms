@@ -1,42 +1,52 @@
 #! /bin/bash
 
 
-# Desktop 1 == Comms (desktops are zero-based)
+if [[ $1 == "--restack" ]]
+then
+	only_stack=1
+fi
+
 
 ThunderbirdWindow=".*Mozilla Thunderbird"
-if ! /usr/bin/pgrep thunderbird >/dev/null
+
+if [[ ! $only_stack ]]
 then
-	thunderbird >/dev/null 2>&1 &
-	while ! xdotool search --name "$ThunderbirdWindow" >/dev/null
-	do
-		sleep 1
-	done
-	sleep 2											# not sure why this is necessary, but it appears to be
-	xdotool search --name "$ThunderbirdWindow" windowmove 175 55 set_desktop_for_window 1
+	# Desktop 1 == Comms (desktops are zero-based)
+
+	if ! /usr/bin/pgrep thunderbird >/dev/null
+	then
+		thunderbird >/dev/null 2>&1 &
+		while ! xdotool search --name "$ThunderbirdWindow" >/dev/null
+		do
+			sleep 1
+		done
+		sleep 2											# not sure why this is necessary, but it appears to be
+		xdotool search --name "$ThunderbirdWindow" windowmove 175 55 set_desktop_for_window 1
+	fi
+
+	PidginWindow="Buddy List"
+	if ! /usr/bin/pgrep pidgin >/dev/null
+	then
+		pidgin >/dev/null 2>&1 &
+
+		# have to give Pidgin time to connect to the various IM servers
+		# but need to start this monitoring proglet before the program actually starts
+		wait-for-pidgin-connect
+
+		# make sure window is there before we try to move it to the proper desktop
+		# (although now that we've moved the wait for connection above this,
+		# it's probably unlikely that the window isn't up by now)
+		while ! xdotool search --name "$PidginWindow" >/dev/null
+		do
+			sleep 1
+		done
+		xdotool search --name "$PidginWindow" set_desktop_for_window 1
+	fi
+
+	# do this regardless of whether we had to start Pidgin or not
+	# stacking them doesn't do much good if they're in the wrong positions
+	pidgin_restore
 fi
-
-PidginWindow="Buddy List"
-if ! /usr/bin/pgrep pidgin >/dev/null
-then
-	pidgin >/dev/null 2>&1 &
-
-	# have to give Pidgin time to connect to the various IM servers
-	# but need to start this monitoring proglet before the program actually starts
-	wait-for-pidgin-connect
-
-	# make sure window is there before we try to move it to the proper desktop
-	# (although now that we've moved the wait for connection above this,
-	# it's probably unlikely that the window isn't up by now)
-	while ! xdotool search --name "$PidginWindow" >/dev/null
-	do
-		sleep 1
-	done
-	xdotool search --name "$PidginWindow" set_desktop_for_window 1
-fi
-
-# do this regardless of whether we had to start Pidgin or not
-# stacking them doesn't do much good if they're in the wrong positions
-pidgin_restore
 
 for win in team leadops lambda technology offtopic qa "$ThunderbirdWindow"
 do
