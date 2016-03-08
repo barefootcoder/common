@@ -192,7 +192,7 @@ then
 	from=$(branched_from $branch)
 	args="$args $from..$branch"
 fi
-if [[ $# -eq 1 && $args != *--reverse* ]]			# has to be a single file and not -R
+if [[ $# -eq 1 && -r $1 && $args != *--reverse* ]]	# has to be a single file and not -R
 then
 	args="$args --follow"
 fi
