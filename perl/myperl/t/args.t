@@ -1,4 +1,4 @@
-use Data::Printer;
+use Data::Printer	0.36;
 
 use Test::Most		0.25;
 use Test::Command	0.08;
@@ -23,7 +23,7 @@ perl_error_is( "Debuggit args are passed through", "var is 4", <<'END' );
 END
 
 my $struct = '{ deeply => "nested", config => { stuff => "that", goes => "on", and => "on" } }';
-my $dp_out = &Data::Printer::p(eval $struct, colored => 1, hash_separator => ' => ');
+my $dp_out = &Data::Printer::np(eval $struct, colored => 1, hash_separator => ' => ');
 perl_error_is( "Debuggit default uses Data::Printer", $dp_out, <<END );
 	use myperl DEBUG => 2;
 	sub st { return $struct }
