@@ -46,9 +46,11 @@ foreach my $name (keys %$data)
 	}
 }
 
-# for some super-bizarre reason, my work group gets closed sometimes
-# this will guarantee it's left in the open state
+# for some reason, my groups get in the wrong open/closed state sometimes
+# this should guarantee the right things are open or closed
+type_in_contact_window("me\n-");
 type_in_contact_window("work\n+");
+type_in_contact_window("personal\n+");
 
 
 func get_screen_size

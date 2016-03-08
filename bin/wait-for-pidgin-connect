@@ -34,6 +34,9 @@ my %file_counts =
 alarm(30);
 mce_map { sleep 1 until connected($_) } keys %file_counts;
 
+# give it just a few more seconds for all the contacts to show as connected
+sleep 10;
+
 
 sub connected
 {
