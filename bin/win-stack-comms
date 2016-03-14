@@ -6,6 +6,9 @@ then
 	only_stack=1
 fi
 
+# remember current desktop so we can go back there when we're done
+orig_desktop=$(xdotool get_desktop)
+
 
 ThunderbirdWindow=".*Mozilla Thunderbird"
 
@@ -58,3 +61,6 @@ do
 	# (except hoist the pid var out of the loop, of course)
 	xdotool search --name "^$win\$" windowactivate
 done
+
+# return to original desktop
+xdotool set_desktop $orig_desktop
