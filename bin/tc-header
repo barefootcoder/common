@@ -1,0 +1,11 @@
+#! /usr/bin/env perl
+
+use myperl ONLY => [qw< title_case >];
+use autodie;
+
+while ( <> )
+{
+	no warnings 'uninitialized';
+	s{^ ( =head\d+ \s+ | h\d+ \. | <h\d+> )? (.*?) ( </h\d+> )? $}{ $1 . title_case(lc $2) . $3 }xe;
+	print;
+}
