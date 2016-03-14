@@ -24,6 +24,7 @@ sub import
 {
 	my $class = shift;
 	my %args = @_;
+	my $ONLY = delete $args{'ONLY'};
 
 	my %mod_args;
 	foreach (keys %args)
@@ -47,8 +48,11 @@ sub import
 	my $calling_package = caller;
 
 	# our own routines, which we have to transfer by hand
-	Sub::Install::install_sub({ code => $_, into => $calling_package })
-			foreach \&title_case, \&round, \&expand, \&prompt, \&confirm;
+	foreach (qw< title_case round expand prompt confirm >)
+	{
+		next if $ONLY and not $_ ~~ $ONLY;
+		Sub::Install::install_sub({ code => $_, into => $calling_package });
+	}
 
 	# This is like a poor man's AUTOLOAD.  For each module/function pair, we're going to create a
 	# function which loads the module, then passes off to the function.  Thus, if the function is
@@ -67,11 +71,14 @@ sub import
 		next if $calling_package eq $module;							# don't export things to themselves
 
 		my $function = $autoload_funcs{$module};
+		next if $ONLY and not $function ~~ $ONLY;
+
 		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
 		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
 				unless $calling_package->can($function);
 	}
 
+	# always export these
 	myperl->import_list_into($calling_package,
 
 		strict							=>
@@ -80,6 +87,11 @@ sub import
 		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
+
+	);
+
+	# don't export these if our caller wants only certain functions
+	myperl->import_list_into($calling_package,
 
 		#CLASS							=>	1.00		=>				# handled by myperl::Declare
 		TryCatch						=>	1.003001	=>
@@ -90,7 +102,7 @@ sub import
 		'myperl::Declare'				=>
 		'Method::Signatures'			=>	20111125	=>
 
-	);
+	) unless $ONLY;
 }
 
 

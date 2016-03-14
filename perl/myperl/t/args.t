@@ -42,6 +42,35 @@ perl_output_is( "can turn warnings non-fatal", "2", <<'END' );
 END
 
 
+perl_no_error( "requested funcs exported", <<'END' );
+	use myperl ONLY => [qw< title_case str2time >];
+	title_case("FOO");
+	str2time("12/31/2010");
+END
+
+perl_error_is( "not exporting internals not requested", "Undefined subroutine &main::round called", <<'END' );
+	use myperl ONLY => [qw< title_case str2time >];
+	round(UP => 123.456);
+END
+
+perl_error_is( "not exporting externals not requested", "Undefined subroutine &main::time2str called", <<'END' );
+	use myperl ONLY => [qw< title_case str2time >];
+	time2str(0);
+END
+
+perl_no_error( "still exporting basic syntax", <<'END' );
+	use myperl ONLY => [qw< title_case str2time >];
+	debuggit("foo");
+END
+
+perl_error_is( "not exporting advanced syntax",
+		q{Can't locate object method "class" via package "Foo" (perhaps you forgot to load "Foo"?)},
+		<<'END' );
+	use myperl ONLY => [qw< title_case str2time >];
+	class Foo { }
+END
+
+
 done_testing;
 
 
