@@ -1,4 +1,4 @@
-use 5.012;
+use 5.014;
 use warnings;
 use experimental 'smartmatch';
 use Devel::Declare 0.006007 ();
@@ -77,7 +77,7 @@ sub import
 
 		strict							=>
 		warnings						=>					@{$mod_args{warnings}},,
-		feature							=>					[	':5.12'			],
+		feature							=>					[	':5.14'			],
 		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
