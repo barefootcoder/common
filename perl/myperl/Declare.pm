@@ -1,5 +1,6 @@
 use 5.012;
 use warnings;
+use Devel::Declare 0.006007 ();
 
 # This expects to be called from myperl.pm.  If it's not, it won't be able to find
 # import_list_into().  OTOH, if it tries to 'use myperl', it will create a circular dependency,

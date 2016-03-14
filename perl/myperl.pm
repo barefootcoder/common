@@ -1,7 +1,6 @@
 use 5.014;
 use warnings;
 use experimental 'smartmatch';
-use Devel::Declare 0.006007 ();
 
 package myperl;
 
