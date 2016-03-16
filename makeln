@@ -26,18 +26,6 @@ do
 	make_link $mydir/rc/$file $HOME/.$file
 done
 
-# do vimS rc's next; they're base files that will be copied and then modified in place
-# but we won't mess with them after the initial copy
-cd $mydir/vimS
-for file in *
-do
-	rcfile=$HOME/.vimS-$file
-	if [[ ! -f $rcfile ]]
-	then
-		/bin/cp -i $mydir/vimS/$file $rcfile
-	fi
-done
-
 # do localhost rc's, if any
 local_rcdir=$mydir/local/$LOCALHOSTNAME/rc
 if [[ -d $local_rcdir ]]
