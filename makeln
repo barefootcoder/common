@@ -184,7 +184,7 @@ fi
 # stuff to symlink in from ~/Dropbox/personal
 if [[ $1 != refresh ]]
 then
-	for dir in ~/.local/share/tomboy
+	for dir in ~/vimS ~/.local/share/tomboy
 	do
 		if [[ -d $dir && ! -L $dir ]]
 		then
