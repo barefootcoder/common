@@ -2,42 +2,73 @@
 
 use 5.12.0;
 use warnings;
+use Debuggit DEBUG => 0;
 
-use Data::Printer;
+use Getopt::Std;
+use Const::Fast;
 use File::Basename;
+
+
+our $ME = basename($0);
+const our $DEFAULT_FILE_LIMIT => 5;
+
+my $opts = {};
+getopts('hl:', $opts);
+HELP_MESSAGE() if $opts->{'h'};
+my $file_limit = $opts->{'l'} // $DEFAULT_FILE_LIMIT;
+
+sub HELP_MESSAGE
+{
+	say STDERR "usage: $ME [-l <limit>]";
+	say STDERR "            -l : file limit (minimum number of files which will *not* be reduced to parent dir; ",
+									"default: $DEFAULT_FILE_LIMIT)";
+	say STDERR "       reads list of files from STDIN (e.g. find . -type f | $ME)";
+	say STDERR "       consolidates the counts into parent dirs until one of two things is true:";
+	say STDERR "         * there are no additional files to consolidate with them, or";
+	say STDERR "         * a directory indicates at least <limit> files";
+	exit;
+}
 
 
 my @files = <>;
 chomp @files;
 
-my $files = reduce_list( { map { $_ => 1 } @files }, 1 );
+my $dir_files = {};
+$dir_files->{dirname $_}++ foreach @files;
 while (1)
 {
-	my $count = keys %$files;
-	$files = reduce_list($files, 5);
-	last if keys %$files = $count;
+	debuggit(6 => "current list:", DUMP => $dir_files);
+	my $count = keys %$dir_files;
+	$dir_files = reduce_list($dir_files, $file_limit);
+	last if keys %$dir_files == $count;
 }
 
-say foreach sort keys %$files;
+say sprintf "%5d : $_", $dir_files->{$_} foreach sort keys %$dir_files;
 
 
 sub reduce_list
 {
-	my ($files, $limit) = @_;
-	#say "before:"; p $files;
+	my ($dir_files, $limit) = @_;
 
-	my %parents;
-	$parents{dirname $_}++ foreach keys %$files;
-	foreach my $file (keys %$files)
+	my %parent_files =
+			map		{ $_ => ($dir_files->{$_} // 0)		}				# initial count for parent
+			map		{ dirname $_						}				# get parent
+					keys %$dir_files;
+	$parent_files{dirname $_} += $dir_files->{$_} foreach keys %$dir_files;
+	foreach my $file (sort { length $b <=> length $a } keys %$dir_files)
 	{
 		my $parent = dirname $file;
-		if ($parents{$parent} >= $limit)
+		next if $parent =~ m|^[^/]*/?$|;			# don't consolidate up to the top-level dir
+
+		debuggit(5 => "before [limit $limit] --> file:", $file, "=>", $dir_files->{$file}, "/ parent:", $parent,
+				"=>", $parent_files{$parent});
+		if ($parent_files{$parent} > $dir_files->{$file} and $dir_files->{$file} < $limit)
 		{
-			delete $files->{$file};
-			++$files->{$parent};
+			$dir_files->{$parent} += delete $dir_files->{$file};
 		}
+		debuggit(5 => "└after [limit $limit] --> file:", $file, "=>", $dir_files->{$file}, "/ parent:", $parent,
+				"=>", $dir_files->{$parent});
 	}
 
-	#say "after:"; p $files;
-	return $files;
+	return $dir_files;
 }
