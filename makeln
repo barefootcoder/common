@@ -119,7 +119,7 @@ fi
 make_link $mydir/bin $dir
 
 # ditto for .purple, Pidgin's directory of stuff
-if [[ $1 != refresh ]]
+if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	dir=~/.purple
 	if [[ -d $dir && ! -L $dir ]]
@@ -133,7 +133,7 @@ fi
 
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
-if [[ $1 != refresh ]]
+if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	dir=~/.cddb
 	if [[ -d $dir ]]
@@ -152,8 +152,8 @@ then
 	fi
 fi
 
-# dir to symlink in from ~/Dropbox
-if [[ $1 != refresh ]]
+# dirs to symlink in from ~/Dropbox
+if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/ce
 	do
@@ -169,8 +169,28 @@ then
 	done
 fi
 
+# Dropbox "local" dirs
+if [[ $1 != refresh && -d ~/Dropbox ]]
+then
+	local_dbdir=~/Dropbox/machine/$LOCALHOSTNAME
+	[[ -d $local_dbdir ]] || mkdir -p $local_dbdir
+	for dir in thunderbird config
+	do
+		if [[ ! -e $local_dbdir/$dir ]]
+		then
+			if [[ -d ~/.$dir && ! -L ~/.$dir ]]
+			then
+				mv ~/.$dir $local_dbdir/$dir
+			else
+				mkdir $local_dbdir/$dir
+			fi
+		fi
+		make_link $local_dbdir/$dir ~/.$dir
+	done
+fi
+
 # stuff to symlink in from ~/Dropbox/personal
-if [[ $1 != refresh ]]
+if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	for dir in ~/vimS ~/.local/share/tomboy
 	do

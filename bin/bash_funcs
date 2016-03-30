@@ -39,6 +39,11 @@ function usage_error
 	exit 2
 }
 
+function warn
+{
+	echo "$me: [Warning!] $1" >&2
+}
+
 
 function yn
 {
