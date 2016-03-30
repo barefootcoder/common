@@ -118,6 +118,12 @@ then
 fi
 make_link $mydir/bin $dir
 
+# ditto for docs, except it comes from Dropbox, not our dir
+if [[ $1 != refresh && -d ~/Dropbox ]]
+then
+	make_link ~/Dropbox/personal ~/docs
+fi
+
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
 if [[ $1 != refresh && -d ~/Dropbox ]]
