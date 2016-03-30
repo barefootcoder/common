@@ -118,19 +118,6 @@ then
 fi
 make_link $mydir/bin $dir
 
-# ditto for .purple, Pidgin's directory of stuff
-if [[ $1 != refresh && -d ~/Dropbox ]]
-then
-	dir=~/.purple
-	if [[ -d $dir && ! -L $dir ]]
-	then
-		echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-		echo "$0: please fix that and rerun" >&2
-		exit 1
-	fi
-	make_link ~/Dropbox/purple $dir
-fi
-
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
 if [[ $1 != refresh && -d ~/Dropbox ]]
@@ -152,7 +139,7 @@ then
 	fi
 fi
 
-# dirs to symlink in from ~/Dropbox
+# dirs to symlink in from Dropbox
 if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/ce
@@ -166,6 +153,22 @@ then
 			exit 1
 		fi
 		make_link $src_dir $dest_dir
+	done
+fi
+
+# dirs to symlink in from Dropbox as dot-dirs
+if [[ $1 != refresh && -d ~/Dropbox ]]
+then
+	for dir in purple cpan-testers
+	do
+		dbdir=~/.$dir
+		if [[ -d $dbdir && ! -L $dbdir ]]
+		then
+			echo "$0: your $dbdir directory is a real directory instead of a symlink" >&2
+			echo "$0: please fix that and rerun" >&2
+			exit 1
+		fi
+		make_link ~/Dropbox/$dir $dbdir
 	done
 fi
 
