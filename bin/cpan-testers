@@ -1,0 +1,450 @@
+#!/usr/bin/env perl
+
+# Original version by tobyink
+# http://www.perlmonks.org/?node_id=978606
+# updates by barefootcoder
+# latest version available at:
+# https://github.com/barefootcoder/common/blob/master/bin/cpan-testers
+
+use 5.14.0;
+use utf8;
+use warnings;
+use autodie ':all';
+
+package App::CpanTesters
+{
+
+    use Any::Moose       0;
+    use Path::Tiny       0;
+    use Getopt::Long     0 qw<
+        GetOptionsFromArray
+        :config permute bundling no_ignore_case no_auto_abbrev
+    >;
+    use JSON::MaybeXS    0 qw< decode_json >;
+    use LWP::Simple      0 qw< >;
+    use List::Util       0 qw< max maxstr sum pairmap >;
+    use List::MoreUtils  0 qw< apply >;
+    use PerlX::Maybe     0 qw< maybe >;
+
+    sub show_help
+    {
+        my $exit_status = shift || 0;
+        print <<"HELP";
+Usage:
+    $0 Example-Distribution
+    $0 -v0.001 Example-Distribution
+    $0 -ov0.001 Example-Distribution
+    $0 -s Example-Distribution
+
+Options:
+    --version=V, -vV   Show results for particular release version.
+    --os, -o           Break down by operating system.
+    --summary, -s      Show summary for all versions
+                       (excludes all options except `--stable').
+    --stable, -S       Hide dev versions (excludes `--version').
+    --threaded, -t     Break down by threaded/unthreaded.
+    --failure <FAIL>   Show totals for whether report contains a string
+                       (instead of showing PASS/FAIL/OTHER).
+    --special <SPEC>   Special break down (see below).
+    --no-perlver, -n   Do NOT break down by Perl version.
+    --cache, -c        Cache any downloaded reports in ~/.cpan-testers.
+                       (cached reports are *NOT* cleaned automatically!)
+    --full, -f         Show category, status, and URL for every report.
+    --filenames, -F    With --full, show report filename instead of URL.
+
+Currently recognized special breakdowns:
+HELP
+        say foreach map { "    $_" } apply { s/_/-/g } grep { s/^special_// } keys %App::CpanTesters::;
+        exit($exit_status);
+    }
+
+    use namespace::clean;
+
+    has cache_dir => (
+        is       => 'ro',
+        isa      => 'Path::Tiny',
+        lazy     => 1,
+        builder  => '_build_cache_dir',
+    );
+
+    has distro => (
+        is       => 'ro',
+        isa      => 'Str',
+        required => 1,
+    );
+
+    has results => (
+        is       => 'ro',
+        isa      => 'ArrayRef',
+        lazy     => 1,
+        builder  => '_build_results',
+    );
+
+    has version => (
+        is       => 'ro',
+        isa      => 'Str',
+        lazy     => 1,
+        builder  => '_build_version',
+    );
+
+    has os_data => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has threaded => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has stable => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has perl_ver => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 1,
+    );
+
+    has keep_cache => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has show_reports => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has show_filenames => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
+    has failure_string => (
+        is       => 'ro',
+        isa      => 'Maybe[Str]',
+    );
+
+    has special => (
+        is       => 'ro',
+        isa      => 'Maybe[Str]',
+    );
+
+    has _full_report_info => (
+        is       => 'ro',
+        default  => sub { {} },
+    );
+
+    sub run
+    {
+        my ($class, @argv) = @_;
+        my ($version, $perl_ver, $summary, $os_data, $threaded, $stable, $perma_cache, $full, $filenames, $fail, $special)
+         = (  undef,       1,        0,       0,         0,        0,        0,          0,        0,     undef,   undef );
+
+        GetOptionsFromArray(
+            \@argv,
+            'version|v=s'  => \$version,
+            'summary|s'    => \$summary,
+            'os|o'         => \$os_data,
+            'threaded|t'   => \$threaded,
+            'stable|S'     => \$stable,
+            'no-perlver|n' => sub { $perl_ver = 0 },
+            'cache|c'      => \$perma_cache,
+            'full|f'       => \$full,
+            'filenames|F'  => \$filenames,
+            'special=s'    => \$special,
+            'failure=s'    => \$fail,
+            'help|usage|h' => sub { show_help() },
+        );
+
+        show_help(1) if $summary && ($os_data or length $version);
+        show_help(1) if $stable  && length $version;
+
+        my $distro = shift @argv or show_help(1);
+        $distro =~ s{::}{-}g;
+
+        my $self = $class->new(
+                  distro         => $distro,
+                  os_data        => !!$os_data,
+                  threaded       => !!$threaded,
+                  stable         => !!$stable,
+                  perl_ver       => !!$perl_ver,
+                  keep_cache     => !!$perma_cache,
+                  show_reports   => !!$full,
+                  show_filenames => !!$filenames,
+            maybe version        => $version,
+            maybe failure_string => $fail,
+            maybe special        => $special,
+        );
+
+        if ($summary)
+        {
+            exit ! print $self->summary_report;
+        }
+
+        exit ! print $self->version_report;
+    }
+
+    sub version_data
+    {
+        my ($self) = @_;
+        my %data;
+        print STDERR 'processing reports ' if $self->special or $self->failure_string;
+        foreach (@{$self->results})
+        {
+            next unless $_->{version} eq $self->version;
+            my (@key_fmt, @args);
+            my ($pv) = ($_->{perl} =~ /^5\.(\d+)/) or next;
+            next if $pv ~~ [9, 11, 13, 15];
+            if ($self->perl_ver)
+            {
+                push @key_fmt, "Perl 5.%03d";
+                push @args, $pv;
+            }
+            if ($self->os_data)
+            {
+                push @key_fmt, "%s";
+                push @args, $_->{ostext};
+            }
+            if ($self->threaded)
+            {
+                push @key_fmt, "%s";
+                push @args, $_->{platform} =~ /thread/ ? 'threaded' : 'non-thread';
+            }
+            if ($self->special)
+            {
+                push @key_fmt, "%s";
+                push @args, $self->get_special_val($_);
+            }
+            my $key = sprintf(join(', ', @key_fmt), @args);
+            my $num  = $self->failure_string
+                           ?  $self->check_expected_failure($_)
+                           : { PASS => 0, FAIL => 1 }->{$_->{status}} // 2;
+            $data{$key}[$num]++;
+            $self->save_report($key, $num, $_->{guid}) if $self->show_reports;
+        }
+        say STDERR ' done' if $self->special or $self->failure_string;
+        return \%data;
+    }
+
+    sub save_report
+    {
+        my ($self, $key, $status, $guid) = @_;
+        my $val =
+        [
+            $status,
+            $self->show_filenames
+                ? $self->_cache_filename($guid)
+                : $self->report_uri($guid)
+        ];
+        $self->_full_report_info->{$key} //= [];
+        push $self->_full_report_info->{$key}, $val;
+    }
+
+    sub summary_data
+    {
+        my ($self) = @_;
+        my %data;
+        foreach (@{$self->results})
+        {
+            my $key  = $_->{version};
+            my $num  = { PASS => 0, FAIL => 1 }->{$_->{status}} // 2;
+            $data{$key}[$num]++;
+        }
+        return \%data;
+    }
+
+    sub format_report
+    {
+        my ($self, $title, $data) = @_;
+        my $keylen = max map { length } keys %$data;
+        no warnings 'uninitialized';
+        if ($self->failure_string)
+        {
+            return
+            join "\n" => (
+                $title,
+                q(),
+                "  Does report have failure: " . $self->failure_string,
+                sprintf("%-*s    %6s%6s%6s%6s", $keylen, q(), qw(W/O WITH TOTAL)),
+                (
+                    map { sprintf "%-*s    % 6d% 6d% 6d", $keylen, $_, @{$data->{$_}}, sum @{$data->{$_}} }
+                    sort keys %$data
+                ),
+                q(),
+            );
+        }
+        else
+        {
+            return
+            join "\n" => (
+                $title,
+                q(),
+                sprintf("%-*s    %6s%6s%6s%6s", $keylen, q(), qw(PASS FAIL OTHER TOTAL)),
+                (
+                    map { sprintf "%-*s    % 6d% 6d% 6d% 6d", $keylen, $_, @{$data->{$_}}, sum @{$data->{$_}} }
+                    apply { $data->{$_}->[2] = 0 } # make sure this element is always there
+                    sort keys %$data
+                ),
+                q(),
+            );
+        }
+    }
+
+    sub version_report
+    {
+        my ($self) = @_;
+
+        # have to get data before trying to print full test results
+        my $data = $self->version_data;
+        my $header = sprintf("CPAN Testers results for %s version %s",
+                $self->distro, $self->version);
+
+        if ($self->show_reports)
+        {
+            my $data = $self->_full_report_info;
+            my $keylen = max map { length } keys %$data;
+            say '';
+            # a pseudo-Schwartzian-transform of a map-within-a-map leading to
+            # a printing of the resulting key/value pairs
+            pairmap { printf "%-*s  %-4s  %s\n", $keylen, $a, $b->[0], $b->[1]  }
+            map     { @$_ }
+            apply   { $_->[0] =~ s/ /-/g } # ditch spaces for better output parsing
+            sort    { $a->[0] cmp $b->[0] || $b->[1]->[0] cmp $a->[1]->[0]      }
+            map     { my $k = $_; map { [$k => $_] } @{$data->{$_}}             }
+                    keys %$data;
+            say '';
+        }
+
+        $self->format_report($header, $data);
+    }
+
+    sub summary_report
+    {
+        my ($self, $os_data) = @_;
+
+        $self->format_report(
+            sprintf("CPAN Testers results for %s", $self->distro),
+            $self->summary_data,
+        );
+    }
+
+    sub _build_version
+    {
+        maxstr
+            map { $_->{version} }
+            @{ shift->results }
+    }
+
+    sub _build_results
+    {
+        my $self = shift;
+
+        my $results_uri = sprintf(
+            'http://www.cpantesters.org/distro/%s/%s.json',
+            substr($self->distro, 0, 1),
+            $self->distro,
+        );
+
+        my $results = $self->_get_web_data($results_uri);
+        $results = decode_json($results);
+
+        die "Unexpected non-ARRAY content from $results_uri\n"
+            unless ref $results eq 'ARRAY';
+
+        $self->stable
+            ? [ grep { $_->{version} !~ /_/ } @$results ]
+            : $results;
+    }
+
+    sub _build_cache_dir
+    {
+        my $self = shift;
+        my $dir = $self->keep_cache ?                path(   glob("~"),          '.cpan-testers' )
+                                    : Path::Tiny->tempdir( CLEANUP => 1 )->child( 'CpanTesters'  )
+        ;
+        $dir->mkpath unless -d $dir;
+        return $dir;
+    }
+
+    sub _cache_filename
+    {
+        my ($self, $guid) = @_;
+        return $self->cache_dir->child($guid);
+    }
+
+    sub _get_web_data
+    {
+        my ($self, $uri) = @_;
+        my $data;
+        for (1..5) { $data = LWP::Simple::get($uri) and last }
+        die "Failed to retrieve URI $uri\n" unless $data;
+        return $data;
+    }
+
+    sub get_report
+    {
+        my ($self, $result) = @_;
+        my $guid = $result->{guid};
+        my $uri = $self->report_uri($guid);
+
+        my $file = $self->_cache_filename($guid);
+        unless (-r $file)
+        {
+            $file->spew($self->_get_web_data($uri));
+        }
+        return scalar $file->slurp;
+    }
+
+    sub report_uri
+    {
+        my ($self, $guid) = @_;
+        return "http://cpantesters.org/cpan/report/$guid";
+    }
+
+    sub _mark_progress
+    {
+        state $progress = 0;
+        print STDERR '.' if ++$progress % 10 == 0;
+    }
+
+    sub check_expected_failure
+    {
+        my ($self, $result) = @_;
+        state $regex = qr/${\($self->failure_string)}/;
+        my $report = $self->get_report($result);
+        $self->_mark_progress;
+        return $report =~ $regex ? 1 : 0;
+    }
+
+    sub get_special_val
+    {
+        my ($self, $result) = @_;
+        my $spec = "special_" . $self->special =~ s/-/_/gr;
+        $self->_mark_progress;
+        return $self->$spec($result);
+    }
+
+    sub special_config_pthread
+    {
+        my ($self, $result) = @_;
+        my $report = $self->get_report($result);
+
+        my ($args) = $report =~ /^\s*config_args='(.*)'\s*$/m;
+        return "config_args missing" unless defined $args;
+        return "config_args empty" unless $args;
+        return ( grep { $_ eq 'pthread' } split(' ', $args) ) ? 'pthread' : 'no pthread';
+    }
+}
+
+App::CpanTesters->run(@ARGV)
+    unless scalar caller(0);
