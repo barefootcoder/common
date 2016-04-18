@@ -59,7 +59,9 @@ do
 	#		pidgin_pid=$(/bin/ps -o pid=,cmd= -C pidgin | grep -v defunct | awk '{print $1}')
 	#		xdotool search --all --pid $pidgin_pid --name "^$win\$" windowactivate
 	# (except hoist the pid var out of the loop, of course)
-	xdotool search --name "^$win\$" windowactivate
+	# in the cases where we have two window IDs, use only the bigger (more recent) one
+	wid=$(xdotool search --name "^$win\$" | sort -rn | head -n1)
+	xdotool windowactivate $wid
 done
 
 # return to original desktop

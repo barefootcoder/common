@@ -74,16 +74,17 @@ func get_window_id ($name)
 	my $window = `xdotool search --name '^$name\$'`; chomp $window;
 	if ($window =~ /\s/)
 	{
-		warn("got multiple windows for $name!");
-		$window =~ s/^.*\s//;
+		$window = first { /^\d+$/ } sort { $b <=> $a } split(' ', $window);
+		warn("got multiple windows for $name! [using $window]");
 	}
 	return $window;
 }
 
 func goto_window ($name)
 {
-	system(qq{ xdotool search --name "$name" windowactivate });
-	sleep 1 while `xdotool getwindowfocus` != get_window_id($name);
+	system(qq{ xdotool search --name "$name" windowactivate --sync });
+	my $id = get_window_id($name);
+	sleep 1 while `xdotool getwindowfocus` != $id;
 }
 
 func type_in_contact_window ($string)
