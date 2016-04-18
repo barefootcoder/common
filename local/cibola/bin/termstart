@@ -1,6 +1,8 @@
 #!/bin/bash
-
 . ~/bin/bash_funcs
+
+ssh-add-if-necessary
+ssh-add -l
 
 if [[ -z $(dropbox status) ]] && ! dropbox start
 then

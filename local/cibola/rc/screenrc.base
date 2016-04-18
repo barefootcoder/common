@@ -13,7 +13,7 @@ screen -t launch
 screen -t copy
 screen -t notes
 	number 9
-	stuff "vi ~/Dropbox/notes\015"
+	stuff "vi ~/docs/notes\015"
 screen -t common
 	source .screenrc.vctools
 	stuff "vcd common\015"
@@ -25,22 +25,22 @@ screen -t vagrant
 	stuff "vcd cheops\015"
 	stuff "vims vagrant\015"
 screen -t st
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
 screen -t proj
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
 screen -t sandbox
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
 screen -t sql
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
 screen -t server
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
 screen -t push
-	stuff "cd workproj/cheops\015"
+	stuff "cd $CHEOPSROOT\015"
 	stuff "vagrant-push-box\015"
 	source .screenrc.sandbox
 screen -t work
@@ -53,3 +53,15 @@ screen -t test
 	stuff "vcd VCtools\015"
 screen -t vctools
 	stuff "vcd VCtools\015"
+screen -t cheops
+	stuff "cd $CHEOPSROOT\015"
+	stuff "vagrant-push-box\015"
+screen -t tail1
+	stuff "cd $CEROOT\015"
+	stuff "make tail-error-prod\015"
+screen -t tail2
+	stuff "cd $CEROOT\015"
+	stuff "make tail-potential-leads-error-prod\015"
+screen -t tail3
+	stuff "cd $CEROOT\015"
+	stuff "make tail-queue-worker-error-prod\015"
