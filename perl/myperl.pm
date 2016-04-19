@@ -429,6 +429,8 @@ Test::Command
 Number::Latin
 Package::Stash
 Mail::Sendmail
+WWW::Mechanize
+Regexp::Common
 Module::Install
 Config::General
 MooseX::Declare
@@ -446,6 +448,7 @@ MooseX::Has::Sugar
 Method::Signatures
 IPC::System::Simple
 Test::Pod::Coverage
+Lingua::EN::Numbers
 Net::Google::Calendar
 Net::Google::PicasaWeb
 MooseX::ClassAttribute
@@ -455,5 +458,6 @@ Module::Install::JSONMETA
 MooseX::StrictConstructor
 Date::Gregorian::Business
 Net::Google::DocumentsList
+Lingua::EN::Numbers::Years
 
 =cut
