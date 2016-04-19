@@ -6,6 +6,6 @@ use autodie;
 while ( <> )
 {
 	no warnings 'uninitialized';
-	s{^ ( =head\d+ \s+ | h\d+ \. | <h\d+> )? (.*?) ( </h\d+> )? $}{ $1 . title_case(lc $2) . $3 }xe;
+	s{^ (\h*) ( =head\d+ \s+ | h\d+ \. | <h\d+> )? (.*?) ( </h\d+> )? $}{ $1 . $2 . title_case(lc $3) . $4 }xe;
 	print;
 }
