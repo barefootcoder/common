@@ -1,10 +1,12 @@
 eval "set "`grep VCtoolsDir ~/.vctools/vctools.conf`
 alias vc $VCtoolsDir/bin/vc
-if ( $?tcsh_reset ) then
+set complete_file=~/.tcshrc.complete.vc
+if ( ! -e $complete_file || $?tcsh_reset ) then
 	# refresh VCtools shell completion files
-	vc shell-complete >~/.tcshrc.complete.vc
+	vc shell-complete >$complete_file
 endif
-source ~/.tcshrc.complete.vc
+source $complete_file
+unset complete_file
 
 alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
 complete vcd 'p/1/`vc info project:all`/'
