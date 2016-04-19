@@ -101,6 +101,7 @@ if (-r 'dist.ini')
 			}
 			else
 			{
+				spacer();
 				$ENV{'RENT_DEV_YES'} = 1;
 				my $command = "rent test $opts";
 				print_command_if_debug($command, noenv => 1);
@@ -122,7 +123,8 @@ if (-r 'dist.ini')
 		}
 		else
 		{
-			my $command = "dzil test && dzil clean";
+			spacer();
+			my $command = "dzil test --release && dzil clean";
 			print_command_if_debug($command, noenv => 1);
 			exec($command);
 		}
@@ -288,7 +290,7 @@ $ENV{BAIL_ON_FAIL} = 1 unless $opt->{a};
 print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n";
 
 
-print "\n" x 10 unless $opt->{s};
+spacer();
 $precommand->() if $precommand;
 
 my $command;
@@ -557,30 +559,40 @@ sub get_files
 	local $_ = shift;
 	output_if_debug("found directory", $_);
 
-	if (-e "$_/test_manifest" and not $opt->{n})
+	if ( $opt->{n} )								# find the newest test file
 	{
-		require Test::Manifest;
-		# Test::Manifest doesn't do recursion or parallelization
-		$opt->{N} .= 'rj';
-		return scalar(Test::Manifest::get_t_files(0));
-	}
-	else
-	{
-		my $glob = $opt->{N} =~ /r/ ? "$_/*.t" : `find -H $_ -name '*.t'`;
+		my @dirs = ($_);
+		my $xt = dir($_)->parent->subdir('xt');
+		push @dirs, $xt if -d $xt;
+
+		my $glob = $opt->{N} =~ /r/ ? "$_/*.t" : `find -H @dirs -name '*.t'`;
 		$glob =~ s/\n/ /g;
 
-		if ($opt->{n})
-		{
-			my $latest = `/bin/ls -1t $glob | head -n1`;
-			chomp $latest;
+		my $latest = `/bin/ls -1t $glob | head -n1`;
+		chomp $latest;
 
-			return $latest;
+		return $latest;
+	}
+	else											# just do 'em all
+	{
+		if (-e "$_/test_manifest")
+		{
+			require Test::Manifest;
+			# Test::Manifest doesn't do recursion or parallelization
+			$opt->{N} .= 'rj';
+			return scalar(Test::Manifest::get_t_files(0));
 		}
 		else
 		{
 			return $_;
 		}
 	}
+}
+
+
+sub spacer
+{
+	print "\n" x 10 unless $opt->{s};
 }
 
 
