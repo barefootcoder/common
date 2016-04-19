@@ -15,11 +15,11 @@ nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,_,48-57<CR>
 set keywordprg=perlref
 
 " class stuff
-map <C-C><C-H> :!clgrep -a %<CR>										" show attributes ("has")
-map <C-C><C-I> :!clgrep -i %<CR>										" show inheritance ("extends" and "with")
-map <C-C><C-M> :!clgrep -m %<CR>										" show method ("method")
-map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>							" find definition of method under cursor
-map <C-C><C-N> :!grep -Pe '^\s*\#\s*[A-Z\s]+$' %<CR>					" find "sections" (all-caps comments)
+map <C-C><C-H> :!clgrep -a %<CR>|										" show attributes ("has")
+map <C-C><C-I> :!clgrep -i %<CR>|										" show inheritance ("extends" and "with")
+map <C-C><C-M> :!clgrep -m %<CR>|										" show method ("method" and "sub")
+map <C-C><C-K> :!clgrep -mn <C-R><C-W> %<CR>|							" find definition of method under cursor
+map <C-C><C-N> :!grep -Pe '^\s*\#\s*[A-Z\s]+$' %<CR>|					" find "sections" (all-caps comments)
 
 " jump to next section
 map ]s /^[ <Tab>]*#[ <Tab>]\+[A-Z ]\+[ <Tab>]*#\?$<CR>
@@ -54,7 +54,7 @@ map <C-Z> :%s/[ 	]\+$//<CR>
 map <C-Z><C-Z> :w<CR>:!vcpatchws -f %<CR>:e!<CR>
 
 " search for the word under the cursor
-nmap <C-_> :set isk=@,_,-,48-57<CR>/\<<C-R><C-W>\><CR>:set isk=@,_,48-57<CR>				" Ctrl-/
+nmap <C-_> :set isk=@,_,-,48-57<CR>/\<<C-R><C-W>\><CR>:set isk=@,_,48-57<CR>|				" Ctrl-/
 " start search from top of file
 nmap <C-N> 1Gn
 " stop the hideously annoying shift+backspace problem
@@ -64,9 +64,9 @@ nmap <C-W> :w<CR>:!pusht %<CR>
 " compile check
 nmap <C-C> :w<CR>:!ccheck %<CR>
 " VC blame + jump to current line
-nmap <Esc>b :exe "!git blame % <Bar> less +" . line(".") . "G"<CR>							" Alt-B
+nmap <Esc>b :exe "!git blame % <Bar> less +" . line(".") . "G"<CR>|							" Alt-B
 " show doco
-nmap <Esc>d :w<CR>:!perldoc %<CR>															" Alt-D
+nmap <Esc>d :w<CR>:!perldoc %<CR>|															" Alt-D
 " swap artist/title in a mix file
 map QQ !!perl -lpe 's/^([<>FXV=:~*? -]{4})?(.*?) - (.*?)(\s+[[{].*?[]}])?$/$1$3 - $2$4/'<CR>
 
@@ -90,13 +90,13 @@ set textwidth=100														" width for comment autoformatting
 " comment markers (only works for Perl and piqt, sort of for Mason, and a little for bulleted lists)
 set comments=b:#,b:%,b:--\!\ print,b:--,fb:*
 " reformat current comment block (using Alt-R)
-nnoremap <Esc>r ^gq/^$\<Bar>^<Tab>*#$\<Bar>^<Tab>*[^<Tab>#]\<Bar>^--! print$<CR>			" Alt-R
-nnoremap <Esc>r<Esc>r gqgq																	" Alt-R Alt-R
-nnoremap <Esc>r} gq}																		" Alt-R }
+nnoremap <Esc>r ^gq/^$\<Bar>^<Tab>*#$\<Bar>^<Tab>*[^<Tab>#]\<Bar>^--! print$<CR>|			" Alt-R
+nnoremap <Esc>r<Esc>r gqgq|																	" Alt-R Alt-R
+nnoremap <Esc>r} gq}|																		" Alt-R }
 " twiddle line numbers in Perl to correct stupid Devel::Declare modules
-nnoremap <Esc>i<Esc>l m`O<Esc>i# line 0<Esc>:1,$! reset_lines<CR>:w<CR>``					" Alt-I Alt-L
-nnoremap <Esc>r<Esc>l m`:1,$! reset_lines<CR>``												" Alt-R Alt-L
-nnoremap <Esc>c<Esc>l :%g/^# line/d<CR>:w<CR>												" Alt-C Alt-L
+nnoremap <Esc>i<Esc>l m`O<Esc>i# line 0<Esc>:1,$! reset_lines<CR>:w<CR>``|					" Alt-I Alt-L
+nnoremap <Esc>r<Esc>l m`:1,$! reset_lines<CR>``|											" Alt-R Alt-L
+nnoremap <Esc>c<Esc>l :%g/^# line/d<CR>:w<CR>|												" Alt-C Alt-L
 " use my tfmt program for reformatting non-comment stuff
 set equalprg=tfmt\ -t4\ -w100
 
@@ -180,6 +180,6 @@ au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g
 :	endfor
 :	execute "vimgrep /" . g:grepregex . "/ " . join(buffs, ' ')
 :endfunction
-:map <Esc>/ :call GrepBuffs()<CR>															" Alt-/
-:map <Esc>Oc :cn<CR>																		" Ctrl-Right
-:map <Esc>Od :cp<CR>																		" Ctrl-Left
+:map <Esc>/ :call GrepBuffs()<CR>|															" Alt-/
+:map <Esc>Oc :cn<CR>|																		" Ctrl-Right
+:map <Esc>Od :cp<CR>|																		" Ctrl-Left
