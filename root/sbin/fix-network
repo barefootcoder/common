@@ -1,0 +1,37 @@
+#! /bin/bash
+
+# this usually fixes it
+service network-manager restart
+
+# figure out whether we're going to connect or not
+function network_up
+{
+	#route | tail -n +3
+	[[ $(route | tail -n +3 | wc -l) -ge 2 ]]
+}
+echo -n "waiting for reconnect "
+for n in $(seq 1 20)
+do
+	echo -n "."
+	sleep 1
+	if network_up
+	then
+		echo " and we're up"
+		exit
+	fi
+done
+echo " tired of waiting"
+
+# go extreme
+echo "going medieval on its ass"
+rmmod iwldvm
+rmmod iwlwifi
+modprobe iwlwifi
+lsmod | grep iwlwifi
+
+if network_up
+then
+	echo "success!"
+else
+	echo "out of tricks"
+fi

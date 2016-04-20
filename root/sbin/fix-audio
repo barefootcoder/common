@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# http://askubuntu.com/questions/15223/how-can-i-restart-pulseaudio-without-logout
+
+player=$(/usr/bin/pgrep -f decibel-audio-player)
+[[ $player ]] && kill %player
+
+pulseaudio --check && pulseaudio -k
+pulseaudio -D
+
+decibel-audio-player --volume-button %F
+
+# If this doesn't work, you can also try:
+#	sudo alsa force-reload
+# see: http://forums.bodhilinux.com/index.php?/topic/3800-solved-how-does-a-user-restart-alsa-without-rebooting/

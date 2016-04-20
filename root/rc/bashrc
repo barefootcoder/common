@@ -26,7 +26,6 @@ alias ll='ls -l'
 alias lln='ll -htr'
 alias lls='ls -lhSr'
 alias dux='du -xh --max-depth=1 | grep -v "^0	" | sortk'
-alias sql='mysql thinkgeek'
 alias resrc='. ~/.bashrc'
 alias psync='/root/common/psync'
 
@@ -56,9 +55,15 @@ else
 fi
 
 # as per which man page
+# although Linux Mint doesn't seem to have the super-cool which that Fedora did, so fallback to type
 which ()
 {
-  (alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
+	if which --help >/dev/null 2>&1
+	then
+		(alias; declare -f) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
+	else
+		type $@
+	fi
 }
 export -f which
 

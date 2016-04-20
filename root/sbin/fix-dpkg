@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [[ $(id -u) != 0 ]]
+then
+	echo "$0: must be root to run this" >&2
+	exit 1
+fi
+
+echo "WARNING! automation untested!"
+echo "Load up this web page:"
+echo "http://askubuntu.com/questions/603295/how-to-fix-dpkg-error-2"
+echo ''
+echo -n "Does that look like it will fix your problem? [y/N] "
+read ans
+if [[ $ans == [yY]* ]]
+then
+	echo "I'm going to let you do the editing by hand.  Press ENTER when you're ready."
+	read ans
+
+	vi /var/lib/dpkg/status
+	dpkg --configure -a
+	apt-get -f install
+else
+	echo "Okay, load up this web page (first answer, first block only):"
+	echo "http://askubuntu.com/questions/591855/how-can-i-fix-e-sub-process-usr-bin-dpkg-returned-an-error-code-2"
+	echo "If you think that might work, I'm going to let you handle that one on your own."
+	echo "Or automate it now by modifying me, if you'd prefer."
+
+fi

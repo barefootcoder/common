@@ -34,12 +34,17 @@ do
 done
 
 # now /usr/local/sbin
+set_admin						# makes sure $ADMIN is set properly
 cd $mydir/sbin
 for file in *
 do
 	chmod 775 $file
+	chgrp $ADMIN $file
 	make_link $mydir/sbin/$file /usr/local/sbin/$file
 done
+# get rid of any dangling links, but only they point here
+# (hopefully `each` was set up properly above ...)
+rm $(find /usr/local/sbin/ -xtype l | each -l 'ls -l {} | grep /root/common')
 
 # none of the links will work if /root isn't accessible, so fix that
 # (note: it's still not going to be readable, so this isn't a huge security hole)
