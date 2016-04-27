@@ -1,0 +1,7 @@
+#! /bin/bash
+
+while true
+do
+	top
+	sudo iotop
+done
