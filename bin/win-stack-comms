@@ -23,8 +23,8 @@ then
 		do
 			sleep 1
 		done
-		sleep 2											# not sure why this is necessary, but it appears to be
-		xdotool search --name "$ThunderbirdWindow" windowmove 175 55 set_desktop_for_window 1
+		xdotool search --name "$ThunderbirdWindow" windowactivate --sync
+		xdotool search --name "$ThunderbirdWindow" windowmove 150 58 set_desktop_for_window 1
 	fi
 
 	PidginWindow="Buddy List"
@@ -61,7 +61,7 @@ do
 	# (except hoist the pid var out of the loop, of course)
 	# in the cases where we have two window IDs, use only the bigger (more recent) one
 	wid=$(xdotool search --name "^$win\$" | sort -rn | head -n1)
-	xdotool windowactivate $wid
+	xdotool windowactivate --sync $wid
 done
 
 # return to original desktop

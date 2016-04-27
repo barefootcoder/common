@@ -83,20 +83,17 @@ func get_window_id ($name)
 func goto_window ($name)
 {
 	system(qq{ xdotool search --name "$name" windowactivate --sync });
-	my $id = get_window_id($name);
-	sleep 1 while `xdotool getwindowfocus` != $id;
 }
 
 func type_in_contact_window ($string)
 {
-	state $done_yet = 0;
-	unless ($done_yet)
+	state $do_once = do
 	{
 		# if we don't click somewhere in the list of contacts, typing won't work
 		goto_window($PidginWindow);
 		system('xdotool mousemove 1710 135 click 1');
-		$done_yet = 1;
-	}
+		1;
+	};
 
 	goto_window($PidginWindow);
 	# the `search` is most likely unnecessary here
