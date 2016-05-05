@@ -1,0 +1,104 @@
+#! /bin/bash
+source ~/bin/bash_funcs
+
+while [[ $# -gt 0 ]]
+do
+	case $1 in
+		--to)		direction=to
+					server=$2
+					shift 2
+					;;
+		--from)		direction=from
+					server=$2
+					shift 2
+					;;
+		--)         shift
+					break
+					;;
+		-*)         usage_error "Unrecognized option: $1"
+					;;
+		*)          break
+					;;
+	esac
+done
+[[ $server ]] || die "must supply either --to or --from"
+
+if [[ $1 ]]
+then
+	subdir=$1
+	[[ -d ~/Dropbox/$subdir ]] || die "No such directory $subdir in Dropbox!"
+fi
+
+
+if [[ $direction == "to" ]]
+then
+	from=~/Dropbox/
+	to=cibola:Dropbox/
+else
+	from=cibola:Dropbox/
+	to=~/Dropbox/
+fi
+
+if [[ $subdir ]]
+then
+	from=$from/$subdir/
+	to=$to/$subdir/
+	[[ ${subdir%/} == proj ]] && excludes="--exclude VCtools/"
+else
+	excludes="--exclude .dropbox --exclude .dropbox.cache/ --exclude proj/VCtools/"
+
+	if /usr/bin/pgrep pidgin >/dev/null
+	then
+		echo "[Pidgin running on localhost; excluding IM logs dir]" >&2
+		excludes="$excludes --exclude purple/"
+	elif ssh $server /usr/bin/pgrep pidgin >/dev/null
+	then
+		echo "[Pidgin running on $server; excluding IM logs dir]" >&2
+		excludes="$excludes --exclude purple/"
+	fi
+	if /usr/bin/pgrep -f timer-new >/dev/null
+	then
+		echo "[timer running on localhost; excluding timer dir]" >&2
+		excludes="$excludes --exclude work/timer/"
+	elif ssh $server /usr/bin/pgrep -f timer-new >/dev/null
+	then
+		echo "[timer running on $server; excluding timer dir]" >&2
+		excludes="$excludes --exclude work/timer/"
+	fi
+fi
+
+rsync -n -rlcvz $from $to $excludes
+echo -n "run for real? [y/N] " >&2
+read yn
+if [[ $yn == [yY]* ]]
+then
+	rsync -rlcvz $from $to $excludes
+fi
+
+echo -n "check for times & perms? [y/N] " >&2
+read yn
+if [[ $yn == [yY]* ]]
+then
+	rsync -n -avz $from $to $excludes
+	echo -n "run for real? [y/N] " >&2
+	read yn
+	if [[ $yn == [yY]* ]]
+	then
+		rsync -avz $from $to $excludes
+	fi
+fi
+
+echo -n "check for removed files? [y/N] " >&2
+read yn
+if [[ $yn == [yY]* ]]
+then
+	rsync -n -avz --delete $from $to $excludes
+	echo -n "run for real? [y/N] " >&2
+	read yn
+	if [[ $yn == [yY]* ]]
+	then
+		echo "WARNING!!! This is permanent and destructive.  I'll give you a few seconds to reconsider." >&2
+		sleep 10
+		rsync -avz --delete $from $to $excludes
+	fi
+fi
