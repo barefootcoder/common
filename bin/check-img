@@ -1,0 +1,70 @@
+#! /usr/bin/perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+use experimental 'smartmatch';
+
+use Date::Easy;
+use Path::Class;
+use Image::Magick;
+use File::Glob ':bsd_glob';
+
+
+if ( $ARGV[0] ~~ [qw< -h -? --help >] )
+{
+	my $me = file($0)->basename;
+	say "usage: $me <payer> <amount> [<front-img> <back-img>]";
+	exit;
+}
+
+
+my ($payer, $amt, $front, $back) = @ARGV;
+exec $0, '--help' unless $payer and $amt;
+$amt =~ /^\d+(\.\d{2})?$/ or die("$amt doesn't look like money");
+unless (defined $front)
+{
+	my $IMGDIR = "$ENV{HOME}/Dropbox/Camera Uploads/";
+	chomp( ($back, $front) = map { "$IMGDIR/$_" } `ls -t "$IMGDIR"` );
+}
+-f $front or die("no such file: $front");
+-f $back  or die("no such file: $back");
+
+my $front_mtime = (stat $front)[9];
+if ($front_mtime < today)
+{
+	say STDERR "WARNING! Check image is from prior to today!";
+	print STDERR "Continue anyway? [y/N] ";
+	exit unless <STDIN> =~ /^y/i;
+}
+
+my $BASEDIR = "$ENV{HOME}/SpiderOak Hive/checks";
+-d $BASEDIR or die("base checks dir does not exist");
+my $dir = join('/', $BASEDIR, today->strftime("%Y-%m-%d"));
+mkdir $dir unless -d $dir;
+
+my $filebase = join('-', $payer, sprintf("%.2f", $amt));
+process_img(facing => $front);
+process_img(obverse => $back);
+
+system("ls -l '$dir/$filebase'*");
+system("eom '$dir/$filebase'* 2>/dev/null &");
+
+print STDERR "remove original images? [y/N] ";
+if ( <STDIN> =~ /^y/i )
+{
+	unlink $front, $back;
+}
+
+
+sub process_img
+{
+	my ($name, $file) = @_;
+
+	my $img = Image::Magick->new;
+	$img->Read($file);
+	$img->Thumbnail(width=>1771,height=>996);
+	$img->Quantize(colorspace=>'gray');
+	#$img->Rotate(degrees=>180);
+	$img->Write("$dir/$filebase-$name.jpg");
+}
