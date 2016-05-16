@@ -5,7 +5,16 @@
 
 
 
+###########
+## SETUP ##
+###########
+
+#set -e                                              					# if any command fails, exit the script
+set -o pipefail                                     					# even if it's the first command in a pipeline
+shopt -s extglob                                    					# and allow us to use extended glob patterns
+
 readonly me=${0##*/}													# slightly prettier than $0
+
 
 # I hate that I can't just use an alias here ...
 function vc { ~/proj/VCtools/bin/vc "$@" ; }							# in case we need to get to vc
@@ -25,6 +34,11 @@ do
         done
     fi
 done
+
+
+###########
+## FUNCS ##
+###########
 
 
 function die

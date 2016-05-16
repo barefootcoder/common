@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if screen -ls | grep base
+if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"
 else

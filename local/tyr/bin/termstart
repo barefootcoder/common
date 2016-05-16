@@ -4,7 +4,7 @@ function screen_option
 {
 	screenname=$1
 
-	if screen -ls | fgrep -v Dead | grep -q $screenname
+	if ( screen -ls ||: ) | fgrep -v Dead | grep -q $screenname
 	then
 		echo "-x $screenname"
 	elif screen-session ls | head -n1 | grep -q 'There are matching saved sessions'

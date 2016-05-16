@@ -15,7 +15,7 @@ fi
 cd $CHEOPSROOT
 vagrant up
 
-if screen -ls | grep base
+if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"
 else
