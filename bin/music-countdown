@@ -1,0 +1,11 @@
+#! /bin/bash
+
+volume=1
+if [[ $1 == "--alarm" ]]
+then
+	volume=42
+	shift
+fi
+
+bin/decibel-volume set $volume
+python /usr/share/decibel-audio-player/src/remote.py pl-set /home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
