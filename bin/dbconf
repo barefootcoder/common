@@ -1,4 +1,4 @@
 #! /bin/bash
 
 cd ~/Dropbox
-find . -iname "*(*conflict*)*"
+find . -name .dropbox.cache -prune -o -iname "*(*conflict*)*" -print
