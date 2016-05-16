@@ -87,7 +87,7 @@ then
 	elif [[ "$first_line" == '==>'* ]]
 	then
 		wikify "$1"
-	elif [[ $(pwd) == *docs/blog || $(pwd) == *personal/blog || $first_line == "/bbcode/" || $first_line == "/article/" ]]
+	elif [[ $(pwd) == *personal/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		set -o pipefail
 		blogify "$1" | xclip -selection c
@@ -107,7 +107,7 @@ then
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
-	elif [[ $(realpath "$1") == */work/* && $1 == *.notes ]]
+	elif [[ $(realpath "$1") == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
 		set -o pipefail
 		fmt-for-trac "$1" | xclip -selection c
