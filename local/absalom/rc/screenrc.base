@@ -7,14 +7,14 @@ screen -t timer
 	stuff "timer\015"
 screen -t man
 	stuff "man screen\015"
-screen -t top top
+screen -t top topall
 screen -t root sudo su -
 screen -t launch
 screen -t todo
 	stuff "todo\015"
 screen -t notes
 	number 9
-	stuff "vi ~/Dropbox/notes\015"
+	stuff "vi ~/docs/notes\015"
 screen -t bc
 	stuff "bc\015"
 screen -t st
