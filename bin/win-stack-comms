@@ -19,11 +19,14 @@ then
 	if ! /usr/bin/pgrep thunderbird >/dev/null
 	then
 		thunderbird >/dev/null 2>&1 &
-		while ! xdotool search --name "$ThunderbirdWindow" >/dev/null
+		while true
 		do
-			sleep 1
+			while ! xdotool search --onlyvisible --name "$ThunderbirdWindow" >/dev/null 2>&1
+			do
+				sleep 1
+			done
+			xdotool search --name "$ThunderbirdWindow" windowactivate --sync 2>/dev/null && break
 		done
-		xdotool search --name "$ThunderbirdWindow" windowactivate --sync
 		xdotool search --name "$ThunderbirdWindow" windowmove 150 58 set_desktop_for_window 1
 	fi
 
