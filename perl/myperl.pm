@@ -26,6 +26,7 @@ sub import
 	my $class = shift;
 	my %args = @_;
 	my $ONLY = delete $args{'ONLY'};
+	my $NO_SYNTAX = exists $args{'NO_SYNTAX'} ? delete $args{'NO_SYNTAX'} : !!$ONLY;
 	$DISPLAY_IMPORTS = delete $args{'DISPLAY_IMPORTS'};
 
 	my %mod_args;
@@ -114,7 +115,7 @@ sub import
 		'myperl::Declare'				=>
 		'Method::Signatures'			=>	20111125	=>
 
-	) unless $ONLY;
+	) unless $NO_SYNTAX;
 }
 
 
@@ -291,12 +292,35 @@ Don't make all warnings fatal (but still turn them on).
 Don't pass C<DataPrinter =E<gt> 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
 L<Data::Printer>).
 
+=head2 NO_SYNTAX
+
+	use myperl NO_SYNTAX => 1;
+
+More of a lightweight version of C<myperl>.  Means not to load some of the heavier modules which add new syntax.  So therefore equivalent to:
+
+	use 5.14.0;							# implies `use strict`
+	use warnings FATAL => 'all';
+	use experimental 'smartmatch';
+
+	use Scalar::Util qw< blessed >;
+	use List::Util qw< first max min reduce shuffle sum >;
+	use List::MoreUtils qw< apply zip uniq >;
+
+	use Debuggit DataPrinter => 1;
+
+B<plus> still exporting all the functions listed below under L</FUNCTIONS>.  Besides not screwing
+with your syntax as much, this is also much faster to load.
+
+Note that this does not remove I<all> syntax that C<myperl> typically adds.  For instance, C<use
+5.14.0> does the equivalent of C<use feature ':5.14'>, which adds C<say>, C<state>, C<given>, etc.
+You could also argue that many of the list utility functions count as syntax.
+
 =head2 ONLY
 
 	use myperl ONLY => [qw< slurp time2str title_case >];
 
-More of a lightweight version of C<myperl>.  Means not to load some of the heavier modules at all,
-and only export the requested functions listed below under L</FUNCTIONS>.  The example above works
+An even more lightweight version.  Implies the C<NO_SYNTAX> argument, plus restricts the function
+exports to only those you specify.  Thus, the example above works
 out to the equivalent of:
 
 	use 5.14.0;							# implies `use strict`
@@ -314,6 +338,17 @@ out to the equivalent of:
 	*title_case = \&myperl::title_case;
 
 meaning that L<Perl6::Slurp> and L<Date::Format> will still only be loaded if you call C<slurp> or C<time2str>.
+
+If you want no functions at all, you can do this:
+
+	use myperl ONLY => [];
+
+If you really want to get the syntax without all the functions, you can do something clever like:
+
+	use myperl NO_SYNTAX => 0, ONLY => [qw< slurp time2str title_case >];
+
+The order of the arguments in this case is irrelevant.  Note that, unlike with C<NO_SYNTAX>, this is
+not faster to load; it just reduces namespace pollution.
 
 =head2 DISPLAY_IMPORTS
 

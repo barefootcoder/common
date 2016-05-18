@@ -4,10 +4,14 @@ use Test::Most		0.25;
 use Test::Command	0.08;
 
 
+# Bad Args
+
 perl_error_is( "unknown args caught", "myperl: unknown argument BMOOGLE", <<'END' );
 	use myperl BMOOGLE => 1;
 END
 
+
+# DEBUG
 
 perl_no_error( "defaults for Debuggit are good", <<'END' );
 	use myperl;
@@ -31,6 +35,8 @@ perl_error_is( "Debuggit default uses Data::Printer", $dp_out, <<END );
 END
 
 
+# NoFatalWarns
+
 perl_no_output( "defaults for warnings are good", <<'END' );
 	use myperl;
 	say 2 + "fred";
@@ -41,6 +47,23 @@ perl_output_is( "can turn warnings non-fatal", "2", <<'END' );
 	say 2 + "fred";
 END
 
+
+# NO_SYNTAX
+
+perl_no_error( "still exporting basic syntax", <<'END' );
+	use myperl NO_SYNTAX => 1;
+	debuggit("foo");
+END
+
+perl_error_is( "not exporting advanced syntax",
+		q{Can't locate object method "class" via package "Foo" (perhaps you forgot to load "Foo"?)},
+		<<'END' );
+	use myperl NO_SYNTAX => 1;
+	class Foo { }
+END
+
+
+# ONLY
 
 perl_no_error( "requested funcs exported", <<'END' );
 	use myperl ONLY => [qw< title_case str2time >];
@@ -53,7 +76,7 @@ perl_error_is( "not exporting internals not requested", "Undefined subroutine &m
 	round(UP => 123.456);
 END
 
-perl_error_is( "not exporting externals not requested", "Undefined subroutine &main::time2str called", <<'END' );
+perl_error_is( "not exporting autoloads not requested", "Undefined subroutine &main::time2str called", <<'END' );
 	use myperl ONLY => [qw< title_case str2time >];
 	time2str(0);
 END
@@ -67,6 +90,16 @@ perl_error_is( "not exporting advanced syntax",
 		q{Can't locate object method "class" via package "Foo" (perhaps you forgot to load "Foo"?)},
 		<<'END' );
 	use myperl ONLY => [qw< title_case str2time >];
+	class Foo { }
+END
+
+perl_no_error( "can override NO_SYNTAX with ONLY", <<'END' );
+	use myperl ONLY => [qw< title_case str2time >], NO_SYNTAX => 0;
+	class Foo { }
+END
+
+perl_no_error( "can override NO_SYNTAX with ONLY regardless of order", <<'END' );
+	use myperl NO_SYNTAX => 0, ONLY => [qw< title_case str2time >];
 	class Foo { }
 END
 
