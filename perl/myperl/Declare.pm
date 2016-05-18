@@ -2,14 +2,8 @@ use 5.012;
 use warnings;
 use Devel::Declare 0.006007 ();
 
-# This expects to be called from myperl.pm.  If it's not, it won't be able to find
-# import_list_into().  OTOH, if it tries to 'use myperl', it will create a circular dependency,
-# which is also bad.  I'm not bothering to fix this for now.  One possible fix is to put this back
-# into myperl.pm; we'll have to see if that changes any behavior after we're all done.
-#
-# Nonetheless, you really shouldn't include myperl::Declare directly.  This is just to stop errors
-# on things like perlfind and whatnot.  Including myperl::Declare directly is a) unnecessary, and b)
-# won't do what you expect.  Unless you expect to be scratching your head a lot.
+# This is typically called from myperl.pm.  You could `use` it directly if you wanted to, but it
+# wouldn't gain you anything, and it's more characters to type.  So why would you?
 
 use myperl ();
 use MooseX::Declare;
@@ -43,23 +37,16 @@ class myperl::Declare extends MooseX::Declare
 		my $calling_package = caller;
 		myperl->import_list_into($calling_package,
 
-			Debuggit						=>
+			# We want our classes to have all the functions that myperl exports.
+			# And we have guards against circular dependencies, so we can do this.
+			myperl							=>
+
+			# These are modules we _only_ want inside classes.
 			Moose							=>	2.00		=>
-			CLASS							=>	1.00		=>
-			TryCatch						=>
-			'Const::Fast'					=>
-			'Path::Class'					=>
-			'Perl6::Form'					=>
-			'Perl6::Slurp'					=>
-			'Perl6::Gather'					=>	0.42		=>
+			'Class::Load'					=>					[ 'load_class' ],
 			'MooseX::Has::Sugar'			=>
 			'MooseX::ClassAttribute'		=>	0.26		=>
 			'MooseX::StrictConstructor'		=>
-			# don't have to actually do this one; Moose gives it to us for free
-			#'Scalar::Util'					=>					[ qw< blessed > ],
-			'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
-			'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
-			'Class::Load'					=>					[ 'load_class' ],
 			'MooseX::Types::Moose'			=>					[ ':all' ],
 
 		);
@@ -78,18 +65,28 @@ class myperl::Declare extends MooseX::Declare
 =head1 SYNOPSIS
 
 	use myperl::Declare;
+	class Foo
+	{
+	}
 
 is pretty much the same thing as:
 
 	use myperl;
-
 	use MooseX::Declare;
-	use MooseX::Has::Sugar;
-	use MooseX::ClassAttribute;
-	use Method::Signatures::Modifiers;
-	use MooseX::Types::Moose qw< all >;
 
-except that you'd never actually C<use myperl::Declare> directly.  Instead, C<use myperl> and then
-just declare your classes or roles with the appropriate keyword (a la L<MooseX::Declare>).
+	class Foo
+	{
+		use Class::Load 'load_class';
+		use MooseX::Has::Sugar;
+		use MooseX::ClassAttribute;
+		use MooseX::StrictConstructor;
+		use Method::Signatures::Modifiers;
+		use MooseX::Types::Moose qw< all >;
+	}
+
+except that you never need to C<use myperl::Declare> directly.  Instead, C<use myperl> and then just
+declare your classes or roles with the appropriate keyword (a la L<MooseX::Declare>).
+
+See L<myperl> for full details.
 
 =cut

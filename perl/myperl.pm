@@ -20,11 +20,13 @@ our %PASS_UNLESS =
 	DataDumper		=>	[ Debuggit => [ DataPrinter => 1	] ],
 );
 
+my $DISPLAY_IMPORTS;
 sub import
 {
 	my $class = shift;
 	my %args = @_;
 	my $ONLY = delete $args{'ONLY'};
+	$DISPLAY_IMPORTS = delete $args{'DISPLAY_IMPORTS'};
 
 	my %mod_args;
 	foreach (keys %args)
@@ -47,6 +49,12 @@ sub import
 
 	my $calling_package = caller;
 
+	# to avoid vicious circular dependency issues, add a pointless "marker" sub
+	# unless we've already added it, in which case just bail out
+	my $marker_sub = '__myperl_loaded';
+	return if $calling_package->can($marker_sub);
+	Sub::Install::install_sub({ code => sub {}, into => $calling_package, as => $marker_sub });
+
 	# our own routines, which we have to transfer by hand
 	foreach (qw< title_case round expand prompt confirm >)
 	{
@@ -60,6 +68,8 @@ sub import
 	# function had been exported.
 	my %autoload_funcs =
 	(
+		'Perl6::Slurp'		=>	'slurp',
+		'Perl6::Form'		=>	'form',
 		'Date::Parse'		=>	'str2time',
 		'Date::Format'		=>	'time2str',
 		'File::Basename'	=>	'basename',
@@ -87,17 +97,19 @@ sub import
 		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
+		'Scalar::Util'					=>					[ qw< blessed > ],
+		'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
+		'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
 
 	);
 
 	# don't export these if our caller wants only certain functions
 	myperl->import_list_into($calling_package,
 
-		#CLASS							=>	1.00		=>				# handled by myperl::Declare
+		CLASS							=>	1.00		=>
 		TryCatch						=>	1.003001	=>
 		'Const::Fast'					=>
 		'Path::Class'					=>
-		'Perl6::Slurp'					=>
 		'Perl6::Gather'					=>	0.42		=>
 		'myperl::Declare'				=>
 		'Method::Signatures'			=>	20111125	=>
@@ -127,6 +139,7 @@ sub use_and_import_into
 {
 	my $args = ref $_[-1] eq 'ARRAY' ? pop : undef;
 	my ($class, $to_pkg, $from_pkg, $version) = @_;
+	say STDERR ":: importing $from_pkg into $to_pkg ::" if $DISPLAY_IMPORTS;
 
 	$version ? use_module($from_pkg, $version) : use_module($from_pkg);
 	$from_pkg->import::into($to_pkg, @{ $args || [] }) unless $args and @$args == 0;
@@ -234,19 +247,17 @@ sub confirm
 
 is pretty much the same thing as:
 
-	use 5.12.0;							# implies `use strict`
+	use 5.14.0;							# implies `use strict`
 	use warnings FATAL => 'all';
+	use experimental 'smartmatch';
 
 	use CLASS;
 	use TryCatch;
 	use Const::Fast;
 	use Path::Class;
-	use Perl6::Form;
-	use Perl6::Slurp;
 	use Perl6::Gather;
 	use Method::Signatures;
 
-	use Class::Load 'load_class';
 	use Scalar::Util qw< blessed >;
 	use List::Util qw< first max min reduce shuffle sum >;
 	use List::MoreUtils qw< apply zip uniq >;
@@ -280,19 +291,73 @@ Don't make all warnings fatal (but still turn them on).
 Don't pass C<DataPrinter =E<gt> 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
 L<Data::Printer>).
 
+=head2 ONLY
+
+	use myperl ONLY => [qw< slurp time2str title_case >];
+
+More of a lightweight version of C<myperl>.  Means not to load some of the heavier modules at all,
+and only export the requested functions listed below under L</FUNCTIONS>.  The example above works
+out to the equivalent of:
+
+	use 5.14.0;							# implies `use strict`
+	use warnings FATAL => 'all';
+	use experimental 'smartmatch';
+
+	use Scalar::Util qw< blessed >;
+	use List::Util qw< first max min reduce shuffle sum >;
+	use List::MoreUtils qw< apply zip uniq >;
+
+	use Debuggit DataPrinter => 1;
+
+	*slurp      = \&myperl::slurp;
+	*time2str   = \&myperl::time2str;
+	*title_case = \&myperl::title_case;
+
+meaning that L<Perl6::Slurp> and L<Date::Format> will still only be loaded if you call C<slurp> or C<time2str>.
+
+=head2 DISPLAY_IMPORTS
+
+	use myperl DISPLAY_IMPORTS => 1;
+
+All C<myperl> really does is import things ... lots of things.  If you're confused about what's
+getting imported into where, use this to force a message every time it (attempts to) load a module
+into a package's namespace.  Results in lots of messages to C<STDERR> that look like this:
+
+	:: importing strict into main ::
+	:: importing warnings into main ::
+	:: importing feature into main ::
+	:: importing experimental into main ::
+	:: importing Debuggit into main ::
+	:: importing List::Util into main ::
+	:: importing List::MoreUtils into main ::
+	:: importing TryCatch into main ::
+	:: importing Const::Fast into main ::
+	:: importing Path::Class into main ::
+	:: importing Perl6::Gather into main ::
+	:: importing myperl::Declare into main ::
+	:: importing Method::Signatures into main ::
+
 
 =head1 FUNCTIONS
 
-=head2 Date Functions
+=head2 "Autoloaded" Functions
 
 These functions are exported, but the modules they derive from are only loaded if the functions
 themselves are called.  See their respective modules for more info on them:
 
 =over 4
 
+=item B<slurp> (from L<Perl6::Slurp>)
+
+=item B<form> (from L<Perl6::Form>)
+
 =item B<str2time> (from L<Date::Parse>)
 
 =item B<time2str> (from L<Date::Format>)
+
+=item B<basename> (from L<File::Basename>)
+
+=item B<menu> (from L<myperl::Menu>)
 
 =back
 
@@ -378,7 +443,7 @@ You will probably need the following packages, which might not be installed alre
 	libxml2-devel [on Fedora] or libxml2-dev   [on Linux Mint]
 	expat-devel   [on Fedora] or libexpat1-dev [on Linux Mint]
 
-I<After> that, if you want to make sure you have all the necessary prereqs, try this:
+I<After> that, if you want to make sure you have all the necessary Perl prereqs, try this:
 
 	podselect -section PREREQS `perlfind myperl` | grep '^[a-zA-Z]' | cpanm -n
 

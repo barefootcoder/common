@@ -42,7 +42,8 @@ sub test_snippet
 	my $code = "$decl; \@result = $snippets{$_}; main::calc_result(\@result)";
 	$code = "class $class { $code }" if $class;
 
+	my $place = $class ? 'class' : 'main';
 	eval $code;
-	is $@, '', "list util $_ runs without exception";
-	is $result, 10, "list util $_ returns correct answer";
+	is $@, '', "list util $_ runs without exception in $place";
+	is $result, 10, "list util $_ returns correct answer in $place";
 }

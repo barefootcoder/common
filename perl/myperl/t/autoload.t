@@ -15,6 +15,14 @@ loads_ok { menu(undef) } menu => 'myperl::Menu';
 loads_ok { expand('') } expand => 'Text::Tabs';
 
 
+# slurp()
+loads_ok { my $p = slurp '/etc/passwd' } slurp => 'Perl6::Slurp';
+
+
+# form()
+loads_ok { my $s = form("{<<}", "xx")	} form => 'Perl6::Form';
+
+
 # basename()
 # can't really test for it being unloaded/loaded, because something-or-other we depend on is already
 # using it; therefore, just make sure we can call the method

@@ -11,8 +11,6 @@ class Calendar::Event extends Net::Google::Calendar::Entry
 
 	method _format_datetime ($dt)
 	{
-		use Date::Format;
-
 		return time2str('%L/%d/%Y %l:%M%P', $dt->epoch);
 	}
 
