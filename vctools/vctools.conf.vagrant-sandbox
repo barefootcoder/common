@@ -87,6 +87,7 @@ DefaultVC=git
 
 			git diff --stat HEAD^
 			? Push this to Cibola?
+			git fetch cibola
 			git push --force-with-lease
 		---
 	</CustomCommand>
