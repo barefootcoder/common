@@ -98,6 +98,7 @@ sub import
 		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
+		'Const::Fast'					=>
 		'Scalar::Util'					=>					[ qw< blessed > ],
 		'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
 		'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
@@ -109,7 +110,6 @@ sub import
 
 		CLASS							=>	1.00		=>
 		TryCatch						=>	1.003001	=>
-		'Const::Fast'					=>
 		'Path::Class'					=>
 		'Perl6::Gather'					=>	0.42		=>
 		'myperl::Declare'				=>
@@ -254,11 +254,11 @@ is pretty much the same thing as:
 
 	use CLASS;
 	use TryCatch;
-	use Const::Fast;
 	use Path::Class;
 	use Perl6::Gather;
 	use Method::Signatures;
 
+	use Const::Fast;
 	use Scalar::Util qw< blessed >;
 	use List::Util qw< first max min reduce shuffle sum >;
 	use List::MoreUtils qw< apply zip uniq >;
@@ -302,6 +302,7 @@ More of a lightweight version of C<myperl>.  Means not to load some of the heavi
 	use warnings FATAL => 'all';
 	use experimental 'smartmatch';
 
+	use Const::Fast;
 	use Scalar::Util qw< blessed >;
 	use List::Util qw< first max min reduce shuffle sum >;
 	use List::MoreUtils qw< apply zip uniq >;
@@ -320,13 +321,13 @@ You could also argue that many of the list utility functions count as syntax.
 	use myperl ONLY => [qw< slurp time2str title_case >];
 
 An even more lightweight version.  Implies the C<NO_SYNTAX> argument, plus restricts the function
-exports to only those you specify.  Thus, the example above works
-out to the equivalent of:
+exports to only those you specify.  Thus, the example above works out to the equivalent of:
 
 	use 5.14.0;							# implies `use strict`
 	use warnings FATAL => 'all';
 	use experimental 'smartmatch';
 
+	use Const::Fast;
 	use Scalar::Util qw< blessed >;
 	use List::Util qw< first max min reduce shuffle sum >;
 	use List::MoreUtils qw< apply zip uniq >;
@@ -337,7 +338,8 @@ out to the equivalent of:
 	*time2str   = \&myperl::time2str;
 	*title_case = \&myperl::title_case;
 
-meaning that L<Perl6::Slurp> and L<Date::Format> will still only be loaded if you call C<slurp> or C<time2str>.
+meaning that L<Perl6::Slurp> and L<Date::Format> will still only be loaded if you call C<slurp> or
+C<time2str>.
 
 If you want no functions at all, you can do this:
 

@@ -52,6 +52,8 @@ END
 
 perl_no_error( "still exporting basic syntax", <<'END' );
 	use myperl NO_SYNTAX => 1;
+	say "foo";
+	const my $foo => 1;
 	debuggit("foo");
 END
 
