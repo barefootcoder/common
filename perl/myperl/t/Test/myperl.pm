@@ -1,9 +1,15 @@
 package Test::myperl;
 
 use Test::More;
+use Test::Command	0.08;
+
+use Perl6::Slurp;
 
 use parent 'Exporter';
-our @EXPORT = qw< %SNIPPETS test_snippet >;
+our @EXPORT =	(
+					qw< %SNIPPETS test_snippet >,
+					qw< perl_output_is perl_no_output perl_error_is perl_no_error >,
+				);
 
 
 our %SNIPPETS =
@@ -39,6 +45,54 @@ sub test_snippet
 	{
 		is $@, '', "snippet succeeds as expected: $_";
 	}
+}
+
+
+# Run Perl and check the output or error.
+
+sub _perl_command
+{
+	my $cmd = shift;
+	return [ $^X, '-e', $cmd, '--', @_ ];
+}
+
+sub perl_output_is
+{
+	my ($tname, $expected, $cmd, @extra) = @_;
+
+	$expected .= "\n" unless $expected =~ /\n\Z/;
+	my $test_cmd = Test::Command->new( cmd => _perl_command($cmd, @extra) );
+	$test_cmd->stdout_is_eq($expected, $tname) or diag "error was:\n", slurp $test_cmd->{'result'}->{'stderr_file'};
+}
+
+sub perl_no_output
+{
+	my ($tname, $cmd, @extra) = @_;
+
+	my $test_cmd = Test::Command->new( cmd => _perl_command($cmd, @extra) );
+	$test_cmd->stdout_is_eq('', $tname) or diag "error was:\n", slurp $test_cmd->{'result'}->{'stderr_file'};
+}
+
+sub perl_error_is
+{
+	my ($tname, $expected, $cmd, @extra) = @_;
+
+	if ( $expected =~ /\n\Z/ )
+	{
+		stderr_is_eq(_perl_command($cmd, @extra), $expected, $tname);
+	}
+	else
+	{
+		my $regex = qr/^\Q$expected\E( at \S+ line \d+\.)?\n/;
+		stderr_like(_perl_command($cmd, @extra), $regex, $tname);
+	}
+}
+
+sub perl_no_error
+{
+	my ($tname, $cmd, @extra) = @_;
+
+	stderr_is_eq(_perl_command($cmd, @extra), '', $tname);
 }
 
 

@@ -1,7 +1,10 @@
 use Data::Printer	0.36;
 
 use Test::Most		0.25;
-use Test::Command	0.08;
+
+use File::Basename;
+use lib dirname($0);
+use Test::myperl;
 
 
 # Bad Args
@@ -107,33 +110,3 @@ END
 
 
 done_testing;
-
-
-sub perl_output_is
-{
-	my ($tname, $expected, $cmd) = @_;
-
-	stdout_is_eq([ $^X, '-e', $cmd ], "$expected\n", $tname);
-}
-
-sub perl_no_output
-{
-	my ($tname, $cmd) = @_;
-
-	stdout_is_eq([ $^X, '-e', $cmd ], '', $tname);
-}
-
-sub perl_error_is
-{
-	my ($tname, $expected, $cmd) = @_;
-
-	my $regex = qr/^\Q$expected\E( at \S+ line \d+\.)?\n/;
-	stderr_like([ $^X, '-e', $cmd ], $regex, $tname);
-}
-
-sub perl_no_error
-{
-	my ($tname, $cmd) = @_;
-
-	stderr_is_eq([ $^X, '-e', $cmd ], '', $tname);
-}
