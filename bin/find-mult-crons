@@ -19,7 +19,7 @@ opts <<"-";
 -
 
 my $interesting = $OPT{'i'};
-my $threshhold = $OPT{'t'} || $interesting ? 1 : DEFAULT_THRESHHOLD;
+my $threshhold = $OPT{'t'} || ($interesting ? 1 : $DEFAULT_THRESHHOLD);
 my ($start_hr, $start_min) = split(/[:.]/, shift || '0:0');
 my ($end_hr, $end_min) = split(/[:.]/, shift || '23:59');
 
@@ -27,9 +27,10 @@ my ($end_hr, $end_min) = split(/[:.]/, shift || '23:59');
 my @crons;
 while ( <> )
 {
-	next if /^\s*#/;
-	next if /^\s*$/;
-	next if /^\S+=\S+$/;
+	next if /^\s*#/;			# comment
+	next if /^\s*$/;			# blank line
+	next if /^\s*<%/;			# template substitution
+	next if /^\S+=/;			# variable assignment
 
 	my $cron = {};
 	@$cron{qw<min hr day mo dow command cmd_args>} = split(' ', $_, 7);
