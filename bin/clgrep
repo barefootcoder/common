@@ -1,47 +1,27 @@
 #! /usr/bin/env perl
 
-use 5.12.0;
+use myperl::Script;
 use autodie qw< :all >;
-use warnings FATAL => 'all';
 
 use File::Next;
-use Getopt::Std;
-use Perl6::Slurp;
-use File::Basename;
 use Regexp::Common;
-use List::Util qw< first >;
 use Text::Tabs; $tabstop = 4;
 use List::MoreUtils qw< firstidx >;
 use Text::Balanced qw< extract_quotelike extract_multiple >;
 
 
-our $ME = basename($0);
+opts <<'-';
+	{ -a | -m | -i } [-n <name>] file_or_dir [...]
+	-a : find attributes in file(s)
+	-m : find methods in file(s)
+	-i : find inheritance (superclasses and roles) in file(s)
+	-n : search only for <name> (treated as a Perl regex)
+	dirs are treated recursively
+-
 
-my $opts = {};
-getopts('amin:h', $opts);
-HELP_MESSAGE() if $opts->{'h'};
 my %modes = ( a => 'attributes', m => 'methods', i => 'inheritance' );
-my $mode = first { $_ } map { $opts->{$_} ? $modes{$_} : () } sort keys %modes
+my $mode = first { $_ } map { $OPT{$_} ? $modes{$_} : () } sort keys %modes
 		or usage_error("must supply one of: " . join(" | ", map { "-$_" } sort keys %modes));
-
-sub usage_error
-{
-	my ($msg) = @_;
-	say STDERR "$ME: $msg ($ME -h for help)";
-	exit 1;
-}
-
-sub HELP_MESSAGE
-{
-	say STDERR "usage: $ME [-h] { -a | -m | -i } [-n regex] file_or_dir [...]";
-	say STDERR "            -a : find attributes in file(s)";
-	say STDERR "            -m : find methods in file(s)";
-	say STDERR "            -i : find inheritance (superclasses and roles) in file(s)";
-	say STDERR "            -n : search only for this name (treated as a Perl regex)";
-	say STDERR "            -h : this help message";
-	say STDERR "       dirs are treated recursively";
-	exit;
-}
 
 usage_error("must supply file(s) or dir(s)") unless @ARGV;
 
@@ -102,7 +82,7 @@ sub process_file
 	my $disp_file;
 	while ($code =~ /^(.*?[^\$\@%])?\b$keywords\s+(\w+|{Q\d+}).*?$/mg)
 	{
-		next if $opts->{'n'} and $2 ne $opts->{'n'};
+		next if $OPT{'n'} and $2 ne $OPT{'n'};
 		my $keyword_pos = $+[1] ? $+[1] - $-[1] : 0;
 		my ($start, $end) = ($-[0], $+[0]);
 
@@ -113,7 +93,7 @@ sub process_file
 			$end = $parend_at + $+[1];
 		}
 
-		if ( $mode eq 'methods' and $opts->{'n'} )
+		if ( $mode eq 'methods' and $OPT{'n'} )
 		{
 			substr($code, $start) =~ /$RE{balanced}{-parens=>'{}'}/ or die("can't find closing brace anywhere");
 			$end = $start + $+[1];

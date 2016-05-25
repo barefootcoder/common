@@ -1,37 +1,27 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 
-use strict;
-use warnings;
-
-use Debuggit;
+use myperl::Script;
 
 use Getopt::Std;
 use Data::Dumper;
 use File::Basename;
 
 
-our $ME = basename($0);
-use constant DEFAULT_THRESHHOLD => 3;
+const our $DEFAULT_THRESHHOLD => 3;
 
-my $opts = {};
-getopts('hit:', $opts);
-HELP_MESSAGE() if $opts->{'h'};
-my $interesting = $opts->{'i'};
-my $threshhold = $opts->{'t'} || $interesting ? 1 : DEFAULT_THRESHHOLD;
+opts <<"-";
+	[-i] [-t <threshhold>] [start] [end]
+	-i : show only 'interesting' cronjobs (defined as jobs that run less often than 1x/hr)
+	-t : only show times that have more than <threshhold> jobs running at that time (default: $DEFAULT_THRESHHOLD)
+	reads list of crons from STDIN (e.g. crontab -l | $ME)
+	use -t1 to show all cronjbs
+	-i implies -t1, unless overridden
+-
+
+my $interesting = $OPT{'i'};
+my $threshhold = $OPT{'t'} || $interesting ? 1 : DEFAULT_THRESHHOLD;
 my ($start_hr, $start_min) = split(/[:.]/, shift || '0:0');
 my ($end_hr, $end_min) = split(/[:.]/, shift || '23:59');
-
-sub HELP_MESSAGE
-{
-	print STDERR "usage: $ME [-i] [-t threshhold] [start] [end]\n";
-	print STDERR "            -i : show only 'interesting' cronjobs (defined as jobs that run less often than 1x/hr)\n";
-	print STDERR "            -t : only show times that have more than threshhold jobs running at that time (default: ",
-										DEFAULT_THRESHHOLD, ")\n";
-	print STDERR "       reads list of crons from STDIN (e.g. crontab -l | $ME)\n";
-	print STDERR "       use -t1 to show all cronjbs\n";
-	print STDERR "       -i implies -t1, unless overridden\n";
-	exit;
-}
 
 
 my @crons;

@@ -1,33 +1,20 @@
 #! /usr/bin/env perl
 
-use 5.12.0;
-use warnings;
-use Debuggit DEBUG => 0;
-
-use Getopt::Std;
-use Const::Fast;
-use File::Basename;
+use myperl::Script;
 
 
-our $ME = basename($0);
 const our $DEFAULT_FILE_LIMIT => 5;
 
-my $opts = {};
-getopts('hl:', $opts);
-HELP_MESSAGE() if $opts->{'h'};
-my $file_limit = $opts->{'l'} // $DEFAULT_FILE_LIMIT;
+opts <<"-";
+	[-l <limit>]
+	-l : file limit (<limit> files or more will *not* be reduced to parent dir; default: $DEFAULT_FILE_LIMIT)
+	reads list of files from STDIN (e.g. find . -type f | $ME)
+	consolidates the counts into parent dirs until one of two things is true:
+	* there are no additional files to consolidate with them, or
+	* a directory indicates at least <limit> files
+-
 
-sub HELP_MESSAGE
-{
-	say STDERR "usage: $ME [-l <limit>]";
-	say STDERR "            -l : file limit (minimum number of files which will *not* be reduced to parent dir; ",
-									"default: $DEFAULT_FILE_LIMIT)";
-	say STDERR "       reads list of files from STDIN (e.g. find . -type f | $ME)";
-	say STDERR "       consolidates the counts into parent dirs until one of two things is true:";
-	say STDERR "         * there are no additional files to consolidate with them, or";
-	say STDERR "         * a directory indicates at least <limit> files";
-	exit;
-}
+my $file_limit = $OPT{'l'} // $DEFAULT_FILE_LIMIT;
 
 
 my @files = <>;

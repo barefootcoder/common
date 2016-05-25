@@ -1,17 +1,28 @@
 #! /usr/bin/env perl
 
-use myperl DEBUG => 1;
+use myperl::Script;
 
-use Getopt::Std;
-use Time::Local;
 use Time::ParseDate qw<parsedate>;
 use List::Util qw< minstr maxstr >;
 
 const my $AVAIL => ':AVAILABILITY';
 
 
-my $opts = {};
-getopts('avw:', $opts);
+opts <<'-';
+	[-av] [-w <num>] <command> <cmd_arg> file [...]
+	-a : operate on all weeks (default: only the latest/first one found)
+	-v : be more verbose (currently only works with `review' command)
+	-w : operate on <num> weeks ago (1 == current week--default)
+	commands (and what <cmd_arg> represents) are:
+	*  start <timer>     : start the given timer
+	*  half <timer>      : start the given timer in half-timing mode
+	*  pause <timer>     : pause all timers, or pause availability if <timer> is `:AVAILABILITY'
+	*  total <timer>     : total of timers for the first week containing <timer>
+	*  eod <date>        : total of timers for a given date
+	*  breakdown <timer> : break down <timer> into chunks and display times and durations of each chunk
+	*  daybreak <date>   : show all the chunks for a given date
+	*  review <prefix>   : total of timers by ticket (all weeks) where timer has a ticket and name begins with <prefix>
+-
 
 my $cmd = shift;
 my $arg = shift;
@@ -53,7 +64,7 @@ while ( <> )
 					else
 					{
 						my $total = my $lines = 0;
-						push @mondays, $totals{':MINDATE'} if $opts->{a};
+						push @mondays, $totals{':MINDATE'} if $OPT{a};
 						$totals{':MINDATE'} ||= 'N/A';
 						$totals{':MAXDATE'} ||= 'N/A';
 						print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
@@ -67,7 +78,7 @@ while ( <> )
 						print_time("GRAND TOTAL", $total) if $lines > 1;
 						print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
 					}
-					exit unless $opts->{a};
+					exit unless $OPT{a};
 					say '';
 					$group_found = 0;
 				}
@@ -122,16 +133,16 @@ while ( <> )
 
 	if ($cmd eq 'breakdown')
 	{
-		if ($name eq $tname and $cur_week >= ($opts->{w} // 1))
+		if ($name eq $tname and $cur_week >= ($OPT{w} // 1))
 		{
 			breakdown(split(',', $chunks));
-			exit unless $opts->{a};
+			exit unless $OPT{a};
 		}
 		next;
 	}
 	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
-		if ($cur_week >= ($opts->{w} // 1))
+		if ($cur_week >= ($OPT{w} // 1))
 		{
 			$group_found = 1 if $cmd eq 'total' and $name eq $tname;
 			my $sub;
@@ -189,7 +200,7 @@ while ( <> )
 				{
 					my $total = sum map { scalar total_chunk($_) } split(',', $chunks);
 					$review{$name}->{total} += $total;
-					if ($opts->{v})
+					if ($OPT{v})
 					{
 						my $min = minstr map { $_ ? (date_range($_))[0] : () } split(',', $chunks);
 						my $max = maxstr map { $_ ? (date_range($_))[1] : () } split(',', $chunks);
@@ -214,7 +225,7 @@ if ($cmd eq 'review')
 				keys %review;
 }
 
-if ($cmd eq 'total' and $opts->{a})
+if ($cmd eq 'total' and $OPT{a})
 {
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
