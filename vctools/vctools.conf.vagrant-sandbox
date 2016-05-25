@@ -38,7 +38,7 @@ DefaultVC=git
 			%cur_branch !~ /^feature/	->	git checkout $BRANCH
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->  git log --format=format: --stat -n1
 			`git log -n1 --format=%s` =~ /DO NOT PUSH TO GITHUB/    ->	git reset HEAD^
-			git-helper-log -LNs
+			= stat-plus
 		---
 	</CustomCommand>
 </Policy>
