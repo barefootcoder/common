@@ -82,9 +82,9 @@ sub process_file
 	my $disp_file;
 	while ($code =~ /^(.*?[^\$\@%])?\b$keywords\s+(\w+|{Q\d+}).*?$/mg)
 	{
-		next if $OPT{'n'} and $2 ne $OPT{'n'};
 		my $keyword_pos = $+[1] ? $+[1] - $-[1] : 0;
 		my ($start, $end) = ($-[0], $+[0]);
+		next if $OPT{'n'} and $2 !~ qr/$OPT{'n'}/;
 
 		if ( $mode eq 'attributes' and substr($code, $start, $end - $start) =~ /\(/ )
 		{
