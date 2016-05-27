@@ -1,4 +1,4 @@
 #! /bin/bash
 
-command=$(echo "$*" | perl -pe "s/'/'\\''/g")
+command=$(echo "$*" | perl -pe "s/'/'\\''/g;"'s/~/\\~/')
 runon cibola "~/local/bin/vagrant-exe $command"
