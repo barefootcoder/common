@@ -40,22 +40,28 @@ do
 	prefixes="$prefixes $prefix"
 done
 
-while getopts ":lvenh" opt
+grepargs=-lP
+while getopts ":lg:venh" opt
 do
 	case $opt in
 		l)	list=yes
 			;;
+		g)	pattern="^badd .*$OPTARG"
+			;;
 		v)	verbose=yes
+			grepargs=-hP
 			;;
 		e)	edit=yes
 			;;
 		n)	local=yes
 			;;
-		h)  echo "usage: $me -h | -l[v] | -e file | [-n] file" >&2
-			echo "    -l : instead of starting a vim session, list possible session files" >&2
-			echo "    -v : when listing with -l, display full pathnames of session files" >&2
+		h)  echo "usage: $me -h | -l[v] | -[v]g <pattern> | -e <file> | [-n] <file>" >&2
+			echo "    -l : list all possible session files" >&2
+			echo "    -g : list possible session files which load a file matching <pattern> (Perl regex)" >&2
+			echo "    -v : with -l, display full pathnames of session files; with -g, diplay full matching lines" >&2
 			echo "    -e : instead of starting a vim session, edit the session file itself" >&2
 			echo "         (with -l, edit all known vimS session files)" >&2
+			echo "         (with -g, edit all matching vimS session files)" >&2
 			echo "    -n : do not autosave the session (default: autosave any changes/new files)" >&2
 			echo "    -h : this help message" >&2
 			echo "    file : session file (or partial name)" >&2
@@ -69,10 +75,10 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-if [[ $list ]]
+if [[ $list || $pattern ]]
 then
-	[[ $verbose ]] && echo "Name               Marks? Path"
-	[[ $verbose ]] && echo "============================================================================="
+	[[ $list && $verbose ]] && echo "Name               Marks? Path"
+	[[ $list && $verbose ]] && echo "============================================================================="
 
 	function print_file
 	{
@@ -95,16 +101,40 @@ then
 		fi
 	}
 
+	function handle_file
+	{
+		local base="$1"
+		local file="$2"
+
+		if [[ $pattern ]]
+		then
+			if ! grep $grepargs -q "$pattern" $file
+			then
+				return
+			fi
+		fi
+
+		if [[ $edit ]]
+		then
+			edit_files="$edit_files $file"
+		elif [[ $pattern ]]
+		then
+			if [[ $verbose ]]
+			then
+				grep $grepargs "$pattern" $file | sed "s/^/$base:/"
+			else
+				echo $base
+			fi
+		else
+			print_file $base $file
+		fi
+	}
+
 	for file in ./*.vimS
 	do
 		if [[ $file != *"*"* ]]
 		then
-			if [[ $edit ]]
-			then
-				edit_files="$edit_files $file"
-			else
-				print_file $(basename $file .vimS) $file
-			fi
+			handle_file $(basename $file .vimS) $file
 		fi
 	done
 	for prefix in $prefixes
@@ -113,12 +143,7 @@ then
 		do
 			if [[ $file != *"*" ]]
 			then
-				if [[ $edit ]]
-				then
-					edit_files="$edit_files $file"
-				else
-					print_file ${file##$prefix} $file
-				fi
+				handle_file ${file##$prefix} $file
 			fi
 		done
 	done
