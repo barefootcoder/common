@@ -1,5 +1,7 @@
 #! /bin/bash
 
 killall synergyc
-xdotool keyup Shift_L Shift_R Control_L Control_R
-/usr/bin/synergyc -f --no-tray --debug NOTE --name absalom --crypto-mode gcm --crypto-pass 3d7aa5ebcefa002e6422c90f6c41b6f6 10.106.0.134:24800 &
+grep '^#define' /usr/include/X11/keysymdef.h | sed -r 's/^#define XK_(\S*?).*$/\1/;'							\
+		| grep -E '_(L|R|Level.*)$' | xargs xdotool keyup
+/usr/bin/synergyc -f --no-tray --debug NOTE --name absalom --crypto-mode gcm									\
+		--crypto-pass 3d7aa5ebcefa002e6422c90f6c41b6f6 10.106.0.134:24800 &
