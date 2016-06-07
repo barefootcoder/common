@@ -1,5 +1,6 @@
 #! /usr/bin/env perl
 
+BEGIN { eval { require 5.14.0 } or exec "vim", @ARGV }
 use 5.14.0;
 use warnings FATAL => 'all';
 
