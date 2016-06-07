@@ -63,7 +63,7 @@ sub process_img
 
 	my $img = Image::Magick->new;
 	$img->Read($file);
-	$img->Thumbnail(width=>1771,height=>996);
+	$img->Thumbnail(width=>1500,height=>844);
 	$img->Quantize(colorspace=>'gray');
 	#$img->Rotate(degrees=>180);
 	$img->Write("$dir/$filebase-$name.jpg");
