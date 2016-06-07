@@ -10,7 +10,7 @@ use Method::Signatures;
 
 use HTML::Entities;
 use List::MoreUtils qw< after >;
-use List::Util qw< first pairmap >;
+use List::Util qw< first pairs pairmap >;
 use Text::Tabs; $tabstop = 4;
 
 use lib "$ENV{'HOME'}/Dropbox/personal";
@@ -119,21 +119,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{e`}{&eacute;}g;																# generalized e accute
 	s{a`}{&agrave;}g;																# generalized a grave
 	s{u`}{&uacute;}g;																# generalized u accute
-	s{\bcliche\b}{clich&eacute;}g;													# cliche (w/ accent)
-	s{\bcafe\b}{caf&eacute;}g;														# cafe (w/ accent)
-	s{\bdeja vu\b}{d&eacute;j&agrave; vu}g;											# deja vu (w/ accents)
-	s{\b(voil)a\b}{$1&agrave;}gi;													# voila (w/ accent), preserving case
-	s{\ba la\b}{&agrave;&nbsp;la}g;													# a la (w/ accent)
-	s{\b(fa)c(ade)\b}{$1&ccedil;$2}gi;												# facade (w/ cedilla), preserving case
-	s{\braison detre\b}{raison d'&ecirc;tre}g;										# raison d'etre (w/ circumflex (and '))
-	s{\b(jalape)n(os?)\b}{$1&ntilde;$2}gi;											# jalapeno (w/ tilde), preserving case
-	s{\b(pl)a(tanos?)\b}{$1&aacute;$2}gi;											# platanos (w/ accent), preserving case
-	s{\b(mon fr)ere\b}{$1&egrave;re}gi;												# mon frere (w/ accent), preserving case
-	s{\b(a)e(sthetic(s|ally)?)\b}{ "&${\({a=>'ae',A=>'AE'}->{$1})}lig;$2" }ige;		# aesthetic/s/ally, preserving case
-	s{\bEostre\b}{&#274;ostre}g;													# Eostre (w/ macron)
-	s{Ingy dot Net}{Ingy d&ouml;t Net}g;											# proper spelling of Ingy's name
-	s{Gabor Szabo}{G&aacute;bor Szab&oacute;}g;										# proper spelling of Gabor's name
-	s{Szabo}{Szab&oacute;}g;														# ... even if it's only the last name
+	diacritic_fixup($_);															# lots of words/names w/ accents
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
 	s{\b1/([234])\b}{&frac1$1;}g;													# stand-alone fractions
@@ -356,6 +342,83 @@ func code_block ($type, $code)
 	$code =~ s/^$/ /mg				if						$blog_type eq 'perl';
 	$code = "<pre>$code</pre>\n"	if $type eq 'block' and	not bbstyle;
 	return block_save($code);
+}
+
+
+	# only used by diacritic_fixup (directly below)
+	func _fixup ($string, $fixups)
+	{
+		foreach my $loc (sort { $b <=> $a } keys %$fixups)				# make adjustments from end-of-string backwards
+		{
+			my $fix = $fixups->{$loc};
+			if ($fix =~ /^\w+$/)
+			{
+				if ($fix eq 'lig')
+				{
+					my $ligature = substr($string, $loc - 1, 2);
+					my ($first, $second) = split(//, $ligature);
+					# make case of second letter match that of the first
+					$second = $first eq uc $first ? uc $second : lc $second;
+					$ligature = "$first$second";
+					substr($string, $loc - 1, 2) = "&${ligature}$fix;";
+				}
+				else
+				{
+					my $letter = substr($string, $loc - 1, 1);
+					substr($string, $loc - 1, 1) = "&${letter}$fix;";
+				}
+			}
+			elsif ($fix =~ /^#\d+/)
+			{
+				substr($string, $loc - 1, 1) = "&$fix;";
+			}
+			else
+			{
+				substr($string, $loc, 0) = $fix;
+			}
+		}
+		return $string;
+	}
+func diacritic_fixup ($string is alias)
+{
+	state $FIXUPS =
+	{
+		cliche			=>	{ 6 => 'acute', plural => 1, },
+		cafe			=>	{ 4 => 'acute', plural => 1, },
+		voila			=>	{ 5 => 'grave', },
+		'a la'			=>	{ 1 => 'grave', },
+		facade			=>	{ 3 => 'cedil', plural => 1, },
+		jalapeno		=>	{ 7 => 'tilde', plural => 1, },
+		platanos		=>	{ 3 => 'acute', },
+		eostre			=>	{ 1 => '#274',  },
+		aesthetic		=>	{ 1 => 'lig',   plural => 1, },
+		aesthetically	=>	{ 1 => 'lig',   },
+		'mon frere'		=>  { 7 => 'grave', },
+		'deja vu'		=>	{ 2 => 'acute', 4 => 'grave', },
+		'raison detre'	=>	{ 9 => 'circ',  8 => q|'|,    },
+		'Ingy dot Net'	=>	{ 7 => 'uml',   },
+		'Gabor'			=>	{ 2 => 'acute', },
+		'Szabo'			=>	{ 5 => 'acute', },
+	};
+	my $PRE = qr/(^|[^\w\\]|_)/;
+	my $POST = qr/(?=_|\W|$)/;
+
+	# if it ever becomes possible/necessary to call diacritic_fixup more than once per program, this
+	# will need to be moved into a `do` block or somesuch
+	foreach (keys %$FIXUPS)
+	{
+		my $fixups = $FIXUPS->{$_};
+		if ( delete $fixups->{plural} )
+		{
+			$FIXUPS->{$_ . 's'} = $fixups;
+		}
+	}
+
+	foreach (keys %$FIXUPS)
+	{
+		my $find = /^[A-Z]/ ? qr/$PRE($_)$POST/ : qr/$PRE($_)$POST/i;
+		$string =~ s/ $find / $1 . _fixup($2, $FIXUPS->{$_}) /egx;
+	}
 }
 
 
