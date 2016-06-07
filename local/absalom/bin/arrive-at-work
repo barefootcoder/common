@@ -1,20 +1,46 @@
 #!/bin/bash
 . ~/bin/bash_funcs
 
+check_timer=true
+while getopts ":Th" opt
+do
+	case $opt in
+		T)	check_timer=false
+			;;
+		h)  echo "usage: $me -h | [-T]" >&2
+			echo "    -T : don't verify that the current timer is 'switchover'" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
 
 function current-timer
 {
 	grep -e '-$' ~/timer/timer-new | cut -d$'\t' -f1 | head -n1
 }
 
-if [[ $(current-timer) != "switchover" ]]
+if $check_timer
 then
-	die "Must start the switchover timer first!"
+	if [[ $(current-timer) != "switchover" ]]
+	then
+		die "Must start the switchover timer first!"
+	fi
 fi
 
-echo "Check your network connection!"
-echo -n "Enter to continue "
-read
+work=cibola
+if ! ssh -no ConnectTimeout=1 $work >/dev/null 2>&1
+then
+	die "cannot connect to $work (verify ~/.ssh/config)"
+fi
 
 switchover
 echo -n "waiting for timerfile sync "
@@ -22,7 +48,7 @@ while true
 do
 	echo -n "."
 	localtime=$(perl -le 'print ((stat shift)[9])' ~/timer/timer-new)
-	remotetime=$(ssh cibola "perl -le 'print ((stat shift)[9])' ~/timer/timer-new")
+	remotetime=$(ssh $work "perl -le 'print ((stat shift)[9])' ~/timer/timer-new")
 	if [[ $localtime -eq $remotetime ]]
 	then
 		break
@@ -32,4 +58,4 @@ do
 done
 echo ''
 echo "timerfiles sync'ed"
-copy-to-cibola
+copy-to-$work
