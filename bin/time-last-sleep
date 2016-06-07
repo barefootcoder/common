@@ -1,0 +1,15 @@
+#!/bin/bash
+. ~/bin/bash_funcs
+
+function findit
+{
+	for log in /var/log/syslog*
+	do
+		if zgrep "Preparing system for mem sleep" $log | tail -n1 | awk '{print $1, $2, $3}'
+		then
+			break
+		fi
+	done
+}
+
+perlsecs $(findit)
