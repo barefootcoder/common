@@ -9,7 +9,7 @@ use warnings FATAL => 'all';
 
 sub check_prereqs
 {
-	foreach (qw< Getopt::Std Path::Class Perl6::Slurp Time::Duration List::MoreUtils Time::HiRes >)
+	foreach (qw< Getopt::Std File::Which Path::Class Perl6::Slurp Time::Duration List::MoreUtils Time::HiRes >)
 	{
 		eval "require $_" or system(qw< cpanm -n >, $_);
 	}
@@ -17,6 +17,7 @@ sub check_prereqs
 BEGIN { check_prereqs() }
 
 use Getopt::Std;
+use File::Which;
 use Path::Class;
 use Perl6::Slurp;
 use Time::Duration;
@@ -75,18 +76,19 @@ if ($opt->{h})
 ###########################
 
 
-# quick hack: shortcut to spawning dzil test if:
+# quick hack: shortcut to spawning `dzil test` if:
 # 	a) we can find a "dist.ini"
 # 	b) we're called with no args (that includes switches!)
-# alternately, we could call rent if:
+# 	c) we can find dzil and it's using the same Perl we are
+# alternately, we could call `rent` if:
 #	a) we're in the packages/ directory, or a subdir thereof
 #	b) we have no args, and only -n and/or -v switches
-# we can't allow switches because there's no reliable way to pass them on to dzil
-# (although rent specifically handles -v and -n, so those are okay)
+# we can't allow switches because there's no reliable way to pass them on to `dzil`
+# (although `rent` specifically handles -v and -n, so those are okay)
 $ENV{RELEASE_TESTING} = 1;
-if (-r 'dist.ini')
+if (-r 'dist.ini' and can_run_dzil())
 {
-	output_if_debug("found a dist.ini");
+	output_if_debug("found a dist.ini and a Perl-compatible dzil");
 	if (dir()->absolute =~  m{/packages/})
 	{
 		output_if_debug("trying to run `rent`");
@@ -134,7 +136,7 @@ if (-r 'dist.ini')
 
 # another quick hack:
 # if we see evidence that we're going to be using blib/lib/ instead of lib/, we probably better run
-# make to make sure the library file is copied to blib/lib/
+# `make` to make sure the library file is copied to blib/lib/
 system("make") if -d 'blib/lib' and -e 'Makefile';
 
 
@@ -143,14 +145,14 @@ my $postcommand;														# executes after command, but *only* if successful
 # slightly less quick hack:
 # if we're in a Dist::Zilla distro and we _do_ get arguments, we _may_ be able to set up an
 # environment where prove will work properly ...
-if (-r "dist.ini" and @ARGV)
+if (-r "dist.ini" and which("dzil") and @ARGV)
 {
 	$precommand = sub
 	{
 		system("dzil build");
 		# the dir we want is the same as the tarfile sans extension
-		(my $dir = glob("*.tar.gz")) =~ s/\.tar\.gz$//;
-		-d $dir or die("can't figure out build directory");
+		(my $dir = glob("*.tar.gz")) =~ s/(-TRIAL)?\.tar\.gz$//;
+		-d $dir or die("can't figure out build directory [$dir]");
 		chdir $dir;
 		system("$^X Makefile.PL");
 		system("make");
@@ -426,6 +428,34 @@ if ($opt->{p})
 ###########################
 ###  SUBS
 ###########################
+
+
+sub can_run_dzil
+{
+	# The trickiness here is that you may be in a situation where `dzil` is in your path, but you're
+	# not using the same Perl that `dzil` is.  One simple example of how this can happen is:
+	# 		perlbrew exec --with 5.8.9 t
+	# So, assuming `dzil` was in your path before, it still is, and its shebang line has the version
+	# of Perl that installed it hardcoded there.  The end result is that the above `perlbrew` line
+	# ends up running your tests, via `dzil`, on an entirely different version of Perl than you
+	# thought you were.  Which is bad.
+	#
+	# To avoid this, we actually find the copy of `dzil` that's going to be run (if there is one),
+	# read its shebang line, and refuse to run `dzil` if it doesn't match the currently running
+	# Perl.  This is a lot of work.  However, it prevents nasty surprises, so it's worth it.
+
+	return 0 unless $^O eq 'linux';					# too hard to figure out if this is safe on non-Linux systems
+	my $perl = $^X;
+	my $dzil = which("dzil") or return 0;			# no dzil to check Perl path of
+	my $dzil_perl = do
+	{
+		my ($first_line) = file($dzil)->slurp;
+		$first_line =~ s/^#!\s*//;
+		$first_line =~ s/\s*$//;
+		$first_line;
+	};
+	return $perl eq $dzil_perl;
+}
 
 
 my ($WORKENV, $CURENV);
