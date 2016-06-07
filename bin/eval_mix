@@ -48,7 +48,7 @@ while ( <> )
 
 		given ($_)
 		{
-			$volume = $_		when /^[A-Z]/;		# mix name and volume
+			$volume = $_		when /^[A-Z8]/;		# mix name and volume
 			$subtitle = $_		when /^\[.*\]\??$/;	# volume subtitle
 			''					when /^\{/;			# old statistics; throw these away
 			$in_header = 0		when /^===/;		# end of header
@@ -72,6 +72,7 @@ my $final_score = final_score($running_score / @tracks, $time, $named);
 my $stats = @tracks . " tracks, time: " . $time . ", named: " . ($named ? 'yes' : 'no') . ", score: "
 		. sprintf("%5.2f%%", $final_score * 100);
 my @headers = ( $volume, $subtitle || (), "{$stats}" );
+debuggit("headers:", DUMP => \@headers);
 
 say foreach @headers;
 say '=' x (max map { length } @headers);
@@ -107,6 +108,7 @@ sub get_time
 	($mix_name, $vol_num) = ($volume, '') unless $mix_name;
 
 	my ($mix_file) = bsd_glob("$MUSICHOME/tracklists/*/$mix_name.m3u");
+	$mix_file =~ s/'/'\\''/g;
 	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
 	while ( <PIPE> )
 	{
