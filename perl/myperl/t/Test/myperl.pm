@@ -8,7 +8,7 @@ use Perl6::Slurp;
 use parent 'Exporter';
 our @EXPORT =	(
 					qw< %SNIPPETS test_snippet >,
-					qw< perl_output_is perl_no_output perl_error_is perl_no_error >,
+					qw< perl_output_is perl_no_output perl_error_is perl_no_error perl_exit_is >,
 				);
 
 
@@ -48,7 +48,7 @@ sub test_snippet
 }
 
 
-# Run Perl and check the output or error.
+# Run Perl and check the output or error (or return value).
 
 sub _perl_command
 {
@@ -93,6 +93,15 @@ sub perl_no_error
 	my ($tname, $cmd, @extra) = @_;
 
 	stderr_is_eq(_perl_command($cmd, @extra), '', $tname);
+}
+
+sub perl_exit_is
+{
+	my ($tname, $expected, $cmd, @extra) = @_;
+
+	$expected .= "\n" unless $expected =~ /\n\Z/;
+	my $test_cmd = Test::Command->new( cmd => _perl_command($cmd, @extra) );
+	$test_cmd->exit_is_num($expected, $tname) or diag "error was:\n", slurp $test_cmd->{'result'}->{'stderr_file'};
 }
 
 

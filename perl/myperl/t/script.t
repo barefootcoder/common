@@ -74,6 +74,31 @@ OUT
 		-a : turn a on
 -
 	usage_error("aww crap ...");
+	say STDERR "bmoogle!";
+END
+
+perl_exit_is( "provides proper exit on usage_error", 2, <<'END');
+	use myperl::Script;
+	usage_error("should have exited with 2");
+END
+
+
+perl_error_is( "provides proper fatal error function", <<OUT, <<'END');
+<one-liner>: bmoogle!
+OUT
+	use myperl::Script;
+	fatal("bmoogle!");
+	say STDERR "boo!";
+END
+
+perl_exit_is( "provides proper exit on fatal", 1, <<'END');
+	use myperl::Script;
+	fatal("should have exited with 1");
+END
+
+perl_exit_is( "can tweak exit on fatal", 5, <<'END');
+	use myperl::Script;
+	fatal(5 => "should have exited with 5");
 END
 
 

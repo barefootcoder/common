@@ -9,7 +9,7 @@ use myperl ();
 
 
 use parent 'Exporter';
-our @EXPORT = qw< $ME %OPT opts usage_error >;
+our @EXPORT = qw< $ME %OPT opts fatal usage_error >;
 
 our $ME = $0 eq '-e' ? '<one-liner>' : basename($0);
 
@@ -85,10 +85,18 @@ sub HELP_MESSAGE
 	exit;
 }
 
+sub fatal
+{
+	my $exitval = $_[0] =~ /^\d+/ ? shift : 1;
+	my ($msg) = @_;
+	say STDERR "$ME: $msg";
+	exit $exitval;
+}
+
 sub usage_error
 {
 	my $msg = shift;
-	say STDERR "$ME: $msg ($ME -h for help)";
+	fatal(2 => "$msg ($ME -h for help)");
 }
 
 
