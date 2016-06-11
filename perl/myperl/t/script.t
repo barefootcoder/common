@@ -65,6 +65,18 @@ OUT
 	say "bmoogle!";
 END
 
+perl_output_is( "proper help message even w/o post-option block", <<OUT, <<'END', qw< -h > );
+usage: <one-liner> -h | [-a]
+           -a : turn a on
+           -h : this help message
+OUT
+	use myperl::Script;
+	opts <<"-";
+		[-a]
+		-a : turn a on
+-
+END
+
 perl_error_is( "provides proper usage_error function", <<OUT, <<'END');
 <one-liner>: aww crap ... (<one-liner> -h for help)
 OUT

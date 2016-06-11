@@ -40,6 +40,13 @@ sub opts ($)
 	my $prefix = 'usage';
 	my $prefix_len = length($prefix) + 2;
 	my $option_len = $prefix_len + 4;
+
+	my $add_help_opt = sub
+	{
+		$optstring .= 'h';
+		push @help, ' ' x $option_len . "-h : this help message";
+	};
+
 	foreach (split("\n", $help))
 	{
 		s/^\s+//;
@@ -64,16 +71,13 @@ sub opts ($)
 		}
 		else										# post-option block
 		{
-			if ($block_pos == 1)					# first post-option block line; add help option
-			{
-				$optstring .= 'h';
-				push @help, ' ' x $option_len . "-h : this help message";
-			}
+			&$add_help_opt if $block_pos == 1;		# first post-option block line; add help option
 			$_ = ' ' x $prefix_len . $_;
 		}
 
 		push @help, $_;
 	}
+	&$add_help_opt if $block_pos == 0;				# there _were_ no post-option block lines; add help option
 
 	Getopt::Std::getopts($optstring, \%OPT);
 	HELP_MESSAGE() if $OPT{h};
