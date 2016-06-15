@@ -53,7 +53,7 @@ while (<>)
 		s/\[(.*?)\|(.*?)\]/[$1 $2]/g;									# links
 		s/(#\d)(?!\d)/!$1/g;											# numbered things that aren't tickets
 
-		s/\b([A-Z][a-z]+[A-Z][a-z]+\w*)\b/!$1/g;						# stop auto-linking to Wiki pages for camel case
+		s/([^`])\b([A-Z][a-z]+[A-Z][a-z]+\w*)\b(?!`)/$1!$2/g;			# stop auto-linking to Wiki pages for camel case
 	}
 
 	print;
