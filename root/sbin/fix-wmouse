@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+
+BEGIN { die("don't run as root!") if $< == 0; }
+
+use myperl::Script;
+use PerlX::bash;
+use LWP::Simple qw< get >;
+use Path::Tiny qw< path tempfile >;
+
+
+const my $CMD => 'unifying_pair';
+my $PAIR = path("/var/install/$CMD");
+unless ( -x $PAIR )
+{
+	my $SRC = 
+		first	{ -r $_						}
+		map		{ path($_, "$CMD.c")		}
+				qw< ~/docs/laptop-local ~/Dropbox/personal/laptop-local >
+	;
+	unless ($SRC)
+	{
+		my $URL = 'http://th0th.me/log/wp-content/uploads/2012/04/unifying_pair.c';
+		$SRC = tempfile(SUFFIX => '.c');
+		$SRC->spew(get($URL));
+	}
+	die("can't locate source!") unless $SRC and -s $SRC;
+	bash -e => "gcc -o $PAIR $SRC";
+}
+
+say "Please turn the mouse off and unplug the USB receiver.";
+exit unless confirm("Press 'y' when ready.");
+
+my $GET_DEVS = 'ls -1 /dev/hidraw*';
+my $cur_devs = [ bash \lines => $GET_DEVS ];
+
+say "Now plug the USB reciever back in.";
+exit unless confirm("Press 'y' when ready.");
+
+my $dev = first { not $_ ~~ $cur_devs } bash \lines => $GET_DEVS;
+bash -e => "sudo $PAIR $dev";
