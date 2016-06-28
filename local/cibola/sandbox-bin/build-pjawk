@@ -1,0 +1,50 @@
+#! /bin/bash -e
+
+if [[ $(hostname) != "dirk" ]]
+then
+	echo "push this script to dirk and run it there" >&2
+	echo "(should be safe to run multiple times)" >&2
+	exit 2
+fi
+
+pjawk_dir=$CEROOT/../pjawk
+if [[ ! -d $pjawk_dir ]]
+then
+	sudo mkdir $pjawk_dir
+	sudo chown $(id -un):CE $pjawk_dir
+	chmod 775 $pjawk_dir
+fi
+
+if [[ ! -e $pjawk_dir/README.md ]]
+then
+	git clone https://github.com/barefootcoder/pjawk.git $pjawk_dir
+fi
+
+EXTLIB=$CEROOT/extlib
+pjawk=$pjawk_dir/bin/pjawk
+[[ -x $pjawk ]] || ( echo "something has gone horribly wrong ..." >&2; exit 1 )
+
+if [[ ! -d $pjawk_dir/extlib ]]
+then
+	mkdir $pjawk_dir/extlib
+fi
+$EXTLIB/cpanm -n -L $pjawk_dir/extlib --self-contained --auto-cleanup 1											\
+		Method::Signatures experimental Perl6::Slurp Getopt::Long::Descriptive
+
+pjawk_script=$EXTLIB/bin/pjawk
+if [[ ! -x $pjawk_script ]]
+then
+	cat <<'END' >$pjawk_script
+#! /bin/bash
+
+timestamp='timestamp => qr|\d{4}/\d\d/\d\d \d\d:\d\d:\d\d|'
+day='day => qr|\d{4}/\d\d/\d\d|'
+hour='hour => qr|(?<= )\d\d(?=:)|'
+prefix="$timestamp, $day, $hour"
+
+PJAWK=$CEROOT/../pjawk
+export PERL5LIB=$PJAWK/extlib/lib/perl5
+exec $PJAWK/bin/pjawk -E"$prefix" "$@"
+END
+	chmod +x $pjawk_script
+fi

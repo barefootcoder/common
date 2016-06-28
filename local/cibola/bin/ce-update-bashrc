@@ -18,5 +18,20 @@ export PERL5LIB=$CEROOT/lib:$CEROOT/extlib/lib/perl5
 alias go='sudo -H -u CE -i'
 END
 fi
+if ! $cessh $host cat .bashrc | grep -q "^alias resrc="
+then
+	echo "alias resrc='source ~/.bashrc'" | $cessh $host cat ">>.bashrc"
+fi
+if ! $cessh $host cat .bashrc | grep -q "PATH=.*HOME/bin"
+then
+	echo '[[ $PATH == *$HOME/bin* ]] || export PATH=$PATH:$HOME/bin' | $cessh $host cat ">>.bashrc"
+fi
 
 $cescp -p ~/.exrc $host:
+
+# set up for pjawk, but only on dirk
+if [[ $host == dirk* ]]
+then
+	$cessh $host mkdir -p bin/
+	$cescp $(find ~/common/ -name build-pjawk) $host:bin/
+fi
