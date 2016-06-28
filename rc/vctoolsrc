@@ -37,7 +37,7 @@ if ( $?VCTOOLS_SHELL ) then
 	set filter_line_too_long="perl -pe 's/:.{512,}/:<<LINE TOO LONG!>>/'"
 	set ignore_nytprof='--ignore-file "match:nytprof.*"'
 	set always_ignore="--ignore-dir tmp --ignore-dir extlib --ignore-dir perl5 --ignore-dir var $ignore_nytprof"
-	set code_ignore="$always_ignore --ignore-dir t --ignore-dir tlib"
+	set code_ignore="$always_ignore --ignore-dir t --ignore-dir tlib --ignore-dir doc"
 	alias vg "$top_space ; ack $always_ignore --match \!* | $filter_line_too_long"
 	alias vgl "$top_space ; ack --perl $code_ignore --match \!* | $filter_line_too_long"
 	alias vgt "$top_space ; ack --match \!* t/ tlib/ | $filter_line_too_long"
