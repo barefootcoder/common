@@ -232,6 +232,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 			push @notes, footnote(final => $footnotes[$f], $f) if defined $footnotes[$f];
 		}
 		$_ .= $endnote_header . fmt(small => join('', map { "<p>$_</p>\n" } @notes)) . '</div>';
+		$_ .= '<br>' x 4;
 	}
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
