@@ -1,7 +1,42 @@
 #! /bin/bash
+. ~/bin/bash_funcs
+
+while getopts ":tu:" opt
+do
+	case $opt in
+		u)	user=$OPTARG
+			;;
+		t)	times=1
+			;;
+		h)  echo "usage: $me -h | [-t] [-u <user>] <file> [...]" >&2
+			echo "    -t : list and sort by create times" >&2
+			echo "    -u : only list files created by <user> (as grep -Pi)" >&2
+			echo "    -h : this help message" >&2
+			echo "    file : Git repo file" >&2
+			exit
+			;;
+		:)  usage_erorr "$OPTARG requires an argument"
+			;;
+		\?) usage_error "unknown argument $OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
 
 # changing it to use `--reverse -n1` to save the tail makes this much faster but wrong :-(
 # apparently, the `-n1` is applied *before* the `--reverse` :-/
 # using `--reverse` only and using `head` instead of `tail` is no faster
 # and `--reverse` has issues (obviously), so leaving it this way for now
-each 'git log --format=format:%aN {} | tail -n1' "$@"
+files=$(each 'git log --format=format:%h {} | tail -n1' "$@")
+
+if [[ $user ]]
+then
+	files=$(echo "$files" | each -l 'git log -1 --format=format:%aN `echo {} | cut -d: -f2` | grep -Pi "'"$user"'"')
+fi
+
+if [[ $times ]]
+then
+	echo "$files" | each 'git log -1 --format=format:%aN:%at:%aD `echo {} | cut -d: -f2`' | sort -t: -k4 -n | awk -F: 'BEGIN{OFS=":"}{print $1,$3,$5}'
+else
+	echo "$files" | each 'git log -1 --format=format:%aN `echo {} | cut -d: -f2`'| awk -F: 'BEGIN{OFS=":"}{print $1,$3}'
+fi
