@@ -47,6 +47,7 @@ Options:
                        (instead of showing PASS/FAIL/OTHER).
     --special <SPEC>   Special break down (see below).
     --no-perlver, -n   Do NOT break down by Perl version.
+    --micro, -m        When breaking down by Perl version, include micro version.
     --cache, -c        Cache any downloaded reports in ~/.cpan-testers.
                        (cached reports are *NOT* cleaned automatically!)
     --full, -f         Show category, status, and URL for every report.
@@ -111,6 +112,12 @@ HELP
         default  => 1,
     );
 
+    has perl_micro => (
+        is       => 'ro',
+        isa      => 'Bool',
+        default  => 0,
+    );
+
     has keep_cache => (
         is       => 'ro',
         isa      => 'Bool',
@@ -147,8 +154,10 @@ HELP
     sub run
     {
         my ($class, @argv) = @_;
-        my ($version, $perl_ver, $summary, $os_data, $threaded, $stable, $perma_cache, $full, $filenames, $fail, $special)
-         = (  undef,       1,        0,       0,         0,        0,        0,          0,        0,     undef,   undef );
+        my ($version, $perl_ver, $micro, $summary, $os_data, $threaded, $stable, $perma_cache, $full, $filenames)
+         = (  undef,       1,       0,       0,       0,         0,        0,        0,          0,        0    );
+        my ($fail, $special)
+         = ( undef,  undef );
 
         GetOptionsFromArray(
             \@argv,
@@ -158,6 +167,7 @@ HELP
             'threaded|t'   => \$threaded,
             'stable|S'     => \$stable,
             'no-perlver|n' => sub { $perl_ver = 0 },
+            'micro|m'      => \$micro,
             'cache|c'      => \$perma_cache,
             'full|f'       => \$full,
             'filenames|F'  => \$filenames,
@@ -178,6 +188,7 @@ HELP
                   threaded       => !!$threaded,
                   stable         => !!$stable,
                   perl_ver       => !!$perl_ver,
+                  perl_micro     => !!$micro,
                   keep_cache     => !!$perma_cache,
                   show_reports   => !!$full,
                   show_filenames => !!$filenames,
@@ -203,12 +214,20 @@ HELP
         {
             next unless $_->{version} eq $self->version;
             my (@key_fmt, @args);
-            my ($pv) = ($_->{perl} =~ /^5\.(\d+)/) or next;
-            next if $pv ~~ [9, 11, 13, 15];
+            my ($pv, $micro) = ($_->{perl} =~ /^5\.(\d+)(?:\.(\d+))?/) or next;
+            next if $pv >= 9 and $pv % 2 == 1;
             if ($self->perl_ver)
             {
-                push @key_fmt, "Perl 5.%03d";
-                push @args, $pv;
+                if ($self->perl_micro)
+				{
+					push @key_fmt, "Perl 5.%03d%03d";
+					push @args, $pv, $micro;
+				}
+				else
+				{
+					push @key_fmt, "Perl 5.%03d";
+					push @args, $pv;
+				}
             }
             if ($self->os_data)
             {
@@ -277,7 +296,8 @@ HELP
                 "  Does report have failure: " . $self->failure_string,
                 sprintf("%-*s    %6s%6s%6s%6s", $keylen, q(), qw(W/O WITH TOTAL)),
                 (
-                    map { sprintf "%-*s    % 6d% 6d% 6d", $keylen, $_, @{$data->{$_}}, sum @{$data->{$_}} }
+                    map   { sprintf "%-*s    % 6d% 6d% 6d", $keylen, $_, @{$data->{$_}}, sum @{$data->{$_}} }
+					apply { $data->{$_}->[1] //= 0 } # make sure this element is always there
                     sort keys %$data
                 ),
                 q(),
@@ -292,7 +312,7 @@ HELP
                 sprintf("%-*s    %6s%6s%6s%6s", $keylen, q(), qw(PASS FAIL OTHER TOTAL)),
                 (
                     map { sprintf "%-*s    % 6d% 6d% 6d% 6d", $keylen, $_, @{$data->{$_}}, sum @{$data->{$_}} }
-                    apply { $data->{$_}->[2] = 0 } # make sure this element is always there
+					apply { $data->{$_}->[2] //= 0 } # make sure this element is always there
                     sort keys %$data
                 ),
                 q(),
@@ -400,7 +420,7 @@ HELP
         my $file = $self->_cache_filename($guid);
         unless (-r $file)
         {
-            $file->spew($self->_get_web_data($uri));
+            $file->spew_utf8($self->_get_web_data($uri));
         }
         return scalar $file->slurp;
     }
