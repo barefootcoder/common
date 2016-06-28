@@ -36,6 +36,9 @@ screen -t sandbox
 screen -t sql
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
+screen -t cetest
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
 screen -t server
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
@@ -48,7 +51,7 @@ screen -t work
 screen -t lib
 	source .screenrc.vctools
 	stuff "vcd method-signatures\015"
-screen -t test
+screen -t ltest
 	source .screenrc.vctools
 	stuff "vcd VCtools\015"
 screen -t vctools
@@ -65,3 +68,10 @@ screen -t tail2
 screen -t tail3
 	stuff "cd $CEROOT\015"
 	stuff "make tail-queue-worker-error-prod\015"
+screen -t mixes
+	stuff "vims mixes\015"
+screen -t mtest
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+screen -t blog
+	stuff "cd docs/blog\015"
