@@ -54,7 +54,9 @@ map <C-Z> :%s/[ 	]\+$//<CR>
 map <C-Z><C-Z> :w<CR>:!vcpatchws -f %<CR>:e!<CR>
 
 " search for the word under the cursor
-nmap <C-_> :set isk=@,_,-,48-57<CR>/\<<C-R><C-W>\><CR>:set isk=@,_,48-57<CR>|				" Ctrl-/
+nmap <C-_> *|																				" Ctrl-/
+" search for the word under the cursor, but restrict to last visual region
+nmap <Esc><C-_> /\%V\<<C-R><C-W>\><CR>|														" Ctrl-Alt-/
 " start search from top of file
 nmap <C-N> 1Gn
 " stop the hideously annoying shift+backspace problem
