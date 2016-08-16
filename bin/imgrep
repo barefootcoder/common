@@ -17,5 +17,65 @@ for who in $@
 do
 	files="$files ~/.purple/logs/*/*/*$who*/*"
 done
-eval grep -Pi $opts "\"$pattern\"" $files																				\
-		| perl -lpe 's{^/(.+?/){6}}{};s{^(.*?)@.*?(/.*?:)}{$1$2};s{\.\d{6}-\d{4}P[SD]T\.txt:}{:};s{^%2b1}{+}'
+perl_prog=$(cat <<'END'
+	use 5.14.0;
+	use warnings;
+	use autodie ':all';
+
+	use Date::Easy;
+
+	my $pattern = shift; $pattern = qr/$pattern/i;
+
+	my (%lines, $curline, $curdate);
+	while ( <> )
+	{
+		if ( /^\(/ )
+		{
+			process();
+			$curline = $_;
+		}
+		elsif ( /^Conversation with/ )
+		{
+			($curdate) = / at (.*?\d{4}) /;
+		}
+		else
+		{
+			$curline .= $_;
+		}
+
+	}
+	process();
+	print foreach
+			#map		{ s/\n{2,}\Z/\n/r }
+			map		{ join(':', @{$lines{$_}}, $_) }
+			sort	{ $lines{$a}->[1] cmp $lines{$b}->[1] }
+					keys %lines;
+
+	sub process
+	{
+		return unless defined $curline;
+		local $_ = $curline;
+		return unless /$pattern/;
+
+		s/^\((.*?)\)//;
+		$1 or die("line: $ARGV:$_");
+		my $timestamp = $1; $timestamp = "$curdate $timestamp" unless $timestamp =~ m|/|;
+		$timestamp = datetime($timestamp)->strftime("%Y/%m/%d %H.%M.%S");
+		if (exists $lines{$_})
+		{
+			$lines{$_} = [ filename($ARGV), $timestamp ] if $timestamp lt $lines{$_}->[1];
+		}
+		else
+		{
+			$lines{$_} = [ filename($ARGV), $timestamp ];
+		}
+	}
+
+	sub filename
+	{
+		shift =~ s|^/(.+?/){6}||r =~ s|^(.*?)@.*?(/.*)|$1$2|r =~ s|\.\d{6}-\d{4}[A-Z]{2}T\.txt$||r;
+	}
+END
+)
+files=$(eval echo $files)
+perl -le "$perl_prog" "$pattern" $files
