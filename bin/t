@@ -35,7 +35,7 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-exit 2 unless getopts("hnaTcpvsAPDRN:m:", $opt);
+exit 2 unless getopts("hnaTcpvsAPDRN:Sm:", $opt);
 $opt->{R} = 1 if $opt->{p};
 
 # help message
@@ -63,6 +63,7 @@ if ($opt->{h})
 	print "                  -Nr: do not run recursively (default: prove -r)\n";
 	print "                  -Nj: do not parallelize tests (default: prove -jN [unless -c or -P])\n";
 	print "                          default N: number of CPU cores + 1\n";
+	print "           -S: skip all commands *before* prove, if any (may cause weird failures)\n";
 	print "           -m: only run a single test method in the specified file\n";
 	print "                  this only works with Test::Class-style tests\n";
 	print "                  you can specify a partial name; if it is ambiguous, it is an error\n";
@@ -205,49 +206,51 @@ if ($opt->{P})
 #
 
 my ($dir, @files);
-my $arg = shift;
-if ($arg)
+if (@ARGV)
 {
-	if ( $arg =~ /\.(t|pm)$/ )
+	foreach my $arg (@ARGV)
 	{
-		@files = ($arg);
-	}
-	else
-	{
-		my ($pkg, @possibles);
-		if ( my $file = identify_perl_module($arg) )
+		if ( $arg =~ /\.(t|pm)$/ )
 		{
-			$pkg = $arg;
-			$dir = file($file)->dir;
+			push @files, $arg;
 		}
-		elsif (-f $arg)
+		else
 		{
-			$pkg = get_pkgname($arg);
-			output_if_debug('got package:', $pkg);
-		}
-		$pkg =~ s/::/-/g if $pkg;
-
-		my @dirs = get_workenv('test_dirs');
-		if (@dirs)
-		{
-			# if we get this far, we're running in a work environment
-			(my $d = $arg) =~ s{::}{/}g;
-			foreach my $t_dir ( @dirs )
+			my ($pkg, @possibles);
+			if ( my $file = identify_perl_module($arg) )
 			{
-				push @possibles, "$WORKDIR/$t_dir/$d/t";
-				push @possibles, "$WORKDIR/$t_dir/$d";
-				push @possibles, "$WORKDIR/$t_dir/$pkg" if $pkg;
+				$pkg = $arg;
+				$dir = file($file)->dir;
 			}
+			elsif (-f $arg)
+			{
+				$pkg = get_pkgname($arg);
+				output_if_debug('got package:', $pkg);
+			}
+			$pkg =~ s/::/-/g if $pkg;
+
+			my @dirs = get_workenv('test_dirs');
+			if (@dirs)
+			{
+				# if we get this far, we're running in a work environment
+				(my $d = $arg) =~ s{::}{/}g;
+				foreach my $t_dir ( @dirs )
+				{
+					push @possibles, "$WORKDIR/$t_dir/$d/t";
+					push @possibles, "$WORKDIR/$t_dir/$d";
+					push @possibles, "$WORKDIR/$t_dir/$pkg" if $pkg;
+				}
+			}
+
+			push @possibles, "$arg/t", $arg;
+			push @possibles, "t/$arg" if $arg and $arg !~ m@^/@;
+			push @possibles, "t/$pkg" if $pkg;
+			@possibles = uniq @possibles;
+			push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
+
+			my $found = find_dest(@possibles);
+			-d $found ? ($dir = $found) : push @files, $found if $found;
 		}
-
-		push @possibles, "$arg/t", $arg;
-		push @possibles, "t/$arg" if $arg and $arg !~ m@^/@;
-		push @possibles, "t/$pkg" if $pkg;
-		@possibles = uniq @possibles;
-		push @possibles, map { dir($dir)->file($_) } @possibles if $dir;
-
-		my $found = find_dest(@possibles);
-		-d $found ? ($dir = $found) : push @files, $found if $found;
 	}
 }
 
@@ -293,7 +296,7 @@ print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n
 
 
 spacer();
-$precommand->() if $precommand;
+run_pre_commands();
 
 my $command;
 if ($opt->{R})
@@ -381,12 +384,12 @@ print_color green => "\nALL TESTS PASSED\n";
 
 if ($opt->{c})
 {
-	my $pretty_arg = prettify_dir($arg);
-	#my $base_arg = fileparse($arg, qr/\..*$/);
-	my ($base_arg) = file($arg)->basename =~ /^(.*)\.?/;
+	my $pretty_arg = join(', ', map { prettify_dir($_) } @files);
+	my $args_re = join('|', map { file($_)->basename =~ /^(.*)\.?/ } @files);
 	print "\n\nResults from Devel::Cover for $pretty_arg:\n\n";
 
-	my $command = "$cover -select $arg -report text $coverdb";
+	my @select_args = map { "+select $_" } @files;
+	my $command = "$cover @select_args -report text $coverdb";
 	print_command_if_debug($command);
 	open(PIPE, "$command 2>&1 |") or die("$0: can't run cover\n");
 	my $section = 0;
@@ -403,7 +406,7 @@ if ($opt->{c})
 
 		if ($section == 2)
 		{
-			print if /$base_arg/ and not /\.t\b/;
+			print if /$args_re/ and not /\.t\b/;
 			next;
 		}
 
@@ -462,6 +465,8 @@ my ($WORKENV, $CURENV);
 sub get_workenv
 {
 	my ($param) = @_;
+	# this is like a poor man's `state`
+	# can't use the real thing because we need this to work on 5.8 as well
 	unless (defined $WORKENV)
 	{
 		$WORKENV =
@@ -473,6 +478,7 @@ sub get_workenv
 			CE		=>	{
 							env_var		=>	[ 'CEROOT' ],
 							test_dirs	=>	[qw< t/lib tlib >],
+							pre_cmd		=>	[ 'database/cetest/build-cetest' ],
 							post_args	=>	[qw< :: --dbconfig utest-main >],
 						},
 		};
@@ -487,8 +493,9 @@ sub get_workenv
 			{
 				if (exists $ENV{$_})
 				{
-					$WORKDIR = $ENV{$_};
+					$WORKDIR = dir($ENV{$_});
 					next unless -d $WORKDIR;
+					next unless $WORKDIR->absolute->contains(".");
 					$CURENV = $env;
 					last;
 				}
@@ -498,7 +505,7 @@ sub get_workenv
 		$CURENV = 0 unless defined $CURENV;								# i.e., false but not undefined
 	}
 
-	return $CURENV ? @{ $WORKENV->{$CURENV}->{$param} } : ();
+	return $CURENV && exists $WORKENV->{$CURENV}->{$param} ? @{ $WORKENV->{$CURENV}->{$param} } : ();
 }
 
 
@@ -623,6 +630,18 @@ sub get_files
 sub spacer
 {
 	print "\n" x 10 unless $opt->{s};
+}
+
+
+sub run_pre_commands
+{
+	return if $opt->{S};
+	$precommand->() if $precommand;
+	foreach ( get_workenv('pre_cmd') )
+	{
+		print_command_if_debug($_, noenv => 1);
+		system $_;
+	}
 }
 
 
