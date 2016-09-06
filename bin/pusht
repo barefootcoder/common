@@ -73,6 +73,22 @@ function send_to_sandbox
 }
 
 
+function copy-to-clipboard
+{
+	if [[ $(hostname) == "vagrant-sandbox" ]]
+	then
+		# I have no idea why this ridiculous dance is necessary.  But, via trial-and-error, this
+		# seems to be the only way to make it work.
+		local tmpfile=/tmp/$$.xhost-xclip
+		"$@" | ssh buddy@10.0.2.2 bash -c "'cat >$tmpfile'"
+		ssh buddy@10.0.2.2 bash -c "'DISPLAY=:0.0 xclip -selection c $tmpfile'" &
+		sleep 5 ; kill %1
+	else
+		"$@" | xclip -selection c
+	fi
+}
+
+
 if [[ $VCTOOLS_SHELL == "proj:$proj" || ( $VCTOOLS_SHELL == "git" && $(pwd) == */proj/rent* ) ]]
 then
 	send_to_sandbox "$1"
@@ -90,16 +106,16 @@ then
 	elif [[ $(pwd) == *personal/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		set -o pipefail
-		blogify "$1" | xclip -selection c
+		copy-to-clipboard blogify "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.trac ]]
 	then
 		set -o pipefail
-		ce_commit_link "$1" | xclip -selection c
+		copy-to-clipboard ce_commit_link "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.md ]]
 	then
-		xclip -selection c "$1"
+		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
 	elif [[ "$1" == xtrack_posts ]]
 	then
@@ -110,11 +126,11 @@ then
 	elif [[ $(realpath "$1") == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
 		set -o pipefail
-		fmt-for-trac "$1" | xclip -selection c
+		copy-to-clipboard fmt-for-trac "$1"
 		echo "copied to X clipboard"
 	elif [[ $1 == *.testing.notes || $(realpath "$1") == */C3V/* || $(basename "$1") == github.reply ]]
 	then
-		xclip -selection c "$1"
+		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
 	elif [[ -x "$1" ]]
 	then
