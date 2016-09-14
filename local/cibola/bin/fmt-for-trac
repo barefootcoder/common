@@ -46,10 +46,10 @@ while (<>)
 	{
 		s/^  (\s*\*\s+)/$1/ and $in_list = 1;							# bullet lists
 		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
-		s/^  // if $in_list and not /^\s+[*#]/;							# continuation of bullet items
+		s/^  // if $in_list and not /^\s+[*#\d]/;						# continuation of bullet items
 
-		s/\*\b(.+?)\*(?=\W)/'''$1'''/g;									# bold
-		s/(^|\W)_(.+?)_(\W|$)/$1''$2''$3/g;								# italics
+		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
+		s{(^|\W)_(.+?)_(\W|$)}{$1//$2//$3}g;							# italics
 		s/\[(.*?)\|(.*?)\]/[$1 $2]/g;									# links
 		s/(#\d)(?!\d)/!$1/g;											# numbered things that aren't tickets
 
