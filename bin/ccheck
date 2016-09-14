@@ -25,7 +25,7 @@ then
 else
 	if realpath "$1" | grep -q blog
 	then
-		blog_wc "$1"
+		blog-wc "$1"
 	elif [[ "$1" == xtrack_posts ]]
 	then
 		scp $1 heroscapers:bin

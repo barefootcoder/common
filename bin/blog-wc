@@ -3,6 +3,9 @@
 use myperl;
 
 
+my %LETTER_SYMBOLS = map { $_ => 1 } qw< v= =v h1. h2. h3. h4. ~~LEFT~~ ~~RIGHT~~ ~~CENTER~~ {img {mix TM >;
+
+
 my $post = slurp;
 my $total = wc($post);
 
@@ -20,6 +23,7 @@ my $in_quotes = $total - $typeline - wc($post);
 # links
 $post =~ s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ $3 // $1 }seg;
 $post =~ s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ $3 // $1 }seg;
+$post =~ s[{img(\d+x\d+)? (.*?)}][]g;
 my $in_links = $total - $typeline - $in_quotes - wc($post);
 
 # footnotes
@@ -30,8 +34,12 @@ my $in_notes = $total - $typeline - $in_quotes - $in_links - wc($post);
 
 # code blocks
 $post =~ s{^\.\n.+?^\.\n}{}smg;
+my $in_code = $total - $typeline - $in_quotes - $in_links - $in_notes - wc($post);
+
+# fine print
+$post =~ s{v=.*?=v}{}sg;
 my $net = wc($post);
-my $in_code = $total - $typeline - $in_quotes - $in_links - $in_notes - $net;
+my $in_fine_print = $total - $typeline - $in_quotes - $in_links - $in_notes - $in_code - $net;
 
 
 report("total words", $total);
@@ -40,12 +48,13 @@ report("- in links", $in_links) if $in_links;
 report("- in blockquotes", $in_quotes) if $in_quotes;
 report("- in footnotes", $in_notes) if $in_notes;
 report("- in code blocks", $in_code) if $in_code;
+report("- in fine print", $in_fine_print) if $in_fine_print;
 report("net words", $net);
 
 
 func wc ($str)
 {
-	return scalar grep { /\w/ } split(/[\s|]+/, $str);
+	return scalar grep { not exists $LETTER_SYMBOLS{$_} } grep { /\w/ } split(/[\s|]+|--/, $str);
 }
 
 func report ($label, $count)
