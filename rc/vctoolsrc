@@ -34,15 +34,11 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vd git diff
 	alias vnew git add -N
 	alias vdel git rm
-	set top_space='echo "\n\n\n\n\n\n\n\n\n"'
-	set filter_line_too_long="perl -pe 's/:.{512,}/:<<LINE TOO LONG!>>/'"
-	set ignore_nytprof='--ignore-file "match:nytprof.*"'
-	set always_ignore="--ignore-dir tmp --ignore-dir extlib --ignore-dir perl5 --ignore-dir var $ignore_nytprof"
-	set code_ignore="$always_ignore --ignore-dir t --ignore-dir tlib --ignore-dir doc"
-	alias vg "$top_space ; ack $always_ignore --match \!* | $filter_line_too_long"
-	alias vgl "$top_space ; ack --perl $code_ignore --match \!* | $filter_line_too_long"
-	alias vgt "$top_space ; ack --match \!* t/ tlib/ | $filter_line_too_long"
-	alias vf "$top_space ; ack $always_ignore -f | ack --match \!*"
+	alias vg  'vgrep -e \!*'
+	alias vgl 'vgrep -Ce \!*'
+	alias vgc 'vgrep -Pe \!*'
+	alias vgt 'vgrep -Te \!*'
+	alias vf  'vgrep -e . | grep -P \!*'
 	alias vlog git-helper-log
 	alias vbranch git-helper-branch
 	alias testclean 'git stash save ; t ; git stash pop'

@@ -1,0 +1,86 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie qw< :all >;
+
+use Path::Tiny;
+use List::AllUtils qw< sum >;
+
+
+opts <<'-';
+	[{ -C | -P | -T }] [-lipD] { -e <regex> | <regex> } [<arg> ...]
+	-C : only look in Perl code
+	-P : only look in deployed (production) Perl code
+	-T : only look in Perl unit test code
+	-l : just list filenames that contain a match
+	-i : case insensitive search
+	-p : try to search Perl statements instead of lines of code
+	-D : debug mode (show `ack' command)
+	-e : next arg is the <regex>, even if it starts with -
+			-C omits t/, tlib/, and doc/
+			-P omits -C dirs + etc/, devtools/, and oneoff/
+			-T includes only t/ and tlib/
+			<arg>(s) are passed through to `ack'
+-
+
+die("can only specify one of: -C, -P, -T") if (sum map { $OPT{$_} // 0 } split(//, 'CPT')) > 1;
+my $CODE_ONLY = $OPT{C} || $OPT{P};
+
+my $regex = $OPT{e} // shift;
+$regex = $OPT{i} ? qr/$regex/i : qr/$regex/;
+my $final_re;
+if ( $OPT{p} )
+{
+	$final_re = $regex =~ s/:/sm:/r;
+	$regex =~ s/\..*\)$/)/;
+	$regex =~ s/[\$^]//g;
+}
+
+# start with stuff we *always* ignore
+my @IGNORE_FILES = qw< match:nytprof.* >;
+my @IGNORE_DIRS  = qw< nytprof tmp extlib perl5 var >;
+# for -T, we'll use these dirs only
+my @TEST_DIRS    = qw< t tlib >;
+# for -C or -P, ignore the -T dirs + doc dirs
+push @IGNORE_DIRS, @TEST_DIRS, qw< doc > if $CODE_ONLY;
+# for -P, also ignore things which don't actually get run on prod regularly
+push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
+
+
+my @ignores  = map {; '--ignore-file', $_ } @IGNORE_FILES;
+push @ignores, map {; '--ignore-dir',  $_ } @IGNORE_DIRS;
+$regex =~ s/'/'\\''/;
+my @cmd = ('ack', @ignores, $CODE_ONLY ? '--perl' : (), '--match', "'$regex'");
+push @cmd, '-l' if $OPT{l} or $OPT{p};
+push @cmd, @TEST_DIRS if $OPT{T};
+push @cmd, @ARGV;
+if ( $OPT{D} )
+{
+	say STDERR "@cmd";
+	say STDERR "    | perl -F/;\\s*\$/ -ne 'print if /$final_re/'" if $OPT{p};
+}
+
+say STDERR '' foreach 1..10;
+
+my $PAGER = $ENV{PAGER} // 'less';
+open OUT, "| $PAGER";
+
+open IN, "@cmd |";
+while ( <IN> )
+{
+	if ( $OPT{p} )
+	{
+		# line will be a filename
+		chomp; my $file = $_;
+		my @matches = grep /$final_re/, split(/;\s*$/m, path($file)->slurp);
+		say OUT $OPT{l} ? $file : join("\n", map { "$file:$_;" } @matches) if @matches;
+	}
+	else
+	{
+		$_ = '<<LINE TOO LONG!>>' if length >= 512;
+		print OUT;
+	}
+}
+eval { close(IN) };
+
+close(OUT);
