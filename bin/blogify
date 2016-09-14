@@ -149,6 +149,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 	}
+	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
 	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
 	s{((^\h*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
@@ -163,7 +164,6 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
 	s{(?<!-)$front_boundary-(.+?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;	# strikethrough
-	s[{img (.*?)}][<img src="$1">]g;												# embedded images
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
@@ -232,7 +232,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 			push @notes, footnote(final => $footnotes[$f], $f) if defined $footnotes[$f];
 		}
 		$_ .= $endnote_header . fmt(small => join('', map { "<p>$_</p>\n" } @notes)) . '</div>';
-		$_ .= '<br>' x 4;
+		$_ .= '<br>' x 10;
 	}
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
@@ -242,6 +242,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\cQ(\d+)}{$blocks[$1]}g;
 	# put BBcode lists items back
 	s{\cL}{[*]}g if bbstyle;
+	# put consecutive dashes back
+	s{\cD(\d+)}{"-"x$1}eg;
 	# handle initial whitespace according to blog type
 	s{\A\s*}{$blog{$blog_type}->{'initial'}};
 	# an initial blockquote needs a bit of extra space
@@ -386,6 +388,7 @@ func diacritic_fixup ($string is alias)
 	{
 		cliche			=>	{ 6 => 'acute', plural => 1, },
 		cafe			=>	{ 4 => 'acute', plural => 1, },
+		risque			=>	{ 6 => 'acute', },
 		voila			=>	{ 5 => 'grave', },
 		'a la'			=>	{ 1 => 'grave', },
 		facade			=>	{ 3 => 'cedil', plural => 1, },
