@@ -1,81 +1,117 @@
-#!/bin/bash
+#!/usr/bin/env perl
 
-while [[ $1 == -* ]]
-do
-	opts="$opts $1"
-	if [[ $1 == "-e" ]]
-	then
-		shift 1
-		break
-	fi
-	shift 1
-done
+use myperl::Script;
+use autodie qw< :all >;
 
-pattern="$1"
-shift 1
-for who in $@
-do
-	files="$files ~/.purple/logs/*/*/*$who*/*"
-done
-perl_prog=$(cat <<'END'
-	use 5.14.0;
-	use warnings;
-	use autodie ':all';
+use Date::Easy;
+use Path::Tiny;
+use List::AllUtils qw< first apply >;
 
-	use Date::Easy;
 
-	my $pattern = shift; $pattern = qr/$pattern/i;
+opts <<'-';
+	[-v] [-t <range>] [-e] text-pattern contact-pattern [...]
+	-v : verbose mode
+	-t : limit results to timestamp <range> (parsed with Date::Easy; flexible separators)
+	-e : introduce <text-pattern> that starts with a `-' (or use `--' instead)
+	all patterns Perl-style regexen
+	<text-pattern> automatically considered case-insensitive
+-
 
-	my (%lines, $curline, $curdate);
-	while ( <> )
+
+my ($start, $end) = validate_date_range($OPT{'t'});
+say "# limiting results to $start through $end" if $start and $OPT{'v'};
+
+my $pattern = $OPT{'e'} // shift // die("must supply pattern!");
+$pattern = qr/$pattern/i;
+my $contact_pattern = join('|', @ARGV);
+
+
+my $start_year = $start ? $start->year : undef;
+my (%lines, $curline, $curdate);
+foreach my $dir (glob("~/.purple/logs/*/*/*"))
+{
+	next unless $dir =~ /$contact_pattern/o;
+	if ($OPT{'v'})
 	{
-		if ( /^\(/ )
-		{
-			process();
-			$curline = $_;
-		}
-		elsif ( /^Conversation with/ )
-		{
-			($curdate) = / at (.*?\d{4}) /;
-		}
-		else
-		{
-			$curline .= $_;
-		}
-
-	}
-	process();
-	print foreach
-			#map		{ s/\n{2,}\Z/\n/r }
-			map		{ join(':', @{$lines{$_}}, $_) }
-			sort	{ $lines{$a}->[1] cmp $lines{$b}->[1] }
-					keys %lines;
-
-	sub process
-	{
-		return unless defined $curline;
-		local $_ = $curline;
-		return unless /$pattern/;
-
-		s/^\((.*?)\)//;
-		$1 or die("line: $ARGV:$_");
-		my $timestamp = $1; $timestamp = "$curdate $timestamp" unless $timestamp =~ m|/|;
-		$timestamp = datetime($timestamp)->strftime("%Y/%m/%d %H.%M.%S");
-		if (exists $lines{$_})
-		{
-			$lines{$_} = [ filename($ARGV), $timestamp ] if $timestamp lt $lines{$_}->[1];
-		}
-		else
-		{
-			$lines{$_} = [ filename($ARGV), $timestamp ];
-		}
+		my @parts = split('/', $dir);
+		my ($contact, $protocol) = @parts[ -1, -3 ];
+		say "# checking $contact (on $protocol)";
 	}
 
-	sub filename
+	foreach my $file (glob("$dir/*"))
 	{
-		shift =~ s|^/(.+?/){6}||r =~ s|^(.*?)@.*?(/.*)|$1$2|r =~ s|\.\d{6}-\d{4}[A-Z]{2}T\.txt$||r;
+		if ($start_year)
+		{
+			next unless $file =~ m{ / $start_year }xo;
+		}
+
+		foreach ( path($file)->lines_utf8 )
+		{
+			if ( /^\(/ )
+			{
+				process($file);
+				$curline = $_;
+			}
+			elsif ( /^Conversation with/ )
+			{
+				($curdate) = / at (.*?\d{4}) /;
+			}
+			else
+			{
+				$curline .= $_;
+			}
+
+		}
+		process($file);
+		print foreach
+				map		{ join(':', @{$lines{$_}}, $_)										}
+				apply	{ $lines{$_}->[1] = $lines{$_}->[1]->strftime("%Y/%m/%d %H.%M.%S")	}
+				sort	{ $lines{$a}->[1] <=> $lines{$b}->[1]								}
+						keys %lines;
+		undef $curline; undef $curdate; %lines = ();
 	}
-END
-)
-files=$(eval echo $files)
-perl -le "$perl_prog" "$pattern" $files
+}
+
+
+sub validate_date_range
+{
+	my $range = shift;
+	return (undef, undef) unless $range;
+	my @SEPARATORS = ( ' - ', '—', '–', '-', '//' );
+
+	my $sep = first { scalar @{[ $range =~ /$_/ ]} == 1 } @SEPARATORS;
+	die("can't figure out how to split your time range into start/end!") unless $sep;
+	return map { datetime($_) } split(/$sep/, $range);
+}
+
+
+sub process
+{
+	return unless defined $curline;
+	local $_ = $curline;
+	return unless /$pattern/;
+	my $file = shift;
+
+	s/^\((.*?)\)//;
+	$1 or die("line: $file:$_");
+	my $timestamp = $1; $timestamp = "$curdate $timestamp" unless $timestamp =~ m|/|;
+	$timestamp = datetime($timestamp);
+	if ($start)
+	{
+		return unless $timestamp >= $start and $timestamp <= $end;
+	}
+	if (exists $lines{$_})
+	{
+		$lines{$_} = [ filename($file), $timestamp ] if $timestamp < $lines{$_}->[1];
+	}
+	else
+	{
+		$lines{$_} = [ filename($file), $timestamp ];
+	}
+}
+
+
+sub filename
+{
+	shift =~ s|^/(.+?/){6}||r =~ s|^(.*?)@.*?(/.*)|$1$2|r =~ s|\.\d{6}-\d{4}[A-Z]{2}T\.txt$||r;
+}
