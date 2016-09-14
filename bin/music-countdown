@@ -3,9 +3,17 @@
 volume=1
 if [[ $1 == "--alarm" ]]
 then
-	volume=42
+	volume=22
 	shift
 fi
 
 bin/decibel-volume set $volume
 python /usr/share/decibel-audio-player/src/remote.py pl-set /home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
+for i in {1..9}
+do
+    sleep 300
+	for j in $(seq 1 $(( ($i + 1) / 2 )) )
+	do
+		bin/decibel-volume up
+	done
+done
