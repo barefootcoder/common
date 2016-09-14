@@ -17,6 +17,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vpush vc push
 	alias stg vc stage
 	alias istg git add -i
+	alias stg-amend 'vc amend-local'
 	alias unstage vc unstage
 	alias commit vc commit
 	alias unget vc unget
