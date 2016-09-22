@@ -1,4 +1,12 @@
 #! /usr/bin/perl
+# not using perlbrewed Perl above because I can't get ImageMagick installed on it,
+# for whatever reason
+# for a fresh machine, try this (as root):
+#	# apt-get install libyaml-perl perlmagick libexperimental-perl
+#	# cpan
+#	> install cpan
+#	> reload cpan
+#	> install Date::Easy
 
 use 5.14.0;
 use warnings;
