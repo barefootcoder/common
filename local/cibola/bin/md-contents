@@ -1,10 +1,1 @@
-#! /usr/bin/env perl
-
-use myperl ONLY => [qw< >];
-use autodie;
-
-while ( <> )
-{
-	s{^ ( \h* \* \h* ) ( [^\[] .*? ) $}{ $1 . "[$2](#" . lc($2) =~ s/ /-/gr =~ s/[^\w-]//gr . ")" }xe;
-	print;
-}
+../sandbox-bin/md-contents
