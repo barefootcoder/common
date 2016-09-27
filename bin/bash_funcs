@@ -17,7 +17,8 @@ readonly me=${0##*/}													# slightly prettier than $0
 
 
 # I hate that I can't just use an alias here ...
-function vc { ~/proj/VCtools/bin/vc "$@" ; }							# in case we need to get to vc
+eval $(grep VCtoolsDir ~/.vctools/vctools.conf)
+function vc { $VCtoolsDir/bin/vc "$@" ; }								# in case we need to get to vc
 
 
 # pseudo-aliases
