@@ -23,4 +23,4 @@ else
 fi
 myterm -s Cibola cityofgold 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
-myterm -s Jade Jade-Agate-Texture 125x50-0+59 $CEROOT/devtools/cessh jade
+#myterm -s Jade Jade-Agate-Texture 125x50-0+59 $CEROOT/devtools/cessh jade
