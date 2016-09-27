@@ -1,4 +1,10 @@
 #! /bin/bash
+. ~/bin/bash_funcs
+
+if [[ $(get_location) == "work" ]]
+then
+	die "will not play music at work"
+fi
 
 volume=1
 if [[ $1 == "--alarm" ]]

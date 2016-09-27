@@ -71,3 +71,15 @@ function yn
 		return 1
 	fi
 }
+
+
+function get_location
+{
+	if ping -c1 -w1 10.106.0.6 >&/dev/null || ping -c1 -w1 10.106.0.7 >&/dev/null
+	then
+		echo "work"
+	else
+		# assume "not work" == "home" until we figure out a way to better determine it
+		echo "home"
+	fi
+}
