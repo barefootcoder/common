@@ -6,16 +6,31 @@ use warnings FATAL => 'all';
 
 use Debuggit DEBUG => 1;
 use Path::Class;
-use List::Util qw< max >;
+use List::AllUtils qw< max zip pairmap >;
 
 
 my $MODES =
 {
-	'mix-stats'		=>	{
-							end_of_block	=>	\&gather_stats,
-							block_line		=>	\&check_for_blogged,
-							end_of_file		=>	\&print_mix_summary,
-						},
+	'mix-list'			=>	{
+								end_of_block	=>	\&gather_names,
+								block_line		=>	sub {},
+								end_of_file		=>	\&print_mix_names,
+							},
+	'check-spectrum'	=>	{
+								end_of_block	=>	\&gather_names,
+								block_line		=>	sub {},
+								end_of_file		=>	\&compare_spectrum,
+							},
+	'print-spectrum'	=>	{
+								end_of_block	=>	sub {},
+								block_line		=>	sub {},
+								end_of_file		=>	\&print_spectrum,
+							},
+	'mix-stats'			=>	{
+								end_of_block	=>	\&gather_stats,
+								block_line		=>	\&check_for_blogged,
+								end_of_file		=>	\&print_mix_summary,
+							},
 };
 
 my $mode = shift;
@@ -27,6 +42,8 @@ say "going to load file $file";
 
 my %header;
 my $in_header = 0;
+my @spectrum;
+my $in_spectrum = 0;
 foreach ( $file->slurp )
 {
 	chomp;
@@ -35,7 +52,7 @@ foreach ( $file->slurp )
 		given ($_)
 		{
 			next						when '';						# blank line
-			$header{volume} = $_		when /^[A-Z]/;					# mix name and volume
+			$header{volume} = $_		when /^[A-Z\d][a-z\d][^\t]+$/;	# mix name and volume
 			$header{subtitle} = $_		when /^\[.*\]\??$/;				# volume subtitle
 			$header{stats} = $1			when /^\{(.*)\}/;				# statistics
 			$in_header = 0				when /^[=-]{3,}$/;				# end of header
@@ -56,6 +73,16 @@ foreach ( $file->slurp )
 		reset_header();
 		$in_header = 1;
 	}
+	elsif ( /^Spectrum/ )
+	{
+		$in_spectrum = 1;
+	}
+	elsif ($in_spectrum)
+	{
+		$in_spectrum = 0, next if /^[-]{5,}$/;
+		chomp;
+		push @spectrum, $_ if s/^\t\t//;
+	}
 	else
 	{
 		$process->{block_line}->();
@@ -75,11 +102,87 @@ sub reset_header
 }
 
 
+my (@mixes, %seen, $blogged);
+# this is taken from `blogify`, whence it was stolen from elsewhere (on the Internet)
+my $roman_numeral; BEGIN { $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/; }
+
+
+##################
+# mix-names      #
+# check-spectrum #
+##################
+
+sub gather_names
+{
+	if ( $header{volume} )
+	{
+		my $mix = $header{volume} =~ s/\s+ $roman_numeral $//xr;
+		push @mixes, $mix unless $seen{$mix}++;
+	}
+}
+
+sub print_mix_names
+{
+	say foreach sort @mixes;
+}
+
+sub compare_spectrum
+{
+	my %exclude  = map { $_ => 1 } ("Random's Mix", "Perrin's Mix", "Mother's Day", "In Search of ...");
+	my %spectrum = map { $_ => 1 } @spectrum;
+	my @leftovers;
+	$spectrum{$_} ? delete $spectrum{$_} : push @leftovers, $_ foreach grep { not $exclude{$_} } @mixes;
+	if (keys %spectrum)
+	{
+		say "IN SPECTRUM BUT NO MIX:";
+		say "    $_" foreach sort keys %spectrum;
+	}
+	if (@mixes)
+	{
+		say "MIX NOT IN SPECTRUM:";
+		say "    $_" foreach sort @leftovers;
+	}
+}
+
+##################
+# print-spectrum #
+##################
+
+sub _print_cols
+{
+	my ($indent, $left, $right) = @_;
+	my $line = '';
+	$_ = ' ' x ($indent * 4) . $_ foreach ($left, $right);
+	$line .= $left;
+	$line .= ' ' x (55 - length($left));
+	$line .= $right;
+	say $line;
+}
+
+sub print_spectrum
+{
+	my $list_is_odd = @spectrum % 2;
+	my $col_height = int(@spectrum / 2) + $list_is_odd;
+	my $list_height = $col_height + 5;
+	my $spacer_lines = int((48 - $list_height) / 2);
+	my @left = @spectrum[0..($col_height-1)];
+	my @right = @spectrum[$col_height..$#spectrum];
+	unshift @right, '' if $list_is_odd;
+	die("calculation error") unless @left == @right;
+
+	print "\n" x $spacer_lines;
+	say '-' x 100;
+	say "Spectrum of Mixes:";
+	_print_cols( 1 => '[upbeat]', '...' );
+	pairmap { _print_cols( 2 => $a, $b ) } zip @left, @right;
+	_print_cols( 1 => '...', '[downbeat]' );
+	say '-' x 100;
+	print "\n" x $spacer_lines;
+}
+
 #############
 # mix-stats #
 #############
-
-my (@mixes, $blogged);
 
 sub gather_stats
 {
