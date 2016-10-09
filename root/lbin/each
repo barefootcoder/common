@@ -77,10 +77,11 @@ sub run_command ()
 		($cfile, $dir) = fileparse($file);
 		chdir $dir;
 	}
+	$cfile =~ s/([ *?[<>|&;\$'"`({!#\\])/\\$1/g;
 
 	my $run_file = $command;
 	$run_file =~ s/\\\{\}/\cC\0/g;
-	$run_file =~ s/\{\}/"$cfile"/g;
+	$run_file =~ s/\{\}/$cfile/g;
 	$run_file =~ s/\cC\0/{}/g;
 	print STDERR "$run_file\n" if $opt->{D};
 
