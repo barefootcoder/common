@@ -129,6 +129,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
 		s{(\W)'em\b}{$1&rsquo;em}g;													# ditto
+		s{\b'n'\b}{&rsquo;n&rsquo;}g;												# two apostrophes, even
 		s{'$back_boundary}{&rsquo;}g;												# close single quote
 		s{$front_boundary'}{$1&lsquo;}g;											# open single quote
 		s{"$back_boundary}{&rdquo;}g;												# close double quote
@@ -163,7 +164,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
-	s{(?<!-)$front_boundary-(.+?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;	# strikethrough
+	s{(?<!-)$front_boundary-(\S.*?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;# strikethrough
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
@@ -403,6 +404,7 @@ func diacritic_fixup ($string is alias)
 		'Ingy dot Net'	=>	{ 7 => 'uml',   },
 		'Gabor'			=>	{ 2 => 'acute', },
 		'Szabo'			=>	{ 5 => 'acute', },
+		'Faerun'		=>	{ 5 => 'circ', },
 	};
 	my $PRE = qr/(^|[^\w\\]|_)/;
 	my $POST = qr/(?=_|\W|$)/;
