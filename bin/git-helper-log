@@ -70,7 +70,7 @@ function all_unpushed
 	# that's why the regex is a bit more complex than you might imagine.
 	curbranch=$(current_branch)
 	git log --branches="$curbranch*" --not --remotes --pretty="%h %d"											\
-			| perl -lane '$in = m{[ (]'$curbranch'\)} if $F[1]; print $F[0] if $in'
+			| perl -lane '$in = m{[ (]'$curbranch'[,)]} if $F[1]; print $F[0] if $in'
 }
 
 cmd="log"
