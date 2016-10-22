@@ -31,6 +31,7 @@ my %WEIGHTS =
 							':'		=>	1,
 							'V'		=>	1,
 							'*'		=>	1,
+							'~'		=>	.6,
 							'?'		=>	.4,
 						},
 );
@@ -49,7 +50,7 @@ while ( <> )
 		given ($_)
 		{
 			$volume = $_		when /^[A-Z8]/;		# mix name and volume
-			$subtitle = $_		when /^\[.*\]\??$/;	# volume subtitle
+			$subtitle = $_		when /^\[.*?\]\??/;	# volume subtitle
 			''					when /^\{/;			# old statistics; throw these away
 			$in_header = 0		when /^===/;		# end of header
 			# otherwise:
