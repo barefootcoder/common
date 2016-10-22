@@ -1,0 +1,6 @@
+#! /bin/bash
+
+# quick script to kill mate if it goes crazy
+# (symptoms: high CPU load, keyboard not responding and/or exhibits "stuck key syndrome")
+# this should restart itself once killed
+killall mate-settings-daemon
