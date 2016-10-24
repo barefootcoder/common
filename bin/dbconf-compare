@@ -1,6 +1,13 @@
 #! /bin/bash -e
 . ~/bin/bash_funcs
 
+mode=diff
+if [[ $1 == "--save" ]]
+then
+	mode=save
+	shift
+fi
+
 swapfile="$1"
 origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print join("/", $1//".", $2)' "$swapfile")"
 if [[ -z $origfile ]]
@@ -17,4 +24,20 @@ trap "/bin/rm -rf $tmpdir" EXIT
 cd $tmpdir
 touch "$base"
 vim -r "$base" +'w "$tmpdir/$base"' +q >/dev/null 2>&1
-diff "$tmpdir/$base" "$origfile" | ${PAGER:-less}
+
+if [[ $mode == "diff" ]]
+then
+	diff "$tmpdir/$base" "$origfile" | ${PAGER:-less}
+elif [[ $mode == "save" ]]
+then
+	arcdir=$(dirname "$origfile")/archive
+	mkdir -p $arcdir
+	arcfile="$arcdir/$base.$(perl -e 'shift =~ m|copy (\d{4}-\d{2}-\d{2})\)| and print $1 =~ s/-//gr' "$swapfile")"
+	[[ -e $arcfile ]] && die "can't save to $arcfile; already exists"
+	mv "$tmpdir/$base" "$arcfile"
+	echo "saved to $arcfile"
+	echo "you may wish to:"
+	echo "    rm \"$swapfile\""
+else
+	die "unknown mode: $mode"
+fi
