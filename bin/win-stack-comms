@@ -54,7 +54,7 @@ then
 	pidgin_restore
 fi
 
-for win in team leadops lambda technology offtopic qa "$ThunderbirdWindow"
+for win in team leadops lambda technology offtopic push-songs qa "$ThunderbirdWindow"
 do
 	# using anchors to enforce no partial matching of window titles
 	# this mostly seems to limit it to only finding Pidgin windows
