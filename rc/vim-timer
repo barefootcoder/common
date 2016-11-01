@@ -1,5 +1,6 @@
 :se nocompatible
 :se undolevels=1000
+:map g G
 :nmap Y y$
 :map  :files<CR>
 :map % :w<CR>:!fake_timerchk %<CR>
@@ -21,7 +22,7 @@
 :map <C-D><C-W> :w<CR>^:!fake_timer daybreak 'last friday' %<CR>
 :map <C-D><C-R> :w<CR>^:!fake_timer review <cword> %<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
-:let g:timer="default"
+:let g:timer="email"
 :function! GetTimer()
 :	call inputsave()
 :	let g:timer=input("Timer to search for:")
