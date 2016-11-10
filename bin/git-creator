@@ -1,7 +1,7 @@
 #! /bin/bash
 . ~/bin/bash_funcs
 
-while getopts ":tu:" opt
+while getopts ":tu:h" opt
 do
 	case $opt in
 		u)	user=$OPTARG
@@ -33,6 +33,7 @@ if [[ $user ]]
 then
 	files=$(echo "$files" | each -l 'git log -1 --format=format:%aN `echo {} | cut -d: -f2` | grep -Pi "'"$user"'"')
 fi
+[[ $files ]] || exit
 
 if [[ $times ]]
 then
