@@ -9,9 +9,10 @@ const my $AVAIL => ':AVAILABILITY';
 
 
 opts <<'-';
-	[-av] [-w <num>] <command> <cmd_arg> file [...]
+	[-avD] [-w <num>] <command> <cmd_arg> file [...]
 	-a : operate on all weeks (default: only the latest/first one found)
 	-v : be more verbose (currently only works with `review' command)
+	-D : debug mode (implies -v)
 	-w : operate on <num> weeks ago (1 == current week--default)
 	commands (and what <cmd_arg> represents) are:
 	*  start <timer>     : start the given timer
@@ -23,6 +24,7 @@ opts <<'-';
 	*  daybreak <date>   : show all the chunks for a given date
 	*  review <prefix>   : total of timers by ticket (all weeks) where timer has a ticket and name begins with <prefix>
 -
+$OPT{v} = 1 if $OPT{D};
 
 my $cmd = shift;
 my $arg = shift;
@@ -48,6 +50,7 @@ my (%totals, @daybreak, %review, @mondays);
 my $processed_labels = 0;
 while ( <> )
 {
+	warn("# LINE => $_") if $OPT{D};
 	if (/^\s*$/)
 	{
 		if ( $processed_labels )

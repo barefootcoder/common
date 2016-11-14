@@ -1,56 +1,100 @@
 #! /usr/bin/env perl
 
-use myperl DEBUG => 1;
+use myperl::Script DEBUG => 1;
+use autodie qw< :all >;
 
 use Getopt::Std;
 
 
-my $opts = {};
-getopts('vb', $opts);
+sub process_timer($@);
+
+
+opts <<'-';
+	[-v] [-b] <ticket> <file> [...]
+	-v : verbose mode
+	-b : breakdown timers
+	<ticket> ticket number (Jira or Trac)
+	<file> timer file(s)
+-
 
 my $ticket = shift;
 die("don't recoginze Jira/Trac ticket num: $ticket")
 		unless $ticket =~ /^[[:upper:]]{2,3}-\d{1,5}$/ or $ticket =~ /^\d{4,5}$/;;
 
+die("must specify timer file(s)") unless @ARGV;
+
 
 my $pipe_opened = 0;
-my @comments;
-for my $file (@ARGV)
+foreach my $file (@ARGV)
 {
 	my @file = slurp $file;
-	my @lines = grep { /$ticket$/ } @file;
-	my %seen;
+	shift @file if $file[0] =~ /^$/;
 
-	foreach (@lines)
+	my $week = 1;
+	my $newlines = 0;
+	my (@current, @timers, @comments);
+	foreach (@file)
 	{
-		my ($timer) = /^([\w-]+):/;
-		die("can't determine timer from line: $_") unless $timer;
-		next if $seen{$timer}++;
-		push @comments, $_;
-
-		unless ($pipe_opened)
+		if ( /^$/ )
 		{
-			my $cmd = "fake_timer total $timer";
-			debuggit(2 => "about to run:", $cmd);
-			open(PIPE, "| $cmd") or die("can't fork");
-			say PIPE '';
-			$pipe_opened = 1;
+			++$newlines;
+			if ($newlines == 1)
+			{
+				@timers = @current;
+			}
+			elsif ($newlines == 2)
+			{
+				@comments = @current;
+				PROCESS:
+				{
+					my $timer_re = join('|', map { /^([\w-]+):/ }  grep { /\t$ticket(\t|$)/ } @comments);
+					process_timer $file, $week => grep { /^($timer_re)\t/ } @timers;
+				}
+				$newlines = 0;
+				++$week;
+				@current = ();
+			}
 		}
-
-		print "$file: $_" if $opts->{v};
-		print map { "$file: $_" } `fake_timer -a breakdown $timer $file` if $opts->{b};
-		print PIPE map { s/$/\t$ticket/; $_ } grep { /^$timer\t/ } @file;
+		else
+		{
+			push @current, $_;
+		}
 	}
 }
 
 if ($pipe_opened)
 {
 	say PIPE '';
-	print PIPE @comments;
+	say PIPE "foo:\tbar";		# doesn't really matter what you put here
 	say PIPE '';
 	close(PIPE);
 }
 else
 {
 	die("no timers matching ticket $ticket found\n");
+}
+
+
+sub process_timer ($@)
+{
+	my $file = shift;
+	my $week = shift;
+
+	foreach (@_)
+	{
+		my ($timer) = /^(.+?)\t/ or die("can't determine timer from line: $_");
+
+		unless ($pipe_opened)
+		{
+			my $cmd = "fake_timer total $timer";
+			debuggit(2 => "about to run:", $cmd);
+			open(PIPE, "| $cmd");
+			say PIPE '';
+			$pipe_opened = 1;
+		}
+
+		print "$file: $_" if $OPT{'v'};
+		print map { "$file: $_" } `fake_timer -w$week breakdown $timer $file` if $OPT{'b'};
+		print PIPE s/$/\t$ticket/r;
+	}
 }
