@@ -57,6 +57,7 @@ sub opts ($)
 		else										# not an option; increment pos
 		{
 			++$block_pos;
+			++$block_pos unless $block_pos;			# can't be 0 (an option line)
 		}
 
 		if ( $block_pos == -1 )						# first line is usage line

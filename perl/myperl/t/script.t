@@ -77,6 +77,18 @@ OUT
 -
 END
 
+perl_output_is( "proper help message even w/o options", <<OUT, <<'END', qw< -h > );
+usage: <one-liner> -h | <thingy>
+           -h : this help message
+       <thingy> : a thing
+OUT
+	use myperl::Script;
+	opts <<"-";
+		<thingy>
+		<thingy> : a thing
+-
+END
+
 perl_error_is( "provides proper usage_error function", <<OUT, <<'END');
 <one-liner>: aww crap ... (<one-liner> -h for help)
 OUT
