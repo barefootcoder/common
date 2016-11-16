@@ -2,7 +2,7 @@
 
 use myperl::Script;
 
-use Time::ParseDate qw<parsedate>;
+use Date::Easy;
 use List::Util qw< minstr maxstr >;
 
 const my $AVAIL => ':AVAILABILITY';
@@ -31,7 +31,7 @@ my $arg = shift;
 my ($tname, $today, $prefix);
 if ($cmd eq 'eod' or $cmd eq 'daybreak')
 {
-	$today = $arg // get_date(time());
+	$today = date($arg // today)->strftime('%Y/%m/%d');
 }
 elsif ($cmd eq 'review')
 {
@@ -44,7 +44,6 @@ else
 
 my ($group_found, $timer_found, $avail_found) = (0,0,0);
 my ($in_week, $cur_week) = (0,0);
-$today = time2str('%Y/%m/%d', scalar parsedate($today)) if $today;
 my (%totals, @daybreak, %review, @mondays);
 
 my $processed_labels = 0;
@@ -233,7 +232,7 @@ if ($cmd eq 'total' and $OPT{a})
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
 	debuggit(3 => "mondays:", DUMP => \@mondays);
-	my @mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { str2time($_) } @mondays;
+	my @mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { datetime($_) } @mondays;
 	for (1..$#mondays)
 	{
 		foreach ( ($mondays[$_-1] + 1)..($mondays[$_] - 1) )
@@ -241,7 +240,7 @@ if ($cmd eq 'total' and $OPT{a})
 			# the beginning of the epoch was a Thursday ... in England
 			# in the U.S., it was still Wednesday
 			# so, to get a Monday, we have to add 5 days
-			my $date = time2str("%m/%d/%Y", $_ * $WEEK + $DAY * 5);
+			my $date =  ($_ * $WEEK + $DAY * 5)->strftime("%m/%d/%Y");
 			say STDERR "Missing week: $date";
 		}
 	}
@@ -251,10 +250,11 @@ if ($cmd eq 'total' and $OPT{a})
 sub get_date
 {
 	my ($time) = @_;
+	$time //= now;
 	debuggit(4 => "get_date: got time", $time);
 
 	# times before 6am are considered "yesterday", so just subtract 6 hours from the actual time
-	return time2str("%Y/%m/%d", $time - 60 * 60 * 6);
+	return datetime($time - 60 * 60 * 6)->strftime("%Y/%m/%d");
 }
 
 
@@ -264,7 +264,7 @@ sub date_range
 	debuggit(4 => "date_range: got chunk", $chunks);
 
 	$chunks =~ m{^(?:2/)?(\d+).*-(?:(\d+),?)?$};
-	return (get_date($1), get_date($2 || time()));
+	return (get_date($1), get_date($2));
 }
 
 
