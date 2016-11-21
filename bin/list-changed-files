@@ -1,0 +1,31 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie qw< :all >;
+
+
+opts <<'-';
+	[-D] [-I <regex>] [commit ...]
+	-D : ignore deleted files (files which no longer exist)
+	-I : ignore paths that match Perl-style <regex>
+	reads commits from args or STDIN
+	reports all files changed by one or more commits
+-
+
+my @commits = @ARGV ? @ARGV : <STDIN>;
+chomp @commits;
+
+my @files;
+open(IN, "git show --pretty='' --stat=1000 @commits |");
+while ( <IN> )
+{
+	chomp;
+	s/^ //;
+	if ( s/\s+\|\s+.*$// )
+	{
+		push @files, $_;
+	}
+}
+close(IN);
+
+say foreach sort grep { $OPT{D} ? -f : 1 } grep { $OPT{I} ? !m{$OPT{I}} : 1 } uniq @files;
