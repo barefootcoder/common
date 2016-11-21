@@ -8,23 +8,26 @@ use List::AllUtils qw< sum >;
 
 
 opts <<'-';
-	[{ -C | -P | -T }] [-lipD] { -e <regex> | <regex> } [<arg> ...]
-	-C : only look in Perl code
-	-P : only look in deployed (production) Perl code
-	-T : only look in Perl unit test code
-	-l : just list filenames that contain a match
-	-i : case insensitive search
-	-p : try to search Perl statements instead of lines of code
-	-D : debug mode (show `ack' command)
-	-e : next arg is the <regex>, even if it starts with -
-			-C omits t/, tlib/, and doc/
-			-P omits -C dirs + etc/, devtools/, and oneoff/
-			-T includes only t/ and tlib/
-			<arg>(s) are passed through to `ack'
+	[{ -C | -E | -P | -T }] [-lipD] { -e <regex> | <regex> } [<arg> ...]
+		-C : only look in Perl code
+		-E : look in all executable code
+		-P : only look in deployed (production) Perl code
+		-T : only look in Perl unit test code
+		-l : just list filenames that contain a match
+		-i : case insensitive search
+		-p : try to search Perl statements instead of lines of code
+		-D : debug mode (show `ack' command)
+		-e : next arg is the <regex>, even if it starts with -
+	<arg>(s) are passed through to `ack'
+	-C and -E omit t/, tlib/, and doc/
+	-P omits -C/-E dirs + etc/, devtools/, and oneoff/
+	-T includes only t/ and tlib/
+	default: look in all files and directories
 -
 
 die("can only specify one of: -C, -P, -T") if (sum map { $OPT{$_} // 0 } split(//, 'CPT')) > 1;
-my $CODE_ONLY = $OPT{C} || $OPT{P};
+my $CODE_ONLY = $OPT{C} || $OPT{E} || $OPT{P};
+my $PERL_ONLY = $OPT{C} || $OPT{P};
 
 my $regex = $OPT{e} // shift;
 $regex = $OPT{i} ? qr/$regex/i : qr/$regex/;
@@ -50,7 +53,7 @@ push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
 my @ignores  = map {; '--ignore-file', $_ } @IGNORE_FILES;
 push @ignores, map {; '--ignore-dir',  $_ } @IGNORE_DIRS;
 $regex =~ s/'/'\\''/;
-my @cmd = ('ack', @ignores, $CODE_ONLY ? '--perl' : (), '--match', "'$regex'");
+my @cmd = ('ack', @ignores, $PERL_ONLY ? '--perl' : (), '--match', "'$regex'");
 push @cmd, '-l' if $OPT{l} or $OPT{p};
 push @cmd, @TEST_DIRS if $OPT{T};
 push @cmd, @ARGV;
@@ -63,7 +66,14 @@ if ( $OPT{D} )
 say STDERR '' foreach 1..10;
 
 my $PAGER = $ENV{PAGER} // 'less';
-open OUT, "| $PAGER";
+if (-t STDOUT)
+{
+	open OUT, "| $PAGER";
+}
+else
+{
+	open OUT, '>&', \*STDOUT;
+}
 
 open IN, "@cmd |";
 while ( <IN> )
@@ -77,7 +87,7 @@ while ( <IN> )
 	}
 	else
 	{
-		$_ = '<<LINE TOO LONG!>>' if length >= 512;
+		$_ =~ s/:.*$/:<<LINE TOO LONG!>>/ if length >= 512;
 		print OUT;
 	}
 }
