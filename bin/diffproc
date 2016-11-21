@@ -4,7 +4,7 @@ readonly ME=${0##*/}													# slightly prettier than $0
 
 get=cat
 stdin=STDIN
-while getopts ":sibch" opt
+while getopts ":sibcI:O:h" opt
 do
 	case $opt in
 		s)	sort=1
@@ -18,11 +18,17 @@ do
 		c)	diffopts="u$diffopts"
 			context=1
 			;;
-		h)	echo "usage: somecmd | $ME [-sibch] 'command [args]'" >&2
+		I)	input_label=$OPTARG
+			;;
+		O)	output_label=$OPTARG
+			;;
+		h)	echo "usage: somecmd | $ME [-sibch] [-I label] [-O label] 'command [args]'" >&2
 			echo "    -s : sort both streams before diff'ing" >&2
 			echo "    -i : ignore case (i.e. diff -i)" >&2
 			echo "    -b : ignore whitespace (i.e. diff -bB)" >&2
 			echo "    -c : context diff (i.e. diff -u)" >&2
+			echo "    -I : use this for input label (default: 'STDIN')" >&2
+			echo "    -O : use this for output label (default: full command line)" >&2
 			echo "    -h : this help message" >&2
 			echo "  diffs STDIN (somecmd) against cmd arg ('command [args]')" >&2
 			echo "  STDIN is < (or -), cmd arg is > (or +) in diff output" >&2
@@ -45,9 +51,11 @@ cmd="$1"
 [[ $sort ]] && cmd="$cmd | sort"
 
 
+: ${input_label:=$stdin}
+: ${output_label:=$cmd}
 if [[ ! $context ]]
 then
-	echo "< $stdin"
-	echo "> $cmd"
+	echo "< $input_label"
+	echo "> $output_label"
 fi
-diff $diffopts --label "$stdin" --label "$cmd" <(eval $get) <(eval $cmd)
+diff $diffopts --label "$input_label" --label "$output_label" <(eval $get) <(eval "$cmd")
