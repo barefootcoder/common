@@ -25,16 +25,20 @@ function do_git
 }
 
 
-function Mainline
+function vc
 {
 	eval "local $(grep VCtoolsDir ~/.vctools/vctools.conf)"
-	$VCtoolsDir/bin/vc info %Mainline
+	$VCtoolsDir/bin/vc "$@"
+}
+
+function Mainline
+{
+	vc info %Mainline
 }
 
 function current_branch
 {
-	eval "local $(grep VCtoolsDir ~/.vctools/vctools.conf)"
-	branch=$($VCtoolsDir/bin/vc info %cur_branch)
+	branch=$(vc info %cur_branch)
 	if [[ $branch == "HEAD" ]]
 	then
 		echo "$me: can't show branch logs with a detached HEAD" >&2
@@ -56,21 +60,7 @@ function branched_from
 
 function all_unpushed
 {
-	# This method for finding unpushed commits based on:
-	# http://stackoverflow.com/questions/2016901/viewing-unpushed-git-commits
-	#
-	# Unfortunately, limiting it to only the current branch turned out to be non-trivial. :-/
-	# You can give `--branches` an arg, but it either has to contain a wildcard, or it gets "/*"
-	# appended to it automatically, which makes it match nothing.  So we *have* to add the "*" at
-	# the end, at which point it matches.  Unfortunately, it would also match any other branch name
-	# that was the same as the current branch name, only longer.  For instance, if you were on
-	# branch feature/foo, this would match feature/foo, but also feature/foo-bar.  Which we don't
-	# want.  So we apply a bit of Perl magic at the end to make sure we only get the branch we're
-	# looking for.  Note that "%d" produces either "(feature/foo)" *or* "(HEAD -> feature/foo)", so
-	# that's why the regex is a bit more complex than you might imagine.
-	curbranch=$(current_branch)
-	git log --branches="$curbranch*" --not --remotes --pretty="%h %d"											\
-			| perl -lane '$in = m{[ (]'$curbranch'[,)]} if $F[1]; print $F[0] if $in'
+	vc info %local_commits
 }
 
 cmd="log"
