@@ -26,6 +26,7 @@ my %blog =
 						strike		=>	's',
 						big			=>	'span style="font-size: larger;"',
 						small		=>	'span style="font-size: smaller;"',
+						smallcap	=>	'span style="font-variant: small-caps;"',
 						quote		=>	'blockquote',
 						center		=>	'div align=center',
 						code		=>	'code',
@@ -61,8 +62,8 @@ my %blog =
 						code		=>	'code',
 						collapsed	=>	'spoiler',
 						dialog		=>	'code',
-						dash		=>	'--',
-						ndash		=>	'-',
+						dash		=>	'—',
+						ndash		=>	'–',
 						initial		=>	'',
 					},
 );
@@ -80,7 +81,7 @@ my @footnotes = (undef);												# footnotes (starting at 1)
 my $footnote_style = '*';												# default style for footnotes
 my $me = '';															# URL to self (mostly not needed)
 my $subtitle = '';														# first line of post (also mostly not needed)
-my $subtitle_type;														# one of: alt, vol
+my $subtitle_type;														# one of: alt, vol, or paren
 
 
 my $hash = '#';
@@ -121,11 +122,11 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{u`}{&uacute;}g;																# generalized u accute
 	diacritic_fixup($_);															# lots of words/names w/ accents
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
-	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
-	s{\b1/([234])\b}{&frac1$1;}g;													# stand-alone fractions
-	s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;						# a Monty Python quote, preserving case
 	unless ($blog_type eq 'bbcode')
 	{
+		s{(\d) 1/2}{$1&frac12;}g;													# number + one half
+		s{\b1/([234])\b}{&frac1$1;}g;												# stand-alone fractions
+		s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;					# a Monty Python quote, preserving case
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
 		s{(\W)'em\b}{$1&rsquo;em}g;													# ditto
@@ -149,9 +150,10 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
+		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
 	}
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
-	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
+	s{--}{$blog{$blog_type}->{dash}<wbr/>}g;										# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
 	s{((^\h*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
 	s{((^\h*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
@@ -250,7 +252,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	# an initial blockquote needs a bit of extra space
 	s{\A(\s*[[<]$blog{$blog_type}->{'quote'})}{\n$1};
 	# handle subtitle, if any (goes in front of initial)
-	s{\A}{fmt(italic => { alt => "or, $subtitle", vol => qq{"$subtitle"}, }->{$subtitle_type}) . "\n"}e if $subtitle;
+	s{\A}{fmt(italic =>
+			{ alt => "or, $subtitle", vol => qq{"$subtitle"}, paren => "($subtitle)", }->{$subtitle_type}) . "\n"}e
+		if $subtitle;
 
 	print;
 }
@@ -266,7 +270,8 @@ func change_type ($type, $extra)
 	$me = get_blog($1) if $extra =~ /\[(.*?)]/;
 	if ($extra =~ /(\w+):{(.*?)}/)
 	{
-		$subtitle_type = { subtitle => 'alt', volume => 'vol' }->{$1} or die "unknown subtitle type $1";
+		$subtitle_type = { subtitle => 'alt', volume => 'vol', parenthetical => 'paren' }->{$1}
+				or die "unknown subtitle type $1";
 		$subtitle = $2;
 	}
 
@@ -393,6 +398,7 @@ func diacritic_fixup ($string is alias)
 		voila			=>	{ 5 => 'grave', },
 		'a la'			=>	{ 1 => 'grave', },
 		facade			=>	{ 3 => 'cedil', plural => 1, },
+		uber			=>	{ 1 => 'uml',   },
 		jalapeno		=>	{ 7 => 'tilde', plural => 1, },
 		platanos		=>	{ 3 => 'acute', },
 		eostre			=>	{ 1 => '#274',  },
