@@ -98,7 +98,7 @@ else
 endif
 if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished DB/server stuff"
 
-set path_dirs = ( /usr/local/bin /bin /usr/bin /usr/X11R6/bin $sybase_bin $oracle_bin /usr/sbin /usr/local/sbin /usr/local/dbutils /usr/local/t3/bin /usr/local/thinkgeek /usr/local/bin/proj /usr/games ~/bin ~/local/bin ~/rpg/bin /sbin /cygdrive/c/WINDOWS/system32 /cygdrive/c/Perl/site/bin . )
+set path_dirs = ( /usr/local/bin /bin /usr/bin /usr/X11R6/bin $sybase_bin $oracle_bin /usr/sbin /usr/local/sbin /usr/local/dbutils /usr/local/t3/bin /usr/local/thinkgeek /usr/local/bin/proj /usr/games ~/bin ~/local/bin ~/rpg/bin /sbin ~/.rakudobrew/bin /cygdrive/c/WINDOWS/system32 /cygdrive/c/Perl/site/bin . )
 set cdpath_dirs = ( . $APACHE ~ /export/usr/buddy )
 if ( -x ~/bin/addpath ) then
 	eval `~/bin/addpath -eB $path_dirs`
