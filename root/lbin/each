@@ -146,3 +146,10 @@ sub print_output
 
 	print "$line\n";
 }
+
+
+=head1 EXAMPLES
+
+	xdotool search -name "Kid3" | each 'xwininfo -id {} | fgrep "Map State"'
+
+=cut
