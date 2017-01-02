@@ -147,7 +147,6 @@ install () {
 
 	if [[ -d $distdir ]]
 	then
-		echo "1st arg is $1"
 		if [[ $1 == "force" ]]
 		then
 			shift 1
