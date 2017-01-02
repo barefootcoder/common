@@ -50,13 +50,13 @@ function send_to_sandbox
 
 	if [[ ! -e $NO_SERVER_BOUNCE ]]
 	then
-		fpath="$(realpath "$file")"
 		if [[ -n $file ]]
 		then
-			if [[ $fpath == $base_dir/web/* || $fpath == $base_dir/lib/* && $fpath != */t/* && $fpath != */Test/* ]]
+			if [[ $fullpath == $base_dir/web/* || $fullpath == $base_dir/lib/*
+					&& $fullpath != */t/* && $fullpath != */Test/* ]]
 			then
 				bounce_apache=1
-				if [[ $fpath == $base_dir/lib/reports/* || $fpath == $base_dir/lib/oracle/* || $fpath == *.html ]]
+				if [[ $fullpath == $base_dir/lib/reports/* || $fullpath == $base_dir/lib/oracle/* || $fullpath == *.html ]]
 				then
 					bounce_apache=0
 				fi
@@ -97,6 +97,7 @@ then
 	base=$(basename "$1")
 	first_line="$(head -n1 "$1")"
 	second_line="$(head -n2 "$1" | tail -n1)"
+	fullpath="$(realpath "$1")"
 	if [[ "$second_line" == "# pusht: "* ]]
 	then
 		eval ${second_line#*pusht: }
@@ -113,7 +114,7 @@ then
 		set -o pipefail
 		copy-to-clipboard ce_commit_link "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.md ]]
+	elif [[ "$1" == *.md || "$1" == *.email ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
@@ -123,12 +124,12 @@ then
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
-	elif [[ $(realpath "$1") == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
+	elif [[ $fullpath == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
 		set -o pipefail
 		copy-to-clipboard fmt-for-trac "$1"
 		echo "copied to X clipboard"
-	elif [[ $1 == *.testing.notes || $(realpath "$1") == */C3V/* || $(basename "$1") == github.reply ]]
+	elif [[ $1 == *.testing.notes || $fullpath == */C3V/* || $(basename "$1") == github.reply || $fullpath == */custom/* ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
