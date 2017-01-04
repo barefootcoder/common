@@ -18,6 +18,7 @@ opts <<'-';
 	*  start <timer>     : start the given timer
 	*  half <timer>      : start the given timer in half-timing mode
 	*  pause <timer>     : pause all timers, or pause availability if <timer> is `:AVAILABILITY'
+	*  new-week <timer>  : start <timer>, then create a new week, retaining comments with tickets or marked `SAVE`
 	*  total <timer>     : total of timers for the first week containing <timer>
 	*  eod <date>        : total of timers for a given date
 	*  breakdown <timer> : break down <timer> into chunks and display times and durations of each chunk
@@ -28,6 +29,7 @@ $OPT{v} = 1 if $OPT{D};
 
 my $cmd = shift;
 my $arg = shift;
+die("can't use -w# with new-week") if $cmd eq 'new-week' and $OPT{w};
 my ($tname, $today, $prefix);
 if ($cmd eq 'eod' or $cmd eq 'daybreak')
 {
@@ -45,13 +47,31 @@ else
 my ($group_found, $timer_found, $avail_found) = (0,0,0);
 my ($in_week, $cur_week) = (0,0);
 my (%totals, @daybreak, %review, @mondays);
+my ($week_timers, @week_timers, %week_timers, %no_time_timers);
 
 my $processed_labels = 0;
 while ( <> )
 {
-	warn("# LINE => $_") if $OPT{D};
+	debug(LINE => $_);
 	if (/^\s*$/)
 	{
+		if ($cmd eq 'new-week' and ($in_week and $cur_week == 1))
+		{
+			$week_timers .= $_;
+			if ($processed_labels)
+			{
+				$in_week = 0;
+				debug(CMD => "new-week", week_data_tag('printing header'));
+
+				say foreach @week_timers;
+				say '';
+				print $week_timers{$_} // "$_:\n" foreach grep { not /^:/ } @week_timers;
+				say '';
+				print $week_timers;
+			}
+			next;
+		}
+
 		if ( $processed_labels )
 		{
 			$in_week = 0;
@@ -110,6 +130,7 @@ while ( <> )
 			{
 				++$cur_week;
 				$in_week = 1;
+				debuggit(4 => "incremented week to $cur_week at name $name");
 			}
 			$processed_labels = 0;
 		}
@@ -150,9 +171,9 @@ while ( <> )
 			my $sub;
 			if ( $name =~ s/:$// )
 			{
-				if (@stuff)
+				if (my $ticket = extract_ticket(@stuff))
 				{
-					$sub = sprintf("%-20s  [%s]", $name, $stuff[-1]);
+					$sub = sprintf("%-20s  [%s]", $name, $ticket);
 					$totals{$sub} = delete $totals{$name} if exists $totals{$name} and not exists $totals{$sub};
 				}
 				next;
@@ -193,7 +214,8 @@ while ( <> )
 		{
 			if ($name =~ s/:$//)
 			{
-				$review{$name}->{ticket} = $stuff[-1] if $stuff[-1];
+				my $ticket = extract_ticket(@stuff);
+				$review{$name}->{ticket} = $ticket if $ticket;
 				$review{$name}->{descr} = $chunks;
 			}
 			else
@@ -209,6 +231,37 @@ while ( <> )
 						print_time("time from $min to $max", $total);
 					}
 				}
+			}
+		}
+		next;
+	}
+	elsif ($cmd eq 'new-week' and $in_week and $cur_week == 1)
+	{
+		debug(CMD => "new-week", week_data_tag('gathering data'));
+		if ($processed_labels)
+		{
+			if (my $save = save_ticket(@stuff))
+			{
+				my $new_stuff = "$_\n";
+				$new_stuff =~ s/\(.*?\)\t/()\t/ if $save eq 'p';
+				$week_timers{ $name =~ s/:$//r } = $new_stuff;
+			}
+			unless ( $no_time_timers{$name} )
+			{
+				warn("no comment for timer: $name") unless $chunks;
+				$week_timers .= "$_\n";
+			}
+		}
+		else
+		{
+			push @week_timers, $name;
+			if ($chunks)
+			{
+				$week_timers .= "$_\n";
+			}
+			else
+			{
+				$no_time_timers{"$name:"} = 1;
 			}
 		}
 		next;
@@ -232,7 +285,7 @@ if ($cmd eq 'total' and $OPT{a})
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
 	debuggit(3 => "mondays:", DUMP => \@mondays);
-	my @mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { datetime($_) } @mondays;
+	@mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { datetime($_) } @mondays;
 	for (1..$#mondays)
 	{
 		foreach ( ($mondays[$_-1] + 1)..($mondays[$_] - 1) )
@@ -243,6 +296,27 @@ if ($cmd eq 'total' and $OPT{a})
 			my $date =  ($_ * $WEEK + $DAY * 5)->strftime("%m/%d/%Y");
 			say STDERR "Missing week: $date";
 		}
+	}
+}
+
+
+sub debug
+{
+	if ( $OPT{D} )
+	{
+		my ($cat, @m) = @_;
+		chomp $m[-1];
+		printf STDERR "# %-4s => %s\n", $cat, join(' ', @m);
+	}
+}
+
+sub week_data_tag
+{
+	if ( $OPT{D} )
+	{
+		my $array = scalar      @week_timers;
+		my $hash  = scalar keys %week_timers;
+		return "[$_[0] ($cur_week:$in_week/$processed_labels#$array/$hash)]";
 	}
 }
 
@@ -290,6 +364,19 @@ sub print_time
 	my $hrs = round(DOWN => $mins / 60);
 	$mins %= 60;
 	printf("%2d hrs, %2d mins : %s\n", $hrs, $mins, $label);
+}
+
+
+sub extract_ticket
+{
+	my (@stuff) = @_;
+	return $stuff[-1] && $stuff[-1] !~ /^SAVE/ ? $stuff[-1] : undef;
+}
+
+sub save_ticket
+{
+	my (@stuff) = @_;
+	return $stuff[-1] && $stuff[-1] =~ /^(\d+|SAVE(\w)?)$/ ? $2 // 1 : 0;
 }
 
 
