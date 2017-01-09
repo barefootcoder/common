@@ -1,0 +1,10 @@
+#!/bin/bash
+set -ex
+
+echo $0 >>/tmp/anacron.hourly.ce.log
+id >>/tmp/anacron.hourly.ce.log
+date >>/tmp/anacron.hourly.ce.log
+pwd >>/tmp/anacron.hourly.ce.log
+env >>/tmp/anacron.hourly.ce.log
+ps -ef >>/tmp/anacron.hourly.ce.log
+echo ------------------------------ >>/tmp/anacron.hourly.ce.log

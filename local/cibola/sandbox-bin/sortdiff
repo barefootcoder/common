@@ -1,0 +1,37 @@
+#! /bin/bash
+
+me=${0##*/}
+
+function usage
+{
+	echo "usage: $me [-h] | [-n] file1 file2" >&2
+	echo "           -n: do numeric sort (default: alpha sort)" >&2
+	echo "           -h: this help message" >&2
+	echo "           any unrecognized single-char options passed through to diff" >&2
+	echo "           either file1 or file2 (but not both) may be -" >&2
+}
+
+while getopts ":nh" opt
+do
+	case $opt in
+		n)	numeric="-n"
+			;;
+		h)	usage
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	diffopts="$diffopts -$OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+
+tmpfile=/tmp/sd.$$
+trap "/bin/rm -f $tmpfile" EXIT
+/bin/mknod $tmpfile p
+
+sort $numeric "$1" >$tmpfile &
+sort $numeric "$2" | diff $diffopts $tmpfile -
