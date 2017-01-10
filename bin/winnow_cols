@@ -1,9 +1,0 @@
-#! /bin/bash
-
-cols="$1"
-tmpfile=/tmp/wcols.$$
-trap EXIT 'bin/rm -f $tmpfile'
-
-echo "$cols" | sed 's/  *|  */, /g' >$tmpfile
-vi $tmpfile
-cat $tmpfile
