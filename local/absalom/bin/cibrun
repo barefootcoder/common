@@ -1,4 +1,0 @@
-#! /bin/bash
-
-command=$(echo "$*" | perl -pe "s/'/'\\''/g")
-runon cibola ~/local/bin/remote-exe "'$command'"

@@ -19,6 +19,10 @@ alias vagrant-latest-test 'vagrant box list | perl -lane '\''print $F[0] if $F[0
 alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 
+# backcompat for intra-laptop comms
+alias cibrun 'run cib'
+alias cibvag 'vrun cib'
+
 # AWS setup -- BEGIN
 setenv JAVA_HOME /usr
 setenv EC2_HOME /usr/local/aws

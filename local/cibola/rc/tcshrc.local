@@ -20,6 +20,10 @@ alias vagrant-latest-test \
 alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 
+# backcompat for intra-laptop comms
+alias absrun 'run abs'
+alias absvag 'vrun abs'
+
 # AWS setup -- BEGIN
 #complete -C aws_completer aws
 
