@@ -6,6 +6,7 @@ use CLASS;
 use File::Basename;
 
 use myperl ();
+use Debuggit DataPrinter => 1;
 
 
 use parent 'Exporter';
@@ -81,6 +82,7 @@ sub opts ($)
 	&$add_help_opt if $block_pos == 0;				# there _were_ no post-option block lines; add help option
 
 	Getopt::Std::getopts($optstring, \%OPT);
+	debuggit(4 => "OPT:", $optstring, "=>", DUMP => \%OPT);
 	HELP_MESSAGE() if $OPT{h};
 }
 
