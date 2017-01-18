@@ -3,6 +3,7 @@
 use myperl::Script;
 use autodie qw< :all >;
 
+use Try::Tiny;
 use Date::Easy;
 use Path::Tiny;
 use List::AllUtils qw< first apply >;
@@ -47,7 +48,7 @@ foreach my $dir (glob("~/.purple/logs/*/*/*"))
 
 		foreach ( path($file)->lines_utf8 )
 		{
-			if ( /^\(/ )
+			if ( /^\(\d/ )
 			{
 				process($file);
 				$curline = $_;
@@ -63,14 +64,16 @@ foreach my $dir (glob("~/.purple/logs/*/*/*"))
 
 		}
 		process($file);
-		print foreach
-				map		{ join(':', @{$lines{$_}}, $_)										}
-				apply	{ $lines{$_}->[1] = $lines{$_}->[1]->strftime("%Y/%m/%d %H.%M.%S")	}
-				sort	{ $lines{$a}->[1] <=> $lines{$b}->[1]								}
-						keys %lines;
-		undef $curline; undef $curdate; %lines = ();
+		undef $curline; undef $curdate;
 	}
 }
+
+debuggit(4 => "lines struct", DUMP => \%lines) if keys %lines;
+print foreach
+		map		{ join(':', @{$lines{$_}}, $_)										}
+		apply	{ $lines{$_}->[1] = $lines{$_}->[1]->strftime("%Y/%m/%d %H.%M.%S")	}
+		sort	{ $lines{$a}->[1] <=> $lines{$b}->[1]								}
+				keys %lines;
 
 
 sub validate_date_range
@@ -90,23 +93,30 @@ sub process
 	return unless defined $curline;
 	local $_ = $curline;
 	return unless /$pattern/;
-	my $file = shift;
+	my $file = filename(shift);
 
 	s/^\((.*?)\)//;
 	$1 or die("line: $file:$_");
 	my $timestamp = $1; $timestamp = "$curdate $timestamp" unless $timestamp =~ m|/|;
-	$timestamp = datetime($timestamp);
+	try
+	{
+		$timestamp = datetime($timestamp);
+	}
+	catch
+	{
+		die("In $file: $_");
+	};
 	if ($start)
 	{
 		return unless $timestamp >= $start and $timestamp <= $end;
 	}
 	if (exists $lines{$_})
 	{
-		$lines{$_} = [ filename($file), $timestamp ] if $timestamp < $lines{$_}->[1];
+		$lines{$_} = [ $file, $timestamp ] if $timestamp < $lines{$_}->[1];
 	}
 	else
 	{
-		$lines{$_} = [ filename($file), $timestamp ];
+		$lines{$_} = [ $file, $timestamp ];
 	}
 }
 
