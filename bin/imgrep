@@ -25,6 +25,7 @@ say "# limiting results to $start through $end" if $start and $OPT{'v'};
 my $pattern = $OPT{'e'} // shift // die("must supply pattern!");
 $pattern = qr/$pattern/i;
 my $contact_pattern = join('|', @ARGV);
+say "# checking logs that match /$contact_pattern/" if $OPT{'v'};
 
 
 my $start_year = $start ? $start->year : undef;
