@@ -136,11 +136,11 @@ while ( <> )
 		}
 	}
 
-	if ($chunks and substr($chunks, -1, 1) eq '-' and ($cmd eq 'start' or $cmd eq 'half' or $cmd eq 'pause'))
+	if ($chunks and substr($chunks, -1, 1) eq '-' and $cmd ~~ [qw< start half pause new-week >])
 	{
 		$chunks .= time() . ',' unless $name eq $AVAIL and $tname ne $AVAIL;
 	}
-	if ( $cmd ~~ [qw< start half >] )
+	if ( $cmd ~~ [qw< start half new-week >] )
 	{
 		if ($name eq $tname and !$timer_found)
 		{
@@ -257,7 +257,7 @@ while ( <> )
 			push @week_timers, $name;
 			if ($chunks)
 			{
-				$week_timers .= "$_\n";
+				$week_timers .= join("\t", $name, $chunks, @stuff) . "\n";
 			}
 			else
 			{
