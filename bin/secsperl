@@ -1,6 +1,18 @@
 #! /usr/bin/perl
 
-use strict;
+use 5.14.0;
 use warnings;
 
-print scalar(localtime($ARGV[0])), "\n";
+my $time = shift;
+if ($time =~ /-/)
+{
+	$time =~ s/,$//;
+	my ($from, $to) = split('-', $time);
+	say join(" - ", conv($from), conv($to)), " [", ($to - $from) / 60, " min]";
+}
+else
+{
+	say conv($time);
+}
+
+sub conv { scalar(localtime(shift)) }
