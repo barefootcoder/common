@@ -6,15 +6,27 @@ then
 	die "will not play music at work"
 fi
 
+mode=wake
+
 volume=1
 if [[ $1 == "--alarm" ]]
 then
+	mode=alarm
 	volume=22
 	shift
 fi
 
+playlist=/home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
+if [[ $1 == "--sleep" ]]
+then
+	mode=sleep
+	playlist=/home/buddy/Dropbox/music/tracklists/Merrick/'Numeric Driftwood.m3u'
+	shift
+fi
+
 bin/decibel-volume set $volume
-python /usr/share/decibel-audio-player/src/remote.py pl-set /home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
+python /usr/share/decibel-audio-player/src/remote.py pl-set "$playlist"
+[[ $mode == "sleep" ]] && exit
 for i in {1..9}
 do
     sleep 300
