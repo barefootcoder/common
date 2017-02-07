@@ -1,0 +1,5 @@
+#! /bin/bash
+
+date=$1
+echo -e "\n\n\n\n\n\n\n\n\n"
+imgrep -t "$date - $date 23:59:59" "Buddy Burden:" technology leadops 624737 676951 voidstar |& $PAGER
