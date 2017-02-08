@@ -52,7 +52,7 @@ push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
 
 my @ignores  = map {; '--ignore-file', $_ } @IGNORE_FILES;
 push @ignores, map {; '--ignore-dir',  $_ } @IGNORE_DIRS;
-$regex =~ s/'/'\\''/;
+$regex =~ s/'/'\\''/g;
 my @cmd = ('ack', @ignores, $PERL_ONLY ? '--perl' : (), '--match', "'$regex'");
 push @cmd, '-l' if $OPT{l} or $OPT{p};
 push @cmd, @TEST_DIRS if $OPT{T};
