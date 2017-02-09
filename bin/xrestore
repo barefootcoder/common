@@ -1,0 +1,99 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use PerlX::bash;
+use Getopt::Long;
+use Time::HiRes qw< usleep >;
+
+
+my $desktop_num = 0;
+my %DESKTOPS = map { $_ => $desktop_num++ } qw< Main Comms Music Personal >;
+
+my $ME = $0 =~ s|^.*/||r;
+sub USAGE
+{
+	say <<".";
+
+usage: $ME [-v] [-title "<window title>" [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] "<cmd> [<arg> ...]"
+	               -v : be chatty about it
+       <window title> : title of window (in order to locate it)
+                  <W> : desired width of the window
+                  <H> : desired height of the window
+                  <X> : desired X offset of the window
+                  <Y> : desired Y offset of the window
+            <desktop> : desired desktop of the window (by name)
+                <cmd> : command to run if process not already running
+                <arg> : arguments for the command to be run
+        if the process is already running, it is not spawned
+.
+    exit;
+}
+
+my $OPT = {};
+GetOptions($OPT,
+	'title=s',
+	'geometry=s',
+	'desktop=s',
+	'verbose|v',
+	'help|h',
+);
+if ($OPT->{geometry})
+{
+	$OPT->{geometry} =~ /^((\d+)x(\d+))?([+-]\d+)?([+-]\d+)?$/ or die("unknown geometry format");
+	$OPT->{width}  = $2;
+	$OPT->{height} = $3;
+	$OPT->{xoff}   = $4;
+	$OPT->{yoff}   = $5;
+}
+USAGE() if $OPT->{help};
+my ($command) = @ARGV or die("must specify command");
+$OPT->{title} //= $command;
+$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop") if $OPT->{desktop};
+
+
+sub info
+{
+	say STDERR "$ME: @_" if $OPT->{verbose};
+}
+
+sub X (@)
+{
+	info("doing window operation on $OPT->{title}:", $_[0] // 'N/A');
+	bash "xdotool search --onlyvisible --name '$OPT->{title}' @_ >/dev/null 4>&1";
+}
+
+sub cur_desktop_num
+{
+	bash \words => 'xdotool get_desktop';
+}
+
+
+# remember current desktop so we can go back there when we're done
+my $orig_desktop = cur_desktop_num();
+info("currently on desktop $orig_desktop");
+if ( $OPT->{desktop} )
+{
+	bash "xdotool set_desktop $OPT->{desktop}";
+	info("switched to desktop " . cur_desktop_num());
+}
+
+bash "$command >/dev/null 2>&1 &" unless bash "/usr/bin/pgrep '$command' >/dev/null";
+while (1)
+{
+	until (X)
+	{
+		usleep 100;
+	}
+	last if X windowactivate => '--sync';
+}
+X windowmove => $OPT->{xoff}, $OPT->{yoff}    if $OPT->{xoff};
+X windowsize => $OPT->{width}, $OPT->{height} if $OPT->{width};
+# this is probably unnecessary now that we're switching desktops
+X set_desktop_for_window => $OPT->{desktop}   if $OPT->{desktop};
+
+# return to original desktop
+info("returning to desktop $orig_desktop");
+bash "xdotool set_desktop $orig_desktop";

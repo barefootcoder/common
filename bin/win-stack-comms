@@ -16,19 +16,7 @@ if [[ ! $only_stack ]]
 then
 	# Desktop 1 == Comms (desktops are zero-based)
 
-	if ! /usr/bin/pgrep thunderbird >/dev/null
-	then
-		thunderbird >/dev/null 2>&1 &
-		while true
-		do
-			while ! xdotool search --onlyvisible --name "$ThunderbirdWindow" >/dev/null 2>&1
-			do
-				sleep 1
-			done
-			xdotool search --name "$ThunderbirdWindow" windowactivate --sync 2>/dev/null && break
-		done
-		xdotool search --name "$ThunderbirdWindow" windowmove 150 58 set_desktop_for_window 1
-	fi
+	xrestore -title "$ThunderbirdWindow" -geometry +150+58 -desktop Comms thunderbird
 
 	PidginWindow="Buddy List"
 	if ! /usr/bin/pgrep pidgin >/dev/null
