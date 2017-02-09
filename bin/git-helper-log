@@ -4,6 +4,19 @@ me=${0##*/}																# slightly prettier than $0
 readonly me
 
 
+function die
+{
+	echo "$me: $@" >&2
+	exit 1
+}
+
+function usage_error
+{
+	echo "$me: $@" >&2
+	exit 2
+}
+
+
 function capture_git
 {
 	do_git $pretend 0 "now running:" "$1"
@@ -41,8 +54,7 @@ function current_branch
 	branch=$(vc info %cur_branch)
 	if [[ $branch == "HEAD" ]]
 	then
-		echo "$me: can't show branch logs with a detached HEAD" >&2
-		exit 1
+		die "can't show branch logs with a detached HEAD"
 	fi
 	echo $branch
 }
@@ -66,7 +78,7 @@ function all_unpushed
 cmd="log"
 
 args=''
-patcharg='-s'
+fmtarg='-s'
 show_merges=0
 show_branch=0
 show_local=0
@@ -74,34 +86,57 @@ show_me=0
 pretend=0
 grep_diffs=0
 date_format=local
-while getopts ":vdscHCNpbln:LmU:g:RGh" opt
+while getopts ":vdscHDCNpbln:LmU:g:RGh" opt
 do
 	case $opt in
 		v)	show_merges=1
-			if [[ $patcharg == "-p" ]]
+			if [[ $fmtarg == "-s" ]]
 			then
-				patcharg='-p --stat'
-			else
-				patcharg='--stat'
+				fmtarg=''
 			fi
+			args="$args --stat"
 			;;
-		d)	if [[ $patcharg == "--stat" ]]
+		d)	if [[ $fmtarg && $fmtarg != "-s" ]]
 			then
-				patcharg='-p --stat'
-			else
-				patcharg='-p'
+				usage_error "trying to use conflicting args (pick one of: -d/-s/-H/-c)"
 			fi
+			fmtarg="-p"
 			if [[ $grep_diffs != 0 ]]
 			then
 				args="$args -G $grep_diffs"
 			fi
 			grep_diffs=1
 			;;
-		s)	args="$args --oneline"
+		s)	if [[ $fmtarg && $fmtarg != "-s" ]]
+			then
+				usage_error "trying to use conflicting args (pick one of: -d/-s/-H/-c)"
+			fi
+			fmtarg="-s --oneline"
 			;;
-		H)	args="$args --pretty=%h"
+		H)	if [[ $fmtarg && $fmtarg != "-s" ]]
+			then
+				usage_error "trying to use conflicting args (pick one of: -d/-s/-H/-c)"
+			fi
+			fmtarg="-s --pretty='%h'"
 			;;
-		c)  args="$args --oneline"
+		D)	case $fmtarg in
+				-s)			# date is already included in default format
+							;;
+				'')			# also included when you show diffs (empty fmt == -v)
+							;;
+				*--oneline)	fmtarg="-s --pretty='%C(auto)%h %ad %s'"
+							date_format=format:%Y-%m-%d_%H:%M:%S
+							;;
+				*--pretty*)	fmtarg="${fmtarg%\'} %ad'"
+							date_format=format:%Y-%m-%d_%H:%M:%S
+							;;
+			esac
+			;;
+		c)	if [[ $fmtarg != "-s" ]]
+			then
+				usage_error "can't use -c with format args (-d/-s/-H/-v)"
+			fi
+			fmtarg="-s --oneline"
 			post="wc -l"
 			;;
 		C)	args="$args --no-color"
@@ -133,44 +168,43 @@ do
 			;;
 		R)	args="$args --reverse"
 			;;
-		G)	date_format=gmt
+		G)	date_format=raw
 			;;
-		h)  echo "usage: $me -h | [-{v|d|s|H} [-NG] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]" >&2
-			echo "    -v : verbose (show files changed, include merge commits)" >&2
-			echo "    -d : show diffs of changed files" >&2
-			echo "    -s : show short (one-line) format for commits" >&2
-			echo "    -H : show only SHA1s (even shorter than short format)" >&2
-			echo "    -C : turn off color (useful for piping)" >&2
-			echo "    -N : number commits (first commit marked 1, second 2, etc; includes merge commits)" >&2
-			echo "    -G : display dates in GMT/UTC format" >&2
-			echo "    -c : don't show commits, just count them" >&2
-			echo "    -p : pretend (show git command to be run, but don't run it)" >&2
-			echo "    -b : show only commits on the current branch (no merges unless -v or -N)" >&2
-			echo "    -L : show only commits not yet pushed to server (no merges unless -v or -N)" >&2
-			echo "    -l : show only latest commit (same as -n1)" >&2
-			echo "    -n : show only X commits (default: show all)" >&2
-			echo "    -m : show only my commits (commits by current user)" >&2
-			echo "    -U : show only commits by user" >&2
-			echo "    -g : show only commits with log messages containing regex" >&2
-			echo "    -R : show commits in reverse order (oldest to newest; doesn't work across renames)" >&2
-			echo "    -h : this help message" >&2
-			echo "    user : either name or email; can be partial, but is case-sensitive" >&2
-			echo "    file : source file (default: entire working tree)" >&2
+		h)  echo "usage: $me -h | [[-v] -{d|s|H} [-NDG] | -c] [-p] [-b | -L] [-l | -nX] [-m | -Uuser] [-g regex] [file ...]"
+			echo "    -v : verbose (show files changed, include merge commits)"
+			echo "    -d : show diffs of changed files"
+			echo "    -s : show short (one-line) format for commits"
+			echo "    -H : show only SHA1s (even shorter than short format)"
+			echo "    -C : turn off color (useful for piping)"
+			echo "    -N : number commits (first commit marked 1, second 2, etc; includes merge commits)"
+			echo "    -D : display date for -s or -H format"
+			echo "    -G : display dates in raw (epoch seconds + timezone) format"
+			echo "    -c : don't show commits, just count them"
+			echo "    -p : pretend (show git command to be run, but don't run it)"
+			echo "    -b : show only commits on the current branch (no merges unless -v or -N)"
+			echo "    -L : show only commits not yet pushed to server (no merges unless -v or -N)"
+			echo "    -l : show only latest commit (same as -n1)"
+			echo "    -n : show only X commits (default: show all)"
+			echo "    -m : show only my commits (commits by current user)"
+			echo "    -U : show only commits by user"
+			echo "    -g : show only commits with log messages containing regex"
+			echo "    -R : show commits in reverse order (oldest to newest; doesn't work across renames)"
+			echo "    -h : this help message"
+			echo "    user : either name or email; can be partial, but is case-sensitive"
+			echo "    file : source file (default: entire working tree)"
 			exit
 			;;
-		:)  echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
-			exit 2
+		:)  usage_error "$OPTARG requires an argument ($me -h for help)"
 			;;
-		\?) echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
-			exit 2
+		\?) usage_error "unknown argument $OPTARG ($me -h for help)"
 			;;
 	esac
 done
 shift $(( $OPTIND - 1 ))
-   [[ $date_format == local ]] && args="$args --date=local"
-   [[ $show_me     == 1     ]] && args="$args --author $(capture_git "config user.email")"
-   [[ $show_merges == 0     ]] && args="$args --no-merges"
-if [[ $show_local  == 1     ]]
+   [[ $date_format != gmt ]] && args="$args --date=$date_format"
+   [[ $show_me     == 1   ]] && args="$args --author $(capture_git "config user.email")"
+   [[ $show_merges == 0   ]] && args="$args --no-merges"
+if [[ $show_local  == 1   ]]
 then
 	cmd="show"
 	commits=$(all_unpushed)
@@ -190,7 +224,7 @@ then
 fi
 
 
-cmd="$cmd $patcharg $args $*"
+cmd="$cmd $fmtarg $args $*"
 if [[ -n $post ]]
 then
 	cmd="$cmd | $post"
