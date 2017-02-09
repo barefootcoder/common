@@ -15,6 +15,7 @@ given (shift)
 	$soundtrack = $1 when /^ .... \s  .*?  \s-\s  .*?  \s+ \[ (.{3,}?) \] (\s+ [[{] .*)? \s* $/x;
 	$artist     = $1 when /^ .... \s  .*?  \s-\s (.*?)                    (\s+ [[{] .*)? \s* $/x;
 }
+$artist =~ s/^the\s+//i;
 
 my $group_title = '';
 say "searching for: ", $artist // "$soundtrack [soundtrack]";
