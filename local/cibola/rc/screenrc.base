@@ -60,13 +60,13 @@ screen -t cheops
 	stuff "cd $CHEOPSROOT\015"
 	stuff "vagrant-push-box\015"
 screen -t tail1
-	stuff "cd workproj/CE-push\015"
+	stuff "cd $CEROOT\015"
 	stuff "make tail-error-prod\015"
 screen -t tail2
-	stuff "cd workproj/CE-push\015"
+	stuff "cd $CEROOT\015"
 	stuff "make tail-potential-leads-error-prod\015"
 screen -t tail3
-	stuff "cd workproj/CE-push\015"
+	stuff "cd $CEROOT\015"
 	stuff "make tail-queue-worker-error-prod\015"
 screen -t mixes
 	stuff "vims mixes\015"
