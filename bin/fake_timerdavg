@@ -3,6 +3,7 @@
 use myperl DEBUG => 1;
 
 use Getopt::Std;
+use POSIX qw< ceil >;
 
 
 my $opts = {};
@@ -35,7 +36,7 @@ if ($opts->{v})
 	say "  Avg availability: ", $total_avail / $num_weeks;
 	my $pct = $total_time / $total_avail;
 	say "              %age: ", 100 * $pct;
-	my $next_week = ($num_weeks+1) * 40 - $total_avail;
+	my $next_week = (ceil($num_weeks)+1) * 40 - $total_avail;
 	say "         Next week: $next_week / ", $next_week * $pct;
 }
 
