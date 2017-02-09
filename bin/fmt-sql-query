@@ -1,0 +1,38 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie ':all';
+
+
+local $/ = undef;				# slurp mode
+my $input = <>;
+
+my ($type, $first_line, $columns) =
+	$input =~ /\A .*? [>#] \s+ (select|update|delete|insert) \s+ ( (.*?) \s+ ) from \s+ /x
+			or die("can't recognize input as a SQL query");
+$input =~ s/\Q$first_line/$columns\n\t/ if $columns =~ /,/;
+$input =~ s/ \s+ where \h+ /\n\twhere /x;
+$input =~ s/ \s+ and \h+ /\n\tand /xg;
+$input =~ s/ \s+ between (.*?) \n\t and \h / between $1 and /xg;
+
+print $input;
+
+
+sub reformat_query
+{
+	my ($query) = @_;
+
+	$query =~ /
+		^                  (?<prompt>  .*? [>#] )
+		  \s+ select   \s+ (?<columns> .*?      )
+		  \s+ from     \s+ (?<tables>  .*?      )
+		( \s+ where    \s+ (?<filters> .*?      ) )?
+		( \s+ group by \s+ (?<groupby> .*?      ) )?
+		( \s+ order by \s+ (?<orderby> .*?      ) )?
+		( \s+ limit    \s+ (?<limit>   .*?      ) )?
+		; \s+
+	/ix;
+
+	my @lines;
+	push @lines, "$+{prompt} ";
+}
