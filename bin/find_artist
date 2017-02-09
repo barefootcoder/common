@@ -20,7 +20,7 @@ my $group_title = '';
 say "searching for: ", $artist // "$soundtrack [soundtrack]";
 say '';
 say foreach
-		map { s/^.... / /r }
+		map { s/^(.)... /$1/r }
 		grep { $soundtrack ? / - .*? \[(the )?\Q$soundtrack]/i : / - (the )?\Q$artist\E\b/i }
 		map { save_group_title }
 		slurp shift;
