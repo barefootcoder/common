@@ -152,4 +152,6 @@ sub print_output
 
 	xdotool search -name "Kid3" | each 'xwininfo -id {} | fgrep "Map State"'
 
+	find /usr/local/sbin/ -xtype l | each -l 'ls -l {} | grep /root/common' | each 'rm {}'
+
 =cut
