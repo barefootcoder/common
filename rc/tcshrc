@@ -6,14 +6,7 @@ if ( $?tcsh_reset ) then
 endif
 
 # figure out where we are
-if ( -e /etc/localhostname ) then
-	setenv LOCALHOSTNAME `cat /etc/localhostname`
-else
-	setenv LOCALHOSTNAME `/bin/bash -c "hostname -s 2>/dev/null"`
-	if ( $LOCALHOSTNAME == "localhost" || $LOCALHOSTNAME == "" ) then
-		setenv LOCALHOSTNAME `echo $HOST | sed 's/\..*//'`
-	endif
-endif
+setenv LOCALHOSTNAME `~/common/root/lbin/localhostname`
 
 # internal shell stuff
 bindkey -v

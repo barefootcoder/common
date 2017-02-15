@@ -1,0 +1,24 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+use autodie;
+
+my $lhost_filename = '/etc/localhostname';
+if ( -r $lhost_filename )
+{
+	open(IN, $lhost_filename);
+	print scalar <IN>;
+	close(IN);
+}
+else
+{
+	my $name = `hostname -s 2>/dev/null`;
+	if ( not $name or $name eq 'localhost' )
+	{
+		$name = $ENV{HOST};
+		$name =~ s/\..*//;
+		$name .= "\n";
+	}
+	print $name;
+}

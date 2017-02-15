@@ -2,6 +2,10 @@
 
 source ./functions
 
+# Probably $LOCALHOSTNAME is already set, but it's pretty tragic if it's not.  Better safe than
+# sorry.  Note that this utilizes the same method that rc/tcshrc does.
+: ${LOCALHOSTNAME:=`$mydir/root/lbin/localhostname`}
+
 
 ###########################
 # MAIN
