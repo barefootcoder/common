@@ -3,7 +3,6 @@
 use myperl::Script;
 
 use Date::Easy;
-use List::Util qw< minstr maxstr >;
 
 const my $AVAIL => ':AVAILABILITY';
 
@@ -33,7 +32,7 @@ die("can't use -w# with new-week") if $cmd eq 'new-week' and $OPT{w};
 my ($tname, $today, $prefix);
 if ($cmd eq 'eod' or $cmd eq 'daybreak')
 {
-	$today = date($arg // today)->strftime('%Y/%m/%d');
+	$today = date($arg // today);
 }
 elsif ($cmd eq 'review')
 {
@@ -87,9 +86,9 @@ while ( <> )
 					{
 						my $total = my $lines = 0;
 						push @mondays, $totals{':MINDATE'} if $OPT{a};
-						$totals{':MINDATE'} ||= 'N/A';
-						$totals{':MAXDATE'} ||= 'N/A';
-						print "time from $totals{':MINDATE'} to $totals{':MAXDATE'}:\n" if $cmd eq 'total';
+						$totals{':MINDATE'} //= 'N/A';
+						$totals{':MAXDATE'} //= 'N/A';
+						say range_label($totals{':MINDATE'}, $totals{':MAXDATE'}, ':') if $cmd eq 'total';
 						foreach (sort keys %totals)
 						{
 							next if /^:/;
@@ -187,13 +186,13 @@ while ( <> )
 			{
 				warn("no from time on timer $name, line $.") if /^-/;
 				warn("bad time on timer $name, line $.") unless /^\d/;
-				my ($min, $max) = date_range($_);
-				if ($cmd eq 'eod' and $min eq $today)
+				my ($from, $to) = date_range($_);
+				if ($cmd eq 'eod' and $from == $today)
 				{
 					$group_found = 1;
 					$totals{$sub} += total_chunk($_);
 				}
-				elsif ($cmd eq 'daybreak' and $min eq $today and $name ne $AVAIL)
+				elsif ($cmd eq 'daybreak' and $from == $today and $name ne $AVAIL)
 				{
 					$group_found = 1;
 					push @daybreak, "$_:$name";
@@ -201,8 +200,12 @@ while ( <> )
 				elsif ($cmd eq 'total')
 				{
 					$totals{$sub} += total_chunk($_);
-					$totals{':MINDATE'} = $min if not $totals{':MINDATE'} or $min lt $totals{':MINDATE'};
-					$totals{':MAXDATE'} = $min if not $totals{':MAXDATE'} or $min gt $totals{':MAXDATE'};
+					$totals{':MINDATE'} = $from if not defined $totals{':MINDATE'} or $from < $totals{':MINDATE'};
+					# $from and $to are nearly always the same
+					# the only they wouldn't be is if a timer crossed a date boundary
+					# and, in that (unlikely) scenario, we'd want to consider the timer to be on the
+					# date that it started, not the date where it ended
+					$totals{':MAXDATE'} = $from if not defined $totals{':MAXDATE'} or $from > $totals{':MAXDATE'};
 				}
 			}
 		}
@@ -226,9 +229,9 @@ while ( <> )
 					$review{$name}->{total} += $total;
 					if ($OPT{v})
 					{
-						my $min = minstr map { $_ ? (date_range($_))[0] : () } split(',', $chunks);
-						my $max = maxstr map { $_ ? (date_range($_))[1] : () } split(',', $chunks);
-						print_time("time from $min to $max", $total);
+						my $min = min map { $_ ? (date_range($_))[0] : () } split(',', $chunks);
+						my $max = max map { $_ ? (date_range($_))[1] : () } split(',', $chunks);
+						print_time(range_label($min, $max), $total);
 					}
 				}
 			}
@@ -285,7 +288,7 @@ if ($cmd eq 'total' and $OPT{a})
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
 	debuggit(3 => "mondays:", DUMP => \@mondays);
-	@mondays = sort { $a <=> $b } map { int($_ / $WEEK) } map { datetime($_) } @mondays;
+	@mondays = sort { $a <=> $b } map { int($_->epoch / $WEEK) } map { datetime($_) } @mondays;
 	for (1..$#mondays)
 	{
 		foreach ( ($mondays[$_-1] + 1)..($mondays[$_] - 1) )
@@ -328,7 +331,7 @@ sub get_date
 	debuggit(4 => "get_date: got time", $time);
 
 	# times before 6am are considered "yesterday", so just subtract 6 hours from the actual time
-	return datetime($time - 60 * 60 * 6)->strftime("%Y/%m/%d");
+	return date($time - 60 * 60 * 6);
 }
 
 
@@ -339,6 +342,17 @@ sub date_range
 
 	$chunks =~ m{^(?:2/)?(\d+).*-(?:(\d+),?)?$};
 	return (get_date($1), get_date($2));
+}
+
+sub range_label
+{
+	my ($from, $to, $suffix) = @_;
+	$suffix //= '';
+	foreach ($from, $to)
+	{
+		$_ = $_->as('/Ymd') unless $_ eq 'N/A';
+	}
+	return "time from $from to $to" . $suffix;
 }
 
 
