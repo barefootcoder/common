@@ -42,6 +42,8 @@ else
 {
 	$tname = $arg;
 }
+# need to handle setting $AVAIL specially for 'new-week' if it's Monday or Tuesday
+my $set_avail = $cmd eq 'new-week' && today->day_of_week <= 2 ? 'new week' : 'old week';
 
 my ($group_found, $timer_found, $avail_found) = (0,0,0);
 my ($in_week, $cur_week) = (0,0);
@@ -62,7 +64,17 @@ while ( <> )
 				$in_week = 0;
 				debug(CMD => "new-week", week_data_tag('printing header'));
 
-				say foreach @week_timers;
+				if ($set_avail eq 'new week')							# we need to start $AVAIL timer
+				{
+					pop @week_timers if $week_timers[-1] eq $AVAIL;
+					say foreach @week_timers;
+					say "$AVAIL\t", time(), '-';
+					$avail_found = 1;
+				}
+				else													# we can just dump all timer names
+				{
+					say foreach @week_timers;
+				}
 				say '';
 				print $week_timers{$_} // "$_:\n" foreach grep { not /^:/ } @week_timers;
 				say '';
@@ -149,7 +161,10 @@ while ( <> )
 		elsif ($name eq $AVAIL and !$avail_found)
 		{
 			$avail_found = 1;
-			$chunks .= time() . '-' unless $chunks =~ /-$/;
+			if ($set_avail eq 'old week')								# 'new week' handled elsewhere
+			{
+				$chunks .= time() . '-' unless $chunks =~ /-$/;
+			}
 		}
 	}
 
@@ -408,14 +423,6 @@ sub breakdown
 		$duration .= " (half time)" if $half;
 		$duration .= " [$tname]" if $tname;
 		print_time($duration, $mins);
-		#if ($name eq $AVAIL)
-		#{
-		#	print_time($duration, $mins);
-		#}
-		#else
-		#{
-		#	printf("%5d mins : %s\n", $mins, $duration);
-		#}
 		$total_mins += $mins;
 	}
 	#printf("%5d mins : TOTAL\n", $total_mins);
