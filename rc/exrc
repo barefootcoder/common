@@ -113,7 +113,7 @@ filetype indent off
 map <C-C><C-D> 0Wy0!!date +\%Y-\%m-\%dT\%H:\%M:\%S\%z<CR>0P
 
 " to make sessions work properly
-set sessionoptions=buffers,curdir,globals,options,unix
+set sessionoptions=buffers,curdir,globals,localoptions,options,unix
 
 " check for differences in session
 :function! SessionDiffs()
@@ -155,9 +155,12 @@ set sessionoptions=buffers,curdir,globals,options,unix
 :command! SM call SaveMarks()
 
 " reload marks (if the file exists)
-:function! LoadMarks()
+:function! LoadSessionAuxFiles()
 :	if exists("g:MarksFile")
 :		exe "rviminfo! " . g:MarksFile
+:	endif
+:	if exists("g:FuncsFile")
+:		exe "source " . g:FuncsFile
 :	endif
 :endfunction
 

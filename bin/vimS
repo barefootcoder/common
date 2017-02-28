@@ -77,25 +77,26 @@ shift $(( $OPTIND - 1 ))
 
 if [[ $list || $pattern ]]
 then
-	[[ $list && $verbose ]] && echo "Name               Marks? Path"
+	[[ $list && $verbose ]] && echo "Name                 Aux?   Path"
 	[[ $list && $verbose ]] && echo "============================================================================="
 
 	function print_file
 	{
 		local base="$1"
 		local file="$2"
-		local marks
+		local aux
 
-		if [[ ${file%%.marks} != $file && -e ${file%%.marks} ]]
+		if [[ ${file%%.(marks|funcs)} != $file && -e ${file%%.(marks|funcs)} ]]
 		then
 			continue
 		fi
 
 		if [[ $verbose ]]
 		then
-			marks=" "
-			[[ -r $file.marks ]] && marks="X"
-			printf "%-20s  $marks  %s\n" $base $file
+			[[ -r $file.funcs ]] && aux="${aux}F"
+			[[ -r $file.marks ]] && aux="${aux}M"
+			: ${aux:=.}
+			printf "%-20s  %-2s    %s\n" $base $aux $file
 		else
 			echo $base
 		fi
@@ -188,4 +189,4 @@ then
 fi
 
 eval $(awk '$1 == "cd"' $sessionfile)
-eval vim -S $sessionfile -c '"call LoadMarks()"' $(awk '$1 == "args" { print $2 }' $sessionfile)
+eval vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' $(awk '$1 == "args" { print $2 }' $sessionfile)
