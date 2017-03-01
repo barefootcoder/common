@@ -1,14 +1,10 @@
-use myperl;
+use myperl NO_SYNTAX => 1;
 
 use Test::Most 0.25;
 
 use Module::Runtime qw< module_notional_filename >;
 
 sub loads_ok(&$$);
-
-
-# menu()
-loads_ok { menu(undef) } menu => 'myperl::Menu';
 
 
 # expand()
@@ -24,9 +20,12 @@ loads_ok { my $s = form("{<<}", "xx")	} form => 'Perl6::Form';
 
 
 # basename()
-# can't really test for it being unloaded/loaded, because something-or-other we depend on is already
-# using it; therefore, just make sure we can call the method
-lives_ok { basename('') } "can call basename()";
+loads_ok { basename('') } basename => 'File::Basename';
+
+
+# menu()
+# do this one last, because it loads some of the above stuff
+loads_ok { menu(undef) } menu => 'myperl::Menu';
 
 
 done_testing;
