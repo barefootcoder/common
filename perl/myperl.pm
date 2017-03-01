@@ -82,7 +82,7 @@ sub import
 		next if $calling_package eq $module;							# don't export things to themselves
 
 		my $function = $autoload_funcs{$module};
-		next if $ONLY and not $function ~~ $ONLY;
+		next if $ONLY and not $function ~~ $ONLY;						# don't export things if we're told not to
 
 		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
 		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
@@ -289,7 +289,7 @@ Don't make all warnings fatal (but still turn them on).
 
 	use myperl DataDumper => 1;
 
-Don't pass C<DataPrinter =E<gt> 1> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
+Don't pass C<< DataPrinter => 1 >> to L<Debuggit> (i.e. have Debuggit use L<Data::Dumper> instead of
 L<Data::Printer>).
 
 =head2 NO_SYNTAX
@@ -345,12 +345,13 @@ If you want no functions at all, you can do this:
 
 	use myperl ONLY => [];
 
-If you really want to get the syntax without all the functions, you can do something clever like:
+If you really want to get the syntax and only some of the functions, you can do something clever
+like:
 
 	use myperl NO_SYNTAX => 0, ONLY => [qw< slurp time2str title_case >];
 
-The order of the arguments in this case is irrelevant.  Note that, unlike with C<NO_SYNTAX>, this is
-not faster to load; it just reduces namespace pollution.
+The order of the arguments in this case is irrelevant.  Note that, unlike with C<< NO_SYNTAX =>
+1 >>, this is not faster to load; it just reduces namespace pollution.
 
 =head2 DISPLAY_IMPORTS
 
@@ -382,7 +383,7 @@ into a package's namespace.  Results in lots of messages to C<STDERR> that look 
 These functions are exported, but the modules they derive from are only loaded if the functions
 themselves are called.  See their respective modules for more info on them:
 
-=over 4
+=over
 
 =item B<slurp> (from L<Perl6::Slurp>)
 
@@ -404,7 +405,7 @@ Like the date functions, C<prompt> from L<IO::Prompter> is made available, but t
 loaded if the function itself is called.  Actually this is a thin wrapper around the actual
 IO::Prompter function.  There are currently only two differences:
 
-=over 4
+=over
 
 =item *
 
