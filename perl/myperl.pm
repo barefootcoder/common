@@ -88,6 +88,25 @@ sub import
 		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
 				unless $calling_package->can($function);
 	}
+	# glob() is a CORE function, so must be handled separately
+	unless ( $ONLY and not 'glob' ~~ $ONLY )
+	{
+		state $CORE_glob_already_redefined;
+		unless ($CORE_glob_already_redefined)
+		{
+			*CORE::GLOBAL::glob = sub
+			{
+				require File::Glob;
+				# use all the default flags *except* NOMAGIC
+				state $flags = $File::Glob::DEFAULT_FLAGS & ~File::Glob::GLOB_NOMAGIC();
+
+				my $pattern = shift;
+				$pattern =~ s/^\s+//; $pattern =~ s/\s+$//;
+				File::Glob::bsd_glob($pattern, $flags);
+			};
+			$CORE_glob_already_redefined = 1;
+		}
+	}
 
 	# always export these
 	myperl->import_list_into($calling_package,
@@ -398,6 +417,37 @@ themselves are called.  See their respective modules for more info on them:
 =item B<menu> (from L<myperl::Menu>)
 
 =back
+
+=head2 glob
+
+The C<CORE::glob> function will be overridden to point at C<bsd_glob> from L<File::Glob>.  This
+makes C<glob> actually useful again for file patterns that include spaces.  Note that this is subtly
+different from:
+
+	use File::Glob ':bsd_glob';
+
+in the following ways:
+
+=over
+
+=item *
+
+It can be used prior to Perl version 5.16 (which the File::Glob version cannot).
+
+=item *
+
+It doesn't return an iterator in scalar context (which the File::Glob version does).
+
+=item *
+
+It doesn't send the C<GLOB_NOMAGIC> flag (which the File::Glob version does, by default).  This is
+because NOMAGIC is stupid: if a pattern doesn't match, it doesn't match, and should never return any
+results, regardless of whether there are any special characters in the pattern or not.
+
+=back
+
+If you specify L</ONLY>, C<CORE::glob> will B<not> be overridden (unless, of course, C<glob> is one
+of the functions in the C<ONLY> list).
 
 =head2 prompt
 
