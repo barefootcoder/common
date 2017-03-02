@@ -209,8 +209,18 @@ sub print_mix_summary
 	debuggit(3 => "found:", DUMP => \@mixes);
 	my $maxlen = max map { length $_->{name} } @mixes;
 
+	my $num_completed = 0;
+	my $fmt = "(%s) %-*s || %6s%%\n";
 	foreach ( sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged} } @mixes )
 	{
-		printf("(%s) %-*s || %6s%%\n", $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
+		if ( $_->{score} == 100 and $_->{blogged} )
+		{
+			++$num_completed;
+		}
+		else
+		{
+			printf($fmt, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
+		}
 	}
+	printf($fmt, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00");
 }
