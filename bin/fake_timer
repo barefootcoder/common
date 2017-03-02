@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 
 use myperl::Script;
+use autodie ':all';
 
 use Date::Easy;
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 
 use myperl DEBUG => 1;
+use autodie ':all';
 
 use Getopt::Std;
 use POSIX qw< ceil >;

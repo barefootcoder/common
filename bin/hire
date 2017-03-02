@@ -6,7 +6,6 @@ use autodie qw< :all >;
 use IO::Prompt;
 use Tie::IxHash;
 use Term::ANSIScreen;
-use File::Glob qw< :glob >;
 use Config::General qw< ParseConfig >;
 
 
@@ -679,7 +678,7 @@ func take_home_test
 
 		warn("going to do a review of $name in dir ", dir()->absolute);
 		system("./review" => $name);
-		foreach (bsd_glob("$name/*"))
+		foreach (glob("$name/*"))
 		{
 			chdir $_ if -d;
 		}

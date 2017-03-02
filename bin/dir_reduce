@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 
 use myperl::Script;
+use autodie ':all';
 
 
 const our $DEFAULT_FILE_LIMIT => 5;

@@ -1,7 +1,7 @@
 #! /usr/bin/env perl
 
 use myperl::Script DEBUG => 1;
-use autodie qw< :all >;
+use autodie ':all';
 
 use Getopt::Std;
 
