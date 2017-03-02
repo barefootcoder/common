@@ -57,7 +57,7 @@ screen -t ltest
 screen -t vctools
 	stuff "vcd VCtools\015"
 screen -t cheops
-	stuff "cd $CHEOPSROOT\015"
+	stuff "vcd cheops\015"
 	stuff "vagrant-push-box\015"
 screen -t tail1
 	stuff "cd $CEROOT\015"
