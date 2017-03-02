@@ -32,8 +32,8 @@ exec $0, '--help' unless $payer and $amt;
 $amt =~ /^\d+(\.\d{2})?$/ or die("$amt doesn't look like money");
 unless (defined $front)
 {
-	my $IMGDIR = "$ENV{HOME}/Dropbox/Camera Uploads/";
-	chomp( ($back, $front) = map { "$IMGDIR/$_" } `ls -t "$IMGDIR"` );
+	my $IMGDIR = "$ENV{HOME}/Dropbox/Camera Uploads";
+	chomp( ($back, $front) = `ls -t "$IMGDIR"/*.jpg` );
 }
 -f $front or die("no such file: $front");
 -f $back  or die("no such file: $back");
