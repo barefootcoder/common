@@ -129,6 +129,7 @@ sub import
 
 		CLASS							=>	1.00		=>
 		TryCatch						=>	1.003001	=>
+		'Date::Easy'					=>	0.03		=>
 		'Path::Class'					=>
 		'Perl6::Gather'					=>	0.42		=>
 		'myperl::Declare'				=>

@@ -14,4 +14,12 @@ is time2str("%L/%e/%Y %l%P %Z", 1262358000, 'UTC'), "1/ 1/2010  3pm UTC", "can c
 is exists $INC{'Date/Format.pm'}, 1, "loaded Date::Format now";
 
 
+# dates easy
+my $d;
+lives_ok { $d = date("1/17/2015")->as("/Ymd") } "can call date()";
+is $d, "2015/01/17", "date() gives good results";
+lives_ok { $d = (datetime("noon") + 30*60 + 23)->as(":HMS") } "can call datetime()";
+is $d, "12:30:23", "datetime() gives good results";
+
+
 done_testing;
