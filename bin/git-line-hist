@@ -2,13 +2,16 @@
 
 line=$1
 file="$2"
-commit="$3"
+commit="${3:-HEAD}"
 
+echo "$line:$(sed -n "${line}p;$(( $line + 1 ))q" $file | expand -t4)"
 while [[ 1 ]]
 do
-	blame=$(git blame -M -L $line,$line -n $commit $file)
+	blame=$(git blame -M -L $line,$line -n $commit $file 2>/dev/null)
 	[[ $blame ]] || exit
 	commit=$(echo "$blame" | awk '{print $1}')^
 	line=$(echo "$blame" | awk '{print $2}')
-	echo "$blame"
+	text=$(echo "$blame" | sed 's/^[^)]*)//' | expand -t4)
+	git log -1 --oneline ${commit//^/}
+	echo "$line:$text"
 done
