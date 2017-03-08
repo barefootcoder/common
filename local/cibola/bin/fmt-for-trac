@@ -4,6 +4,7 @@ use 5.14.0;
 use autodie ':all';
 use warnings FATAL => 'all';
 
+use Text::Balanced qw<:ALL>;
 use Text::Tabs; $tabstop = 4;
 
 
@@ -44,6 +45,18 @@ while (<>)
 	}
 	elsif (not $in_pre)
 	{
+		# as ever, stolen shamelessly from Filter::Simple by The Damian
+		# in this case, we're not avoiding normal quotes, but backquotes
+		# because those indicate preformatted text that's safe from Trac's interference anyway
+		my @quoted_strings;
+		$_ = join('', map { ref $_ ? scalar((push @quoted_strings, $_), "{Q$#quoted_strings}") : $_ }
+			extract_multiple($_,
+			[
+				{ BQ => sub { extract_delimited($_[0], q{`}, '', q{`}) } },
+				qr/[^`]+/,
+			])
+		);
+
 		s/^  (\s*\*\s+)/$1/ and $in_list = 1;							# bullet lists
 		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
 		s/^  // if $in_list and not /^\s+[*#\d]/;						# continuation of bullet items
@@ -55,7 +68,10 @@ while (<>)
 		s/--/—/g;														# em dashes
 		s/ - / – /g;													# en dashes
 
-		s/([^`])\b([A-Z][a-z]+[A-Z][a-z]+\w*)\b(?!`)/$1!$2/g;			# stop auto-linking to Wiki pages for camel case
+		s/\b([A-Z][a-z]+[A-Z][a-z]+\w*)\b/!$1/g;						# stop auto-linking to Wiki pages for camel case
+
+		# put any quoted strings back
+		s/{Q(\d+)}/${$quoted_strings[$1]}/g;
 	}
 
 	print;
