@@ -114,7 +114,7 @@ then
 		set -o pipefail
 		copy-to-clipboard ce_commit_link "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.md || "$1" == *.email ]]
+	elif [[ "$1" == *.md || "$1" == *.email || "$1" == *.gs ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
