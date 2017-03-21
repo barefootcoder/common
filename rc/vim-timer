@@ -21,6 +21,7 @@
 :map <C-D><C-F> :w<CR>^:!fake_timer daybreak 'last friday' #<CR>
 :map <C-D><C-W> :w<CR>^:!fake_timer daybreak 'last friday' %<CR>
 :map <C-D><C-R> :w<CR>^:!fake_timer review <cword> %<CR>
+:map <C-W><C-W> :w<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
 :let g:timer="email"
 :function! GetTimer()
