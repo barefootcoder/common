@@ -1,14 +1,15 @@
 #! /bin/bash
 
-# this usually fixes it
-service network-manager restart
-
 # figure out whether we're going to connect or not
 function network_up
 {
 	#route | tail -n +3
 	[[ $(route | tail -n +3 | wc -l) -ge 2 ]]
 }
+
+# this usually fixes it
+service network-manager restart
+
 echo -n "waiting for reconnect "
 for n in $(seq 1 20)
 do
@@ -20,13 +21,31 @@ do
 		exit
 	fi
 done
-echo " tired of waiting"
 
+# this is a bit more intrusive,
+# but fixes some things the above doesn't
+echo -ne "\ngoing deeper "
+ip link set eth0 down
+ip link set eth0 up
+
+for n in $(seq 1 20)
+do
+	echo -n "."
+	sleep 1
+	if network_up
+	then
+		echo " and we're up"
+		exit
+	fi
+done
+
+echo " tired of waiting"
 # go extreme
 echo "going medieval on its ass"
-rmmod iwldvm
+basemod=$(lsmod | awk '{print $1}' | grep 'iwl.vm')
+rmmod $basemod
 rmmod iwlwifi
-modprobe iwlwifi
+modprobe $basemod iwlwifi
 lsmod | grep iwlwifi
 
 if network_up
