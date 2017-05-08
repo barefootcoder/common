@@ -32,7 +32,7 @@ my %blog =
 						code		=>	'code',
 						collapsed	=>	'',
 						dialog		=>	'div style="margin-left: 1em; line-height: 150%"',
-						dash		=>	'&mdash;',
+						dash		=>	'&mdash;<wbr/>',
 						ndash		=>	'&ndash;',
 						initial		=>	"\n",
 					},
@@ -47,7 +47,7 @@ my %blog =
 						code		=>	'code class="prettyprint"',
 						collapsed	=>	'',
 						dialog		=>	'div style="margin-left: 1em; line-height: 150%"',
-						dash		=>	'&mdash;',
+						dash		=>	'&mdash;<wbr/>',
 						ndash		=>	'&ndash;',
 						initial		=>	'',
 					},
@@ -151,9 +151,10 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
-	}
+		s{\b (\d)\b}{&nbsp;$1}g;													# don't leave single digits hanging
+	}																				#	out on a separate line
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
-	s{--}{$blog{$blog_type}->{dash}<wbr/>}g;										# em dash
+	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
 	s{((^\h*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
 	s{((^\h*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
