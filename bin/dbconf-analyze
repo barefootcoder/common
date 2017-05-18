@@ -1,0 +1,241 @@
+#! /usr/bin/env perl
+
+use myperl;
+use myperl::Script;
+use autodie ':all';
+use PerlX::bash;
+
+use File::stat;
+use Path::Tiny;
+use Digest::MD5 qw< md5 >;
+use Capture::Tiny qw< capture >;
+use Git::Helpers qw< checkout_root >;
+
+
+sub woulda_shoulda($$;$$);
+sub files_by_time(@);
+sub files_by_size(@);
+
+
+opts <<'-';
+	[-n] base-file
+	-n : no action (just say what you would have done)
+-
+
+my $base = shift;
+die("must specify base file") unless $base;
+die("$base does not exist") unless -r $base;
+
+
+my $without_ext = $base =~ s/(\.[^.]+)$//r;
+my $ext = $1 // '';
+my @conflicts = glob("$without_ext*conflicted*$ext");
+die("no conflict files found!") unless @conflicts;
+
+say '' if $OPT{'n'};
+
+my %checksums = map { $_ => md5(slurp $_) } $base, @conflicts;
+my %unique_by_contents;
+push @{ $unique_by_contents{$checksums{$_}} }, $_ foreach keys %checksums;
+
+# anything that's exactly the same as $base can just GTFO
+my $base_checksum = $checksums{$base};
+foreach (@{ $unique_by_contents{$base_checksum} })
+{
+	next if $_ eq $base;
+	expunge($_);
+}
+
+# for things that are different from $base, we can keep only copy: the oldest
+foreach ( keys %unique_by_contents )
+{
+	next if $_ eq $base_checksum;
+	my @files = files_by_time @{ $unique_by_contents{$_} };
+	next if @files == 1;
+	shift @files;
+	expunge($_) foreach @files;
+}
+
+# if we got it down to 1 file, we're done
+my @files_left = sort keys %checksums;
+if ( @files_left > 1 )
+{
+	my $git;
+	capture { eval { $git = checkout_root(path($base)->parent) } };
+	if ($git)
+	{
+		$git = safe_filename($git);
+		my $git_diff = qq{ git --work-tree=$git diff $base };
+		# okay, the file is checked into git; maybe we can do more stuff
+		my $diff = bash \string => $git_diff;
+		if ( not $diff and @files_left == 2 )
+		{
+			# okay, the base file is unchanged from what's checked into git
+			# and there's only one other file
+			# so we can just overwrite the base with the other file
+			git_modified(@files_left);
+			bash $git_diff;
+		}
+	}
+	else
+	{
+		# not much we can do here but show the user dates and sizes
+		system(qw< ls -l >, @files_left);
+
+		# okay, maybe one thing we could try ...
+		# if any of the files are both older _and_ smaller than the others,
+		# then we could toss that, but only if our user approves
+		my @files_by_time = files_by_time @files_left;
+		my @files_by_size = files_by_size @files_left;
+		while ( @files_by_time > 1 and $files_by_time[0] eq $files_by_size[0] )
+		{
+			shift @files_by_size;
+			my $file = shift @files_by_time;
+			say "This file is older and smaller than the other(s):";
+			say "    $file";
+			if (confirm("Shall we ditch it?"))
+			{
+				expunge($file);
+			}
+			else
+			{
+				last;
+			}
+		}
+	}
+}
+
+# if we've *still* goot more than 1 file, maybe the user would like to see a diff?
+@files_left = sort keys %checksums;
+if ( @files_left > 1 )
+{
+	if (confirm("Would you like to `diff` the two oldest files?"))
+	{
+		my ($left, $right) = files_by_time @files_left;
+		my ($out, $err) = capture { eval { system("diff", $left, $right) } };
+		if ($err)
+		{
+			say STDERR $err;
+			exit 1;
+		}
+		else
+		{
+			my $pager = $ENV{PAGER} // "less -F";
+			open OUT, "| $pager";
+			say OUT "< $left";
+			say OUT "> $right";
+			print OUT $out;
+			close(OUT);
+		}
+	}
+}
+
+# if, after all that, we're down to 1 file, but it's not the base file,
+# we should probably _rename_ it to the base file
+@files_left = sort keys %checksums;
+if ( @files_left == 1 and $files_left[0] ne $base )
+{
+	my $file = shift @files_left;
+	say "We're down to one file:";
+	say "    $file";
+	if (confirm("Shall we rename it to $base?"))
+	{
+		change_name($file, $base);
+	}
+}
+
+
+if ($OPT{'n'})
+{
+	woulda_shoulda remain => $_ foreach sort keys %checksums;
+	say '';
+}
+
+
+sub woulda_shoulda ($$;$$)
+{
+	my ($action, $file, $reason, $ref) = @_;
+	printf "would %-14s: %s\n", $action, $file;
+}
+
+
+sub safe_filename
+{
+	my ($filename) = @_;
+	$filename =~ s/'/'\\''/g;
+	return qq{'$filename'};
+}
+
+
+sub files_by_time (@)
+{
+	# ooh, look: a Schwartzian transform in the wild!
+	# beautiful bird, lovely plumage
+	return
+		map  { $_->[0] }
+		sort { $a->[1]->mtime <=> $b->[1]->mtime || $a->[0] cmp $b->[0] }
+		map	 { [ $_, stat $_ ] }
+			 @_
+}
+
+sub files_by_size (@)
+{
+	# oh, look: another one ...
+	# (the plumage don't enter into it!)
+	return
+		map  { $_->[0] }
+		sort { $a->[1]->size <=> $b->[1]->size || $a->[0] cmp $b->[0] }
+		map	 { [ $_, stat $_ ] }
+			 @_
+}
+
+
+sub expunge
+{
+	my ($file) = @_;
+
+	if ($OPT{'n'})
+	{
+		woulda_shoulda remove => $file;
+	}
+	else
+	{
+		unlink $file;
+	}
+
+	delete $checksums{$file};
+}
+
+sub change_name
+{
+	my ($old, $new) = @_;
+	die("shit is seriously fucked up!") if exists $checksums{$new};
+
+	if ($OPT{'n'})
+	{
+		woulda_shoulda rename => $old;
+	}
+	else
+	{
+		rename $old, $new;
+	}
+
+	$checksums{$new} = delete $checksums{$old};
+}
+
+
+sub git_modified
+{
+	my ($unmodified, $modified) = @_;
+
+	if ($OPT{'n'})
+	{
+		woulda_shoulda 'move onto base' => $modified;
+	}
+	else
+	{
+		bash join(' ', "mv -v", safe_filename($modified), safe_filename($unmodified));
+	}
+
+	delete $checksums{$modified};
+}
