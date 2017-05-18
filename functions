@@ -1,8 +1,16 @@
 # common functions and pseudo-global vars
 # used by the psync system
+# 	including: `psync` (both personal and root versions), `makeln`, and `build-music`
 
 mydir=~/common
 
+
+# simple fatal error
+function die
+{
+	echo "$0: $*" >&2
+	exit 1
+}
 
 # find a valid directory from a list of choices
 # args will be a list of potential directories
@@ -20,8 +28,7 @@ function find_dir
 	done
 
 	# if we get here, we couldn't find anything at all
-	echo "$0: can't find any of these directories: $@" >&2
-	exit 1
+	die "can't find any of these directories: $@"
 }
 
 
@@ -43,16 +50,16 @@ function make_link
 	then
 		# there's _something_ there, but not the right something
 		# better make sure it's okay to replace it
-		/bin/ls -l $2
+		/bin/ls -l "$2"
 		echo -n "$2 exists; overwrite? " >&2
 		read yn
 		if [[ $yn == [yY]* ]]
 		then
-			/bin/rm -f $2
-			ln -s $1 $2
+			/bin/rm -f "$2"
+			ln -s "$1" "$2"
 		fi
 	else
-		ln -s $1 $2
+		ln -s "$1" "$2"
 	fi
 }
 
@@ -115,8 +122,7 @@ function backup_file
 	then
 		if ! mkdir $mydir/backup
 		then
-			echo "can't seem to make backup directory" >&2
-			exit 1
+			die "can't seem to make backup directory"
 		fi
 	fi
 
@@ -170,7 +176,6 @@ function set_admin
 
 	if [[ -z $ADMIN ]]
 	then
-		echo "$0: can't figure out the name of the ADMIN group on this machine" >&2
-		exit 1
+		die "can't figure out the name of the ADMIN group on this machine"
 	fi
 }

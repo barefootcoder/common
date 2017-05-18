@@ -1,0 +1,45 @@
+#! /bin/bash -e
+
+source ./functions
+
+
+: ${MUSICHOME:=/export/music}
+
+# build it
+if [[ -d $MUSICHOME ]]
+then
+	: # everthing is good
+elif [[ ! -e $MUSICHOME ]]
+then
+	# just make it
+	mkdir -p $MUSICHOME
+else
+	# it exists, but it's not a directory; that's tragic
+	die "$MUSICHOME not a directory; cannot continue"
+fi
+
+# now populate it
+
+# most dirs come from Dropbox
+for dir in ~/Dropbox/music/*
+do
+	make_link "$dir" "$MUSICHOME/$(basename $dir)"
+done
+
+# but a few come from the music project
+for dir in ~/proj/music/*
+do
+	if [[ -d $dir ]]
+	then
+		make_link $dir $MUSICHOME/$(basename $dir)
+	fi
+done
+
+# finally, throw a fit if there's anything in $MUSICHOME that *isn't* a link
+for file in $MUSICHOME/*
+do
+	if [[ ! -L $file ]]
+	then
+		echo "WARNING! $file isn't a symlink!" >&2
+	fi
+done

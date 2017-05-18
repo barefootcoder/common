@@ -334,3 +334,10 @@ done
 # may as well go ahead and fix the perms on this dir since little will
 # actually work unless the perms are correct
 chmod -R go-rwx ~/.ssh
+
+
+###########################
+# Subscripts
+###########################
+
+./build-music
