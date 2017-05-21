@@ -1,0 +1,9 @@
+#! /bin/bash
+
+# This is designed to be run from cron, so use full paths for everything.
+LOCALHOSTNAME=$(/usr/local/bin/localhostname)
+
+for dir in mozilla config
+do
+	/usr/bin/rsync -az --delete ~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
+done

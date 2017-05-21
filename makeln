@@ -187,7 +187,8 @@ if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	local_dbdir=~/Dropbox/machine/$LOCALHOSTNAME
 	[[ -d $local_dbdir ]] || mkdir -p $local_dbdir
-	for dir in thunderbird config
+	# local copy is a symlink to Dropbox
+	for dir in thunderbird
 	do
 		if [[ ! -e $local_dbdir/$dir ]]
 		then
@@ -199,6 +200,12 @@ then
 			fi
 		fi
 		make_link $local_dbdir/$dir ~/.$dir
+	done
+	# Dropbox dir is just a copy of local dir
+	# (copying handled by crontab, set up below)
+	for dir in firefox mozilla config
+	do
+		[[ -d $local_dbdir/$dir ]] || mkdir -p $local_dbdir/$dir
 	done
 fi
 
@@ -334,6 +341,26 @@ done
 # may as well go ahead and fix the perms on this dir since little will
 # actually work unless the perms are correct
 chmod -R go-rwx ~/.ssh
+
+
+###########################
+# Install crontab
+###########################
+
+tmp_crontab=$(mktemp)
+trap "/bin/rm -f $tmp_crontab" EXIT
+my_crondir=$mydir/conf/crontab
+cat $my_crondir/default.cron >$tmp_crontab
+machine_cron=$my_crondir/$LOCALHOSTNAME.cron
+if [[ -e $machine_cron ]]
+then
+	cat $machine_cron >>$tmp_crontab
+fi
+if ! diff <(crontab -l) $tmp_crontab >/dev/null
+then
+	echo "updating crontab" >&2
+	crontab $tmp_crontab
+fi
 
 
 ###########################
