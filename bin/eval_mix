@@ -110,6 +110,7 @@ sub get_time
 	($mix_name, $vol_num) = ($volume, '') unless $mix_name;
 
 	my ($mix_file) = bsd_glob("$MUSICHOME/tracklists/*/$mix_name.m3u");
+	die("cannot find mix file for: $mix_name") unless $mix_file;
 	$mix_file =~ s/'/'\\''/g;
 	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
 	while ( <PIPE> )
