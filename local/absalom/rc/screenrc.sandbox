@@ -1,2 +1,2 @@
 source ~/.screenrc.vagrant
-stuff "bin/ssh-tunnels --db-only --restart\015"
+stuff "ssh-tunnels --status\015"
