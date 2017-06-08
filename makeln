@@ -343,23 +343,27 @@ done
 chmod -R go-rwx ~/.ssh
 
 
-###########################
+#################################
 # Install crontab
-###########################
+# (but not on Vagrant sandboxes!)
+#################################
 
-tmp_crontab=$(mktemp)
-trap "/bin/rm -f $tmp_crontab" EXIT
-my_crondir=$mydir/conf/crontab
-cat $my_crondir/default.cron >$tmp_crontab
-machine_cron=$my_crondir/$LOCALHOSTNAME.cron
-if [[ -e $machine_cron ]]
+if [[ $(id -un) != "vagrant" ]]
 then
-	cat $machine_cron >>$tmp_crontab
-fi
-if ! diff <(crontab -l) $tmp_crontab >/dev/null
-then
-	echo "updating crontab" >&2
-	crontab $tmp_crontab
+	tmp_crontab=$(mktemp)
+	trap "/bin/rm -f $tmp_crontab" EXIT
+	my_crondir=$mydir/conf/crontab
+	cat $my_crondir/default.cron >$tmp_crontab
+	machine_cron=$my_crondir/$LOCALHOSTNAME.cron
+	if [[ -e $machine_cron ]]
+	then
+		cat $machine_cron >>$tmp_crontab
+	fi
+	if ! diff <(crontab -l) $tmp_crontab >/dev/null
+	then
+		echo "updating crontab" >&2
+		crontab $tmp_crontab
+	fi
 fi
 
 
