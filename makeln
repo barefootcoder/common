@@ -367,4 +367,4 @@ fi
 # Subscripts
 ###########################
 
-./build-music
+[[ -d /export ]] && ./build-music					# don't try to build if there's /export (e.g. a sandbox)
