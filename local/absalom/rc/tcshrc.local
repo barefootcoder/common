@@ -10,7 +10,9 @@ alias ceflow ~/workproj/CE/bin/ceflow
 alias vbounce 'cd $CHEOPSROOT ; vagrant reload'
 
 # Vagrant environment stuff
-alias vagrant-push-box 'setenv CE_VAGRANT_BOX ce-push-sandbox ; setenv CE_VAGRANT_SSHFS_MOUNTPOINT ~/workproj/CE-push ; \
+setenv CE_VAGRANT_BOX abs-dev-sandbox
+setenv CE_VAGRANT_RSYNC_MOUNTPOINT ../CE-mounted
+alias vagrant-push-box 'setenv CE_VAGRANT_BOX abs-push-sandbox ; setenv CE_VAGRANT_RSYNC_MOUNTPOINT ~/workproj/CE-push ; \
 							setenv CE_VAGRANT_PORT_WEB 3003 ; setenv CE_VAGRANT_PORT_ES 9202'
 
 # Vagrant testing stuff
@@ -32,12 +34,10 @@ eval `~/bin/addpath -e $EC2_HOME/bin`
 
 # AWS credentials for Campus Explorer
 setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
-	setenv AWS_ACCESS_KEY AKIAID5YSWB4FWNJGXXQ
-	setenv AWS_SECRET_KEY 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
 setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
 setenv BOTO_CONFIG /home/buddy/.aws-campusexplorer/boto.cfg
-setenv S3CMD_CONFIG /home/buddy/.aws-campusexplorer/s3cfg
-alias s3cmd "s3cmd --config=$S3CMD_CONFIG"
+setenv AWS_ACCESS_KEY AKIAI2IL2NXAUIL3CABA
+setenv AWS_SECRET_KEY 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
 # AWS setup -- END
 
 if ( $?tcsh_reset ) then
