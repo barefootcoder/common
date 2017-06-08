@@ -239,7 +239,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	}
 	# this makes footnote links work better,
 	# and also make single-line final paragraphs stand out
-	$_ .= '<br>' x 10;
+	$_ .= '<br>' x 10 if $blog_type eq 'blogspot';
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
 	# in-place HTML entity replacement (certain types only)
