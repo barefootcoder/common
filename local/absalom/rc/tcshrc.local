@@ -1,48 +1,11 @@
 setenv CE_REMOTE_USERNAME bburden
-setenv CEROOT ~/workproj/CE
 setenv CHEOPSROOT ~/workproj/cheops
-setenv CE_USE_CONFIG /tmp/cepush
 eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
 
-alias cessh ~/workproj/CE/devtools/cessh
-alias cescp ~/workproj/CE/devtools/cescp
-alias ceflow ~/workproj/CE/bin/ceflow
-alias vbounce 'cd $CHEOPSROOT ; vagrant reload'
-
-# Vagrant environment stuff
-setenv CE_VAGRANT_BOX abs-dev-sandbox
-setenv CE_VAGRANT_RSYNC_MOUNTPOINT ../CE-mounted
-alias vagrant-push-box 'setenv CE_VAGRANT_BOX abs-push-sandbox ; setenv CE_VAGRANT_RSYNC_MOUNTPOINT ~/workproj/CE-push ; \
-							setenv CE_VAGRANT_PORT_WEB 3003 ; setenv CE_VAGRANT_PORT_ES 9202'
-
-# Vagrant testing stuff
-alias vagrant-latest-test 'vagrant box list | perl -lane '\''print $F[0] if $F[0] =~ /ce-dev-sandbox-2014/'\'' \
-							| sort | tail -n1'
-alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
-							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
+#alias cessh ~/workproj/CE/devtools/cessh
+#alias cescp ~/workproj/CE/devtools/cescp
+#alias ceflow ~/workproj/CE/bin/ceflow
 
 # backcompat for intra-laptop comms
 alias cibrun 'run cib'
 alias cibvag 'vrun cib'
-
-# AWS setup -- BEGIN
-setenv JAVA_HOME /usr
-setenv EC2_HOME /usr/local/aws
-setenv AWS_ELB_HOME $EC2_HOME
-eval `~/bin/addpath -e $EC2_HOME/bin`
-#complete -C aws_completer aws
-
-# AWS credentials for Campus Explorer
-setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
-setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
-setenv BOTO_CONFIG /home/buddy/.aws-campusexplorer/boto.cfg
-setenv AWS_ACCESS_KEY AKIAI2IL2NXAUIL3CABA
-setenv AWS_SECRET_KEY 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
-# AWS setup -- END
-
-if ( $?tcsh_reset ) then
-	ceflow shell-complete >~/local/.tcshrc.complete.ceflow
-endif
-source ~/local/.tcshrc.complete.ceflow
-alias br 'ceflow switch'
-complete br 'p@1@`git branch | awk -F/ '\''$1 == "  feature" {print $2}'\''`@'

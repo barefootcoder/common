@@ -4,7 +4,7 @@ WorkingDir=~/proj
 WorkingDir=~/workproj
 
 # Policy file for CE
-<<include /home/buddy/workproj/CE/etc/ceflow/CE.conf>>
+#<<include /home/buddy/workproj/CE/etc/ceflow/CE.conf>>
 
 DefaultVC=git
 <<include ~/proj/VCtools/share/conf/git.conf>>
@@ -20,6 +20,10 @@ DefaultSourcePath=git@github.com:%user/%project.git
 <Project common>
 	ProjectDir = ~/common
 </Project>
+
+#<Project cibola-common>
+#	ProjectDir = ~/Dropbox/machine/cibola/common
+#</Project>
 
 <Project CE-cibola>
     ProjectPolicy = CE

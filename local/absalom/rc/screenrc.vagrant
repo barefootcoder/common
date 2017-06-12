@@ -1,4 +1,0 @@
-stuff "eval `ssh-agent-env`\015"
-stuff "ssh-sandbox\015"
-sleep 1
-stuff "cd \$CEROOT\015"

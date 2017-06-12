@@ -1,2 +1,0 @@
-source ~/.screenrc.vagrant
-stuff "ssh-tunnels --status\015"

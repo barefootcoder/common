@@ -1,4 +1,3 @@
-bind ^y source .screenrc.sandbox
 bind ^_ source .screenrc.search
 bind ^v source .screenrc.vctools
 
@@ -17,19 +16,6 @@ screen -t notes
 	stuff "vi ~/docs/notes\015"
 screen -t bc
 	stuff "bc\015"
-screen -t st
-	source .screenrc.sandbox
-screen -t proj
-	source .screenrc.sandbox
-screen -t sandbox
-	source .screenrc.sandbox
-screen -t sql
-	source .screenrc.sandbox
-	stuff "sqlr\015"
-screen -t server
-	source .screenrc.devserver
-screen -t work
-	stuff "cd ~/work/qsift\015"
 screen -t common
 	source .screenrc.vctools
 	stuff "vcd common\015"
@@ -53,14 +39,6 @@ screen -t mixes
 screen -t mtest
 	stuff "cd /export/music\015"
 	stuff "source etc/musicsh\015"
-screen -t push
-	stuff "cd workproj/cheops\015"
-	stuff "vagrant-push-box\015"
-	stuff "vagrant up\015"
-	stuff "vagrant ssh\015"
-screen -t vagrant
-	stuff "vcd cheops\015"
-	stuff "vims vagrant\015"
 screen -t blog
 	stuff "cd Dropbox/personal/blog\015"
 	stuff "vims blog\015"
