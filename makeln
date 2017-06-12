@@ -122,12 +122,6 @@ then
 fi
 make_link $mydir/bin $dir
 
-# ditto for docs, except it comes from Dropbox, not our dir
-if [[ $1 != refresh && -d ~/Dropbox ]]
-then
-	make_link ~/Dropbox/personal ~/docs
-fi
-
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
 if [[ $1 != refresh && -d ~/Dropbox ]]
@@ -152,10 +146,9 @@ fi
 # dirs to symlink in from Dropbox
 if [[ $1 != refresh && -d ~/Dropbox ]]
 then
-	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/ce
+	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/timer
 	do
-		dest_dir=${src_dir##*Dropbox/}
-		dest_dir=~/${dest_dir%%/*}
+		dest_dir=${src_dir##*/}
 		if [[ -d $dir && ! -L $dir ]]
 		then
 			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
@@ -164,6 +157,8 @@ then
 		fi
 		make_link $src_dir $dest_dir
 	done
+	# this one gets renamed when linked
+	make_link ~/Dropbox/personal ~/docs
 fi
 
 # dirs to symlink in from Dropbox as dot-dirs
