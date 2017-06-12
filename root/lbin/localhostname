@@ -7,6 +7,7 @@ use autodie;
 my $lhost_filename = '/etc/localhostname';
 if ( -r $lhost_filename )
 {
+	local *IN;
 	open(IN, $lhost_filename);
 	print scalar <IN>;
 	close(IN);
