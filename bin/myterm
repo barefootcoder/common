@@ -71,12 +71,13 @@ function locate_img
 	done
 	echo $file
 }
-pixmap=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
-if [[ -z $pixmap ]]
+img=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
+if [[ -z $img ]]
 then
 	echo "$me: can't find image file for $pixmap" >&2
 	exit 2
 fi
+pixmap=$img
 
 icondir=/usr/share/icons
 for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
