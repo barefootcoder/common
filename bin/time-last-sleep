@@ -1,15 +1,48 @@
 #!/bin/bash
 . ~/bin/bash_funcs
 
+ago=1
+while getopts ":n:h" opt
+do
+	case $opt in
+		n)	ago=$OPTARG
+			;;
+		h)  echo "usage: $me -h | [-n<num>]" >&2
+			echo "    -n : print the time of this many sleeps ago" >&2
+			echo "    -h : this help message" >&2
+			echo "    num : integer greater than 0 (default: 1)" >&2
+			exit
+			;;
+		:)  usage_error "$OPTARG requires an argument"
+			;;
+		\?) usage_error "unknown argument $OPTARG"
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
 function findit
 {
+	local times=$ago
+	local sleep_msg='Preparing system for mem sleep|Suspending system\.\.\.'
+
 	for log in /var/log/syslog*
 	do
-		if zgrep "Preparing system for mem sleep" $log | tail -n1 | awk '{print $1, $2, $3}'
+		sleeps="$(zgrep -E "$sleep_msg" $log | tac)"
+		if [[ $sleeps ]]
 		then
-			break
+			num=$(echo "$sleeps" | wc -l)
+			if [[ $num -lt $times ]]
+			then
+				times=$(( $times - $num ))
+			else
+				echo "$sleeps" | sed -n "${times}p" | awk '{print $1, $2, $3}'
+				break
+			fi
 		fi
 	done
 }
 
-perlsecs $(findit)
+time=$(findit)
+[[ $time ]] || die "can't find a sleep from $ago times ago"
+perlsecs $time
