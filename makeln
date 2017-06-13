@@ -320,19 +320,19 @@ cd $mydir
 authfile=~/.ssh/authorized_keys
 for file in ssh/*.pub
 do
-	if ! fgrep -q "$(cat $file)" $authfile 2>/dev/null
-	then
-		if fgrep -q $(awk '{print $3}' $file) $authfile 2>/dev/null
-		then
-			# have to put this in a for some reason ... can't seem to make it
-			# not interpolate the @ sign otherwise
-			perl -i -lne '$t=q{'$(awk '{print $3}' $file)'}; print unless /$t$/' $authfile
-		fi
-		cat $file >>$authfile
-	fi
+	replace_in_file $authfile $file '{print $3}'
 done
 
-# 4: .ssh/
+# 4: .ssh/known_hosts
+# similar to authorized_keys, but for known_hosts
+cd $mydir
+knownfile=~/.ssh/known_hosts
+for file in ssh/*.known
+do
+	replace_in_file $knownfile $file '$1 != "#" {print $1}'
+done
+
+# 5: .ssh/
 # may as well go ahead and fix the perms on this dir since little will
 # actually work unless the perms are correct
 chmod -R go-rwx ~/.ssh

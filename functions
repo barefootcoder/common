@@ -133,6 +133,28 @@ function backup_file
 }
 
 
+# replace a line in one file with the contents of another file
+# based on an identifier plucked out using an awk pattern
+function replace_in_file
+{
+	local base_file="$1"
+	local file_piece="$2"
+	local identifier_pattern="$3"
+
+	if ! fgrep -q "$(cat $file_piece)" $base_file 2>/dev/null
+	then
+		identifier=$(awk "$identifier_pattern" $file_piece)
+		if fgrep -q $identifier $base_file 2>/dev/null
+		then
+			# have to put this in a temp var for some reason ... can't seem to
+			# make it not interpolate any @ signs in identifier otherwise
+			perl -i -lne '$t=q{'$identifier'}; print unless /$t$/' $base_file
+		fi
+		cat $file_piece >>$base_file
+	fi
+}
+
+
 # find the profie directory for Mozilla
 # Phoenix/Firebird/Firefox/whatever the hell it is this week
 function find_mozilla_profile_dir
