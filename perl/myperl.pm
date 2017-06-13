@@ -559,6 +559,7 @@ File::Stat
 Data::Rmap
 File::Next
 XML::MyXML
+Path::Tiny
 Const::Fast
 Path::Class
 Tie::IxHash
