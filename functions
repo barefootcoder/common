@@ -46,6 +46,9 @@ function make_link
 	then
 		# don't bother if it's already pointing at the right place
 		:
+	elif [[ $(realpath "$2") == ~/Dropbox/* ]]
+	then
+		die "won't make symlinks inside Dropbox folder [$2]"
 	elif [[ -e $2 || -L $2 ]]
 	then
 		# there's _something_ there, but not the right something

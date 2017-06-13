@@ -148,7 +148,7 @@ if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/timer
 	do
-		dest_dir=${src_dir##*/}
+		dest_dir=~/${src_dir##*/}
 		if [[ -d $dir && ! -L $dir ]]
 		then
 			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
