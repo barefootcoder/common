@@ -1,6 +1,8 @@
 #! /bin/bash
 source ~/bin/bash_funcs
 
+FONTDIR=~/.fonts
+mkdir -p $FONTDIR
 for file
 do
 	if [[ $file != *.[to]tf ]]
@@ -8,6 +10,6 @@ do
 		die "must have a .ttf or .otf file to work with"
 	fi
 
-	cp "$file" ~/.fonts
+	cp "$file" $FONTDIR
 done
 fc-cache -fv
