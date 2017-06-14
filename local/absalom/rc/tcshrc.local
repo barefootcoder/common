@@ -1,6 +1,5 @@
 setenv CE_REMOTE_USERNAME bburden
 setenv CHEOPSROOT ~/workproj/cheops
-eval `~/bin/addpath -eb PERL5LIB $CEROOT/lib $CEROOT/tlib`
 
 #alias cessh ~/workproj/CE/devtools/cessh
 #alias cescp ~/workproj/CE/devtools/cescp
