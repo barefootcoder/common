@@ -24,7 +24,7 @@ then
 	shift
 fi
 
-bin/decibel-volume set $volume
+~/bin/decibel-volume set $volume
 python /usr/share/decibel-audio-player/src/remote.py pl-set "$playlist"
 [[ $mode == "sleep" ]] && exit
 for i in {1..9}
@@ -32,6 +32,6 @@ do
     sleep 300
 	for j in $(seq 1 $(( ($i + 1) / 2 )) )
 	do
-		bin/decibel-volume up
+		~/bin/decibel-volume up
 	done
 done
