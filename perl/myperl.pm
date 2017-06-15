@@ -550,7 +550,7 @@ TryCatch
 Template
 JSON::XS
 MCE::Map
-#MP3::Tag																# constantly reinstalls itself :-(
+MP3::Tag											# constantly reinstalls itself :-(
 MP3::Info
 local::lib
 Test::Most
@@ -560,6 +560,7 @@ Data::Rmap
 File::Next
 XML::MyXML
 Path::Tiny
+Date::Easy											# finally got to the point where enough stuff depends on this
 Const::Fast
 Path::Class
 Tie::IxHash
@@ -569,6 +570,7 @@ Perl6::Form
 Dist::Zilla
 Math::Round
 Date::Parse
+Config::Any
 experimental
 Import::Into
 Sub::Install
@@ -578,6 +580,7 @@ Carp::Always
 Email::Stuff
 Date::Format
 IO::Prompter
+Git::Helpers
 Perl6::Gather
 Data::Printer
 Test::Command
