@@ -5,5 +5,8 @@ LOCALHOSTNAME=$(/usr/local/bin/localhostname)
 
 for dir in mozilla config
 do
-	/usr/bin/rsync -az --delete ~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
+	if [[ -d ~/Dropbox/machine/$LOCALHOSTNAME/$dir ]]
+	then
+		/usr/bin/rsync -az --delete ~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
+	fi
 done
