@@ -16,6 +16,7 @@
 :map <C-B><C-B> :w<CR>^:!fake_timer -w2 breakdown <cWORD> %<CR>
 :map <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
 :imap <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
+:map <C-L><C-L> :w<CR>^:!fake_timer -w2 total <cWORD> %<CR>
 :map <C-D><C-D> :w<CR>^:!fake_timer daybreak today %<CR>
 :map <C-D><C-Y> :w<CR>^:!fake_timer daybreak yesterday %<CR>
 :map <C-D><C-F> :w<CR>^:!fake_timer daybreak 'last friday' #<CR>
