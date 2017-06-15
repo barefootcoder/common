@@ -26,7 +26,7 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-arg=$1
+arg="$1"
 
 
 if [[ $plain_file ]]
@@ -40,7 +40,7 @@ then
 	fi
 else
 	# try finding it in the path
-	fullpath=$(which $arg 2>/dev/null)
+	fullpath=$(which "$arg" 2>/dev/null)
 
 	if [[ $? > 0 ]]
 	then
@@ -52,13 +52,13 @@ else
 fi
 
 
-/bin/ls -lF $fullpath
-filetype=$(file -L $fullpath)
+/bin/ls -lF "$fullpath"
+filetype=$(file -L "$fullpath")
 echo $filetype
 
 if [[ $filetype == *text* || $filetype == *"Lisp data"* ]]
 then
-	wc -l $fullpath
+	wc -l "$fullpath"
 fi
 
 if [[ $edit ]]
@@ -75,7 +75,7 @@ fi
 # if it's a command, we might be able to get some further information
 if [[ ! $plain_file ]]
 then
-	if man $arg >/dev/null 2>&1
+	if man "$arg" >/dev/null 2>&1
 	then
 		echo "man page is available"
 	fi
