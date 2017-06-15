@@ -146,7 +146,7 @@ fi
 # dirs to symlink in from Dropbox
 if [[ $1 != refresh && -d ~/Dropbox ]]
 then
-	for src_dir in ~/Dropbox/rpg ~/Dropbox/work/timer
+	for src_dir in ~/Dropbox/proj ~/Dropbox/rpg ~/Dropbox/work/timer
 	do
 		dest_dir=~/${src_dir##*/}
 		if [[ -d $dir && ! -L $dir ]]
