@@ -34,6 +34,7 @@
 #	*	Environment variables in "badd" lines are okay; vim will expand them.  But in the "args"
 #		line, we'll have to expand that ourselves.  Also, there might be tildes which need expanding
 #		(this applies to the "cd" line as well).  Thus the `eval`s below.
+#	*	Newer versions of `vim` use `argadd` instead of `args`.  So we search for either.
 
 for prefix in ~/.vimS- ~/vimS/ ~/local/data/vimS/ ~/proj/vimS/ ./vimS/
 do
@@ -189,4 +190,4 @@ then
 fi
 
 eval $(awk '$1 == "cd"' $sessionfile)
-eval vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' $(awk '$1 == "args" { print $2 }' $sessionfile)
+eval vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' $(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
