@@ -37,9 +37,9 @@ do
 done
 
 
-###########
-## FUNCS ##
-###########
+##############
+## UI FUNCS ##
+##############
 
 
 function die
@@ -71,6 +71,11 @@ function yn
 		return 1
 	fi
 }
+
+
+###################
+## NETWORK FUNCS ##
+###################
 
 
 function get_location
