@@ -1,5 +1,21 @@
 #! /bin/bash
 
+
+# determine the wired interface
+# it used to always be eth0, but nowadays, not so much
+function eth0
+{
+	for interface in $(ifconfig -s -a | awk 'NR > 1 {print $1}')
+	do
+		if ethtool $interface 2>/dev/null | grep -q "Supported ports"
+		then
+			echo $interface
+			break
+		fi
+	done
+}
+
+
 # figure out whether we're going to connect or not
 function network_up
 {
@@ -25,8 +41,8 @@ done
 # this is a bit more intrusive,
 # but fixes some things the above doesn't
 echo -ne "\ngoing deeper "
-ip link set eth0 down
-ip link set eth0 up
+ip link set $(eth0) down
+ip link set $(eth0) up
 
 for n in $(seq 1 20)
 do
