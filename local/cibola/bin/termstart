@@ -15,11 +15,12 @@ fi
 cd $CHEOPSROOT
 vagrant up
 
-if ( screen -ls ||: ) | grep base
+session=${1:-base}
+if ( screen -ls ||: ) | grep $session
 then
-	cmd="screen -x base"
+	cmd="screen -x $session"
 else
-	cmd="screen -S base"
+	cmd="screen -S $session"
 fi
 
 # Music desktop stuff
