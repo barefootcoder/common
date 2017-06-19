@@ -4,11 +4,14 @@ use 5.14.0;
 use autodie ':all';
 use warnings FATAL => 'all';
 
+use Const::Fast;
 use Text::Balanced qw<:ALL>;
 use Text::Tabs; $tabstop = 4;
 
 
 my $pre_re = qr/^\.$/;
+my $commit_sha_re = qr/\[([0-9a-f]{10})\]/;
+const my $REPO_URL => 'https://github.com/campus-explorer/CE/commit';
 
 my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block
 my $in_list = 0;
@@ -61,6 +64,8 @@ while (<>)
 		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
 		s/^  // if $in_list and not /^\s+[*#\d]/;						# continuation of bullet items
 
+		s{$commit_sha_re}{[$REPO_URL/$1 $1]}g;							# link to GitHub via commit SHA1
+
 		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
 		s{(^|\W)_(.+?)_(\W|$)}{$1//$2//$3}g;							# italics
 		s/\[(.*?)\|(.*?)\]/[$1 $2]/g;									# links
@@ -68,7 +73,7 @@ while (<>)
 		s/--/—/g;														# em dashes
 		s/ - / – /g;													# en dashes
 
-		s/\b([A-Z][a-z]+[A-Z][a-z]+\w*)\b/!$1/g;						# stop auto-linking to Wiki pages for camel case
+		s{\b([A-Z][a-z/]+[A-Z][a-z/]+\w*)\b}{!$1}g;						# stop auto-linking to Wiki pages for camel case
 
 		# put any quoted strings back
 		s/{Q(\d+)}/${$quoted_strings[$1]}/g;

@@ -109,10 +109,10 @@ then
 		set -o pipefail
 		copy-to-clipboard blogify "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.trac ]]
+	elif [[ "$1" == *.trac || $fullpath == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
 		set -o pipefail
-		copy-to-clipboard ce_commit_link "$1"
+		copy-to-clipboard fmt-for-trac "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.md || "$1" == *.email || "$1" == *.gs ]]
 	then
@@ -124,11 +124,6 @@ then
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
-	elif [[ $fullpath == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
-	then
-		set -o pipefail
-		copy-to-clipboard fmt-for-trac "$1"
-		echo "copied to X clipboard"
 	elif [[ $1 == *.testing.notes || $fullpath == */C3V/* || $(basename "$1") == github.reply || $fullpath == */custom/* ]]
 	then
 		copy-to-clipboard cat "$1"
