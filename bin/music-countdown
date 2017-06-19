@@ -1,27 +1,62 @@
 #! /bin/bash
 . ~/bin/bash_funcs
 
-if [[ $(get_location) == "work" ]]
+function USAGE
+{
+	cat <<EOM
+
+usage: $me [--work] [--alarm | --sleep]
+
+    --alarm         : start at medium-loud volume and increase
+                      (default: start at low volume and increase)
+    --sleep         : play sleep playlist at low volume
+                      (default: play wake playlist)
+    --work          : play even when at work
+                      (exit immediately when at work)
+    --help          : this help message
+
+EOM
+}
+
+mode=wake
+play_at_work=false
+while [ $# -gt 0 ]
+do
+	case $1 in
+		--alarm)		mode=alarm
+						shift
+						;;
+		--sleep)		mode=sleep
+						shift
+						;;
+		--work)			play_at_work=true
+						shift
+						;;
+		--help|-h|-\?)	USAGE
+						exit
+						;;
+		*)              usage_error "Unrecognized option: $1"
+						;;
+	esac
+done
+
+
+
+if [[ $(get_location) == "work" ]] && ! $play_at_work
 then
 	die "will not play music at work"
 fi
 
-mode=wake
-
 volume=1
-if [[ $1 == "--alarm" ]]
+if [[ $mode == "alarm" ]]
 then
-	mode=alarm
 	volume=22
-	shift
 fi
 
 playlist=/home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
-if [[ $1 == "--sleep" ]]
+if [[ $mode == "sleep" ]]
 then
-	mode=sleep
 	playlist=/home/buddy/Dropbox/music/tracklists/Merrick/'Numeric Driftwood.m3u'
-	shift
 fi
 
 ~/bin/decibel-volume set $volume
