@@ -29,7 +29,7 @@ foreach my $name (keys %$data)
 	my $window = get_window_id($name);
 	if (!$window and $data->{$name}->{autospawn})
 	{
-		type_in_contact_window("$name\n");
+		type_in_contact_window("$name\r");
 
 		# hopefully that gets us a window at this point
 		# although we might have to wait a second for it to show up
@@ -48,9 +48,9 @@ foreach my $name (keys %$data)
 
 # for some reason, my groups get in the wrong open/closed state sometimes
 # this should guarantee the right things are open or closed
-type_in_contact_window("me\n-");
-type_in_contact_window("work\n+");
-type_in_contact_window("personal\n+");
+type_in_contact_window("me\r-");
+type_in_contact_window("work\r+");
+type_in_contact_window("personal\r+");
 
 
 func get_screen_size
