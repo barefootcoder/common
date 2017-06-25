@@ -52,6 +52,10 @@ map <C-Y> :files<CR>
 map <C-Z> :%s/[ 	]\+$//<CR>
 " convert all tabs to spaces ... BE VERY CAREFUL WITH THIS ONE!
 map <C-Z><C-Z> :w<CR>:!vcpatchws -f %<CR>:e!<CR>
+" convert tabs to spaces on the current line only
+map <Esc>z<Esc>z !!expand -t4<CR>
+" convert tabs to spaces for the current paragraph
+map <Esc>z} !}expand -t4<CR>}
 
 " search for the word under the cursor
 nmap <C-_> *|																				" Ctrl-/
