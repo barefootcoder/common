@@ -88,7 +88,7 @@ my $hash = '#';
 my $front_boundary = qr/(^|[^\w\\])/;
 my $back_boundary = qr/(?=\W|$)/;
 my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
-my $endnote_header = '<div style="line-height: 70%;">' . "\n" . '_' x 10 . "\n\n";
+my $endnote_header = '<div style="line-height: 80%;">' . "\n" . '_' x 10 . "\n\n";
 my $section_break = <<EOT;
 
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
@@ -319,7 +319,7 @@ sub url_block
 	$url =~ s/&[lr]squo;/'/g;											# fixup single quotes
 	$url =~ s/&[lr]dquo;/"/g;											# fixup double quotes
 
-	if ($url =~ /^(\w+):/)												# external link
+	if ($url =~ /^(\w+):\S+$/)											# external link
 	{
 		die("can't do forward links for external links") if $forward;
 		given ($1)
