@@ -17,14 +17,17 @@ sub USAGE
 {
 	say <<".";
 
-usage: $ME [-v] [-title "<window title>" [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] "<cmd> [<arg> ...]"
-	               -v : be chatty about it
-       <window title> : title of window (in order to locate it)
+usage: $ME [-v] [-D] [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] [-ps <ps-cmd-line>] "<cmd> [<arg> ...]"
+   or: $ME [-v] [-D] -firefox
+                   -v : be chatty about it
+                   -D : show internal details
+             -firefox : restore Firefox windows (FF must be running, selected tabs must be sane)
                   <W> : desired width of the window
                   <H> : desired height of the window
                   <X> : desired X offset of the window
                   <Y> : desired Y offset of the window
             <desktop> : desired desktop of the window (by name)
+        <ps-cmd-line> : full command line as seen by `ps` (if different from command to run)
                 <cmd> : command to run if process not already running
                 <arg> : arguments for the command to be run
         if the process is already running, it is not spawned
@@ -34,10 +37,12 @@ usage: $ME [-v] [-title "<window title>" [-geometry [<W>x<H>][+<X>+<Y>]] [-deskt
 
 my $OPT = {};
 GetOptions($OPT,
-	'title=s',
+	'ps=s',
 	'geometry=s',
 	'desktop=s',
+	'firefox',
 	'verbose|v',
+	'debug|D',
 	'help|h',
 );
 if ($OPT->{geometry})
@@ -49,9 +54,20 @@ if ($OPT->{geometry})
 	$OPT->{yoff}   = $5;
 }
 USAGE() if $OPT->{help};
-my ($command) = @ARGV or die("must specify command");
-$OPT->{title} //= $command;
-$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop") if $OPT->{desktop};
+my ($command, $tag);
+if ( $OPT->{firefox} )
+{
+	$tag = $command = 'firefox';
+	$OPT->{ps}      = '/usr/lib/firefox/firefox';
+	die("you must run Firefox, restore the session, and choose appropriate tabs") unless &get_pid;
+}
+else
+{
+	($command)      = @ARGV or die("must specify command");
+	$OPT->{ps}    //= $command;
+	$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop") if $OPT->{desktop};
+	$tag            = $command =~ s/ .*$//r;
+}
 
 
 sub info
@@ -59,10 +75,50 @@ sub info
 	say STDERR "$ME: @_" if $OPT->{verbose};
 }
 
+sub get_pid ()
+{
+	state $pid;
+
+	$pid //= do
+	{
+		my $find_pid = "/usr/bin/pgrep -fx '$OPT->{ps}'";
+		my @pids = bash \lines => $find_pid;
+		die("can't identify process (too many candidates)") if @pids > 1;
+		info("found pid: $pids[0] [via: $find_pid]") if @pids;
+		shift @pids;
+	};
+}
+
+sub is_visible (;$)
+{
+	local $_ = shift if @_;
+	my ($desktop) = bash \lines => "xdotool get_desktop_for_window $_ 2>/dev/null";
+	return $desktop != -1;
+}
+
 sub X (@)
 {
-	info("doing window operation on $OPT->{title}:", $_[0] // 'N/A');
-	bash "xdotool search --onlyvisible --name '$OPT->{title}' @_ >/dev/null 4>&1";
+	state $wid;
+
+	my $pid = get_pid;
+	$wid //= do
+	{
+		my $find_wid = "xdotool search --pid $pid";
+		my @wids = grep { is_visible } bash \lines => $find_wid;
+		warn("multiple candidate windows (choosing first one)") if @wids > 1 and not $OPT->{firefox};
+		info("found wid: $wids[0] [via: $find_wid]") if @wids;
+		shift @wids;
+	};
+
+	return unless $wid;
+	return 1 unless @_;
+
+	my @args = map { /^%W$/ ? $wid : $_ } @_;
+	info("doing window operation on pid $pid: $args[0]");
+	my $redirect = $OPT->{debug} ? '' : ">/dev/null 2>&1 4>&1";
+	my $cmd = "xdotool @args $redirect";
+	info("will run: $cmd") if @args and $OPT->{debug};
+	bash $cmd;
 }
 
 sub cur_desktop_num
@@ -71,28 +127,94 @@ sub cur_desktop_num
 }
 
 
+sub ff_identify_window (;$)
+{
+	local $_ = shift if @_;
+	my ($win_name) = bash \lines => "xdotool getwindowname $_";
+	die("cannot get window name for $_") unless $win_name;
+
+	given (lc $win_name)
+	{
+		return "work"		when /campus explorer/;
+		return "personal"	when /\btodo\b/ or /\bourgroceries\b/;
+		return "music"		when /mp3va\.com/ or /azlyrics/;
+
+		return "date-easy"	when /metacpan/;
+		return "map"		when /google maps/;
+		return "comms"		when /my drive/;
+
+		return "d&d"		when /faerun/ or /\b5e\b/;
+		return "scapers"	when /\bheroscapers\b/;
+	}
+	die("can't identify window: $win_name [$_]");
+}
+
+
+########
+# MAIN #
+########
+
+
 # remember current desktop so we can go back there when we're done
 my $orig_desktop = cur_desktop_num();
 info("currently on desktop $orig_desktop");
-if ( $OPT->{desktop} )
-{
-	bash "xdotool set_desktop $OPT->{desktop}";
-	info("switched to desktop " . cur_desktop_num());
-}
 
-bash "$command >/dev/null 2>&1 &" unless bash "/usr/bin/pgrep '$command' >/dev/null";
-while (1)
+if ( $OPT->{firefox} )
 {
-	until (X)
+	print "[$tag] looking for windows ";
+	my $find_wids = "xdotool search --pid ${\(get_pid)}";
+	my @wids = grep { is_visible } bash \lines => $find_wids;
+	info("found ", scalar(@wids), " wids [via: $find_wids]");
+
+	my %wids = map { $_ => ff_identify_window } @wids;
+	do { require Data::Printer; Data::Printer::p(\%wids) } if $OPT->{debug};
+
+	print '. found ';
+	foreach (keys %wids)
 	{
-		usleep 100;
+		# put everything on the right desktop
+		my $desktop;
+		given ( $wids{$_} )
+		{
+			$desktop = 'Main'		when [qw< work date-easy map	>];
+			$desktop = 'Comms'		when [qw< comms					>];
+			$desktop = 'Music'		when [qw< music					>];
+			$desktop = 'Personal'	when [qw< personal d&d scapers	>];
+
+			die("logic error (no desktop for $_)");
+		}
+		X set_desktop_for_window => $_ => $DESKTOPS{$desktop};
+
+		# adjust position for the few that need it
+		my ($x, $y);
+		given ( $wids{$_} )
+		{
+			($x, $y) = (0, 289)		when 'music';
+		}
+		X windowmove => $_ => $x, $y if defined $x;
 	}
-	last if X windowactivate => '--sync';
+	say '. restored';
 }
-X windowmove => $OPT->{xoff}, $OPT->{yoff}    if $OPT->{xoff};
-X windowsize => $OPT->{width}, $OPT->{height} if $OPT->{width};
-# this is probably unnecessary now that we're switching desktops
-X set_desktop_for_window => $OPT->{desktop}   if $OPT->{desktop};
+else
+{
+	bash "$command >/dev/null 2>&1 &" unless get_pid;
+	my $count = 0;
+	print "[$tag] looking for process and window ";
+	while (1)
+	{
+		until (get_pid and X)
+		{
+			print "." if ++$count % 100 == 0;
+			usleep 100;
+		}
+		last if X windowactivate => '--sync' => '%W';
+	}
+	print '. found ';
+	X windowmove => '%W' => $OPT->{xoff}, $OPT->{yoff}    if $OPT->{xoff};
+	X windowsize => '%W' => $OPT->{width}, $OPT->{height} if $OPT->{width};
+	X set_desktop_for_window => '%W' => $OPT->{desktop}   if $OPT->{desktop};
+	say '. restored';
+}
 
 # return to original desktop
 info("returning to desktop $orig_desktop");

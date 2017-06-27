@@ -16,7 +16,7 @@ if [[ ! $only_stack ]]
 then
 	# Desktop 1 == Comms (desktops are zero-based)
 
-	xrestore -title "$ThunderbirdWindow" -geometry +150+58 -desktop Comms thunderbird
+	xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
 
 	PidginWindow="Buddy List"
 	if ! /usr/bin/pgrep pidgin >/dev/null

@@ -15,18 +15,22 @@ const my $PIDGIN_DIR => path($ENV{HOME}, '.purple');
 
 my $x = xml_to_object($PIDGIN_DIR->child('accounts.xml')->slurp);
 my @dirs =
-	map { $PIDGIN_DIR->child('logs', $_, '.system') }
-	map { join("/", @$_) }
-	map { [ $_->[0] =~ s/^prpl-//r, $_->[1] =~ s|/.*$||r ] }
-	grep { $_->[2] == 1 }
-	map { [ $_->path("protocol")->value, $_->path("name")->value, 
-			map { $_->value }
-			grep { $_->attr("name") eq "auto-login" }
-			map { $_->path("setting") }
-			$_->path("settings")
-		] }
-	$x->path("account");
+	# read from the bottom up
+	map  { $PIDGIN_DIR->child('logs', $_, '.system') }					# ... find system log dir of subdir
+	map  { join("/", @$_) }												# ... form a subdir ...
+	map  { [ $_->[0] =~ s/^prpl-//r, $_->[1] =~ s|/.*$||r ] }			# ... normalize protocol and path ...
+	grep { $_->[2] == 1 }												# ... only consider auto-login accounts ...
+	grep { ($_->[2] // "") ne "" }										# ... ditch accounts w/o auto-login ...
+	map  { [ $_->path("protocol")->value, $_->path("name")->value, 		# ... find all auto-login settings ...
+			map { $_->value }											#		(get the value of that setting)
+			grep { $_->attr("name") eq "auto-login" }					#		(only auto-login settings)
+			map { $_->path("setting") }									#		(each individual setting)
+			$_->path("settings")										#		(go through all settings blocks)
+		 ] }
+	$x->path("account");												# for every Pidgin account ...
 
+# now count how many files each auto-login account's system log has
+# (i.e. get the current status; connecting will make a new file)
 my %file_counts =
 	map { $_ => scalar $_->children }
 	@dirs;
