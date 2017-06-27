@@ -2,6 +2,11 @@
 
 # This is designed to be run from cron, so use full paths for everything.
 LOCALHOSTNAME=$(/usr/local/bin/localhostname)
+if [[ -z $LOCALHOSTNAME ]]
+then
+	echo "$0: machine not set up yet" >&2
+	exit 1
+fi
 
 for dir in mozilla config
 do
@@ -10,3 +15,12 @@ do
 		/usr/bin/rsync -az --delete ~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
 	fi
 done
+
+
+# machine specific stuff
+case $LOCALHOSTNAME in
+	cibola)		src_dir=~/work
+				find_large_logs="find $src_dir/ -name *.log -size +32M -printf "'%P\n'
+				rsync -az --exclude-from=<($find_large_logs) $src_dir/ ~/Dropbox/work/ce/
+				;;
+esac
