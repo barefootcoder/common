@@ -29,8 +29,7 @@ screen -t vctools
 	stuff "vcd VCtools\015"
 screen -t copy
 screen -t music
-	stuff "cd /export/music\015"
-	stuff "source etc/musicsh\015"
+	stuff "vcd music\015"
 	stuff "vims music\015"
 screen -t mixes
 	stuff "cd /export/music\015"
