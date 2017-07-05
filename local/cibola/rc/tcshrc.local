@@ -1,6 +1,3 @@
-# make locate work even though my home dir is encrypted
-setenv LOCATE_PATH ~/local/var/mlocate.db
-
 setenv CE_REMOTE_USERNAME bburden
 setenv CEROOT ~/workproj/CE-mounted
 setenv CHEOPSROOT ~/workproj/cheops
