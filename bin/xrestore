@@ -135,9 +135,9 @@ sub ff_identify_window (;$)
 
 	given (lc $win_name)
 	{
-		return "work"		when /campus explorer/;
-		return "personal"	when /\btodo\b/ or /\bourgroceries\b/;
-		return "music"		when /mp3va\.com/ or /azlyrics/;
+		return "work"		when /campus explorer/ or /\bce\b/;
+		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /do not read this blog/;
+		return "music"		when /mp3va\.com/ or /album download/ or /azlyrics/ or /allmusic/ or /musicbrainz/;
 
 		return "date-easy"	when /metacpan/;
 		return "map"		when /google maps/;
