@@ -77,7 +77,7 @@ sub run_command ()
 		($cfile, $dir) = fileparse($file);
 		chdir $dir;
 	}
-	$cfile =~ s/([ *?[<>|&;\$'"`({!#\\])/\\$1/g;
+	$cfile =~ s/([ *?[<>|&;\$'"`({})!#\\])/\\$1/g;
 
 	my $run_file = $command;
 	$run_file =~ s/\\\{\}/\cC\0/g;
