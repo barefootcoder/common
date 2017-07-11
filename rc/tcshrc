@@ -138,7 +138,7 @@ alias ps 'ps -wwwo user,group,pid,ppid,pgid,stime,tty8,stat,time,cmd'
 alias time '/usr/bin/time -f "\nWallclock: %e (%UU, %SS)"'
 alias psg '/usr/bin/pgrep -f \!* >/dev/null && ps -p `/usr/bin/pgrep -f \!*`'
 alias dfk df -h .
-alias dfa 'df -h | head -n1 ; df -h | awk '\''$1 ~ "/"'\'
+alias dfa 'df -h | head -n1 ; df -h | awk '\''$1 ~ "[/_]"'\'
 	set mfawk='{ mem = $2 / 1024; t = "Mb"; if (mem > 1024) { mem = mem / 1024; t = "Gb" } }'
 	set mfawk="$mfawk"' $1 == "MemFree:" { printf "%7.2f %s main\n", mem, t }'
 	set mfawk="$mfawk"' $1 == "SwapFree:" { printf "%7.2f %s swap\n", mem, t }'
