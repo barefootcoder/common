@@ -47,11 +47,14 @@ then
 	die "will not play music at work"
 fi
 
-volume=1
-if [[ $mode == "alarm" ]]
-then
-	volume=22
-fi
+case $mode in
+	wake)	volume=1
+			;;
+	sleep)	volume=2
+			;;
+	alarm)	volume=22
+			;;
+esac
 
 playlist=/home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
 if [[ $mode == "sleep" ]]
