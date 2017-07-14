@@ -267,7 +267,7 @@ output_if_debug("file(s):", @files);
 # use requested modules
 my %req_modules =
 (
-	A	=>	'Carp::Always',
+	A	=>	'Devel::Confess',
 );
 $ENV{PERL5OPT} = join(' ', map { $opt->{$_} ? "-M$req_modules{$_}" : () } keys %req_modules);
 
@@ -283,7 +283,7 @@ if ($opt->{m})
 	elsif (@candidates > 1)												# too many
 	{
 
-		die("$0: method pattern *$opt->{m}* is ambiguous (", join(',', @candidates), ")");
+		die("$0: method pattern /$opt->{m}/ is ambiguous (", join(',', @candidates), ")");
 	}
 	else																# just right
 	{
@@ -299,6 +299,7 @@ spacer();
 run_pre_commands();
 
 my $command;
+my $single_file = @files == 1 && ! -d $files[0];
 if ($opt->{R})
 {
 	# if we're in raw mode, most switches won't mean much
@@ -316,18 +317,28 @@ if ($opt->{R})
 	push @perl_args, -d 'blib' ? '-Iblib/lib' : '-Ilib' unless $opt->{N} =~ /l/;
 	push @perl_args, '%f';												# placeholder for filenames
 	push @perl_args, get_workenv('post_args');
-	$command = "perl @perl_args";
+	$command = "$^X @perl_args";
 }
 else
 {
 	my @prove_args;
 	push @prove_args, '-c' if -t STDOUT;
-	push @prove_args, '-v', '--merge' if $opt->{v};
+	if ( $opt->{v} )
+	{
+		push @prove_args, '-v';
+		# --merge doesn't play nice with -j, so only do it if we only have one file
+		push @prove_args, '--merge' if $single_file;
+	}
 	push @prove_args, '-Q' if $opt->{s};
 	push @prove_args, '-T' if $opt->{T};
 	push @prove_args, -d 'blib' ? '-Iblib/lib' : '-l' unless $opt->{N} =~ /l/;
 	push @prove_args, '-r' unless $opt->{N} =~ /r/;
-	unless ($opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
+	# don't try to parallelize if:
+	# 	-	we've only got one file (nothing to parallelize, and borks --merge)
+	# 	-	the user specifically requested that we not do so with -Nj
+	# 	-	we're using -c (coverage testing and parallelizing don't mix)
+	# 	-	we're using -P (Test::Pretty won't play nice with -j either)
+	unless ($single_file or $opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
 	{
 		my $cpuinfo = '/proc/cpuinfo';
 		my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
