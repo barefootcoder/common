@@ -7,6 +7,18 @@ readonly wikibase='http://confluence.rent.com/display'					# needed for checking
 taint=$(perl -lne 'print "T" if /perl -T/; exit if $. > 1' $1)
 #echo "url would be $(perl -lne 'print "'$wikibase'/$1/$2" if $. == 1 && /^==> (.+?):(.+?) <==$/' "$1")"
 
+function syntax-check
+{
+	if [[ $(file $1) == *"shell script"* ]]
+	then
+		echo "checking bash syntax ..."
+		bash -n $1
+	else
+		perl -c$taint $1
+	fi
+	exit 0
+}
+
 proj=rent
 if [[ $(vc info project) == "rent" ]]
 then
@@ -20,8 +32,8 @@ then
 	ssh $sandbox perl -c$taint "$file"
 elif [[ $(vc info project) == "CE" ]]
 then
-	eval `~/bin/addpath -eb PERL5LIB $CEROOT/extlib/lib/perl5 $CEROOT/extlib/lib/perl5/x86_64-linux`
-	perl -c$taint $1
+	#eval `~/bin/addpath -eb PERL5LIB $CEROOT/extlib/lib/perl5 $CEROOT/extlib/lib/perl5/x86_64-linux`
+	syntax-check $1
 else
 	if realpath "$1" | grep -q blog
 	then
@@ -38,8 +50,7 @@ else
 			# http://confluence.rent.com/display/Arch/Home
 			wikify "$url" | diff -b "$1" -
 		else
-			perl -c$taint $1
-			exit 0
+			syntax-check $1
 		fi
 	fi
 fi
