@@ -1,0 +1,198 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie ':all';
+
+use Path::Class;
+
+
+sub csv_split(;$);
+
+
+my %DESCRIPTIONS =
+(
+	Paycheck		=>	[
+							qr/N6723 CAMPUS EXP DIR DEP/i,
+						],
+	Mortgage		=>	[
+							qr/bac home loans/i,
+							qr/BANK OF AMERICA ONLINE PMT/i,
+						],
+	'Power/Heat'	=>	[
+							qr/s ca edison/i,
+							qr/southern cal gas/i,
+						],
+	Phone			=>	[
+							qr/asurion wireless/i,
+						],
+	'TV/Internet'	=>	[
+							qr/directv service/i,
+							qr/time warner online/i,
+							qr/netflix/i,
+						],
+	Water			=>	[
+							qr/golden state (water|wtr)/i,
+						],
+	House			=>	[
+							qr/travis junge poo/i,
+							qr/jessie flores/i,
+							qr/fidelity nationa/i,
+						],
+	Cars			=>	[
+							qr/carmax auto fin/i,
+						],
+	Insurance		=>	[
+							qr/acsc-huon/i,
+						],
+	Groceries		=>	[
+							qr/trader joe's/i,
+							qr/sprouts/i,
+							qr/smartnfinal/i,
+							qr/ralphs/i,
+							qr/costco whse/i,
+							qr/ocean park pharmacy/i,
+						],
+	Gas				=>	[
+							qr/chevron/i,
+							qr/shell (oil|service)/i,
+							qr/USA 63216/i,
+						],
+	Pets			=>	[
+							qr/aquarium connection/i,
+						],
+	School			=>	[
+							qr/discovery cube/i,
+						],
+	Entertainment	=>	[
+							qr/studo movie gr/i,
+							qr/fandango/i,
+							qr/universal cty/i,
+						],
+	'Eating Out'	=>	[
+							qr/McDonald's/i,
+							qr/Taco Bell/i,
+							qr/Wendys/i,
+							qr/\bKFC\b/i,
+							qr/Popeye's/i,
+							qr/Freddys/i,
+							qr/Indian Haweli/i,
+							qr/Szechuwan Garden/i,
+							qr/7-Eleven/i,
+						],
+	Personal		=>	[
+							qr/playstation network/i,
+							qr/paypal inst xfer/i,
+							qr/vito rest/i,
+						],
+	Charity			=>	[
+							qr/maximum fun/i,
+						],
+	Unknown			=>	[
+							qr/target/i,
+							qr/Wal-Mart/i,
+							qr/PAYMENT FOR AMZ/i,
+							qr/CHASE EPAY/i,
+						],
+	Reimburse		=>	[
+							qr/sm city parking meters/i,
+						],
+	Fees			=>	[
+							qr/Interest Paid/i,
+						],
+	Xfer			=>	[
+							qr/internet transfer/i,
+						],
+);
+
+
+opts <<'-';
+	[-F] <file>
+	-F : family spending output (default: family finances output)
+	reads transactions file (CSV from Ally)
+	converts it to TSV for personal finance sheet
+-
+
+
+@ARGV or usage_error("must supply transaction file");
+my $file = file(shift);
+-r $file or fatal("can't open $file");
+
+my $line;
+foreach ($file->slurp)
+{
+	chomp;
+	if (not $line++)
+	{
+		say join("\t", csv_split) unless $OPT{F};
+		next;
+	}
+
+	my ($date,$time,$amount,$type,$descr) = csv_split;
+	# time is useless
+	# type is always either "Deposit" or "Withdrawal"
+	# amount is always negative for withdrawals, positive for deposits
+
+	my $category = derive_category_from($descr);
+	$amount = -$amount if $type eq 'Withdrawal';
+	my $source = $type eq 'Withdrawal' ? 'CC' : 'ATM';
+	my $who = '';									# might get set later
+	my $what = $descr;								# just as the default
+
+	given ($descr)
+	{
+		when ( /Cardtronics/ and $amount =~ /^[23]00/ )
+		{
+			$category = 'Personal';
+			$who = 'Buddy';
+			$what = 'Lunch money';
+		}
+
+		when ( $category eq 'Eating Out' )
+		{
+			foreach ( @{ $DESCRIPTIONS{$category} } )
+			{
+				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
+			}
+		}
+	}
+
+	if ($OPT{F})
+	{
+		say join("\t", $what,$who,$amount,$source,$date)
+				if $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
+	}
+	else
+	{
+		say join("\t", $date,$time,$amount,$type,$descr,$category);
+	}
+}
+
+
+########
+# SUBS #
+########
+
+# This is an update of CSV::split(), from the old Barefoot libs.
+sub csv_split (;$)
+{
+	my $line = @_ ? shift : $_;
+	require Text::CSV or die("cannot load Text::CSV; install it?");
+
+	my $csv = Text::CSV->new;
+	die("cannot parse line: " . $csv->error_diag) unless $csv->parse($line);
+	return $csv->fields;
+}
+
+
+sub derive_category_from
+{
+	my ($descr) = @_;
+
+	foreach (keys %DESCRIPTIONS)
+	{
+		return $_ if $descr ~~ $DESCRIPTIONS{$_};
+	}
+
+	# can't find a match; just keep it at empty string
+	return '';
+}
