@@ -1,0 +1,35 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie ':all';
+
+use Path::Class;
+use Perl6::Gather;
+
+use PerlX::bash;
+
+
+opts <<'-';
+	[-n<X>] { -e <regex> | <regex> } <file> [...]
+	-n : show <X> newest files (default: 1)
+	-e : next arg is the <regex>, even if it starts with -
+	<X>     : positive integer
+	<regex> : Perl-style regex
+	finds the <X> file(s) containing <regex>
+	which have been created the most recently, according to Git
+-
+
+$OPT{n} //= 1;
+my $regex = $OPT{e} // shift;
+$regex = qr/$regex/;
+
+
+my @files = gather
+{
+	foreach (@ARGV)
+	{
+		take if first { /$regex/ } file($_)->slurp;
+	}
+};
+
+bash "git-creator -t @files | tail -n$OPT{n}";
