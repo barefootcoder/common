@@ -24,8 +24,7 @@ else
 fi
 
 # Music desktop stuff
-decibel_process="python ./decibel-audio-player.py --volume-button"
-xrestore -desktop Music -geometry 1161x711+0+0 -ps "$decibel_process" "decibel-audio-player --volume-button"
+music-player
 xrestore -desktop Music -geometry 1200x768+715+285 kid3
 
 myterm -s Cibola cityofgold 125x50+7+30 $cmd

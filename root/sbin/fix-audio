@@ -2,13 +2,29 @@
 
 # http://askubuntu.com/questions/15223/how-can-i-restart-pulseaudio-without-logout
 
+if [[ $(id -u) != 0 ]]
+then
+	echo "must run as root" >&2
+	exit 1
+fi
+
 player=$(/usr/bin/pgrep -f decibel-audio-player)
 [[ $player ]] && kill %player
 
 pulseaudio --check && pulseaudio -k
 pulseaudio -D
 
-decibel-audio-player --volume-button %F
+# try to restore the music player, if we can
+if [[ $XAUTHORITY == /home/* ]]
+then
+	as_user=${XAUTHORITY#/home/}
+	as_user=${as_user%%/*}
+	cmd=/home/$as_user/bin/music-player
+	if [[ -x $cmd ]]
+	then
+		sudo -u $as_user $cmd
+	fi
+fi
 
 # If this doesn't work, you can also try:
 #	sudo alsa force-reload

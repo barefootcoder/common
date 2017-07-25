@@ -1,0 +1,6 @@
+#! /bin/bash
+
+decibel_command="decibel-audio-player --volume-button $*"
+decibel_command=${decibel_command/% /}
+decibel_process="python ./${decibel_command/-player/-player.py}"
+xrestore -desktop Music -geometry 1161x711+0+0 -ps "$decibel_process" "$decibel_command"
