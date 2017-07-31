@@ -6,6 +6,7 @@ use warnings FATAL => 'all';
 
 use Debuggit DEBUG => 1;
 use Path::Class;
+use Scalar::Util qw< looks_like_number >;
 use List::AllUtils qw< max zip pairmap >;
 
 
@@ -31,13 +32,32 @@ my $MODES =
 								block_line		=>	\&check_for_blogged,
 								end_of_file		=>	\&print_mix_summary,
 							},
+	'mix-artists'		=>	{
+								end_of_block	=>	\&print_volume_summary,
+								block_line		=>	\&collect_artist,
+								end_of_file		=>	\&print_artist_stats,
+							},
 };
+
+my %ROMAN =
+(
+	I		=>	1,
+	II		=>	2,
+	III		=>	3,
+	IV		=>	4,
+	V		=>	5,
+	VI		=>	6,
+	VII		=>	7,
+	VIII	=>	8,
+	IX		=>	9,
+	X		=>	10,
+);
 
 my $mode = shift;
 die("unrecognized mode: $mode") unless exists $MODES->{$mode};
 my $process = $MODES->{$mode};
 
-my $file = file(shift);
+my $file = file(pop);
 say "going to load file $file";
 
 my %header;
@@ -223,4 +243,110 @@ sub print_mix_summary
 		}
 	}
 	printf($fmt, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00");
+}
+
+###############
+# mix-artists #
+###############
+
+sub _in_the_right_mix
+{
+	state $right_mix = do
+	{
+		# while in here, doing a thing which will only be done once per script run,
+		# go ahead and set up our output file handle
+		open(PAGER, "| $ENV{PAGER}");
+		select PAGER;
+
+		my $mix_line = shift @ARGV or die("must specify mix to analyze artists on");
+		unless ( $mix_line =~ s/\s+ $roman_numeral $//x )
+		{
+			warn("assuming unnumbered mix");
+		}
+		$mix_line;
+	};
+
+	return undef unless $header{volume};
+	$header{mix} //= do
+	{
+		my $m = $header{volume} =~ s/\s+ ($roman_numeral) $//xr;
+		$header{volno} = $1 // 'I';
+		$m
+	};
+	return $header{mix} eq $right_mix;
+}
+
+my ($track_pos, %artist_count, %artist_total, %artist_pos, %artist_distances);
+sub collect_artist
+{
+	if (_in_the_right_mix())
+	{
+		my ($title, $artist, $soundtrack) = /^ .... \h+ (.*?) \h - \h (.*?) (?: \h \[ (.*?) \] )? (?: \t|$ )/x;
+		die("can't work out title/artist from line: |$_|") unless $title and $artist;
+		$artist = "[$soundtrack]" if $soundtrack and grep { not looks_like_number($_) } split('/', $soundtrack);
+		$artist =~ s/^ the \h //xi;
+
+		++$track_pos;
+		++$artist_count{ $artist };
+		++$artist_total{ $artist }->{ $header{volno} };
+		push @{ $artist_distances{ $artist} }, $track_pos - $artist_pos{ $artist } if $artist_pos{ $artist };
+		$artist_pos{ $artist } = $track_pos;
+	}
+}
+
+sub print_volume_summary
+{
+	if (_in_the_right_mix())
+	{
+		my @artists =
+			sort { $a cmp $b             }
+			grep { $artist_count{$_} > 1 }
+			keys %artist_count;
+
+		if (@artists)
+		{
+			say "\n\n$header{volume}";
+			say "=" x length($header{volume});
+			printf "%-40s : %2d  [%s]\n", $_, $artist_count{$_}, join(',', @{ $artist_distances{$_} }) foreach @artists;
+		}
+
+		# reset for next volume
+		$track_pos = 0;
+		%artist_count     = ();
+		%artist_pos       = ();
+		%artist_distances = ();
+	}
+}
+
+sub print_artist_stats
+{
+	my $header = 'TOTAL FOR MIX:';
+	say "\n\n$header";
+	printf "%-40s        %s\n", "=" x length($header), join('|', sort { $ROMAN{$a} <=> $ROMAN{$b} } keys %ROMAN);
+	my @artists;
+	foreach ( keys %artist_total )
+	{
+		my $artist = [ $_ ];
+		my ($count, @volumes);
+		my $astats = $artist_total{$_};
+		foreach ( keys %$astats )
+		{
+			$count += $astats->{$_};
+		}
+		next unless $count > 1;
+		my $volmap = join('|',
+			pairmap { $b . ' ' x (length($a) - length($b))   }
+			pairmap { ($a, ' ' x int(length($a)/2) . $b) }
+			map     { ($_, $astats->{$_} ? 'X' : ' ')    }
+			sort    { $ROMAN{$a} <=> $ROMAN{$b}        }
+			keys    %ROMAN
+		);
+		push @$artist, $count, $volmap;
+		push @artists, $artist;
+	}
+	printf "%-40s : %2d  [%s]\n", @$_ foreach
+		sort { $b->[1] <=> $a->[1] || $a->[0] cmp $b->[0] }
+			@artists;
+
+	close PAGER;
 }
