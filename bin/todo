@@ -59,12 +59,12 @@ menu(\%main_menu, prompt => "\nTask menu:  (Esc to refresh)") while 1;
 # HELPER SUBS
 #################
 
-func today
+func our_today ()
 {
 	# we want each day to start at 6am
 	# thus, times prior to 6am should register as "yesterday"
 	# so we just take the current time and subtract 6 hours
-	return time - 60 * 60 * 6;
+	return date(now - 6*hours);
 }
 
 func pick_item ($action)
@@ -156,7 +156,7 @@ func change_context ($context?)
 	{
 		when ('today')
 		{
-			my $day = time2str('%a', today);
+			my $day = our_today->strftime("%a");
 			$cur_context = $CONTEXT_DAYS{$day};
 		}
 
