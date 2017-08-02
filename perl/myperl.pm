@@ -561,6 +561,7 @@ File::Next
 XML::MyXML
 Path::Tiny
 Date::Easy											# finally got to the point where enough stuff depends on this
+Test::Trap
 Const::Fast
 Path::Class
 Tie::IxHash
