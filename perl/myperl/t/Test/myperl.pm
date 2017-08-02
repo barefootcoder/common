@@ -2,13 +2,14 @@ package Test::myperl;
 
 use Test::More;
 use Test::Command	0.08;
+use Test::Output	1.02	':combined';
 
 use Perl6::Slurp;
 
 use parent 'Exporter';
 our @EXPORT =	(
 					qw< %SNIPPETS test_snippet >,
-					qw< perl_output_is perl_no_output perl_error_is perl_no_error perl_exit_is >,
+					qw< perl_output_is perl_no_output perl_error_is perl_no_error perl_combined_is perl_exit_is >,
 				);
 
 
@@ -77,7 +78,11 @@ sub perl_error_is
 {
 	my ($tname, $expected, $cmd, @extra) = @_;
 
-	if ( $expected =~ /\n\Z/ )
+	if ( ref $expected eq 'Regexp' )
+	{
+		stderr_like(_perl_command($cmd, @extra), $expected, $tname);
+	}
+	elsif ( $expected =~ /\n\Z/ )
 	{
 		stderr_is_eq(_perl_command($cmd, @extra), $expected, $tname);
 	}
@@ -93,6 +98,14 @@ sub perl_no_error
 	my ($tname, $cmd, @extra) = @_;
 
 	stderr_is_eq(_perl_command($cmd, @extra), '', $tname);
+}
+
+sub perl_combined_is
+{
+	my ($tname, $expected, $cmd, @extra) = @_;
+
+	my $full_cmd = _perl_command($cmd, @extra);
+	combined_is( sub { system( @$full_cmd ) }, $expected, $tname );
 }
 
 sub perl_exit_is

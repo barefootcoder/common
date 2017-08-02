@@ -142,4 +142,39 @@ perl_error_is( "script module won't be loaded from package other than main",
 END
 
 
+perl_combined_is( "autoflushes STDOUT", "ab\n", <<'END');
+	use myperl::Script;
+	print "a";
+	die("b\n");
+END
+
+use charnames ':full';
+
+perl_no_error( "STDIN is UTF safe", <<'END' );
+# NOTE: this also tests UTF8 for opened file handles
+	use myperl::Script;
+	use charnames ':full';
+	if (open(CHILD, "|-"))
+	{
+		say CHILD "\N{GREEK SMALL LETTER SIGMA}";
+	}
+	else
+	{
+		<STDIN>;
+	}
+END
+
+perl_no_error( "STDOUT is UTF safe", <<'END' );
+	use myperl::Script;
+	use charnames ':full';
+	say "\N{GREEK SMALL LETTER SIGMA}";
+END
+
+perl_error_is( "STDERR is UTF safe", qr/^(?!Wide character)/, <<'END' );
+	use myperl::Script;
+	use charnames ':full';
+	say STDERR "\N{GREEK SMALL LETTER SIGMA}";
+END
+
+
 done_testing;
