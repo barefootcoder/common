@@ -3,6 +3,7 @@
 use myperl::Script;
 use autodie ':all';
 
+use Date::Easy;
 use Path::Class;
 
 
@@ -23,6 +24,7 @@ my %DESCRIPTIONS =
 							qr/southern cal gas/i,
 						],
 	Phone			=>	[
+							qr/verizon/i,
 							qr/asurion wireless/i,
 						],
 	'TV/Internet'	=>	[
@@ -32,6 +34,9 @@ my %DESCRIPTIONS =
 						],
 	Water			=>	[
 							qr/golden state (water|wtr)/i,
+						],
+	Trash			=>	[
+							qr/anderson rubbish/i,
 						],
 	House			=>	[
 							qr/travis junge poo/i,
@@ -50,6 +55,7 @@ my %DESCRIPTIONS =
 							qr/smartnfinal/i,
 							qr/ralphs/i,
 							qr/costco whse/i,
+							qr|cvs/pharmacy|i,
 							qr/ocean park pharmacy/i,
 						],
 	Gas				=>	[
@@ -58,7 +64,8 @@ my %DESCRIPTIONS =
 							qr/USA 63216/i,
 						],
 	Pets			=>	[
-							qr/aquarium connection/i,
+							qr/aquarium connectio/i,
+							qr/THERESAS COUNTRY FEED/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
@@ -72,26 +79,36 @@ my %DESCRIPTIONS =
 							qr/McDonald's/i,
 							qr/Taco Bell/i,
 							qr/Wendys/i,
+							qr/Carl's Jr/i,
 							qr/\bKFC\b/i,
 							qr/Popeye's/i,
 							qr/Freddys/i,
+							qr/\bThe Hat\b/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
+							qr/Panera/i,
+							qr/Starbucks/i,
 							qr/7-Eleven/i,
 						],
 	Personal		=>	[
-							qr/playstation network/i,
+							qr/PlayStation Network/i,
 							qr/paypal inst xfer/i,
+							qr/Treasured Memories/i,
 							qr/vito rest/i,
 						],
 	Charity			=>	[
-							qr/maximum fun/i,
+							qr/Maximum Fun/i,
 						],
 	Unknown			=>	[
 							qr/target/i,
 							qr/Wal-Mart/i,
 							qr/PAYMENT FOR AMZ/i,
 							qr/CHASE EPAY/i,
+						],
+	Debt			=>	[
+							qr/CITI CARD ONLINE/i,
+							qr/CHASE CREDIT/i,
+							qr/AMZ STORECARD/i,
 						],
 	Reimburse		=>	[
 							qr/sm city parking meters/i,
@@ -101,6 +118,7 @@ my %DESCRIPTIONS =
 						],
 	Xfer			=>	[
 							qr/internet transfer/i,
+							qr/overdraft transfer/i,
 						],
 );
 
@@ -140,6 +158,18 @@ foreach ($file->slurp)
 
 	given ($descr)
 	{
+		if ( $type eq 'Deposit' and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
+		{
+			$category = 'Reimburse';
+		}
+
+		if ( $descr eq 'PAYPAL INST XFER' and $amount == 5 and date($date)->day <= 5 )
+		{
+			$category = 'Charity';
+			$what = 'Patreon';
+			$who = 'Christy';
+		}
+
 		when ( /Cardtronics/ and $amount =~ /^[23]00/ )
 		{
 			$category = 'Personal';
@@ -147,17 +177,37 @@ foreach ($file->slurp)
 			$what = 'Lunch money';
 		}
 
-		when ( $category eq 'Eating Out' )
+		when ( $descr =~ /^PAYPAL INST XFER/i )
+		{
+			$source = 'PayPal';
+			$what ||= '???';
+		}
+
+		when ( $category ~~ ['Eating Out', qw< Charity Personal >] )
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
 				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
 			}
+			$who =	{
+						'Treasured Memories'	=>	'Christy',
+						Panera					=>	'Christy',
+						Starbucks				=>	'Christy',
+						'PlayStation Network'	=>	'Perrin',
+					}->{$what} // '';
 		}
+
+		when ( $descr =~ /STUDIO MOVIE GR/ )
+		{
+			$what = 'Studio Movie Grill';
+			$who = 'family';
+		}
+
 	}
 
 	if ($OPT{F})
 	{
+		$amount = round($amount);
 		say join("\t", $what,$who,$amount,$source,$date)
 				if $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
 	}
