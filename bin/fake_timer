@@ -419,7 +419,7 @@ sub breakdown
 		my ($from, $to, $mins, $half) = total_chunk($_);
 
 		$from = localtime($from);
-		$to = $to ? localtime($to) : 'current (still timing)';
+		$to = $to ? localtime($to) : 'current  (still timing) ';
 		my $duration = "$from - $to";
 		$duration .= " (half time)" if $half;
 		$duration .= " [$tname]" if $tname;
