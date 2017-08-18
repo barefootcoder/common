@@ -49,15 +49,24 @@ class Google::Service
 {
 	use MooseX::ClassAttribute;
 
+	use Class::Load;
+	use JSON::MaybeXS;
 	use Net::Google::Calendar;
 	use Net::Google::PicasaWeb;
 	use Net::Google::Spreadsheets;
 	use Net::Google::DocumentsList;
+	use Net::Google::DataAPI::Auth::OAuth2;
+	{
+		# This shuts up deprecation warnings from Class::MOP.
+		no warnings 'redefine';
+		*Class::MOP::load_class = \&Class::Load::load_class;
+	}
 
 
 	class_has _config		=>	( ro, isa => 'HashRef', lazy, builder => '_read_config' );
 
 	has _acct_config		=>	( ro, isa => 'HashRef', lazy, builder => '_choose_config' );
+	has _oauth				=>	( ro, isa => 'Net::Google::DataAPI::Auth::OAuth2', lazy, builder => '_tasker_auth' );
 
 	method _read_config
 	{
@@ -69,6 +78,26 @@ class Google::Service
 	method _choose_config
 	{
 		return $self->account eq 'default' ? $self->_config : $self->_config->{$self->account};
+	}
+
+	method _tasker_auth
+	{
+		# Oauth builder code taken more or less directly from:
+		# https://stackoverflow.com/questions/30735920/authenticating-in-a-google-sheets-application
+		my $oauth = Net::Google::DataAPI::Auth::OAuth2->new(
+			client_id		=>	$self->_config->{Tasker}->{client_id},
+			client_secret	=>	$self->_config->{Tasker}->{client_secret},
+			scope			=>	['http://spreadsheets.google.com/feeds/'],
+			redirect_uri	=>	'https://developers.google.com/oauthplayground',
+		);
+		my $session = $self->_config->{Tasker}->{session_auth};
+		my $token   = Net::OAuth2::AccessToken->session_thaw(
+			decode_json($session),
+			auto_refresh	=>	1,
+			profile			=>	$oauth->oauth2_webserver,
+		);
+		$oauth->access_token($token);
+		return $oauth;
 	}
 
 
@@ -84,12 +113,12 @@ class Google::Service
 
 	method _connect_to_spreadsheets
 	{
-		return Net::Google::Spreadsheets->new( $self->_login_params('hash') );
+		return Net::Google::Spreadsheets->new( auth => $self->_oauth );
 	}
 
 	method _connect_to_documents
 	{
-		return Net::Google::DocumentsList->new( $self->_login_params('hash') );
+		return Net::Google::DocumentsList->new( auth => $self->_oauth );
 	}
 
 	method _connect_to_calendar
@@ -113,6 +142,8 @@ class Google::Service
 	}
 
 
+	# This is unlikely to work any more for _any_ Google services.
+	# It should probably be removed once we're sure how to replace it in all cases.
 	method _login_params ($type)
 	{
 		my $user = $self->_acct_config->{'username'} || $self->_acct_config->{'user'};
