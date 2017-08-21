@@ -3,6 +3,7 @@ if ( $?tcsh_reset ) then
 	cd ~/common
 	./makeln refresh
 	cd -
+	if ( $?TCSHRC_DEBUG ) echo "DEBUG: ran makeln"
 endif
 
 # figure out where we are

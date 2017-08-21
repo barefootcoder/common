@@ -12,6 +12,8 @@ source ./functions
 ###########################
 
 
+[[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: starting main"
+
 if [[ $PWD != $mydir ]]
 then
 	echo "sorry; must run from ~/common" >&2
@@ -47,6 +49,8 @@ then
 		fi
 	done
 fi
+
+[[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: built simple rc's"
 
 # do pidgin.layout, if any
 p_layout=$mydir/local/$LOCALHOSTNAME/data/pidgin.layout
@@ -109,6 +113,8 @@ then
 		make_link $alt_rcdir/$file $HOME/.$lnfile
 	done
 fi
+
+[[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: constructed special rc's"
 
 # for bin, what we really want is for the whole directory to be symlinked
 # this makes it easy to add new commands
@@ -176,6 +182,8 @@ then
 		make_link ~/Dropbox/$dir $dbdir
 	done
 fi
+
+[[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: symlinked dirs"
 
 # Dropbox "local" dirs
 if [[ $1 != refresh && -d ~/Dropbox ]]
