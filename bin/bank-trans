@@ -124,8 +124,9 @@ my %DESCRIPTIONS =
 
 
 opts <<'-';
-	[-F] <file>
+	[-F|-g] <file>
 	-F : family spending output (default: family finances output)
+	-g : group expenses by category (default: one line per expense)
 	reads transactions file (CSV from Ally)
 	converts it to TSV for personal finance sheet
 -
@@ -136,6 +137,7 @@ my $file = file(shift);
 -r $file or fatal("can't open $file");
 
 my $line;
+my %categories;
 foreach ($file->slurp)
 {
 	chomp;
@@ -211,10 +213,19 @@ foreach ($file->slurp)
 		say join("\t", $what,$who,$amount,$source,$date)
 				if $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
 	}
+	elsif ($OPT{g})
+	{
+		$categories{$category} += $type eq 'Withdrawal' ? $amount : -$amount;
+	}
 	else
 	{
 		say join("\t", $date,$time,$amount,$type,$descr,$category);
 	}
+}
+
+if ($OPT{g})
+{
+	printf "%-20s  ::  %8.2f\n", $_ || '<UNKNOWN>', $categories{$_} foreach sort keys %categories;
 }
 
 
