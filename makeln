@@ -103,14 +103,17 @@ then
 	cd $alt_rcdir
 	for file in *
 	do
-		if [[ ${file/-/} != $file ]]
+		if [[ -f $file ]]							# skip directories
 		then
-			# there's a dash in it ... that means it goes underneath another dot-dir
-			lnfile=${file//-/\/}
-		else
-			lnfile=$file
+			if [[ ${file/-/} != $file ]]
+			then
+				# there's a dash in it ... that means it goes underneath another dot-dir
+				lnfile=${file//-/\/}
+			else
+				lnfile=$file
+			fi
+			make_link $alt_rcdir/$file $HOME/.$lnfile
 		fi
-		make_link $alt_rcdir/$file $HOME/.$lnfile
 	done
 fi
 
