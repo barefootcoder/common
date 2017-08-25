@@ -596,10 +596,10 @@ MooseX::Declare
 Time::ParseDate
 Getopt::Declare
 Text::Unidecode
+Any::Moose@0.26
 Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
-MooseX::App::Cmd
 Array::Columnize
 MooseX::Singleton
 Class::PseudoHash
@@ -608,6 +608,7 @@ Method::Signatures
 IPC::System::Simple
 Test::Pod::Coverage
 Lingua::EN::Numbers
+MooseX::App::Cmd@0.31
 Net::Google::Calendar
 Net::Google::PicasaWeb
 MooseX::ClassAttribute
