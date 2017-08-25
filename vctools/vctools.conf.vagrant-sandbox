@@ -2,7 +2,7 @@
 
 VCtoolsDir=/var/local/VCtools
 <<include /var/local/VCtools/share/conf/git.conf>>
-<<include /home/vagrant/CE/etc/ceflow/CE.conf>>
+<<include $CEROOT/etc/ceflow/CE.conf>>
 <Project CE>
     ProjectDir=/home/vagrant/CE
     VC=git
