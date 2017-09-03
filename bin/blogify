@@ -125,7 +125,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	unless ($blog_type eq 'bbcode')
 	{
 		s{(\d) 1/2}{$1&frac12;}g;													# number + one half
-		s{\b1/([234])\b}{&frac1$1;}g;												# stand-alone fractions
+		s{(?<!\\)\b1/([234])\b}{&frac1$1;}g;										# stand-alone fractions
 		s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;					# a Monty Python quote, preserving case
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
@@ -185,6 +185,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
 	s{\\([\[{*_/}\]])}{$1}g;														# literal brackets, braces, or */_
+	s{\\(?=1/)}{}g;																	# literal fractions
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
@@ -407,6 +408,8 @@ func diacritic_fixup ($string is alias)
 		eostre			=>	{ 1 => '#274',  },
 		aesthetic		=>	{ 1 => 'lig',   plural => 1, },
 		aesthetically	=>	{ 1 => 'lig',   },
+		minutiae		=>	{ 7 => 'lig',   },
+		oeuvre			=>	{ 1 => 'lig',   plural => 1, },
 		pinata			=>	{ 3 => 'tilde', plural => 1, },
 		'mon frere'		=>  { 7 => 'grave', },
 		'deja vu'		=>	{ 2 => 'acute', 4 => 'grave', },
