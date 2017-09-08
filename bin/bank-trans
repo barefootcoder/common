@@ -28,7 +28,7 @@ my %DESCRIPTIONS =
 							qr/asurion wireless/i,
 						],
 	'TV/Internet'	=>	[
-							qr/directv service/i,
+							qr/directv\b/i,
 							qr/time warner online/i,
 							qr/netflix/i,
 						],
@@ -49,19 +49,28 @@ my %DESCRIPTIONS =
 	Insurance		=>	[
 							qr/acsc-huon/i,
 						],
+	'Car Maint'		=>	[
+							qr/CALIF DMV/i,
+							qr/\bsmog\b/i,
+						],
 	Groceries		=>	[
 							qr/trader joe's/i,
 							qr/sprouts/i,
+							qr/lassens/i,
 							qr/smartnfinal/i,
 							qr/ralphs/i,
 							qr/costco whse/i,
 							qr|cvs/pharmacy|i,
 							qr/ocean park pharmacy/i,
 						],
+	Grooming		=>	[
+							qr/supercuts/i,
+						],
 	Gas				=>	[
 							qr/chevron/i,
 							qr/shell (oil|service)/i,
 							qr/USA 63216/i,
+							qr/76.*oil/i,
 						],
 	Pets			=>	[
 							qr/aquarium connectio/i,
@@ -69,9 +78,11 @@ my %DESCRIPTIONS =
 						],
 	School			=>	[
 							qr/discovery cube/i,
+							qr/school ?fees/i,
 						],
 	Entertainment	=>	[
 							qr/studo movie gr/i,
+							qr/simi valley 10 cinemas/i,
 							qr/fandango/i,
 							qr/universal cty/i,
 						],
@@ -88,6 +99,7 @@ my %DESCRIPTIONS =
 							qr/Szechuwan Garden/i,
 							qr/Panera/i,
 							qr/Starbucks/i,
+							qr/Baskin/i,
 							qr/7-Eleven/i,
 						],
 	Personal		=>	[
@@ -99,16 +111,13 @@ my %DESCRIPTIONS =
 	Charity			=>	[
 							qr/Maximum Fun/i,
 						],
-	Unknown			=>	[
-							qr/target/i,
-							qr/Wal-Mart/i,
-							qr/PAYMENT FOR AMZ/i,
-							qr/CHASE EPAY/i,
-						],
 	Debt			=>	[
 							qr/CITI CARD ONLINE/i,
 							qr/CHASE CREDIT/i,
-							qr/AMZ STORECARD/i,
+							qr/AMZ[ _-]STORECA?RD/i,
+							qr/PAYMENT FOR AMZ/i,
+							qr/CITI AUTOPAY/i,
+							qr/CHASE EPAY/i,
 						],
 	Reimburse		=>	[
 							qr/sm city parking meters/i,
@@ -153,8 +162,7 @@ foreach ($file->slurp)
 	# amount is always negative for withdrawals, positive for deposits
 
 	my $category = derive_category_from($descr);
-	$amount = -$amount if $type eq 'Withdrawal';
-	my $source = $type eq 'Withdrawal' ? 'CC' : 'ATM';
+	my $source = $type eq 'Withdrawal' ? 'CC' : '???';
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
 
@@ -179,10 +187,26 @@ foreach ($file->slurp)
 			$what = 'Lunch money';
 		}
 
-		when ( $descr =~ /^PAYPAL INST XFER/i )
+		when ( /^PAYPAL INST XFER/i )
 		{
 			$source = 'PayPal';
-			$what ||= '???';
+			$what = '<<PAYPAL>>' if $what eq $descr;
+		}
+		when ( /^TARGET/i )
+		{
+			$what = '<<TARGET>>' if $what eq $descr;
+		}
+		when ( /Wal-Mart/i )
+		{
+			$what = '<<WAL-MART>>' if $what eq $descr;
+		}
+		when ( /MICHAELS/i )
+		{
+			$what = "<<MICHAEL'S>>" if $what eq $descr;
+		}
+		when ( [ qr/99.CENTS/i, ] )
+		{
+			$what = '<<DOLLAR STORE>>' if $what eq $descr;
 		}
 
 		when ( $category ~~ ['Eating Out', qw< Charity Personal >] )
@@ -191,6 +215,7 @@ foreach ($file->slurp)
 			{
 				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
 			}
+			$what .= ' Robbins' if $what eq 'Baskin';
 			$who =	{
 						'Treasured Memories'	=>	'Christy',
 						Panera					=>	'Christy',
@@ -199,7 +224,7 @@ foreach ($file->slurp)
 					}->{$what} // '';
 		}
 
-		when ( $descr =~ /STUDIO MOVIE GR/ )
+		when ( /STUDIO MOVIE GR/ )
 		{
 			$what = 'Studio Movie Grill';
 			$who = 'family';
@@ -209,13 +234,14 @@ foreach ($file->slurp)
 
 	if ($OPT{F})
 	{
+		$amount = -$amount if $type eq 'Withdrawal';
 		$amount = round($amount);
 		say join("\t", $what,$who,$amount,$source,$date)
 				if $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
 	}
 	elsif ($OPT{g})
 	{
-		$categories{$category} += $type eq 'Withdrawal' ? $amount : -$amount;
+		$categories{$category} += $amount;
 	}
 	else
 	{
