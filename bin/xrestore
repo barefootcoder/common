@@ -137,14 +137,14 @@ sub ff_identify_window (;$)
 	{
 		return "work"		when /campus explorer/ or /\bce\b/ or /markdown editor/;
 		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /do not read this blog/;
-		return "music"		when /mp3va\.com/ or /album download/ or /azlyrics/ or /discogs/ or /allmusic/ or /musicbrainz/;
+		return "music"		when /mp3(va\.com| album)/ or /azlyrics/ or /discogs/ or /allmusic/ or /musicbrainz/;
 
-		return "date-easy"	when /metacpan/;
+		return "date-easy"	when /metacpan/ or /history of time/;
 		return "map"		when /google maps/;
-		return "comms"		when /my drive/;
+		return "comms"		when /my drive/ or /miss the point/;
 
-		return "d&d"		when /faerun/ or /\b5e\b/;
-		return "scapers"	when /\bheroscapers\b/;
+		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/;
+		return "scapers"	when /\bheroscapers\b/ or /xotli's place/;
 	}
 	die("can't identify window: $win_name [$_]");
 }
