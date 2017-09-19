@@ -4,7 +4,7 @@
 # for a fresh machine, try this (as root):
 #	# apt-get install libyaml-perl perlmagick libexperimental-perl
 #	# cpan
-#	> install cpan
+#	> install CPAN
 #	> reload cpan
 #	> install Date::Easy
 
@@ -17,6 +17,7 @@ use Date::Easy;
 use Path::Class;
 use Image::Magick;
 use File::Glob ':bsd_glob';
+use List::Util qw< first >;
 
 
 if ( $ARGV[0] ~~ [qw< -h -? --help >] )
@@ -46,6 +47,8 @@ if ($front_mtime < today)
 	exit unless <STDIN> =~ /^y/i;
 }
 
+my $viewer = first { -x "/usr/bin/$_" } qw< eom xviewer >;
+
 my $BASEDIR = "$ENV{HOME}/SpiderOak Hive/checks";
 -d $BASEDIR or die("base checks dir does not exist");
 my $dir = join('/', $BASEDIR, today->strftime("%Y-%m-%d"));
@@ -56,7 +59,7 @@ process_img(facing => $front);
 process_img(obverse => $back);
 
 system("ls -l '$dir/$filebase'*");
-system("eom '$dir/$filebase'* 2>/dev/null &");
+$viewer ? system("$viewer '$dir/$filebase'* 2>/dev/null &") : warn("cannot view images (no viewer)");
 
 print STDERR "remove original images? [y/N] ";
 if ( <STDIN> =~ /^y/i )
