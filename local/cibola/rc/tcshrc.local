@@ -8,8 +8,11 @@ alias cescp $CEROOT/devtools/cescp
 alias vbounce 'cd $CEROOT ; vagrant reload'
 
 # Vagrant environment stuff
+alias vscp vagrant-scp
 alias vagrant-push-box 'setenv CE_VAGRANT_BOX ce-push-sandbox ; setenv CE_VAGRANT_SSHFS_MOUNTPOINT ../CE-push ; \
 							setenv CE_VAGRANT_PORT_WEB 3003 ; setenv CE_VAGRANT_PORT_ES 9202'
+alias vagrant-xenial   'setenv CE_VAGRANT_BOX ce-xenial-sandbox ; setenv CE_VAGRANT_NOMOUNT 1 ; 				\
+							setenv CE_VAGRANT_PORT_WEB 3033 ; setenv CE_VAGRANT_PORT_ES 9222'
 
 # Vagrant testing stuff
 alias vagrant-latest-test \
