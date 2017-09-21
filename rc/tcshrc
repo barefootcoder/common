@@ -289,6 +289,12 @@ if ( $?tcsh_reset ) then
 	eval `ssh-agent-env`
 endif
 
+# allow local overrides to shared .tcshrc
+if ( -e ~/.tcshrc.local ) then
+	source ~/.tcshrc.local
+endif
+if ( $?TCSHRC_DEBUG ) echo "DEBUG: back from .tcshrc.local"
+
 if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	# debugging
 	#alias vctools-config ~/proj/VCtools/vctools-config
@@ -307,12 +313,6 @@ if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished VCtools"
 
 # Heroscapers stuff
 alias hsreply 'vimS hsreply'
-
-# allow local overrides to shared .tcshrc
-if ( -e ~/.tcshrc.local ) then
-	source ~/.tcshrc.local
-endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: back from .tcshrc.local"
 
 # make sure our subshells don't count as resets
 unset tcsh_reset
