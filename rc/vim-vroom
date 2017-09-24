@@ -39,9 +39,9 @@ map  /<C-R><C-W><CR>
 " stop the hideously annoying shift+backspace problem
 map!  
 " push to testing
-nmap  :w<CR>:!pusht %<CR>
+nmap  :up<CR>:!pusht %<CR>
 " compile check
-nmap  :w<CR>:!ccheck %<CR>
+nmap  :up<CR>:!ccheck %<CR>
 
 " allow locking of vi
 map LockZZ :let choice = confirm("Are you sure you want to exit?", "&Yes\n&No", 2)<CR>:if choice == 1<CR>:x<CR>:endif<CR><CR>

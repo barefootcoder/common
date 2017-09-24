@@ -12,9 +12,9 @@ map g G
 " make Y same as y$
 map Y y$
 " make sig's easy
-map!  		-- Buddy
-imap  		-- GM
+map! <C-B> <CR><CR>		-- Buddy
+imap <C-G> <CR><CR>		-- GM
 " for spellchecking
-map  :w!:!ispell %:e!
+map <C-T> :up!<CR>:!ispell %<CR>:e!<CR>
 " use this for making quotes
-map  <}<}!}fmtrep
+map <C-R> <}<}!}fmtrep<CR>

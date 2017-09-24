@@ -3,26 +3,26 @@
 :map g G
 :nmap Y y$
 :map  :files<CR>
-:map % :w<CR>:!fake_timerchk %<CR>
+:map % :up<CR>:!fake_timerchk %<CR>
 :noremap <C-C> :call FindCurrent()<CR>zz<C-L>
-:map <C-T> :w<CR>^:%!fake_timer start <cWORD><CR><C-C>
+:map <C-T> :up<CR>^:%!fake_timer start <cWORD><CR><C-C>
 :imap <C-T> <Esc><C-T><C-C>
-:map <C-F> :w<CR>^:%!fake_timer half <cWORD><CR>
-:imap <C-F> :w<CR>^:%!fake_timer half <cWORD><CR>
-:map <C-P> :w<CR>^:%!fake_timer pause <cWORD><CR><C-N>
-:imap <C-P> :w<CR>^:%!fake_timer pause <cWORD><CR><C-N>
-:map <C-B> :w<CR>^:!fake_timer breakdown <cWORD> %<CR>
-:imap <C-B> :w<CR>^:!fake_timer breakdown <cWORD> %<CR>
-:map <C-B><C-B> :w<CR>^:!fake_timer -w2 breakdown <cWORD> %<CR>
-:map <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
-:imap <C-L> :w<CR>^:!fake_timer total <cWORD> %<CR>
-:map <C-L><C-L> :w<CR>^:!fake_timer -w2 total <cWORD> %<CR>
-:map <C-D><C-D> :w<CR>^:!fake_timer daybreak today %<CR>
-:map <C-D><C-Y> :w<CR>^:!fake_timer daybreak yesterday %<CR>
-:map <C-D><C-F> :w<CR>^:!fake_timer daybreak 'last friday' #<CR>
-:map <C-D><C-W> :w<CR>^:!fake_timer daybreak 'last friday' %<CR>
-:map <C-D><C-R> :w<CR>^:!fake_timer review <cword> %<CR>
-:map <C-W><C-W> :w<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
+:map <C-F> :up<CR>^:%!fake_timer half <cWORD><CR>
+:imap <C-F> :up<CR>^:%!fake_timer half <cWORD><CR>
+:map <C-P> :up<CR>^:%!fake_timer pause <cWORD><CR><C-N>
+:imap <C-P> :up<CR>^:%!fake_timer pause <cWORD><CR><C-N>
+:map <C-B> :up<CR>^:!fake_timer breakdown <cWORD> %<CR>
+:imap <C-B> :up<CR>^:!fake_timer breakdown <cWORD> %<CR>
+:map <C-B><C-B> :up<CR>^:!fake_timer -w2 breakdown <cWORD> %<CR>
+:map <C-L> :up<CR>^:!fake_timer total <cWORD> %<CR>
+:imap <C-L> :up<CR>^:!fake_timer total <cWORD> %<CR>
+:map <C-L><C-L> :up<CR>^:!fake_timer -w2 total <cWORD> %<CR>
+:map <C-D><C-D> :up<CR>^:!fake_timer daybreak today %<CR>
+:map <C-D><C-Y> :up<CR>^:!fake_timer daybreak yesterday %<CR>
+:map <C-D><C-F> :up<CR>^:!fake_timer daybreak 'last friday' #<CR>
+:map <C-D><C-W> :up<CR>^:!fake_timer daybreak 'last friday' %<CR>
+:map <C-D><C-R> :up<CR>^:!fake_timer review <cword> %<CR>
+:map <C-W><C-W> :up<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
 :let g:timer="email"
 :function! GetTimer()
