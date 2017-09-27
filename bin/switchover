@@ -3,6 +3,7 @@
 killall thunderbird
 killall pidgin
 kill `pgrep -f timer-new`
+ffsleep
 
 # make sure Dropbox is running
 ~/bin/dropbox start

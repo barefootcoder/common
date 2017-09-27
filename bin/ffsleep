@@ -1,0 +1,9 @@
+#! /bin/bash
+
+pid=$(/usr/bin/pgrep firefox)
+if [[ $(/bin/ps -ostat= $pid | cut -c1) == "T" ]]
+then
+	kill -CONT $pid
+else
+	kill -STOP $pid
+fi
