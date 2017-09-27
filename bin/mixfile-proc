@@ -2,6 +2,7 @@
 
 use 5.14.0;
 use autodie ':all';
+use charnames ':full';
 use warnings FATAL => 'all';
 
 use Debuggit DEBUG => 1;
@@ -51,6 +52,16 @@ my %ROMAN =
 	VIII	=>	8,
 	IX		=>	9,
 	X		=>	10,
+);
+
+my %SYMBOL =
+(
+	0		=>	' ',
+	1		=>	'/',
+	2		=>	"\N{N-ARY LOGICAL AND}",
+	3		=>	"\N{CYRILLIC CAPITAL LETTER HA WITH STROKE}",
+	4		=>	"\N{NOT IDENTICAL TO}",
+	5		=>	'*',
 );
 
 my $mode = shift;
@@ -255,7 +266,7 @@ sub _in_the_right_mix
 	{
 		# while in here, doing a thing which will only be done once per script run,
 		# go ahead and set up our output file handle
-		open(PAGER, "| $ENV{PAGER}");
+		open(PAGER, '|-:encoding(UTF-8)', $ENV{PAGER});
 		select PAGER;
 
 		my $mix_line = shift @ARGV or die("must specify mix to analyze artists on");
@@ -335,10 +346,10 @@ sub print_artist_stats
 		}
 		next unless $count > 1;
 		my $volmap = join('|',
-			pairmap { $b . ' ' x (length($a) - length($b))   }
-			pairmap { ($a, ' ' x int(length($a)/2) . $b) }
-			map     { ($_, $astats->{$_} ? 'X' : ' ')    }
-			sort    { $ROMAN{$a} <=> $ROMAN{$b}        }
+			pairmap { $b . ' ' x (length($a) - length($b))  }
+			pairmap { ($a, ' ' x int(length($a)/2) . $b)    }
+			map     { ($_ => $SYMBOL{ $astats->{$_} // 0 }) }
+			sort    { $ROMAN{$a} <=> $ROMAN{$b}             }
 			keys    %ROMAN
 		);
 		push @$artist, $count, $volmap;
