@@ -26,7 +26,7 @@ sub import
 
 	# set up file handles appropriately
 	$| = 1;
-	'open'->import::into(main => ':std', ':utf8');
+	'open'->import::into(main => ':utf8' => ':std');
 
 	$package->export_to_level(1, CLASS, @EXPORT);
 	@_ = ( $package, NO_SYNTAX => 1, @_ );
