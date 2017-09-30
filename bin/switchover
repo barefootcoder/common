@@ -1,6 +1,5 @@
 #! /bin/bash
 
-killall thunderbird
 killall pidgin
 kill `pgrep -f timer-new`
 ffsleep
