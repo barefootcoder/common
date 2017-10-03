@@ -25,7 +25,7 @@ fi
 
 # Music desktop stuff
 music-player
-xrestore -desktop Music -geometry 1200x768+715+285 kid3
+xrestore -desktop Music -geometry 1200x798+715+285 kid3
 
 myterm -s Cibola cityofgold 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
