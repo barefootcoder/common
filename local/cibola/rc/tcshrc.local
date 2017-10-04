@@ -23,11 +23,3 @@ alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 # backcompat for intra-laptop comms
 alias absrun 'run abs'
 alias absvag 'vrun abs'
-
-# AWS setup -- BEGIN
-#complete -C aws_completer aws
-
-# AWS credentials for Campus Explorer
-setenv AWS_CONFIG_FILE /home/buddy/.aws-campusexplorer/aws.config
-setenv AWS_CREDENTIAL_FILE $HOME/.aws-campusexplorer/aws-credential-file.txt
-# AWS setup -- END

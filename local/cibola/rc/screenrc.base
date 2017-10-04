@@ -42,6 +42,8 @@ screen -t cetest
 screen -t server
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
+screen -t awsess
+	stuff "$CHEOPSROOT/bin/awsess\015"
 screen -t push
 	stuff "cd $CHEOPSROOT\015"
 	stuff "vagrant-push-box\015"
