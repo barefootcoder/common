@@ -1,13 +1,62 @@
 #! /bin/bash
+. ~/bin/bash_funcs
 
 
-if [[ $1 == "--restack" ]]
-then
-	only_stack=1
-fi
+function USAGE
+{
+    cat <<EOM
+
+usage: $me [--restack] [--verbose|-v]
+
+    --restack       : only restack the Comms windows
+                      (default: launch everything and position it)
+    --verbose       : print information messages
+                      (default: be only moderately chatty)
+    --help          : this help message
+
+EOM
+}
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+		--restack)		only_stack=1
+						shift
+						;;
+		--verbose|-v)	verbose=1
+						shift
+						;;
+		--help|-h|-\?)  USAGE
+						exit
+						;;
+		*)				usage_error "Unrecognized option: $1"
+						;;
+	esac
+done
+
 
 # remember current desktop so we can go back there when we're done
 orig_desktop=$(xdotool get_desktop)
+
+
+function info
+{
+	if [[ $verbose ]]
+	then
+		echo "$me: $*" >&2
+	fi
+}
+
+function run-xrestore
+{
+	local xrestore_args
+	if [[ $verbose ]]
+	then
+		xrestore_args="$xrestore_args -v"
+	fi
+
+	xrestore $xrestore_args "$@"
+}
 
 
 ThunderbirdWindow=".*Mozilla Thunderbird"
@@ -16,15 +65,18 @@ if [[ ! $only_stack ]]
 then
 	# Desktop 1 == Comms (desktops are zero-based)
 
-	xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
+	info restoring Thunderbird
+	run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
 
 	PidginWindow="Buddy List"
 	if ! /usr/bin/pgrep pidgin >/dev/null
 	then
+		info running Pidgin
 		pidgin >/dev/null 2>&1 &
 
 		# have to give Pidgin time to connect to the various IM servers
 		# but need to start this monitoring proglet before the program actually starts
+		info waiting for Pidgin to connect
 		wait-for-pidgin-connect
 
 		# make sure window is there before we try to move it to the proper desktop
@@ -39,9 +91,11 @@ then
 
 	# do this regardless of whether we had to start Pidgin or not
 	# stacking them doesn't do much good if they're in the wrong positions
+	info restoring pidgin windows
 	pidgin_restore
 fi
 
+info restacking Comms windows
 for win in team leadops lambda technology offtopic push-songs qa "$ThunderbirdWindow"
 do
 	# using anchors to enforce no partial matching of window titles
@@ -52,7 +106,12 @@ do
 	# (except hoist the pid var out of the loop, of course)
 	# in the cases where we have two window IDs, use only the bigger (more recent) one
 	wid=$(xdotool search --name "^$win\$" | sort -rn | head -n1)
-	xdotool windowactivate --sync $wid
+	if [[ $wid ]]
+	then
+		xdotool windowactivate --sync $wid
+	else
+		warn "Cannot locate window for: $win"
+	fi
 done
 
 # return to original desktop
