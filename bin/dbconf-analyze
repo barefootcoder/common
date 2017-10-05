@@ -46,7 +46,7 @@ foreach (@{ $unique_by_contents{$base_checksum} })
 	expunge($_);
 }
 
-# for things that are different from $base, we can keep only copy: the oldest
+# for things that are different from $base, we can keep only one copy: the oldest
 foreach ( keys %unique_by_contents )
 {
 	next if $_ eq $base_checksum;
@@ -126,6 +126,11 @@ if ( @files_left > 1 )
 			say OUT "> $right";
 			print OUT $out;
 			close(OUT);
+
+			if (confirm("Should we ditch the older file?"))
+			{
+				expunge($left);
+			}
 		}
 	}
 }
