@@ -28,7 +28,7 @@ function findit
 
 	for log in /var/log/syslog*
 	do
-		sleeps="$(zgrep -E "$sleep_msg" $log | tac)"
+		sleeps="$(zgrep -Ea "$sleep_msg" $log | tac)"
 		if [[ $sleeps ]]
 		then
 			num=$(echo "$sleeps" | wc -l)
