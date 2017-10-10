@@ -25,10 +25,11 @@ function findit
 {
 	local times=$ago
 	local sleep_msg='Preparing system for mem sleep|Suspending system\.\.\.'
+	local halt_msg='Stopping Disk Manager\.\.\.|Stopping Session \w+ of user buddy\.'
 
 	for log in /var/log/syslog*
 	do
-		sleeps="$(zgrep -Ea "$sleep_msg" $log | tac)"
+		sleeps="$(zgrep -Pa "$sleep_msg|$halt_msg" $log | tac)"
 		if [[ $sleeps ]]
 		then
 			num=$(echo "$sleeps" | wc -l)
@@ -36,7 +37,7 @@ function findit
 			then
 				times=$(( $times - $num ))
 			else
-				echo "$sleeps" | sed -n "${times}p" | awk '{print $1, $2, $3}'
+				echo "$sleeps" | awk '{print $1, $2, $3}' | uniq | sed -n "${times}p"
 				break
 			fi
 		fi
