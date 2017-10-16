@@ -27,7 +27,7 @@ vim -r "$base" +'w "$tmpdir/$base"' +q >/dev/null 2>&1
 
 if [[ $mode == "diff" ]]
 then
-	diff "$tmpdir/$base" "$origfile" | ${PAGER:-less}
+	diff -d "$tmpdir/$base" "$origfile" | ${PAGER:-less}
 elif [[ $mode == "save" ]]
 then
 	arcdir=$(dirname "$origfile")/archive
