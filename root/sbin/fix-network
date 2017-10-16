@@ -1,6 +1,55 @@
 #! /bin/bash
 
 
+function USAGE
+{
+    cat <<EOM
+
+usage: $me [--manager] [--eth0] [--kernel-mod]
+
+    --manager       : bounce Network Manager
+    --eth0          : bounce eth0 interface (or equivalent)
+    --driver        : bounce network card driver (kernel module)
+    --help          : this help message
+
+				things are bounced in the order shown above
+				default: --manager --eth0 --driver
+EOM
+}
+
+manager=false
+eth0=false
+driver=false
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+		--manager)		manager=true
+						shift
+						;;
+		--eth0)			eth0=true
+						shift
+						;;
+		--driver)		driver=true
+						shift
+						;;
+		--help|-h|-\?)  USAGE
+						exit
+						;;
+		*)				usage_error "Unrecognized option: $1"
+						;;
+	esac
+done
+
+if ! $manager && ! $eth0 && ! $driver
+then
+	# no individual ones are set, so do them all
+	manager=true
+	eth0=true
+	driver=true
+fi
+
+
 # determine the wired interface
 # it used to always be eth0, but nowadays, not so much
 function eth0
@@ -23,50 +72,61 @@ function network_up
 	[[ $(route | tail -n +3 | wc -l) -ge 2 ]]
 }
 
-# this usually fixes it
-service network-manager restart
-
-echo -n "waiting for reconnect "
-for n in $(seq 1 20)
-do
-	echo -n "."
-	sleep 1
-	if network_up
-	then
-		echo " and we're up"
-		exit
-	fi
-done
-
-# this is a bit more intrusive,
-# but fixes some things the above doesn't
-echo -ne "\ngoing deeper "
-ip link set $(eth0) down
-ip link set $(eth0) up
-
-for n in $(seq 1 20)
-do
-	echo -n "."
-	sleep 1
-	if network_up
-	then
-		echo " and we're up"
-		exit
-	fi
-done
-
-echo " tired of waiting"
-# go extreme
-echo "going medieval on its ass"
-basemod=$(lsmod | awk '{print $1}' | grep 'iwl.vm')
-rmmod $basemod
-rmmod iwlwifi
-modprobe $basemod iwlwifi
-lsmod | grep iwlwifi
-
-if network_up
+if $manager
 then
-	echo "success!"
-else
-	echo "out of tricks"
+	# this usually fixes it
+	service network-manager restart
+
+	echo -n "waiting for reconnect "
+	for n in $(seq 1 20)
+	do
+		echo -n "."
+		sleep 1
+		if network_up
+		then
+			echo " and we're up"
+			exit
+		fi
+	done
+	echo " tired of waiting"
 fi
+
+if $eth0
+then
+	# this is a bit more intrusive,
+	# but fixes some things the above doesn't
+	echo -ne "\ngoing deeper "
+	ip link set $(eth0) down
+	ip link set $(eth0) up
+
+	for n in $(seq 1 20)
+	do
+		echo -n "."
+		sleep 1
+		if network_up
+		then
+			echo " and we're up"
+			exit
+		fi
+	done
+	echo " tired of waiting"
+fi
+
+if $driver
+then
+	# go extreme
+	echo "going medieval on its ass"
+	basemod=$(lsmod | awk '{print $1}' | grep 'iwl.vm')
+	rmmod $basemod
+	rmmod iwlwifi
+	modprobe $basemod iwlwifi
+	lsmod | grep iwlwifi
+
+	if network_up
+	then
+		echo "success!"
+		exit
+	fi
+fi
+
+echo "out of tricks"
