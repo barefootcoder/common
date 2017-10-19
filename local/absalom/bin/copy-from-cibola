@@ -1,3 +1,0 @@
-#! /bin/bash
-
-laptop-sync --from cibola purple

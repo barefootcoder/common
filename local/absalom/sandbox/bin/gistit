@@ -1,8 +1,0 @@
-#! /bin/bash
-
-gistdir=$CEROOT/tmp/make-log
-"$@" 2>&1 | tee $gistdir/gistfile1.txt
-cd $gistdir
-git -c user.email=bburden@campusexplorer.com -c user.name="Buddy Burden" commit -a -m "new output"
-git push
-echo -e "\n    https://gist.github.com/barefootcoder/1a61b8928b0f05ceebb4\n"
