@@ -1,1 +1,12 @@
-../../absalom/bin/vagrant-kill-3030
+#! /bin/bash
+source ~/bin/bash_funcs
+
+port=${CE_VAGRANT_PORT_WEB:-3030}
+[[ $1 == "--main" ]] && port=3000
+
+socket=$(netstat -plane 2>/dev/null | grep LISTEN | grep :$port | awk '{print $8}')
+[[ -z $socket ]] && die "nothing appears to be listening on port $port"
+#echo "$me: found socket $socket"
+pid=$(sudo find /proc -path "*fd/*" -ls 2>/dev/null | grep $socket | perl -lne 'print $1 and exit if m{/proc/(\d+)/}')
+#echo "$me: found pid $pid"
+kill $pid && echo "killed"
