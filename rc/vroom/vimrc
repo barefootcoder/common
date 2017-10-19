@@ -1,7 +1,4 @@
 map <SPACE> :n<CR>:<CR><C-Home>
 map <BACKSPACE> :N<CR>:<CR><C-Home>
 
-unmap q
-unmap Q
-
 map BB :1argu<CR>:<CR><C-Home>
