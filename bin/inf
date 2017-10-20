@@ -53,6 +53,7 @@ fi
 
 
 /bin/ls -lF "$fullpath"
+loc "$fullpath"
 filetype=$(file -L "$fullpath")
 echo $filetype
 
