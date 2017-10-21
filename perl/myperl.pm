@@ -552,6 +552,7 @@ JSON::XS
 MCE::Map
 MP3::Tag											# constantly reinstalls itself :-(
 MP3::Info
+Text::CSV
 local::lib
 Test::Most
 Term::Size
