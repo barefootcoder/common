@@ -30,6 +30,7 @@ my %DESCRIPTIONS =
 	'TV/Internet'	=>	[
 							qr/directv\b/i,
 							qr/time warner online/i,
+							qr/spectrum/i,
 							qr/netflix/i,
 						],
 	Water			=>	[
@@ -85,15 +86,22 @@ my %DESCRIPTIONS =
 							qr/simi valley 10 cinemas/i,
 							qr/fandango/i,
 							qr/universal cty/i,
+							qr/CHUCK E CHEESE/i,
+						],
+	Books			=>	[
+							qr/Audible/i,
 						],
 	'Eating Out'	=>	[
 							qr/McDonald's/i,
 							qr/Taco Bell/i,
 							qr/Wendys/i,
 							qr/Carl's Jr/i,
+							qr/Jack in the Box/i,
 							qr/\bKFC\b/i,
 							qr/Popeye's/i,
 							qr/Freddys/i,
+							qr/Domino's/i,
+							qr/Little Caesars/i,
 							qr/\bThe Hat\b/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
@@ -101,6 +109,7 @@ my %DESCRIPTIONS =
 							qr/Starbucks/i,
 							qr/Baskin/i,
 							qr/7-Eleven/i,
+							qr/Simi Donuts/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Network/i,
@@ -133,8 +142,9 @@ my %DESCRIPTIONS =
 
 
 opts <<'-';
-	[-F|-g] <file>
+	[-F|-N|-g] <file>
 	-F : family spending output (default: family finances output)
+	-N : only show those lines that didn't get a category assigned
 	-g : group expenses by category (default: one line per expense)
 	reads transactions file (CSV from Ally)
 	converts it to TSV for personal finance sheet
@@ -173,7 +183,7 @@ foreach ($file->slurp)
 			$category = 'Reimburse';
 		}
 
-		if ( $descr eq 'PAYPAL INST XFER' and $amount == 5 and date($date)->day <= 5 )
+		if ( $descr eq 'PAYPAL INST XFER' and abs($amount) == 5 and date($date)->day <= 5 )
 		{
 			$category = 'Charity';
 			$what = 'Patreon';
@@ -245,7 +255,9 @@ foreach ($file->slurp)
 	}
 	else
 	{
-		say join("\t", $date,$time,$amount,$type,$descr,$category);
+		my $display = 1;
+		$display = 0 if $OPT{N} and $category;
+		say join("\t", $date,$time,$amount,$type,$descr,$category) if $display;
 	}
 }
 
