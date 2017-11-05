@@ -144,7 +144,7 @@ sub ff_identify_window (;$)
 		return "comms"		when /my drive/ or /miss the point/;
 
 		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/;
-		return "scapers"	when /\bheroscapers\b/ or /xotli's place/;
+		return "scapers"	when /\bheroscapers\b/ or /xotli's place/ or /posts for xotli/;
 	}
 	die("can't identify window: $win_name [$_]");
 }
