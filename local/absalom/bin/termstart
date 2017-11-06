@@ -21,5 +21,6 @@ then
 else
 	cmd="screen -S base"
 fi
+music-player
 myterm -s Absalom city-spires 125x50+7+30 $cmd
 myterm -s Cibola cityofgold 125x50-0-24 ssh cibola
