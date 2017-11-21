@@ -43,8 +43,8 @@ else
 
 sub choose
 {
-	my $choice = shift;
-	my @potentials = grep { /^$choice/ } @MACHINES;
+	my $choice = join('.*', split(//, lc shift));
+	my @potentials = grep { /$choice/ } @MACHINES;
 	die("cannot resolve $choice") unless @potentials;
 	die("too many possibilities for $choice: @potentials") if @potentials > 1;
 	return $potentials[0];
