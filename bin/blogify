@@ -73,6 +73,11 @@ $blog{'article'} = { %{$blog{'bbcode'}} };
 $blog{'article'}->{$_} = $blog{'html'}->{$_} foreach grep { $blog{'html'}->{$_} =~ /^\&/ } keys $blog{'html'};
 
 
+my $LIST_REGEX    = qr/( (?: ^ \h* ([#*]) \h+ .+? \n )+ )/xm;			# $1 => whole list, #2 => listchar ('*' or '#')
+# The only difference in the embedded list is that leading whitespace is manadatory.
+my $EMBEDDED_LIST = qr/( (?: ^ \h+ ([#*]) \h+ .+? \n )+ )/xm;
+
+
 my $blog_type = 'blogspot';												# default blog type
 sub bbstyle () { $blog_type ~~ [qw< bbcode article >] }					# [tag] instead of <tag>
 
@@ -156,8 +161,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
 	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
-	s{((^\h*#\s+.+?\n)+)}{list(ordered => $1)}meg;									# ordered list
-	s{((^\h*\*\s+.+?\n)+)}{list(unordered => $1)}meg;								# unordered list
+	s{$LIST_REGEX}{list($2 => $1)}meg;											# un/ordered lists (incl embedded)
 	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
 	if (bbstyle)
 	{
@@ -518,16 +522,20 @@ func mix_block ($mix_name, $vol, $extra?)
 
 func list ($type, $text)
 {
+	my ($leader) = $text =~ /\A(\h+)/;
+	$text =~ s/^$leader//mg if $leader;
+	$text =~ s{$EMBEDDED_LIST}{list($2 => $1)."\n"}meg;				# embedded lists handled via recursive call
+
 	if (bbstyle)
 	{
-		$type = $type eq 'ordered' ? 'list=1' : 'list';
+		$type = $type eq '#' ? 'list=1' : 'list';
 		$text =~ s/^\s+//;
 		$text = join("\n", map { s/^\s*[#*]\s*//; "[*]$_" } split("\n", $text));
 		return "\n[$type]$text\n[/list]";
 	}
 	else
 	{
-		$type = $type eq 'ordered' ? 'ol' : 'ul';
+		$type = $type eq '#' ? 'ol' : 'ul';
 		my ($open, $close, $item_style);
 		if ($blog_type eq 'blogspot')
 		{
@@ -543,7 +551,7 @@ func list ($type, $text)
 		}
 
 		$text =~ s/^\s+//;
-		$text = join('', map { s/^\s*[#*]\s*//; "<li $item_style>$_</li>" } split("\n", $text));
+		$text = join('', map { /^<[uo]l/ ? $_ : "<li $item_style>" . s/^\s*[#*]\s*//r . "</li>" } split("\n", $text));
 		return "<$open>$text</$close>";
 	}
 }
