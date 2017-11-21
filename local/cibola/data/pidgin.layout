@@ -13,7 +13,7 @@ COMMS:
 
 	+team			+technology		qa
 			james			george
-	+lambda			+technology		push-songs
+					+technology		push-songs
 			mia				holly
 	+leadops		+technology		+offtopic
 
