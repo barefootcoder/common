@@ -1,0 +1,31 @@
+#!/bin/bash
+. ~/bin/bash_funcs
+
+ssh-add-if-necessary
+ssh-add -l
+
+if [[ -z $(dropbox status) ]] && ! dropbox start
+then
+	if yn "Reinstall dropbox?"
+	then
+		dropbox install force
+	fi
+fi
+
+cd $CHEOPSROOT
+vagrant up
+
+session=${1:-base}
+if ( screen -ls ||: ) | grep $session
+then
+	cmd="screen -x $session"
+else
+	cmd="screen -S $session"
+fi
+
+# Music desktop stuff
+music-player
+xrestore -desktop Music -geometry 1200x798+715+285 kid3
+
+myterm -s Caemlyn sunset-capital 125x50+7+30 $cmd
+myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
