@@ -131,6 +131,9 @@ then
 fi
 make_link $mydir/bin $dir
 
+# ditto for .themes, but with less checking and whinging
+make_link $mydir/X/themes ~/.themes
+
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
 if [[ $1 != refresh && -d ~/Dropbox ]]
