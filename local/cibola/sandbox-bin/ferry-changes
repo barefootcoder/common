@@ -4,9 +4,27 @@
 tarfile=$1
 [[ $tarfile ]] || die "must supply tarfile name"
 
-ferrydir=~/work/ferry
-[[ -d $ferrydir ]] || die "ferry dir $ferrydir doesn't exist"
-
 [[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
 
-tar cvpzf $ferrydir/$tarfile.tgz $($CEROOT/bin/ceflow info %mod_files)
+ferrydir=/var/tmp/ferry
+mkdir -p $ferrydir
+
+first_unpushed=$(vc info %local_commits | tail -n1)
+if [[ $first_unpushed ]]
+then
+	patchdir=tmp/patches
+	if [[ -d $patchdir ]]
+	then
+		die "$patchdir already exists; left over from prior run?"
+	elif [[ -e $patchdir ]]
+	then
+		die "$patchdir exists but is not a dir; WTF?"
+	fi
+	trap "/bin/rm -rf $patchdir" EXIT
+	mkdir $patchdir
+	git format-patch -o $patchdir $first_unpushed^..HEAD
+fi
+
+ferry=$ferrydir/$tarfile.tgz
+tar cvpzf $ferry $($CEROOT/bin/ceflow info %mod_files) ${first_unpushed:+$patchdir}
+aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch-$tarfile-$(date +%Y%m%d).tgz

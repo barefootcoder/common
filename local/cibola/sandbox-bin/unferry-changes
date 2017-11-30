@@ -2,18 +2,59 @@
 . ~/bin/bash_funcs
 
 tarfile=$1
-[[ $tarfile ]] || die "must supply tarfile name"
+[[ $tarfile ]] || die "must supply tarfile name/pattern"
 
-ferrydir=~/work/ferry
-tarfile=$ferrydir/$tarfile.tgz
-[[ -r $tarfile ]] || die "ferry file $tarfile doesn't exist"
+ferrydir=/var/tmp/ferry
+mkdir -p $ferrydir
+
+tarfile=$(ferry-ls -l "$tarfile")
+[[ $tarfile ]] || die "ferry file /$1/ doesn't exist"
+[[ $(echo "$tarfile" | wc -l) == 1 ]] || die "too many candidates! [$tarfile]"
 
 [[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
 
-tar xvpzf $tarfile
-echo -n "remove ferry file? [y/N] "
-read yn
-if [[ $yn == [yY]* ]]
+patchdir=tmp/patches
+if [[ -e $patchdir ]]
 then
-	rm $tarfile
+	die "$patchdir already exists; left over from prior run?"
 fi
+
+aws s3 cp $tarfile $ferrydir
+tarfile=$ferrydir/$(basename $tarfile)
+trap "/bin/rm -f $tarfile" EXIT
+
+if [[ $(vc info %is_dirty) == 1 ]]
+then
+	tmpfile=$(mktemp)
+	trap "/bin/rm -f $tarfile $tmpfile" EXIT
+	vc clean -y | tee $tmpfile
+	dirty_restore=$(perl -lne '/^Dropped.*\((\w+)\)/ and print $1' $tmpfile)
+fi
+
+old_head=$(git rev-parse HEAD)
+first_unpushed=$(vc info %local_commits | tail -n1)
+if [[ $first_unpushed ]]
+then
+	branched_from=$(git rev-parse $first_unpushed^)
+fi
+
+tar xvpzf $tarfile
+
+if [[ -d $patchdir ]]
+then
+	[[ $branched_from ]] && git reset --hard $branched_from
+	vc branch-update
+	git am $patchdir/*
+	# the `git reset --hard` part throws away our non-patch changes
+	# so just unpack the tarfile again to get them back
+	tar xvpzf $tarfile
+	/bin/rm -rf $patchdir
+fi
+
+echo -e "\n\n\n"
+echo "to restore your repo to its pre-unferry state, do this:" >&2
+cmds=()
+cmds+=("vc clean -y")
+cmds+=("git reset --hard $old_head")
+[[ $dirty_restore ]] && cmds+=("git stash apply $dirty_restore")
+color_msg_block $BOLD "${cmds[@]}"

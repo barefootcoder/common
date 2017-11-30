@@ -1,0 +1,55 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie ':all';
+
+use Path::Tiny;
+use Date::Easy;
+use PerlX::bash;
+
+const my $S3_DIR => 's3://backup.campusexplorer.com/sandbox/bburden';
+const my $PREFIX => 'CE-branch-';
+
+
+opts <<'-';
+	{ -c | [-al] { -e <pattern> | <pattern> } }
+	-c : print basenames only (good for tab-completion); implies pattern of `.'
+	-a : show all versions of a file (default: show only the latest)
+	-l : show long name (full S3 URL) (default: show base name and date)
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+
+my $regex = $OPT{c} ? '.' : $OPT{e} // shift or usage_error("must supply regex (try `.' to list all)");
+$regex = qr/$regex/;
+
+
+my %files;
+foreach (bash \lines => "aws s3 ls $S3_DIR/$PREFIX")
+{
+	my $filename = (split(' '))[-1];
+	my ($base, $date) = $filename =~ /^$PREFIX(.*)-(\d+)/;
+	fatal("can't figure out date for file! [$_]") unless $date;
+	push @{ $files{$base} }, $OPT{l} ? "$S3_DIR/$filename" : date($date);
+}
+
+foreach my $base (sort grep { /$regex/ } keys %files)
+{
+	if ($OPT{c})
+	{
+		say $base;
+	}
+	elsif ($OPT{l})
+	{
+		my @urls = sort @{ $files{$base} };
+		@urls = ($urls[-1]) unless $OPT{a};
+		say foreach @urls;
+	}
+	else
+	{
+		my @dates = map { $_->as('/Ymd') } sort @{ $files{$base} };
+		@dates = ($dates[-1]) unless $OPT{a};
+		say "  [$_]  $base" foreach @dates;
+	}
+}
