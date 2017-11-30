@@ -73,6 +73,28 @@ function yn
 }
 
 
+NORMAL=0
+BOLD=1
+RED=91
+CYAN=96
+GREEN=92
+YELLOW=93
+function color_msg_block
+{
+    # Print an indented message out in a particular color.
+    # Use the colors defined above
+    local color="$1"
+    shift
+
+    echo '' >&2
+    for line in "$@"
+    do
+        echo -e "\e[${color}m    $line\e[0m" >&2
+    done
+    echo '' >&2
+}
+
+
 ###################
 ## NETWORK FUNCS ##
 ###################
