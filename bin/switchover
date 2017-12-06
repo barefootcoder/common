@@ -1,8 +1,8 @@
 #! /bin/bash
 
 killall pidgin
-kill `pgrep -f timer-new`
-ffsleep
+timer=$(pgrep -f timer-new)
+[[ $timer ]] && kill $timer
 
 # make sure Dropbox is running
 ~/bin/dropbox start
