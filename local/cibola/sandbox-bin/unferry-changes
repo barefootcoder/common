@@ -42,7 +42,12 @@ tar xvpzf $tarfile
 
 if [[ -d $patchdir ]]
 then
-	[[ $branched_from ]] && git reset --hard $branched_from
+	if [[ $branched_from ]]
+	then
+		git reset --hard $branched_from
+	else
+		vc clean -y
+	fi
 	vc branch-update
 	git am $patchdir/*
 	# the `git reset --hard` part throws away our non-patch changes
@@ -54,6 +59,7 @@ fi
 echo -e "\n\n\n"
 echo "to restore your repo to its pre-unferry state, do this:" >&2
 cmds=()
+[[ $(git status | grep 'in the middle of an am session') ]] && cmds+=("git am --abort")
 cmds+=("vc clean -y")
 cmds+=("git reset --hard $old_head")
 [[ $dirty_restore ]] && cmds+=("git stash apply $dirty_restore")
