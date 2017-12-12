@@ -72,7 +72,7 @@ then
 	if ! /usr/bin/pgrep pidgin >/dev/null
 	then
 		info running Pidgin
-		pidgin >/dev/null 2>&1 &
+		run-xrestore -geometry 250x1004+1666+24 -desktop Comms pidgin &
 
 		# have to give Pidgin time to connect to the various IM servers
 		# but need to start this monitoring proglet before the program actually starts
