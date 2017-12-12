@@ -1,6 +1,7 @@
 #! /bin/bash
 
 cols="$1"
+[[ $cols ]] || cols="$(cat)"
 tmpfile=/tmp/wcols.$$
 trap '/bin/rm -f $tmpfile' EXIT
 
