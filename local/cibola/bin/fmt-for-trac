@@ -69,7 +69,7 @@ while (<>)
 		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
 		s{(^|\W)_(.+?)_(\W|$)}{$1//$2//$3}g;							# italics
 		s/\[(.*?)\|(.*?)\]/[$1 $2]/g;									# links
-		s/(#\d)(?!\d)/!$1/g;											# numbered things that aren't tickets
+		s/(#\d\d?)(?!\d)/!$1/g;											# numbered things that aren't tickets
 		s/(?<!-)--(?!-)/—/g;											# em dashes
 		s/ - / – /g;													# en dashes
 
