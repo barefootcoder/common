@@ -19,8 +19,8 @@ done
 
 # machine specific stuff
 case $LOCALHOSTNAME in
-	cibola)		src_dir=~/work
-				find_large_logs="find $src_dir/ -name *.log -size +32M -printf "'%P\n'
-				rsync -az --exclude-from=<($find_large_logs) $src_dir/ ~/Dropbox/work/ce/
-				;;
+#	cibola)		src_dir=~/work
+#				find_large_logs="find $src_dir/ -name *.log -size +32M -printf "'%P\n'
+#				rsync -az --exclude-from=<($find_large_logs) $src_dir/ ~/Dropbox/work/ce/
+#				;;
 esac
