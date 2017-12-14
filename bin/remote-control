@@ -13,6 +13,7 @@ if (-r $file)
 {
 	try
 	{
+		no warnings 'once';
 		open(CTL, $file);
 		my $cmd = <CTL>; chomp $cmd;
 		close(CTL);
