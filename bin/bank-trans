@@ -32,6 +32,8 @@ my %DESCRIPTIONS =
 							qr/time warner online/i,
 							qr/spectrum/i,
 							qr/netflix/i,
+							qr/amazon digital svcs/i,
+							qr/prime video/i,
 						],
 	Water			=>	[
 							qr/golden state (water|wtr)/i,
@@ -85,6 +87,7 @@ my %DESCRIPTIONS =
 							qr/studo movie gr/i,
 							qr/simi valley 10 cinemas/i,
 							qr/fandango/i,
+							qr/video on demand/i,
 							qr/universal cty/i,
 							qr/CHUCK E CHEESE/i,
 						],
@@ -97,6 +100,7 @@ my %DESCRIPTIONS =
 							qr/Wendys/i,
 							qr/Carl's Jr/i,
 							qr/Jack in the Box/i,
+							qr/Subway/i,
 							qr/\bKFC\b/i,
 							qr/Popeye's/i,
 							qr/Freddys/i,
@@ -108,6 +112,8 @@ my %DESCRIPTIONS =
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
 							qr/\bBetos\b/i,
+							qr/Yolandas/i,
+							qr/Red Robin/i,
 							qr/Panera/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
@@ -119,6 +125,7 @@ my %DESCRIPTIONS =
 							qr/PlayStation Network/i,
 							qr/paypal inst xfer/i,
 							qr/Treasured Memories/i,
+							qr/noa coppa/i,
 							qr/vito rest/i,
 							qr/Smoke & Vape/i,
 						],
@@ -231,11 +238,13 @@ foreach ($file->slurp)
 				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
 			}
 			$what .= ' Robbins' if $what eq 'Baskin';
+			$what  = 'Nintendo' if $what eq 'noa coppa';
 			$who =	{
 						'Treasured Memories'	=>	'Christy',
 						Panera					=>	'Christy',
 						Starbucks				=>	'Christy',
 						'PlayStation Network'	=>	'Perrin',
+						Nintendo				=>	'Perrin',
 						'Smoke & Vape'			=>	'Buddy',
 					}->{$what} // '';
 		}
