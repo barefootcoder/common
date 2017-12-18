@@ -413,6 +413,7 @@ func diacritic_fixup ($string is alias)
 		eostre			=>	{ 1 => '#274',  },
 		aesthetic		=>	{ 1 => 'lig',   plural => 1, },
 		aesthetically	=>	{ 1 => 'lig',   },
+		anaesthesia		=>	{ 3 => 'lig',	},
 		minutiae		=>	{ 7 => 'lig',   },
 		oeuvre			=>	{ 1 => 'lig',   plural => 1, },
 		pinata			=>	{ 3 => 'tilde', plural => 1, },
