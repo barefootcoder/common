@@ -22,7 +22,7 @@ set echo_style=both
 set notify
 set symlinks=ignore
 set ellipsis
-set prompt="[${LOCALHOSTNAME}:%.04] "
+set prompt="[${LOCALHOSTNAME}:%{\e[96m%}%.04%{\e[0m%}] "
 set term=vt100
 if ( $?TCSHRC_DEBUG ) echo "DEBUG: set shell stuff"
 
