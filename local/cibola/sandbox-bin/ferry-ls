@@ -48,7 +48,7 @@ foreach my $base (sort grep { /$regex/ } keys %files)
 	}
 	else
 	{
-		my @dates = map { $_->as('/Ymd') } sort @{ $files{$base} };
+		my @dates = sort map { $_->as('/Ymd') } @{ $files{$base} };
 		@dates = ($dates[-1]) unless $OPT{a};
 		say "  [$_]  $base" foreach @dates;
 	}
