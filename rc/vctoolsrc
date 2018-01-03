@@ -28,7 +28,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias resolved vc resolved
 	alias stash vc stash
 	alias stash-p vc stash-p
-	alias unstash vc unstash
+	alias unstash vc my-unstash
 
 	alias branch vbranch
 
