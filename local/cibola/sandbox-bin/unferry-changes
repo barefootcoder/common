@@ -48,7 +48,11 @@ then
 	else
 		vc clean -y
 	fi
-	vc branch-update
+	if ! vc branch-update
+	then
+		echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
+		read
+	fi
 	git am $patchdir/*
 	# the `git reset --hard` part throws away our non-patch changes
 	# so just unpack the tarfile again to get them back
