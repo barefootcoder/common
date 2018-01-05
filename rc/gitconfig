@@ -20,3 +20,5 @@
 	changed = "bold yellow"
 	deleted = "bold red"
 	untracked = "bold green"
+[rerere]
+	enabled = true
