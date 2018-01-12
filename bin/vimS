@@ -110,7 +110,7 @@ then
 
 		if [[ $pattern ]]
 		then
-			if ! grep $grepargs -q "$pattern" $file
+			if ! grep $grepargs -q "$pattern" "$file"
 			then
 				return
 			fi
@@ -123,7 +123,7 @@ then
 		then
 			if [[ $verbose ]]
 			then
-				grep $grepargs "$pattern" $file | sed "s/^/$base:/"
+				grep $grepargs "$pattern" "$file" | sed "s/^/$base:/"
 			else
 				echo $base
 			fi
@@ -136,7 +136,7 @@ then
 	do
 		if [[ $file != *"*"* ]]
 		then
-			handle_file $(basename $file .vimS) $file
+			handle_file "$(basename $file .vimS)" "$file"
 		fi
 	done
 	for prefix in $prefixes
@@ -145,7 +145,7 @@ then
 		do
 			if [[ $file != *"*" ]]
 			then
-				handle_file ${file##$prefix} $file
+				handle_file "${file##$prefix}" "$file"
 			fi
 		done
 	done
