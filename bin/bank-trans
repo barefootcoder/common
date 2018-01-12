@@ -247,6 +247,8 @@ foreach ($file->slurp)
 						Nintendo				=>	'Perrin',
 						'Smoke & Vape'			=>	'Buddy',
 					}->{$what} // '';
+			# high-dollar 7-11 is gas, not food
+			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 15;
 		}
 
 		when ( /STUDIO MOVIE GR/ )
