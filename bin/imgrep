@@ -10,16 +10,18 @@ use List::AllUtils qw< first apply >;
 
 
 opts <<'-';
-	[-v] [-t <range>] [-e] text-pattern contact-pattern [...]
+	[-v] { [-t <range>] | [-w<N>] } [-e] text-pattern contact-pattern [...]
 	-v : verbose mode
 	-t : limit results to timestamp <range> (parsed with Date::Easy; flexible separators)
+	-w : -w<N> is a shortcut for -t'N weeks ago - today'
 	-e : introduce <text-pattern> that starts with a `-' (or use `--' instead)
 	all patterns Perl-style regexen
 	<text-pattern> automatically considered case-insensitive
 -
 
 
-my ($start, $end) = validate_date_range($OPT{'t'});
+my $range = $OPT{'t'} // $OPT{'w'} ? "$OPT{'w'} weeks ago - today" : undef;
+my ($start, $end) = validate_date_range($range);
 say "# limiting results to $start through $end" if $start and $OPT{'v'};
 
 my $pattern = $OPT{'e'} // shift // die("must supply pattern!");
