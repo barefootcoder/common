@@ -7,14 +7,14 @@ do
 	case $opt in
 		i)	diffopts="i$diffopts"
 			;;
-		b)	diffopts="bB$diffopts"
+		b)	diffopts="wB$diffopts"
 			;;
 		r)	dirs=1
-			diffopts="bB"
+			diffopts="wB"
 			;;
 		h)	echo "usage: $ME [-ibh] 'specialfilename'" >&2
 			echo "    -i : ignore case (i.e. diff -i)" >&2
-			echo "    -b : ignore whitespace (i.e. diff -bB)" >&2
+			echo "    -b : ignore whitespace (i.e. diff -wB)" >&2
 			echo "    -r : compare directories (via ls -l)" >&2
 			echo "    -h : this help message" >&2
 			echo "  specialfilename may contain any number of {} groups" >&2
