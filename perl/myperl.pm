@@ -274,6 +274,7 @@ is pretty much the same thing as:
 
 	use CLASS;
 	use TryCatch;
+	use Date::Easy;
 	use Path::Class;
 	use Perl6::Gather;
 	use Method::Signatures;
