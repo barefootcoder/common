@@ -25,6 +25,10 @@ DefaultSourcePath=git@github.com:%user/%project.git
 	ProjectDir = ~/Dropbox/machine/cibola/common
 </Project>
 
+<Project caemlyn-common>
+	ProjectDir = ~/Dropbox/machine/caemlyn/common
+</Project>
+
 <Project CE>
     ProjectPolicy = CE
     Mainline = trunk
