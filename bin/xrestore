@@ -138,6 +138,7 @@ sub ff_identify_window (;$)
 		return "work"		when /campus explorer/ or /\bce\b/ or /markdown editor/;
 		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /do not read this blog/ or /perl weekly/;
 		return "music"		when /mp3(va\.com| album)/ or /azlyrics/ or /discogs/ or /allmusic/ or /musicbrainz/;
+		return "music"		when /rate your music/;
 
 		return "date-easy"	when /metacpan/ or /history of time/ or /leap second/;
 		return "map"		when /google maps/;
