@@ -62,9 +62,6 @@ screen -t tail1
 	stuff "make tail-error-prod\015"
 screen -t tail2
 	stuff "cd $CEROOT\015"
-	stuff "make tail-potential-leads-error-prod\015"
-screen -t tail3
-	stuff "cd $CEROOT\015"
 	stuff "make tail-queue-worker-error-prod\015"
 screen -t mixes
 	stuff "vims mixes\015"
