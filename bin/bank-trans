@@ -12,34 +12,37 @@ sub csv_split(;$);
 
 my %DESCRIPTIONS =
 (
-	Paycheck		=>	[
+	Reserve			=>	[
 							qr/N6723 CAMPUS EXP DIR DEP/i,
+							qr/Interest Paid/i,
+							qr/internet transfer/i,
+							qr/overdraft transfer/i,
 						],
 	Mortgage		=>	[
-							qr/bac home loans/i,
-							qr/BANK OF AMERICA ONLINE PMT/i,
+							qr/BAC Home Loans/i,
+							qr/Bank of America Online Pmt/i,
 						],
 	'Power/Heat'	=>	[
-							qr/s ca edison/i,
-							qr/southern cal gas/i,
+							qr/S CA Edison/i,
+							qr/Southern Cal Gas/i,
 						],
 	Phone			=>	[
-							qr/verizon/i,
+							qr/Verizon/i,
 							qr/asurion wireless/i,
 						],
 	'TV/Internet'	=>	[
-							qr/directv\b/i,
-							qr/time warner online/i,
-							qr/spectrum/i,
-							qr/netflix/i,
+							qr/DirecTv\b/i,
+							qr/Time Warner Online/i,
+							qr/Spectrum/i,
+							qr/Netflix/i,
 							qr/amazon digital svcs/i,
-							qr/prime video/i,
+							qr/Prime Video/i,
 						],
 	Water			=>	[
-							qr/golden state (water|wtr)/i,
+							qr/Golden State (Water|Wtr)/i,
 						],
 	Trash			=>	[
-							qr/anderson rubbish/i,
+							qr/Anderson Rubbish/i,
 						],
 	House			=>	[
 							qr/travis junge poo/i,
@@ -47,7 +50,7 @@ my %DESCRIPTIONS =
 							qr/fidelity nationa/i,
 						],
 	Cars			=>	[
-							qr/carmax auto fin/i,
+							qr/Carmax Auto Fin./i,
 						],
 	Insurance		=>	[
 							qr/acsc-huon/i,
@@ -57,39 +60,44 @@ my %DESCRIPTIONS =
 							qr/\bsmog\b/i,
 						],
 	Groceries		=>	[
-							qr/trader joe's/i,
-							qr/sprouts/i,
-							qr/lassens/i,
-							qr/smartnfinal/i,
-							qr/ralphs/i,
-							qr/costco whse/i,
-							qr|cvs/pharmacy|i,
-							qr/ocean park pharmacy/i,
+							qr/Trader Joe's/i,
+							qr/Sprouts Farmers/i,
+							qr/Lassens/i,
+							qr/SmartNFinal/i,
+							qr/Ralphs/i,
+							qr/Costco Whse/i,
+							qr|CVS/Pharmacy|i,
+							qr/Pure Indian Foods/i,
+							qr/Ocean Park Pharmacy/i,
 						],
 	Grooming		=>	[
-							qr/supercuts/i,
+							qr/SuperCuts/i,
+							qr/Body Positive/i,
 						],
 	Gas				=>	[
 							qr/chevron/i,
 							qr/shell (oil|service)/i,
 							qr/USA 63216/i,
 							qr/76.*oil/i,
+							qr/moller retail/i,
 						],
 	Pets			=>	[
-							qr/aquarium connectio/i,
+							qr/Aquarium Connect./i,
 							qr/THERESAS COUNTRY FEED/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
 							qr/school ?fees/i,
+							qr/MOORPARK COL BKSTOR/i,
+							qr/Los Angeles Zoo/i,
 						],
 	Entertainment	=>	[
-							qr/studo movie gr/i,
-							qr/simi valley 10 cinemas/i,
-							qr/fandango/i,
-							qr/video on demand/i,
-							qr/universal cty/i,
-							qr/CHUCK E CHEESE/i,
+							qr/Studo Movie Gr/i,
+							qr/Simi Valley 10 Cinemas/i,
+							qr/Fandango/i,
+							qr/Video on Demand/i,
+							qr/Universal Cty/i,
+							qr/Chuck E Cheese/i,
 						],
 	Books			=>	[
 							qr/Audible/i,
@@ -101,8 +109,10 @@ my %DESCRIPTIONS =
 							qr/Carl's Jr/i,
 							qr/Jack in the Box/i,
 							qr/Subway/i,
+							qr/In N Out/i,
 							qr/\bKFC\b/i,
 							qr/Popeye's/i,
+							qr/SMART MANAGEMENT & CO/i,
 							qr/Freddys/i,
 							qr/5Guys/i,
 							qr/Domino's/i,
@@ -114,6 +124,7 @@ my %DESCRIPTIONS =
 							qr/\bBetos\b/i,
 							qr/Yolandas/i,
 							qr/Red Robin/i,
+							qr/Hook Burger/i,
 							qr/Panera/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
@@ -134,32 +145,51 @@ my %DESCRIPTIONS =
 						],
 	Debt			=>	[
 							qr/CITI CARD ONLINE/i,
-							qr/CHASE CREDIT/i,
+							qr/Chase Credit/i,
 							qr/AMZ[ _-]STORECA?RD/i,
 							qr/PAYMENT FOR AMZ/i,
 							qr/CITI AUTOPAY/i,
 							qr/CHASE EPAY/i,
 						],
 	Reimburse		=>	[
-							qr/sm city parking meters/i,
+							qr/SM City Parking Meters/i,
+							qr/OPTUM BANK REIMBUR/i,
 						],
-	Fees			=>	[
-							qr/Interest Paid/i,
-						],
-	Xfer			=>	[
-							qr/internet transfer/i,
-							qr/overdraft transfer/i,
-						],
+);
+
+my %WHAT_LOOKUP =
+(
+	'N6723 CAMPUS EXP DIR DEP'	=>	'Paycheck',
+	'BAC Home Loans'			=>	'Mortgage Payment',
+	'S CA Edison'				=>	'Electric Bill',
+	'travis junge poo'			=>	'Pool Guy',
+	'jessie flores'				=>	'Gardeners',
+	'internet transfer'			=>	'Account Transfer',
+	'fidelity nationa'			=>	'Warranty Company',
+	'Sprouts Farmers'			=>	'Sprouts',
+	'Baskin'					=>	'Baskin Robbins',
+	'SMART MANAGEMENT & CO'		=>	'Arbys',
+	'acsc-huon'					=>	'AAA Car Insurance',
+	'CITI AUTOPAY'				=>	'Costco CC',
+	'AMZ[ _-]STORECA?RD'		=>	'Amazon Credit Card',
+	'SM City Parking Meters'	=>	'Parking Meters',
+	'noa coppa'					=>	'Nintendo',
+	'MOORPARK COL BKSTOR'		=>	'College Bookstore',
+	'Body Positive'				=>	'Yoga Club',
+	'OPTUM BANK REIMBUR'		=>	'HSA Reimbursement',
 );
 
 
 opts <<'-';
-	[-F|-N|-g] <file>
+	{ [-F|-B] [-N] [-a<id>] [-H] | -g } <file>
 	-F : family spending output (default: family finances output)
+	-B : new Budget sheet categorization output
 	-N : only show those lines that didn't get a category assigned
+	-a : only show transactiona after <id>
+	-H : show header line (default: don't)
 	-g : group expenses by category (default: one line per expense)
 	reads transactions file (CSV from Ally)
-	converts it to TSV for personal finance sheet
+	converts it to TSV for personal finance sheet(s)
 -
 
 
@@ -169,12 +199,13 @@ my $file = file(shift);
 
 my $line;
 my %categories;
+my $count = 0;
 foreach ($file->slurp)
 {
 	chomp;
 	if (not $line++)
 	{
-		say join("\t", csv_split) unless $OPT{F};
+		say join("\t", csv_split) if $OPT{H};
 		next;
 	}
 
@@ -184,9 +215,15 @@ foreach ($file->slurp)
 	# amount is always negative for withdrawals, positive for deposits
 
 	my $category = derive_category_from($descr);
-	my $source = $type eq 'Withdrawal' ? 'CC' : '???';
+	my $source = $type eq 'Withdrawal' ? 'CC' : 'Check';
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
+	my $id = datetime("$date $time")->epoch;		# should be good enough for a unique ID
+
+	if ($OPT{a})
+	{
+		next unless $id > $OPT{a};
+	}
 
 	given ($descr)
 	{
@@ -202,17 +239,30 @@ foreach ($file->slurp)
 			$who = 'Christy';
 		}
 
-		when ( /Cardtronics/ and $amount =~ /^[23]00/ )
+		when ( /Cardtronics/ )
 		{
-			$category = 'Personal';
-			$who = 'Buddy';
-			$what = 'Lunch money';
+			$what = 'Petty Cash';
 		}
 
 		when ( /^PAYPAL INST XFER/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
+		}
+		when ( /AMAZON/i or /Prime Video/i )
+		{
+			$source = 'Amazon';
+			if ($category eq 'TV/Internet')
+			{
+				given (abs($amount))
+				{
+					$what = 'Starz' 	when $_ < 9;
+					$what = 'Showtime' 	when $_ < 11;
+					$what = 'HBO'		when $_ < 15;
+					die("can't work out TV/Internet source: $descr [$amount]");
+				}
+			}
+			$what = '<<AMAZON>>' if $what eq $descr;
 		}
 		when ( /^TARGET/i )
 		{
@@ -231,15 +281,25 @@ foreach ($file->slurp)
 			$what = '<<DOLLAR STORE>>' if $what eq $descr;
 		}
 
-		when ( $category ~~ ['Eating Out', qw< Charity Personal >] )
+		when ( /STUDIO MOVIE GR/ )
+		{
+			$what = 'Studio Movie Grill';
+			$who = 'family';
+		}
+
+		when ( $category eq 'Gas' )
+		{
+			$what = 'Misc Gas Station';
+		}
+
+		default
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
 				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
 			}
-			$what .= ' Robbins' if $what eq 'Baskin';
-			$what  = 'Nintendo' if $what eq 'noa coppa';
-			$who =	{
+			$what = $WHAT_LOOKUP{$what} // $what;
+			$who  = {
 						'Treasured Memories'	=>	'Christy',
 						Panera					=>	'Christy',
 						Starbucks				=>	'Christy',
@@ -251,20 +311,20 @@ foreach ($file->slurp)
 			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 15;
 		}
 
-		when ( /STUDIO MOVIE GR/ )
-		{
-			$what = 'Studio Movie Grill';
-			$who = 'family';
-		}
-
 	}
 
+	my $display = 1;
+	$display = 0 if $OPT{N} and $category;
 	if ($OPT{F})
 	{
 		$amount = -$amount if $type eq 'Withdrawal';
 		$amount = round($amount);
-		say join("\t", $what,$who,$amount,$source,$date)
-				if $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
+		$display = 0 unless $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
+		say join("\t", $what,$who,$amount,$source,$date) if $display;
+	}
+	elsif ($OPT{B})
+	{
+		say join("\t", $id,$amount,$what,$category,$source,$who) if $display;
 	}
 	elsif ($OPT{g})
 	{
@@ -272,15 +332,18 @@ foreach ($file->slurp)
 	}
 	else
 	{
-		my $display = 1;
-		$display = 0 if $OPT{N} and $category;
-		say join("\t", $date,$time,$amount,$type,$descr,$category) if $display;
+		say join("\t", $id,$date,$time,$amount,$type,$descr) if $display;
 	}
+	++$count;
 }
 
 if ($OPT{g})
 {
 	printf "%-20s  ::  %8.2f\n", $_ || '<UNKNOWN>', $categories{$_} foreach sort keys %categories;
+}
+else
+{
+	say STDERR "transaction rows: $count";
 }
 
 
