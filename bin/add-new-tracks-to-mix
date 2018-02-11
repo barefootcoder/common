@@ -29,7 +29,7 @@ $ENV{MUSICHOME} = '/export/music';
 $ENV{PERL5LIB}  = "$ENV{MUSICHOME}/lib:$ENV{PERL5LIB}";
 
 # Now we can add said tracks.
-my $mix_name = $lines[0] =~ s/\s+$ROMAN_NUMERAL$//r;
+my $mix_name = $lines[0] =~ s/\s+$ROMAN_NUMERAL$//r =~ s/^\s*\{(.*)\}$/$1/r;
 chomp $mix_name;
 open(PIPE, "| bin/add-to-mix '$mix_name' >/dev/null");
 print PIPE foreach @new_tracks;
