@@ -29,9 +29,14 @@ my $MODES =
 								end_of_file		=>	\&print_spectrum,
 							},
 	'mix-stats'			=>	{
-								end_of_block	=>	\&gather_stats,
+								end_of_block	=>	\&gather_mixes,
 								block_line		=>	\&check_for_blogged,
 								end_of_file		=>	\&print_mix_summary,
+							},
+	'mix-stats-completed'=>	{
+								end_of_block	=>	\&gather_mixes,
+								block_line		=>	\&check_for_blogged,
+								end_of_file		=>	\&print_completed_mix_summary,
 							},
 	'mix-artists'		=>	{
 								end_of_block	=>	\&print_volume_summary,
@@ -69,8 +74,9 @@ die("unrecognized mode: $mode") unless exists $MODES->{$mode};
 my $process = $MODES->{$mode};
 
 my $file = file(pop);
-say "going to load file $file";
+say STDERR "processing mixfile $file";
 
+$. = 1;
 my %header;
 my $in_header = 0;
 my @spectrum;
@@ -80,6 +86,8 @@ foreach ( $file->slurp )
 	chomp;
 	if ($in_header)
 	{
+		next if /^$/;													# blank line
+		$header{line} //= $.;											# line number block starts on
 		given ($_)
 		{
 			next						when '';						# blank line
@@ -119,8 +127,18 @@ foreach ( $file->slurp )
 		$process->{block_line}->();
 	}
 }
+continue
+{
+	++$.;
+}
 $process->{end_of_file}->();
 
+
+########################
+# common routines      #
+# (can be used by many #
+# different modes)     #
+########################
 
 sub reset_header
 {
@@ -133,7 +151,7 @@ sub reset_header
 }
 
 
-my (@mixes, %seen, $blogged);
+my (@mixes, $num_lines, %seen, $blogged);
 # this is taken from `blogify`, whence it was stolen from elsewhere (on the Internet)
 my $roman_numeral; BEGIN { $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/; }
 
@@ -215,25 +233,49 @@ sub print_spectrum
 # mix-stats #
 #############
 
-sub gather_stats
+sub gather_mixes
 {
 	debuggit(4 => "gathering:", DUMP => \%header);
-	# push what we found so far onto our list, if we have stats
-	if ($header{stats})
+
+	# push what we found so far onto our list
+	# (note! not every block is a mix; each mode must filter out whatever it can use)
+	my ($time, $complete);
+	($time, $complete) = $header{stats} =~ /time:\h+(\d+:\d+).*?score:\h+(\d+\.\d+)%/ if $header{stats};
+	# we at least must have a name though ...
+	if ($header{volume})
 	{
-		my ($complete) = $header{stats} =~ /score:\h+(\d+\.\d+)%/;
-		push @mixes, { name => $header{volume}, score => $complete, blogged => $blogged };
-		$blogged = 0;
+		push @mixes,	{
+							name		=>	$header{volume},
+							subtitle	=>	$header{subtitle},
+							time		=>	$time,
+							score		=>	$complete,
+							blogged		=>	$blogged,
+							startline	=>	$header{line},
+							endline		=>	$.,
+							numlines	=>	$num_lines,
+						};
 	}
+
+	# reset stuff
+	$blogged = 0;
+	$num_lines = 0;
 }
 
 sub check_for_blogged
 {
+	++$num_lines;
 	if ( /^\./ )
 	{
 		$blogged = 1;
 	}
 }
+
+
+#############
+# mix-stats #
+#############
+
+sub FMT () { "(%s) %-*s || %6s%%\n" }
 
 sub print_mix_summary
 {
@@ -241,8 +283,8 @@ sub print_mix_summary
 	my $maxlen = max map { length $_->{name} } @mixes;
 
 	my $num_completed = 0;
-	my $fmt = "(%s) %-*s || %6s%%\n";
-	foreach ( sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged} } @mixes )
+	# only care about those that have a 'complete' score
+	foreach ( sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged} } grep { $_->{score} } @mixes )
 	{
 		if ( $_->{score} == 100 and $_->{blogged} )
 		{
@@ -250,11 +292,27 @@ sub print_mix_summary
 		}
 		else
 		{
-			printf($fmt, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
+			printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
 		}
 	}
-	printf($fmt, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00");
+	printf(&FMT, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00");
 }
+
+sub print_completed_mix_summary
+{
+	debuggit(3 => "found:", DUMP => \@mixes);
+	my $maxlen = max map { length $_->{name} } @mixes;
+
+	# only care about those that have a 'complete' score higher than 2/3rds
+	# and print all mixes, even the 100% ones
+	printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score})
+		foreach
+			sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged}	}
+			grep { ($_->{score} // 0) >= 100 * 2/3									}
+				 ( @mixes															)
+	;
+}
+
 
 ###############
 # mix-artists #
