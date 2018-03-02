@@ -5,10 +5,11 @@ use autodie ':all';
 use charnames ':full';
 use warnings FATAL => 'all';
 
+use Roman;
 use Debuggit DEBUG => 1;
 use Path::Class;
 use Scalar::Util qw< looks_like_number >;
-use List::AllUtils qw< max zip pairmap >;
+use List::AllUtils qw< max zip apply pairmap >;
 
 
 my $MODES =
@@ -157,7 +158,7 @@ my $roman_numeral; BEGIN { $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|X
 
 
 ##################
-# mix-names      #
+# mix-list       #
 # check-spectrum #
 ##################
 
@@ -247,6 +248,7 @@ sub gather_mixes
 		push @mixes,	{
 							name		=>	$header{volume},
 							subtitle	=>	$header{subtitle},
+							volno		=>	$header{volno},
 							time		=>	$time,
 							score		=>	$complete,
 							blogged		=>	$blogged,
@@ -275,7 +277,9 @@ sub check_for_blogged
 # mix-stats #
 #############
 
-sub FMT () { "(%s) %-*s || %6s%%\n" }
+sub FMT () { "(%s) %-*s || %6s%%     %s\n" }
+
+sub _subtitle () { $_->{subtitle} ? "$_->{subtitle}" : "..." }
 
 sub print_mix_summary
 {
@@ -292,24 +296,29 @@ sub print_mix_summary
 		}
 		else
 		{
-			printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score});
+			printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score}, _subtitle);
 		}
 	}
-	printf(&FMT, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00");
+	printf(&FMT, '+', $maxlen, "-- $num_completed ADDITIONAL MIXES --", "100.00", '');
 }
 
 sub print_completed_mix_summary
 {
 	debuggit(3 => "found:", DUMP => \@mixes);
+	debuggit(4 => "spectrum:", DUMP => \@spectrum);
 	my $maxlen = max map { length $_->{name} } @mixes;
+	my %spectrum = map { $spectrum[$_] => $_ } 0..$#spectrum;
 
 	# only care about those that have a 'complete' score higher than 2/3rds
 	# and print all mixes, even the 100% ones
-	printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score})
+	printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score}, _subtitle)
 		foreach
-			sort { $a->{score} <=> $b->{score} || $a->{blogged} <=> $b->{blogged}	}
-			grep { ($_->{score} // 0) >= 100 * 2/3									}
-				 ( @mixes															)
+			sort  { $a->{tempo} <=> $b->{tempo} || $a->{volno} <=> $b->{volno}	}
+			apply { $_->{tempo} = $spectrum{ $_->{mix} } // (warn("no tempo! [$_->{name}]"), -1)	}
+			apply { $_->{volno} = arabic( $_->{volno} // 'I' )										}
+			apply { $_->{mix}   = $_->{name} =~ s/\s+ ($roman_numeral) $//xr						}
+			grep  { ($_->{score} // 0) >= 100 * 2/3													}
+				  ( @mixes																			)
 	;
 }
 
