@@ -37,6 +37,7 @@ my %DESCRIPTIONS =
 							qr/Netflix/i,
 							qr/amazon digital svcs/i,
 							qr/Prime Video/i,
+							qr/Hulu/i,
 						],
 	Water			=>	[
 							qr/Golden State (Water|Wtr)/i,
@@ -65,6 +66,7 @@ my %DESCRIPTIONS =
 							qr/Lassens/i,
 							qr/SmartNFinal/i,
 							qr/Ralphs/i,
+							qr/Albertsons/i,
 							qr/Costco Whse/i,
 							qr|CVS/Pharmacy|i,
 							qr/Pure Indian Foods/i,
@@ -105,7 +107,7 @@ my %DESCRIPTIONS =
 	'Eating Out'	=>	[
 							qr/McDonald's/i,
 							qr/Taco Bell/i,
-							qr/Wendys/i,
+							qr/Wendy'?s/i,
 							qr/Carl's Jr/i,
 							qr/Jack in the Box/i,
 							qr/Subway/i,
@@ -139,6 +141,7 @@ my %DESCRIPTIONS =
 							qr/noa coppa/i,
 							qr/vito rest/i,
 							qr/Smoke & Vape/i,
+							qr/Dropbox/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -276,7 +279,7 @@ foreach ($file->slurp)
 		{
 			$what = "<<MICHAEL'S>>" if $what eq $descr;
 		}
-		when ( [ qr/99.CENTS/i, ] )
+		when ( [ qr/99.CENTS/i, qr/DOLLAR TR/i, ] )
 		{
 			$what = '<<DOLLAR STORE>>' if $what eq $descr;
 		}
@@ -284,6 +287,12 @@ foreach ($file->slurp)
 		when ( /STUDIO MOVIE GR/ )
 		{
 			$what = 'Studio Movie Grill';
+			$who = 'family';
+		}
+
+		when ( [ qr/THOUSAND OAKS 14/i, qr/AMC ONLINE/i, ] )
+		{
+			$what = 'Movie Theater';
 			$who = 'family';
 		}
 
@@ -296,7 +305,7 @@ foreach ($file->slurp)
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
-				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r if $descr =~ /$_/;
+				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*]//gr if $descr =~ /$_/;
 			}
 			$what = $WHAT_LOOKUP{$what} // $what;
 			$who  = {
@@ -306,6 +315,7 @@ foreach ($file->slurp)
 						'PlayStation Network'	=>	'Perrin',
 						Nintendo				=>	'Perrin',
 						'Smoke & Vape'			=>	'Buddy',
+						Dropbox					=>	'Buddy',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
 			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 15;
