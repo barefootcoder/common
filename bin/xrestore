@@ -6,6 +6,7 @@ use autodie ':all';
 
 use PerlX::bash;
 use Getopt::Long;
+use Perl6::Slurp;
 use Time::HiRes qw< usleep >;
 
 
@@ -75,6 +76,12 @@ sub info
 	say STDERR "$ME: @_" if $OPT->{verbose};
 }
 
+sub is_zombie (;$)
+{
+	local $_ = shift if @_;
+	return scalar grep { /zombie/ } slurp "/proc/$_/status";
+}
+
 sub get_pid ()
 {
 	state $pid;
@@ -82,7 +89,7 @@ sub get_pid ()
 	$pid //= do
 	{
 		my $find_pid = "/usr/bin/pgrep -fx '$OPT->{ps}'";
-		my @pids = bash \lines => $find_pid;
+		my @pids = grep { !is_zombie } bash \lines => $find_pid;
 		die("can't identify process (too many candidates)") if @pids > 1;
 		info("found pid: $pids[0] [via: $find_pid]") if @pids;
 		shift @pids;
