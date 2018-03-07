@@ -24,8 +24,8 @@
 # requires that you remember which file was first.  You probably do, of course: if your fingers
 # weren't trained to know which file was Ctrl-^ 1, you wouldn't be so desperate to get the damn
 # numbering right in the first place.  However, it might be a long pathname, and who wants to type
-# that every time?  But, of course, we've already mentioned that filename is right there, in the
-# sessionfile, under the `args` command ...
+# that every time?  But, of course, as we've already mentioned, that filename
+# is right there, in the sessionfile, under the `args` command ...
 #
 # Other tricky bits:
 #	*	vim will change to the directory specified in the "cd" line of the session file.  However,
@@ -35,6 +35,13 @@
 #		line, we'll have to expand that ourselves.  Also, there might be tildes which need expanding
 #		(this applies to the "cd" line as well).  Thus the `eval`s below.
 #	*	Newer versions of `vim` use `argadd` instead of `args`.  So we search for either.
+#	*	We have to `eval` the `cd` line, because the directory might contain a `~` (or other thing
+#		that needs expansion, but mainly tildes).
+#	*	vim has the annoying habit of changing the `cd` line by replacing the directory with its
+#		`realpath`.  Since the same path can by symlinked to different places on different machines,
+#		this is pretty tragic.  Thus, we need to put the directory back like it was prior to the
+#		`vim` command afterwards.  Happily, since we pulled it out at the beginning (see point #1
+#		above), we can easily put it back.
 
 for prefix in ~/.vimS- ~/vimS/ ~/local/data/vimS/ ~/proj/vimS/ ./vimS/
 do
@@ -177,7 +184,7 @@ fi
 
 if [[ $edit ]]
 then
-	vi +/badd $sessionfile
+	vi +1 +/badd $sessionfile
 	exit
 fi
 
@@ -189,5 +196,8 @@ then
 	sessionfile=$tmpfile
 fi
 
-eval $(awk '$1 == "cd"' $sessionfile)
-eval vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' $(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
+dir=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
+eval cd "$dir"
+arg=$(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
+vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' "$arg"
+perl -i -lpe '$_ = "cd '$dir'" if /^cd /' $sessionfile
