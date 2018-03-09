@@ -30,7 +30,7 @@ DefaultSourcePath=git@github.com:%user/%project.git
 
 
 
-#<<include $CEROOT/etc/ceflow/CE.conf>>
+<<include $CEROOT/etc/ceflow/CE.conf>>
 
 <<include ~/.vctools/custom.conf>>
 <<include ~/.vctools/CE-custom.conf>>
