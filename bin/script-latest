@@ -1,8 +1,15 @@
 #! /bin/bash
 
-if [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) ]]
+files="$(scripts -b "$@")"
+if [[ $files ]]
 then
-	git-creator -t $(scripts -sb "$@") | tail -n1
+	if [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) ]]
+	then
+		git-creator -t $files | tail -n1
+	else
+		ls -lhtr $files | tail -n1
+	fi
 else
-	ls -lhtr $(scripts -sb "$@") | tail -n1
+	echo "no files found" >&2
+	exit 1
 fi
