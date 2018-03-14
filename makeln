@@ -84,6 +84,9 @@ then
 	if [[ -r vctools.conf.$LOCALHOSTNAME ]]
 	then
 		make_link $mydir/vctools/vctools.conf.$LOCALHOSTNAME $HOME/.vctools/vctools.conf
+	elif [[ -r vctools.conf.$HOST ]]
+	then
+		make_link $mydir/vctools/vctools.conf.$HOST $HOME/.vctools/vctools.conf
 	else
 		make_copy vctools.conf $HOME/.vctools/vctools.conf
 	fi
