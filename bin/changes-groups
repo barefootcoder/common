@@ -1,0 +1,26 @@
+#! /usr/bin/env perl
+
+use myperl::Script DEBUG => 1;
+use autodie ':all';
+
+use Path::Class;
+use Perl6::Gather;
+
+use PerlX::bash;
+
+
+opts <<'-';
+	[<file> ...]
+	reads line, probably from STDIN
+	picks out likely group headings in a Changes file
+	sorts, counts, and prints heading lines
+-
+
+
+my %headers;
+while ( <> )
+{
+	++$headers{$_} if /^ \s+ \* \s+ /x;
+}
+
+printf "[%3d] %s", $headers{$_}, $_ foreach sort { $headers{$b} <=> $headers{$a} || $a cmp $b } keys %headers;
