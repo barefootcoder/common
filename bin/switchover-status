@@ -1,12 +1,34 @@
-#! /bin/bash
+#! /usr/bin/env perl
 
-echo -e "\n\n\n\n"
+use myperl::Pxb;
+use autodie ':all';
 
-timerfile=timer-new
-ls -lh `find ~/timer/ -name $timerfile -o -name ".$timerfile.sw?" ; find ~/.purple/ -name '[abs]*.xml' | grep -v ' '`
+use Path::Class;
 
-echo "===="
-ps | head -n1
-vims_pids=$(/usr/bin/pgrep -f bin/vimS)
-[[ $vims_pids ]] && ps h -p $vims_pids
-[[ -d ~/workproj/cheops ]] && vagrant-exe switchover-status-part2
+
+opts <<'-';
+	[-f]
+	-f : just display filenames instead of doing a full status
+-
+
+
+say '' for 1..5;
+my @files = ($timerfile, glob($timerfile->dir->file('.' . $timerfile->basename . '.sw?')));
+push @files, glob("~/.purple/[abs]*.xml");
+if ($OPT{f})
+{
+	say foreach @files;
+}
+else
+{
+	bash qq(ls -lh @files);
+
+	say "====";
+	say head 1 => sh(@ps);
+	my @vims_pids = sh(q|/usr/bin/pgrep|, -f => q|bin/vimS|);
+	sh(@ps, h => -p => @vims_pids) if @vims_pids;
+	if (-d $ENV{CHEOPSROOT})
+	{
+		say foreach grep { not /^Loading / } sh(q|vagrant-exe|, q|switchover-status-part2|);
+	}
+}
