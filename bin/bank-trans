@@ -85,7 +85,7 @@ my %DESCRIPTIONS =
 						],
 	Pets			=>	[
 							qr/Aquarium Connect./i,
-							qr/THERESAS COUNTRY FEED/i,
+							qr/Theresas Country Feed/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
@@ -120,6 +120,7 @@ my %DESCRIPTIONS =
 							qr/Domino's/i,
 							qr/Toppers/i,
 							qr/Little Caesars/i,
+							qr/Panda Express/i,
 							qr/\bThe Hat\b/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
@@ -138,10 +139,13 @@ my %DESCRIPTIONS =
 							qr/PlayStation Network/i,
 							qr/paypal inst xfer/i,
 							qr/Treasured Memories/i,
+							qr/Joann\b/i,
 							qr/noa coppa/i,
 							qr/vito rest/i,
 							qr/Smoke & Vape/i,
 							qr/Dropbox/i,
+							qr/Miniature Market/i,
+							qr/Nintendo/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -153,6 +157,9 @@ my %DESCRIPTIONS =
 							qr/PAYMENT FOR AMZ/i,
 							qr/CITI AUTOPAY/i,
 							qr/CHASE EPAY/i,
+						],
+	'Professional Fees'=>	[
+							qr/HLW Tax/i,
 						],
 	Reimburse		=>	[
 							qr/SM City Parking Meters/i,
@@ -259,9 +266,10 @@ foreach ($file->slurp)
 			{
 				given (abs($amount))
 				{
-					$what = 'Starz' 	when $_ < 9;
-					$what = 'Showtime' 	when $_ < 11;
-					$what = 'HBO'		when $_ < 15;
+					$what = 'Video rental:'	when $_ < 5;
+					$what = 'Starz' 		when $_ < 9;
+					$what = 'Showtime' 		when $_ < 11;
+					$what = 'HBO'			when $_ < 15;
 					die("can't work out TV/Internet source: $descr [$amount]");
 				}
 			}
