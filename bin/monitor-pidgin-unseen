@@ -1,0 +1,25 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-f]
+	-f : just display filenames instead of doing a full status
+-
+
+
+# red, bold, reverse, blink
+const my $ON  => "\e[31;1;7;5m";
+const my $OFF => "\e[0m";
+
+foreach (sh(wmctrl => -l =>))
+{
+	my ($wid) = split(' ');
+	my $info = sh(xprop => -id => $wid);
+	if ( $info =~ /urgency hint bit/ )
+	{
+		$info =~ /WM_NAME\(STRING\)\s*=\s*"(.*?)"/ and say "$ON$1$OFF";
+	}
+}

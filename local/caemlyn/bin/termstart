@@ -29,3 +29,4 @@ xrestore -desktop Music -geometry 1200x798+715+285 kid3
 
 myterm -s Caemlyn sunset-capital 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
+myterm -s PidginMsgs Jade-Agate-Texture 40x5+1552+24 watch -c monitor-pidgin-unseen
