@@ -45,6 +45,21 @@ OUT
 END
 
 
+perl_output_is( "timerfile set properly", <<OUT, <<'END');
+timer-new
+OUT
+	use myperl::Pxb;
+	say $timerfile->basename;
+END
+
+perl_output_is( "timerfile set properly in DEBUG mode", <<OUT, <<'END');
+timer-test
+OUT
+	use myperl::Pxb DEBUG => 1;
+	say $timerfile->basename;
+END
+
+
 use myperl::Pxb;
 
 my $list = [ sh(echo => -e => q|"one\ntwo\nthree"|) ];

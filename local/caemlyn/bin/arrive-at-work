@@ -1,0 +1,89 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Path::Class;
+use List::AllUtils qw< pairgrep pairmap >;
+
+
+opts <<'-';
+	[-n] <time>
+	-n : no action (dry run)
+	starts your :AVAILABILITY as of <time>
+	starts your switchover timer as of now
+	verifies that switchover-status files are less than 3 hours old
+	(if not, pauses for you to correct)
+-
+
+my $time = shift or usage_error("must provide time");
+$time = datetime($time);
+my $start = now;
+
+
+# make sure timer isn't running
+fatal("can't run this while `timer` is running") if sh(q|/usr/bin/pgrep|, -f => "timer");
+
+# check status of switchover files
+my @files =
+	pairmap  { $a									}
+	pairgrep { $start - $b > 3 * 60 * 60			}
+	map      { $_ => file($_)->stat->mtime			}
+	apply    { debuggit("checking status of: $_")	}
+	    sh(qw| switchover-status -f 				|)
+;
+if ( @files )
+{
+	say "The following files are too old!";
+	sh(ls => -l => @files);
+	say "Please fix this BEFORE proceeding!";
+	say "(Enter to continue.)";
+	<STDIN>;
+}
+
+# fire up comms windows
+my @cmd = qw( win-stack-comms );
+if ($OPT{n} or DEBUG)
+{
+	say "would run: @cmd";
+}
+else
+{
+	sh @cmd;
+}
+
+# tweak timerfile
+my $bakname = "$timerfile.bak";
+if ($OPT{n})
+{
+	say "would process: $timerfile (saving original to $bakname)";
+}
+else
+{
+	my $bak = file($timerfile);
+	$bak = $bak->move_to($bakname);
+	debuggit("bak:", $bak, "::", "tfile:", $timerfile);
+	my $hit_descriptions = 0;
+	my @lines;
+	local $. = 1;
+	foreach ($bak->slurp)
+	{
+		s/-$/-,/;
+		if (not $hit_descriptions)
+		{
+			if ( my ($timer) = /^(\S+?)\t/ )
+			{
+				$hit_descriptions = 1 if $timer =~ /:$/;
+				s/$/$start->epoch . '-'/e if $timer eq 'switchover';
+				s/$/ $time->epoch . '-'/e if $timer eq ':AVAILABILITY';
+			}
+		}
+	}
+	continue
+	{
+		push @lines, $_ if defined($_);
+		++$.;
+	}
+	$timerfile->spew(join('', @lines));
+}

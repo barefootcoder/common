@@ -12,7 +12,6 @@ opts <<'-';
 -
 
 
-say '' for 1..5;
 my @files = ($timerfile, glob($timerfile->dir->file('.' . $timerfile->basename . '.sw?')));
 push @files, glob("~/.purple/[abs]*.xml");
 if ($OPT{f})
@@ -21,6 +20,7 @@ if ($OPT{f})
 }
 else
 {
+	say '' for 1..5;
 	bash qq(ls -lh @files);
 
 	say "====";

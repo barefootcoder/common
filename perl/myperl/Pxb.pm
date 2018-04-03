@@ -3,6 +3,7 @@ package myperl::Pxb;
 use myperl;											# for the proper `glob` (plus `first` and `file`)
 use myperl::Script ();
 
+use Path::Class;
 use PerlX::bash ':all';
 
 use parent 'Exporter';
@@ -13,15 +14,45 @@ our @EXPORT =
 );
 
 
+########################
+# PERSONAL STUFF       #
+# (limited unit tests) #
+########################
+
+# define `ps` however it's defined in my .tcshrc alias
+our @ps = split(' ', first { $_ } map { /alias ps '(.*?)'/ ? $1 : () } file(glob("~/.tcshrc"))->slurp);
+
+# some things will want to know where our timerfile is
+our $timerfile = file(glob('~/timer/timer-new'));
+
+######################
+# END PERSONAL STUFF #
+######################
+
+
 sub import
 {
 	my $package = shift;
 	my $caller = caller;
 
-	# pass through myperl::Script
+	# pass through to myperl::Script
 	myperl::Script->import::into(main => @_);
 
-	$package->export_to_level(1, __PACKAGE__, @EXPORT);
+	$package->export_to_level(1, CLASS, @EXPORT);
+
+	# in debug mode, don't use the real timerfile
+	if (main::DEBUG())
+	{
+		my $testfile = $timerfile =~ s/new$/test/r;
+		if (-e $testfile)
+		{
+			$timerfile = file($testfile);
+		}
+		else
+		{
+			$timerfile = $timerfile->copy_to($testfile);
+		}
+	}
 }
 
 
@@ -32,13 +63,5 @@ sub sh
 }
 
 
-###################
-# PERSONAL STUFF  #
-# (no unit tests) #
-###################
 
-# define `ps` however it's defined in my .tcshrc alias
-our @ps = split(' ', first { $_ } map { /alias ps '(.*?)'/ ? $1 : () } file(glob("~/.tcshrc"))->slurp);
-
-# some things will want to know where our timerfile is
-our ($timerfile) = glob('~/timer/timer-new');
+1;
