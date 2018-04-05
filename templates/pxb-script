@@ -1,0 +1,30 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Path::Class;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-avD] [-n <num>] { -e <pattern> | <pattern> } <file> [...]
+	-a : do a thing (default: don't do that thing)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	-n : do a thing <num> times
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $regex = $OPT{e} // shift;
+$regex = qr/$regex/;
+my @files = map { file($_) } @ARGV or usage_error("must supply at least one file");
+
+
+sh(cmd => -v => @files);
