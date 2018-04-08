@@ -161,7 +161,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
 	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
-	s{$LIST_REGEX}{list($2 => $1)}meg;											# un/ordered lists (incl embedded)
+	s{$LIST_REGEX}{list($2 => $1)}meg;												# un/ordered lists (incl embedded)
 	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
 	if (bbstyle)
 	{
@@ -518,6 +518,9 @@ func mix_block ($mix_name, $vol, $extra?)
 		}
 		$block = join("\n", @newblock);
 	}
+	# handle em dashes in the generated block; it's just easier to do it again here rather than
+	# trying to fiddle with order dependency issues up above
+	$block =~ s{--}{$blog{$blog_type}->{dash}}g;									# em dash
 	return $block;
 }
 
