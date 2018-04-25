@@ -64,8 +64,8 @@ function branched_from
 {
 	branch="$1"
 	# this will not work properly if a branch was somehow branched from multiple branches
-	# however, I can't think this could possibly happen
-	# additonally, it might be slow for branches with lots and lots of commits
+	# however, I can't think how this could possibly happen
+	# additionally, it might be slow for branches with lots and lots of commits
 	local proglet='@b = grep { s/^  // } `git branch --no-color --contains $_` and print $b[0] and exit'
 	capture_git "rev-list --no-merges HEAD | perl -lne '$proglet'"
 }
