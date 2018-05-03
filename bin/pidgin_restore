@@ -91,7 +91,7 @@ func type_in_contact_window ($string)
 	{
 		# if we don't click somewhere in the list of contacts, typing won't work
 		goto_window($PidginWindow);
-		system('xdotool mousemove 1710 135 click 1');
+		system('xdotool mousemove 1710 150 click 1');
 		1;
 	};
 
