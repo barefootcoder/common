@@ -36,6 +36,7 @@ my %DESCRIPTIONS =
 							qr/Spectrum/i,
 							qr/Netflix/i,
 							qr/amazon digital svcs/i,
+							qr/amazon digital service/i,
 							qr/Prime Video/i,
 							qr/Hulu/i,
 						],
@@ -82,6 +83,7 @@ my %DESCRIPTIONS =
 							qr/USA 63216/i,
 							qr/76.*oil/i,
 							qr/moller retail/i,
+							qr/Costco Gas/i,
 						],
 	Pets			=>	[
 							qr/Aquarium Connect./i,
@@ -122,6 +124,7 @@ my %DESCRIPTIONS =
 							qr/Little Caesars/i,
 							qr/Panda Express/i,
 							qr/\bThe Hat\b/i,
+							qr/Golden Tiger/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
 							qr/\bBetos\b/i,
@@ -131,9 +134,11 @@ my %DESCRIPTIONS =
 							qr/Panera/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
+							qr/Tutti Frutti/i,
 							qr/7-Eleven/i,
 							qr/Simi Donuts/i,
 							qr/Donuts Plus/i,
+							qr/Dairy Queen/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Network/i,
@@ -181,7 +186,7 @@ my %WHAT_LOOKUP =
 	'SMART MANAGEMENT & CO'		=>	'Arbys',
 	'acsc-huon'					=>	'AAA Car Insurance',
 	'CITI AUTOPAY'				=>	'Costco CC',
-	'AMZ[ _-]STORECA?RD'		=>	'Amazon Credit Card',
+	'AMZ[ _-]STORECARD'			=>	'Amazon Credit Card',
 	'SM City Parking Meters'	=>	'Parking Meters',
 	'noa coppa'					=>	'Nintendo',
 	'MOORPARK COL BKSTOR'		=>	'College Bookstore',
@@ -279,7 +284,7 @@ foreach ($file->slurp)
 		{
 			$what = '<<TARGET>>' if $what eq $descr;
 		}
-		when ( /Wal-Mart/i )
+		when ( /Wal-Mart/i or /WM SUPERCENTER/i )
 		{
 			$what = '<<WAL-MART>>' if $what eq $descr;
 		}
