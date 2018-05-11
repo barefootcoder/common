@@ -1,11 +1,1 @@
-#! /usr/bin/env perl
-
-use myperl ONLY => [qw< >];
-use autodie;
-
-while ( <> )
-{
-	s{^ ( \h* \* \h* ) ( [^\[] .*? ) $}
-	 { $1 . "[$2](#user-content-" . lc($2) =~ s/ /-/gr =~ s/[^\w-]//gr =~ s/\b_|_\b//gr . ")" }xe;
-	print;
-}
+../../caemlyn/bin/md-contents
