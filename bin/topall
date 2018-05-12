@@ -1,7 +1,7 @@
 #! /bin/bash
 
-while true
-do
-	top
-	sudo iotop
-done
+top
+sudo iotop
+watch sensors
+sudo powertop
+exec "$0"
