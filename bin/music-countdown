@@ -50,7 +50,7 @@ fi
 case $mode in
 	wake)	volume=1
 			;;
-	sleep)	volume=2
+	sleep)	volume=3
 			;;
 	alarm)	volume=22
 			;;
