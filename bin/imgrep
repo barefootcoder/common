@@ -20,7 +20,7 @@ opts <<'-';
 -
 
 
-my $range = $OPT{'t'} // $OPT{'w'} ? "$OPT{'w'} weeks ago - today" : undef;
+my $range = $OPT{'t'} // ($OPT{'w'} ? "$OPT{'w'} weeks ago - today" : undef);
 my ($start, $end) = validate_date_range($range);
 say "# limiting results to $start through $end" if $start and $OPT{'v'};
 
