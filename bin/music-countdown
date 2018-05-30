@@ -12,7 +12,7 @@ usage: $me [--work] [--alarm | --sleep]
     --sleep         : play sleep playlist at low volume
                       (default: play wake playlist)
     --work          : play even when at work
-                      (exit immediately when at work)
+                      (default: exit immediately when at work)
     --help          : this help message
 
 EOM
