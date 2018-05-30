@@ -20,7 +20,7 @@ our %SNIPPETS =
 	q{ say 'fred' 					}	=>	undef,									# feature 'say'
 	q{ given (1) { when (1) {} }	}	=>	undef,									# feature 'switch'
 	q{ const my $x => 'fred' 		}	=>	undef,									# Const::Fast
-	q{ dir('packages', 'rent') 		}	=>	undef,									# Path::Class
+	q{ dir('packages', 'rent') 		}	=>	undef,									# Path::Class::Tiny
 	q{ class Foo {} 				}	=>	undef,									# MooseX::Declare
 	q{ try {die} catch {};			}	=>	undef,									# TryCatch
 	q{ my $p = slurp '/etc/passwd'	}	=>	undef,									# Perl6::Slurp

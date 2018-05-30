@@ -7,7 +7,7 @@ use warnings FATAL => 'all';
 
 use Roman;
 use Debuggit DEBUG => 1;
-use Path::Class;
+use Path::Class::Tiny;
 use Scalar::Util qw< looks_like_number >;
 use List::AllUtils qw< max zip apply pairmap >;
 

@@ -4,7 +4,7 @@ use myperl::Script;
 use autodie ':all';
 
 use Date::Easy;
-use Path::Class;
+use Path::Class::Tiny;
 
 
 sub csv_split(;$);

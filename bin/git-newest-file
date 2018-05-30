@@ -3,8 +3,8 @@
 use myperl::Script;
 use autodie ':all';
 
-use Path::Class;
 use Perl6::Gather;
+use Path::Class::Tiny;
 
 use PerlX::bash;
 

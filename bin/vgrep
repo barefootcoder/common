@@ -3,7 +3,7 @@
 use myperl::Script;
 use autodie qw< :all >;
 
-use Path::Tiny;
+use Path::Class::Tiny;
 use List::AllUtils qw< sum >;
 
 

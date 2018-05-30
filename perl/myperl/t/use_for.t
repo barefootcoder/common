@@ -59,10 +59,10 @@ can_ok Testy3 => 'sum';
 	package Testy5;
 }
 
-myperl->use_and_import_into( Testy4 => 'Path::Class', 0.17 );			# oldest version currently on CPAN
-can_ok Testy4 => 'dir';
+myperl->use_and_import_into( Testy4 => 'Const::Fast', 0.005 );			# oldest version currently on CPAN
+can_ok Testy4 => 'const';
 
-throws_ok { myperl->use_and_import_into( Testy5 => 'Path::Class', 999 ) } qr/version 999 required/,
+throws_ok { myperl->use_and_import_into( Testy5 => 'Const::Fast', 999 ) } qr/version 999 required/,
 		'version demand feature works';
 
 

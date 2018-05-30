@@ -3,13 +3,14 @@ package myperl::Pxb;
 use myperl;											# for the proper `glob` (plus `first` and `file`)
 use myperl::Script ();
 
-use Path::Class;
+use Path::Class::Tiny;
 use PerlX::bash ':all';
 
 use parent 'Exporter';
 our @EXPORT =
 (
 	@PerlX::bash::EXPORT_OK,
+	@Path::Class::Tiny::EXPORT, 'dir',
 	qw< sh @ps $timerfile >,
 );
 

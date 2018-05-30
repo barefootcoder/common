@@ -4,7 +4,6 @@ use myperl::Pxb;
 use autodie ':all';
 
 use Date::Easy;
-use Path::Class;
 
 const my $CONST => 'Some Constant';
 

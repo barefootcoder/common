@@ -3,8 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Path::Class;
-
 
 opts <<'-';
 	[-f]

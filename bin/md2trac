@@ -4,7 +4,7 @@ use v5.14;
 use warnings;
 use autodie ':all';
 
-use Path::Tiny;
+use Path::Class::Tiny;
 
 
 my $md = shift;

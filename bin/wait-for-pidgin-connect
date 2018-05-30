@@ -5,8 +5,8 @@ use warnings;
 use autodie ':all';
 
 use MCE::Map;
-use Path::Tiny;
 use Const::Fast;
+use Path::Class::Tiny;
 use Syntax::Keyword::Try;
 use XML::MyXML qw< xml_to_object >;
 

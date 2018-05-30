@@ -130,7 +130,7 @@ sub import
 		CLASS							=>	1.00		=>
 		TryCatch						=>	1.003001	=>
 		'Date::Easy'					=>	0.03		=>
-		'Path::Class'					=>
+		'Path::Class::Tiny'				=>
 		'Perl6::Gather'					=>	0.42		=>
 		'myperl::Declare'				=>
 		'Method::Signatures'			=>	20111125	=>
@@ -275,8 +275,8 @@ is pretty much the same thing as:
 	use CLASS;
 	use TryCatch;
 	use Date::Easy;
-	use Path::Class;
 	use Perl6::Gather;
+	use Path::Class::Tiny;
 	use Method::Signatures;
 
 	use Const::Fast;
@@ -391,7 +391,7 @@ into a package's namespace.  Results in lots of messages to C<STDERR> that look 
 	:: importing List::MoreUtils into main ::
 	:: importing TryCatch into main ::
 	:: importing Const::Fast into main ::
-	:: importing Path::Class into main ::
+	:: importing Path::Class::Tiny into main ::
 	:: importing Perl6::Gather into main ::
 	:: importing myperl::Declare into main ::
 	:: importing Method::Signatures into main ::
@@ -561,11 +561,9 @@ File::Stat
 Data::Rmap
 File::Next
 XML::MyXML
-Path::Tiny
 Date::Easy											# finally got to the point where enough stuff depends on this
 Test::Trap
 Const::Fast
-Path::Class
 Tie::IxHash
 Tie::CPHash
 Date::Parse
@@ -603,6 +601,7 @@ Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
 Array::Columnize
+Path::Class::Tiny
 MooseX::Singleton
 Class::PseudoHash
 MooseX::Has::Sugar

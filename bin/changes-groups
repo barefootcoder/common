@@ -3,10 +3,10 @@
 use myperl::Script DEBUG => 1;
 use autodie ':all';
 
-use Path::Class;
 use Perl6::Gather;
 
 use PerlX::bash;
+use Path::Class::Tiny;
 
 
 opts <<'-';

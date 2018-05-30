@@ -14,8 +14,8 @@ use autodie ':all';
 use experimental 'smartmatch';
 
 use Date::Easy;
-use Path::Class;
 use Image::Magick;
+use Path::Class::Tiny;
 use File::Glob ':bsd_glob';
 use List::Util qw< first >;
 
