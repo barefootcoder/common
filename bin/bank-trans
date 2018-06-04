@@ -275,8 +275,10 @@ foreach ($file->slurp)
 					$what = 'Starz' 		when $_ < 9;
 					$what = 'Showtime' 		when $_ < 11;
 					$what = 'HBO'			when $_ < 15;
-					die("can't work out TV/Internet source: $descr [$amount]");
+					$what = 'HBO'			when $_ < 15;
+					$what = 'Movie purchase:';
 				}
+				$category = "Entertainment" if $what =~ /:$/;
 			}
 			$what = '<<AMAZON>>' if $what eq $descr;
 		}
