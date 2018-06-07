@@ -1,0 +1,15 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Path::Class::Tiny;
+
+
+sh(grep => -l => undolevels => $_) foreach
+	map   { glob("$_*")               }
+	map   { split(' ')                }
+	grep  { s/^for prefix in\s+//     }
+	      ( path("~/bin/vimS")->slurp )
+;
