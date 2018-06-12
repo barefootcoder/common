@@ -1,21 +1,21 @@
 MAIN:
 
-	steve			juan			+eric
-		ether				amiri
-	sage			jcal			graham
-							kcw
-	+jennine		jared			+arya
+	+steve			amiri			+eric
+
+	sage							jcal
+
+	+jennine		kcw				+arya
 
 
 
 
 COMMS:
 
-	+team			+technology		qa
-			james			george
-					+technology		push-songs
+	tech-private	+technology		tech-qa
+							tech-old
+	general			+technology		+slackbot
 			mia				holly
-	+leadops		+technology		+offtopic
+	leadops			+technology		+tech-offtopic
 
 
 
