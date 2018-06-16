@@ -28,10 +28,18 @@ $mu->record('before loading');
 
 for (@ARGV)
 {
+	my @imports;
+	if ( /=/ )
+	{
+		my $imports;
+		($_, $imports) = split(/=/, $_, 2);
+		@imports = split(/,/, $imports);
+	}
+
 	if (eval "require $_")
 	{
 		#warn($INC{'Debuggit.pm'});
-		eval { $_->import; };
+		eval { $_->import(@imports); };
 	}
 	else
 	{
