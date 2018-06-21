@@ -182,10 +182,11 @@ alias xff "xrestore -firefox"
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
-alias dclean 'rm -f `'"perl -lne '$filter' $bundle_file"'`; dzil clean'
-alias drel 'dclean ; dzil release'
-alias dpod 'dclean ; dzil build ; perldoc *[0-9].[0-9]*/\!^ ; dclean'
-alias dinst 'dclean ; dzil build ; cpanm -n *[0-9].[0-9]*.tar.gz ; dclean'
+alias dzclean 'rm -f `'"perl -lne '$filter' $bundle_file"'`; dzil clean'
+alias dzbuild 'dzclean ; dzil build'
+alias dzrel 'dzclean ; dzil release'
+alias dzpod 'dzbuild ; perldoc *[0-9].[0-9]*/\!^ ; dzclean'
+alias dzinst 'dzbuild ; cpanm -n *[0-9].[0-9]*.tar.gz ; dzclean'
 alias cpi 'cpanm -n \!*'
 
 alias resrc "set tcsh_reset ; source ~/.tcshrc"
