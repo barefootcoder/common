@@ -18,7 +18,7 @@ do
 			;;
 		h)  echo "usage: $me -h | [-r | -t | -d] Perl::Module" >&2
 			echo "    -r : remove a previously privatized copy" >&2
-			echo "    -e : edit (privatize, then edit)" >&2
+			echo "    -e : edit (privatize if not already, then edit)" >&2
 			echo "    -t : temp (privatize, edit, then remove)" >&2
 			echo "    -d : diff the currently privatized copy (if any)" >&2
 			echo "    -h : this help message" >&2
@@ -73,25 +73,22 @@ then
 	remove_mod
 elif [[ $module == $newmod && $mode == 'diff' ]]
 then
-	# Find the Perl module which:
-	# *		isn't the first result (that'll be the privatized one), and
-	# *		doesn't start with ./ (those will almost certainly be dups), and
-	# *		is the shortest from among what's left (most likely the right one).
-	# In the Perl snippet below, you might think you need `next if $. == 1`, but you don't.
-	# Think about it.  (Hint: What's the length of $l before it's ever set?)
-	#oldmod=$(perlfind -f $1 | perl -lne '$l = $_ if $. == 2 or m{^/} && length() < length $l; END { print $l }')
+	# Find the Perl module which would be the right one in the absence of our $PERL5LIB override.
 	oldmod=$(PERL5LIB= perlfind $1)
 	echo "diffing $newmod against $oldmod"
 	diff $oldmod $newmod
-elif [[ $module == $newmod ]]
+elif [[ $module == $newmod && $mode != 'edit' ]]
 then
 	echo "$me: looks like $1 is already privatized [$newmod]" >&2
 	exit 1
 elif [[ $mode == 'add' || $mode == 'temp' || $mode == 'edit' ]]
 then
-	mkdir -p $(dirname $newmod) 2>/dev/null
-	cp -pv $module $newmod
-	chmod ug+w $newmod
+	if [[ $module != $newmod ]]
+	then
+		mkdir -p $(dirname $newmod) 2>/dev/null
+		cp -pv $module $newmod
+		chmod ug+w $newmod
+	fi
 
 	if [[ $mode == 'temp' || $mode == 'edit' ]]
 	then
