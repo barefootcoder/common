@@ -35,7 +35,7 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-exit 2 unless getopts("hnaTcpvsAPDRN:Sm:", $opt);
+exit 2 unless getopts("hnaTcpvsbAPDRN:Sm:", $opt);
 $opt->{R} = 1 if $opt->{p};
 
 # help message
@@ -54,6 +54,7 @@ if ($opt->{h})
 	print "           -p: try to run tests under Devel::NYTProf and report (forces -R)\n";
 	print "           -v: run tests in verbose mode\n";
 	print "           -s: show only test summary\n";
+	print "           -b: beep three times at end of run\n";
 	print "           -A: load Carp::Always to get full stack traces on errors\n";
 	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
@@ -293,6 +294,7 @@ if ($opt->{m})
 
 $ENV{BAIL_ON_FAIL} = 1 unless $opt->{a};
 print "testing @files ", $ENV{TEST_METHOD} ? "[$ENV{TEST_METHOD}] " : '', "...\n";
+END { print "\a" and sleep 1 and print "\a" and sleep 1 and print "\a" if $opt->{b} }
 
 
 spacer();
