@@ -12,8 +12,8 @@ MAIN:
 COMMS:
 
 	tech-private	+technology		tech-qa
-							tech-old
-	general			+technology		+slackbot
+
+	company			+technology		+slackbot
 			mia				holly
 	leadops			+technology		+tech-offtopic
 
