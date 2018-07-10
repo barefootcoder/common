@@ -3,7 +3,7 @@ if ( $?tcsh_reset ) then
 	cd ~/common
 	./makeln refresh
 	cd -
-	if ( $?TCSHRC_DEBUG ) echo "DEBUG: ran makeln"
+	source ~/bin/tcshrc-DEBUG "ran makeln"
 endif
 
 # figure out where we are
@@ -24,7 +24,7 @@ set symlinks=ignore
 set ellipsis
 set prompt="[${LOCALHOSTNAME}:%{\e[96m%}%.04%{\e[0m%}] "
 set term=vt100
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: set shell stuff"
+source ~/bin/tcshrc-DEBUG "set shell stuff"
 
 if ( $?PERL5OPT ) then
 	echo $PERL5OPT | grep -q Carp::Always
@@ -44,7 +44,7 @@ if ( $?METHOD_SIGNATURES_DEBUG ) then
 else
 	alias msdebug 'setenv METHOD_SIGNATURES_DEBUG 1 ; resrc'
 endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: set Perl stuff"
+source ~/bin/tcshrc-DEBUG "set Perl stuff"
 
 set WHOAMI=`/usr/bin/whoami`
 if ( ${WHOAMI} == "root" ) then
@@ -90,7 +90,7 @@ else
 		setenv APACHE_LOG "/var/log/httpd"
 	endif
 endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished DB/server stuff"
+source ~/bin/tcshrc-DEBUG "finished DB/server stuff"
 
 set path_dirs = ( /usr/local/bin /bin /usr/bin /usr/X11R6/bin $sybase_bin $oracle_bin /usr/sbin /usr/local/sbin /usr/local/dbutils /usr/local/t3/bin /usr/local/thinkgeek /usr/local/bin/proj /usr/games ~/bin ~/local/bin ~/rpg/bin /sbin ~/.rakudobrew/bin /cygdrive/c/WINDOWS/system32 /cygdrive/c/Perl/site/bin . )
 set cdpath_dirs = ( . $APACHE ~ /export/usr/buddy )
@@ -106,7 +106,7 @@ else
 	set path=($path_dirs)
 	set cdpath=($cdpath_dirs)
 endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished path/cdpath fiddling"
+source ~/bin/tcshrc-DEBUG "finished path/cdpath fiddling"
 
 setenv PAGER "less -RaF -x4 -j4"
 setenv EDITOR `which fe_vi`
@@ -219,7 +219,7 @@ foreach repo (pjawk)
 		end
 	endif
 end
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: set vars and aliases"
+source ~/bin/tcshrc-DEBUG "set vars and aliases"
 
 # this should be a list of the hosts that we typically keep sync'ed up
 # with this one.  we'll use it for two things:
@@ -268,7 +268,7 @@ complete vimS 'C?[^-]*?`vimS -l`?'										# should be same as line above
 uncomplete mv
 uncomplete cp
 uncomplete ln
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished completions"
+source ~/bin/tcshrc-DEBUG "finished completions"
 
 # perlbrew setup
 if ( -e ~/perl5/perlbrew/etc/cshrc ) then
@@ -280,7 +280,7 @@ setenv PINTO_HOME /home/buddy/opt/local/pinto
 if ( -d $PINTO_HOME ) then
 	alias pinto $PINTO_HOME/bin/pinto
 endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished perlbrew et al"
+source ~/bin/tcshrc-DEBUG "finished perlbrew et al"
 
 if ( $?tcsh_reset ) then
 	# this will start dropbox if not started, and not do anything if it is
@@ -296,7 +296,7 @@ endif
 if ( -e ~/.tcshrc.local ) then
 	source ~/.tcshrc.local
 endif
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: back from .tcshrc.local"
+source ~/bin/tcshrc-DEBUG "back from .tcshrc.local"
 
 if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
 	# debugging
@@ -312,10 +312,11 @@ source ~/.vctoolsrc
 	set pbtest_setup="unalias vc ; setenv PATH $pbtest_path ; setenv PERL5LIB $pbtest_lib"
 	complete pbtest "p/1/(`vc info --oneline project:all`)/"
 alias pbtest "vcd \!^ ; set prompt='[Pb.testing: \!^] ' ; $pbtest_setup"
-if ( $?TCSHRC_DEBUG ) echo "DEBUG: finished VCtools"
+source ~/bin/tcshrc-DEBUG "finished VCtools"
 
 # Heroscapers stuff
 alias hsreply 'vimS hsreply'
 
 # make sure our subshells don't count as resets
 unset tcsh_reset
+source ~/bin/tcshrc-DEBUG "exiting .tcshrc"

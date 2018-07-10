@@ -1,0 +1,10 @@
+# this is designed to be `source`d from ~/.tcshrc (et al)
+
+if ( $?TCSHRC_DEBUG ) then
+	echo "DEBUG: $1"
+	if ( $TCSHRC_DEBUG !~ [0-9]* ) then
+		# debug var set to a name, not a number
+		# assume it's a variable and try to print it
+		eval 'echo "  ===> $'$TCSHRC_DEBUG'"'
+	endif
+endif
