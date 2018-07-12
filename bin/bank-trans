@@ -101,7 +101,9 @@ my %DESCRIPTIONS =
 							qr/Fandango/i,
 							qr/Video on Demand/i,
 							qr/Universal Cty/i,
+							qr/Six Flags/i,
 							qr/Chuck E Cheese/i,
+							qr/GG Delivers/i,
 						],
 	Books			=>	[
 							qr/Audible/i,
@@ -132,6 +134,7 @@ my %DESCRIPTIONS =
 							qr/Red Robin/i,
 							qr/Hook Burger/i,
 							qr/Panera/i,
+							qr/Corner Bakery/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
 							qr/Tutti Frutti/i,
@@ -192,6 +195,7 @@ my %WHAT_LOOKUP =
 	'MOORPARK COL BKSTOR'		=>	'College Bookstore',
 	'Body Positive'				=>	'Yoga Club',
 	'OPTUM BANK REIMBUR'		=>	'HSA Reimbursement',
+	'GG Delivers'				=>	'Recreational',
 );
 
 
