@@ -1,8 +1,13 @@
-#! /bin/bash
+#! /bin/bash -e
 . ~/bin/bash_funcs
 
 tarfile=$1
 [[ $tarfile ]] || die "must supply tarfile name/pattern"
+
+[[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
+
+# make sure we have creds before we get too far in
+aws-credentials-check
 
 ferrydir=/var/tmp/ferry
 mkdir -p $ferrydir
@@ -10,8 +15,6 @@ mkdir -p $ferrydir
 tarfile=$(ferry-ls -l "$tarfile")
 [[ $tarfile ]] || die "ferry file /$1/ doesn't exist"
 [[ $(echo "$tarfile" | wc -l) == 1 ]] || die "too many candidates! [$tarfile]"
-
-[[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
 
 patchdir=tmp/patches
 if [[ -e $patchdir ]]
@@ -46,7 +49,7 @@ then
 	then
 		git reset --hard $branched_from
 	else
-		vc clean -y
+		vc clean -y ||:
 	fi
 	if ! vc branch-update
 	then
