@@ -1,0 +1,11 @@
+#! /usr/bin/env perl
+
+use myperl::Script;
+use autodie ':all';
+
+use Date::Easy;
+
+
+my $should_have_started = shift // prompt("What time should the block timer have started at?");
+my $should_end_at       = datetime($should_have_started) + 75*minutes;
+say "set alarm for: ", $should_end_at->as(' HMS');
