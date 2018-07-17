@@ -19,7 +19,7 @@ while (<>)
 {
 	$_ = expand($_);
 
-	if (( /$pre_re/ or /^\s+(.)/ and !($1 ~~ ['*','#']) ) and not $in_pre and not $in_list)
+	if ( not $in_pre and ( /$pre_re/ or /^\s+(.)/ and !($1 ~~ ['*','#']) and not $in_list) )
 	{
 		if ( /$pre_re/ )
 		{
