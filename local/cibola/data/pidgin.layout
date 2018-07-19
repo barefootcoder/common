@@ -2,7 +2,7 @@ MAIN:
 
 	+steve			amiri			+eric
 
-	sage							jcal
+					+sage			+jcal
 
 	+jennine		kcw				+arya
 
@@ -13,7 +13,7 @@ COMMS:
 
 	tech-private	+technology		tech-qa
 
-	company			+technology		+slackbot
+	company			+technology		push-songs
 			mia				holly
 	leadops			+technology		+tech-offtopic
 

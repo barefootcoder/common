@@ -96,7 +96,7 @@ then
 fi
 
 info restacking Comms windows
-for win in leadops company tech-private technology tech-offtopic slackbot tech-qa "$ThunderbirdWindow"
+for win in leadops company tech-private technology tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
 do
 	# using anchors to enforce no partial matching of window titles
 	# this mostly seems to limit it to only finding Pidgin windows
