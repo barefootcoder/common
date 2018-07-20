@@ -14,7 +14,7 @@ use XML::MyXML qw< xml_to_object >;
 const my $PIDGIN_DIR => path($ENV{HOME}, '.purple');
 
 
-my $x = xml_to_object($PIDGIN_DIR->child('accounts.xml')->slurp);
+my $x = xml_to_object(scalar $PIDGIN_DIR->child('accounts.xml')->slurp);
 my @dirs =
 	# read from the bottom up
 	map  { $PIDGIN_DIR->child('logs', $_, '.system') }					# ... find system log dir of subdir
