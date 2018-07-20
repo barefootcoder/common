@@ -25,11 +25,20 @@ my $start = now;
 # make sure timer isn't running
 fatal("can't run this while `timer` is running") if sh(q|/usr/bin/pgrep|, -f => "timer");
 
+# and a loose swapfile for timer is pretty damn bad as well
+if ( glob(path($timerfile->parent, '.' . $timerfile->basename . '.sw?')) )
+{
+	say "You have a timer swapfile!";
+	say "Please fix this BEFORE proceeding!";
+	say "(Enter to continue.)";
+	<STDIN>;
+}
+
 # check status of switchover files
 my @files =
 	pairmap  { $a									}
-	pairgrep { $start - $b > 3 * 60 * 60			}
-	map      { $_ => file($_)->stat->mtime			}
+	pairgrep { $b < $start - 3 * hours				}
+	map      { $_ => path($_)->mtime				}
 	apply    { debuggit("checking status of: $_")	}
 	    sh(qw| switchover-status -f 				|)
 ;

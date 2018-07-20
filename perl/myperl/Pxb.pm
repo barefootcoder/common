@@ -1,6 +1,6 @@
 package myperl::Pxb;
 
-use myperl;											# for the proper `glob` (plus `first` and `file`)
+use myperl;											# just gives us `first`, really
 use myperl::Script ();
 
 use Path::Class::Tiny;
@@ -21,10 +21,10 @@ our @EXPORT =
 ########################
 
 # define `ps` however it's defined in my .tcshrc alias
-our @ps = split(' ', first { $_ } map { /alias ps '(.*?)'/ ? $1 : () } file(glob("~/.tcshrc"))->slurp);
+our @ps = split(' ', first { $_ } map { /alias ps '(.*?)'/ ? $1 : () } path("~/.tcshrc")->slurp);
 
 # some things will want to know where our timerfile is
-our $timerfile = file(glob('~/timer/timer-new'));
+our $timerfile = path('~/timer/timer-new');
 
 ######################
 # END PERSONAL STUFF #
