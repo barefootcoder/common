@@ -411,6 +411,7 @@ func diacritic_fixup ($string is alias)
 		jalapeno		=>	{ 7 => 'tilde', plural => 1, },
 		platanos		=>	{ 3 => 'acute', },
 		eostre			=>	{ 1 => '#274',  },
+		aeon			=>	{ 1 => 'lig',   plural => 1, },
 		aesthetic		=>	{ 1 => 'lig',   plural => 1, },
 		aesthetically	=>	{ 1 => 'lig',   },
 		anaesthesia		=>	{ 3 => 'lig',	},
