@@ -49,12 +49,14 @@ do
 done
 
 grepargs=-lP
-while getopts ":lg:venh" opt
+while getopts ":lg:G:venh" opt
 do
 	case $opt in
 		l)	list=yes
 			;;
 		g)	pattern="^badd .*$OPTARG"
+			;;
+		G)	pattern="$OPTARG"
 			;;
 		v)	verbose=yes
 			grepargs=-hP
@@ -63,10 +65,11 @@ do
 			;;
 		n)	local=yes
 			;;
-		h)  echo "usage: $me -h | -l[v] | -[v]g <pattern> | -e <file> | [-n] <file>" >&2
+		h)  echo "usage: $me -h | -l[v] | -[v]g <pattern> | -[v]G <pattern> | -e <file> | [-n] <file>" >&2
 			echo "    -l : list all possible session files" >&2
 			echo "    -g : list possible session files which load a file matching <pattern> (Perl regex)" >&2
-			echo "    -v : with -l, display full pathnames of session files; with -g, diplay full matching lines" >&2
+			echo "    -G : list possible session files which have <pattern> anywhere in them (Perl regex)" >&2
+			echo "    -v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines" >&2
 			echo "    -e : instead of starting a vim session, edit the session file itself" >&2
 			echo "         (with -l, edit all known vimS session files)" >&2
 			echo "         (with -g, edit all matching vimS session files)" >&2
