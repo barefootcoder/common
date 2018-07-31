@@ -217,6 +217,7 @@ my $file = file(shift);
 -r $file or fatal("can't open $file");
 
 my $line;
+my %ids;
 my %categories;
 my $count = 0;
 foreach ($file->slurp)
@@ -238,6 +239,9 @@ foreach ($file->slurp)
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
 	my $id = datetime("$date $time")->epoch;		# should be good enough for a unique ID
+	# tweak ID if we get a duplicate
+	--$id while $ids{$id};
+	$ids{$id} = 1;
 
 	if ($OPT{a})
 	{
