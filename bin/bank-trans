@@ -45,6 +45,7 @@ my %DESCRIPTIONS =
 						],
 	Trash			=>	[
 							qr/Anderson Rubbish/i,
+							qr/Waste Management/i,
 						],
 	House			=>	[
 							qr/travis junge poo/i,
@@ -172,6 +173,7 @@ my %DESCRIPTIONS =
 	Reimburse		=>	[
 							qr/SM City Parking Meters/i,
 							qr/OPTUM BANK REIMBUR/i,
+							qr/VENTURA CO CCD/i,
 						],
 );
 
@@ -196,6 +198,7 @@ my %WHAT_LOOKUP =
 	'Body Positive'				=>	'Yoga Club',
 	'OPTUM BANK REIMBUR'		=>	'HSA Reimbursement',
 	'GG Delivers'				=>	'Recreational',
+	'VENTURA CO CCD'			=>	'Moorpark College',
 );
 
 
