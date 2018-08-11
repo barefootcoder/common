@@ -22,7 +22,7 @@ usage: $ME [-v] [-D] [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] [-ps <
    or: $ME [-v] [-D] -firefox
                    -v : be chatty about it
                    -D : show internal details
-             -firefox : restore Firefox windows (FF must be running, selected tabs must be sane)
+             -firefox : restore browser windows (FF/Chrome must be running, selected tabs must be sane)
                   <W> : desired width of the window
                   <H> : desired height of the window
                   <X> : desired X offset of the window
@@ -200,6 +200,10 @@ if ( $OPT->{firefox} )
 			($x, $y) = (0, 289)		when 'music';
 		}
 		X windowmove => $_ => $x, $y if defined $x;
+
+		# any Chrome windows just go to Personal
+		X set_desktop_for_window => $_ => $DESKTOPS{'Personal'}
+			foreach grep { is_visible } bash \lines => "xdotool search --name 'Google Chrome'";
 	}
 	say '. restored';
 }
