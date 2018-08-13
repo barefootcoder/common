@@ -33,7 +33,13 @@ $tdir->child("File Test1")->touch;
 $tdir->child("File Test2")->touch;
 my @test_files = map { "$tdir/File Test$_" } 1..2;
 
-eq_or_diff [ glob("$tdir/File Test*") ], [ @test_files ], "glob() now handles spaces";
+# make sure both class and values are correct
+my @ret = glob("$tdir/File Test*");
+isa_ok $_, 'Path::Class::Tiny', "returned from glob: $_" foreach @ret;
+eq_or_diff [ map { "$_" } @ret ], [ @test_files ], "glob() now handles spaces";
+# and check scalar context returns something sane and useful
+my $ret = glob("$tdir/File Test*");
+is $ret, 2, 'glob in scalar context returns count';
 
 # But not *too* differently ... make sure globbing with ~/ works.
 # (If it doesn't, we'll get zero files back under ~/, which is otherwise impossible.)
@@ -67,7 +73,6 @@ sub requires_ok (&$$)
 {
 	my ($sub, $function, $module) = @_;
 	my $called_yet = 0;
-	#install_modifier $module, before => import => sub { $called_yet->{$module} = 1 };
 	no warnings 'once';
 	local *CORE::GLOBAL::require = sub { $called_yet = 1; CORE::require(@_) };
 

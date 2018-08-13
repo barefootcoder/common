@@ -97,12 +97,13 @@ sub import
 			*CORE::GLOBAL::glob = sub
 			{
 				require File::Glob;
+				require Path::Class::Tiny;
 				# use all the default flags *except* NOMAGIC
 				state $flags = $File::Glob::DEFAULT_FLAGS & ~File::Glob::GLOB_NOMAGIC();
 
 				my $pattern = shift;
 				$pattern =~ s/^\s+//; $pattern =~ s/\s+$//;
-				File::Glob::bsd_glob($pattern, $flags);
+				return map { Path::Class::Tiny::path($_) } File::Glob::bsd_glob($pattern, $flags);
 			};
 			$CORE_glob_already_redefined = 1;
 		}
@@ -422,9 +423,9 @@ themselves are called.  See their respective modules for more info on them:
 
 =head2 glob
 
-The C<CORE::glob> function will be overridden to point at C<bsd_glob> from L<File::Glob>.  This
-makes C<glob> actually useful again for file patterns that include spaces.  Note that this is subtly
-different from:
+The C<CORE::glob> function will be overridden to point at a thin wrapper around C<bsd_glob> from
+L<File::Glob>.  This makes C<glob> actually useful again for file patterns that include spaces.
+Note that this is different from:
 
 	use File::Glob ':bsd_glob';
 
@@ -434,11 +435,16 @@ in the following ways:
 
 =item *
 
-It can be used prior to Perl version 5.16 (which the File::Glob version cannot).
+In a list context, it returns L<Path::Class::Tiny> objects (the File::Glob version just returns
+strings).
 
 =item *
 
-It doesn't return an iterator in scalar context (which the File::Glob version does).
+In a scalar context, it returns a count of the files (the File::Glob version returns an iterator).
+
+=item *
+
+It can be used prior to Perl version 5.16 (which the File::Glob version cannot).
 
 =item *
 
