@@ -19,7 +19,7 @@ if ($OPT{f})
 else
 {
 	say '' for 1..5;
-	bash qq(ls -lh @files);
+	bash (ls => -lh => @files);
 
 	say "====";
 	say head 1 => sh(@ps);

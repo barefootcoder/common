@@ -37,7 +37,7 @@ if ( glob(path($timerfile->parent, '.' . $timerfile->basename . '.sw?')) )
 # check status of switchover files
 my @files =
 	pairmap  { $a									}
-	pairgrep { $b < $start - 3 * hours				}
+	pairgrep { $b < $start - 4 * hours				}
 	map      { $_ => path($_)->mtime				}
 	apply    { debuggit("checking status of: $_")	}
 	    sh(qw| switchover-status -f 				|)
