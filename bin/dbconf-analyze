@@ -6,7 +6,7 @@ use autodie ':all';
 use PerlX::bash;
 
 use File::stat;
-use Path::Tiny;
+use Path::Class::Tiny;
 use Digest::MD5 qw< md5 >;
 use Capture::Tiny qw< capture >;
 use Git::Helpers qw< checkout_root >;
@@ -22,7 +22,7 @@ opts <<'-';
 	-n : no action (just say what you would have done)
 -
 
-my $base = shift;
+my $base = file(shift);
 die("must specify base file") unless $base;
 die("$base does not exist") unless -r $base;
 
@@ -34,7 +34,7 @@ die("no conflict files found!") unless @conflicts;
 
 say '' if $OPT{'n'};
 
-my %checksums = map { $_ => md5(slurp $_) } $base, @conflicts;
+my %checksums = map { $_ => md5($_->slurp) } $base, @conflicts;
 my %unique_by_contents;
 push @{ $unique_by_contents{$checksums{$_}} }, $_ foreach keys %checksums;
 
@@ -61,7 +61,7 @@ my @files_left = sort keys %checksums;
 if ( @files_left > 1 )
 {
 	my $git;
-	capture { eval { $git = checkout_root(path($base)->parent) } };
+	capture { eval { $git = checkout_root($base->parent) } };
 	if ($git)
 	{
 		$git = safe_filename($git);
