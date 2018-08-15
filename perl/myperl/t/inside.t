@@ -10,7 +10,7 @@ use Test::myperl;
 
 
 my $count = 0;
-foreach (keys %SNIPPETS)
+foreach (keys %ALL_SNIPPETS)
 {
 	eval "class TestClass" . $count++ . "\n{ $_ }";
 	test_snippet($_);

@@ -8,17 +8,22 @@ use Perl6::Slurp;
 
 use parent 'Exporter';
 our @EXPORT =	(
-					qw< %SNIPPETS test_snippet >,
+					qw< %CLASSLET_SNIPPETS %ALL_SNIPPETS test_snippet >,
 					qw< perl_output_is perl_no_output perl_error_is perl_no_error perl_combined_is perl_exit_is >,
 				);
 
 
-our %SNIPPETS =
+our %CLASSLET_SNIPPETS =
 (
 	q{ $x = 6 						}	=>	qr/requires explicit package/,			# strict
 	q{ 6 + 'fred' 					}	=>	qr/isn't numeric/,						# warnings FATAL => 'all'
 	q{ say 'fred' 					}	=>	undef,									# feature 'say'
 	q{ given (1) { when (1) {} }	}	=>	undef,									# feature 'switch'
+);
+
+our %ALL_SNIPPETS =
+(
+	%CLASSLET_SNIPPETS,
 	q{ const my $x => 'fred' 		}	=>	undef,									# Const::Fast
 	q{ dir('packages', 'rent') 		}	=>	undef,									# Path::Class::Tiny
 	q{ class Foo {} 				}	=>	undef,									# MooseX::Declare
@@ -36,7 +41,7 @@ our %SNIPPETS =
 sub test_snippet
 {
 	my ($snippet) = @_;
-	my $result = $SNIPPETS{$snippet};
+	my $result = $ALL_SNIPPETS{$snippet};
 
 	if ($result)
 	{

@@ -9,7 +9,7 @@ use lib dirname($0);
 use Test::myperl;
 
 
-foreach (keys %SNIPPETS)
+foreach (keys %ALL_SNIPPETS)
 {
 	eval;
 	test_snippet($_);
