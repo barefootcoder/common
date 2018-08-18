@@ -578,6 +578,7 @@ Dist::Zilla
 Math::Round
 Date::Parse
 Config::Any
+CSS::Simple
 experimental
 Import::Into
 Sub::Install
@@ -588,14 +589,18 @@ Email::Stuff
 Date::Format
 IO::Prompter
 Git::Helpers
+Archive::Zip
+PerlX::Maybe
 Perl6::Gather
 Data::Printer
 Test::Command
 Number::Latin
+Hash::Ordered
 Package::Stash
 Mail::Sendmail
 WWW::Mechanize
 Regexp::Common
+List::AllUtils
 Module::Install
 Config::General
 MooseX::Declare
@@ -603,6 +608,7 @@ Time::ParseDate
 Getopt::Declare
 Text::Unidecode
 Any::Moose@0.26
+Marpa::R2::HTML
 Text::Capitalize
 MooseX::NonMoose
 Term::ANSIScreen
@@ -615,8 +621,10 @@ Method::Signatures
 IPC::System::Simple
 Test::Pod::Coverage
 Lingua::EN::Numbers
+Syntax::Keyword::Try
 MooseX::App::Cmd@0.31
 Net::Google::Calendar
+Archive::Tar::Wrapper
 Net::Google::PicasaWeb
 MooseX::ClassAttribute
 MooseX::Attribute::ENV
