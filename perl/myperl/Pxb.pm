@@ -1,7 +1,7 @@
 package myperl::Pxb;
 
-use myperl;											# just gives us `first`, really
 use myperl::Script ();
+use List::Util qw< first >;
 
 use Path::Class::Tiny;
 use PerlX::bash ':all';
