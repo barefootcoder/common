@@ -268,6 +268,7 @@ while ( <> )
 			unless ( $no_time_timers{$name} )
 			{
 				warn("no comment for timer: $name") unless $chunks;
+				warn("comment for timer is incomplete: $name") if $chunks and $chunks =~ /\(\)$/;
 				$week_timers .= "$_\n";
 			}
 		}
