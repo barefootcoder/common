@@ -21,7 +21,7 @@ opts <<'-';
 $OPT{v} = 1 if $OPT{D};
 $OPT{n} //= 1;
 
-my $regex = $OPT{e} // shift;
+my $regex = $OPT{e} // shift // usage_error('must supply regex');
 $regex = qr/$regex/;
 my @files = map { file($_) } @ARGV or usage_error("must supply at least one file");
 
