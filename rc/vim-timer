@@ -43,3 +43,4 @@
 :map <C-Z> :call GetTimer()<CR>
 :noremap <C-N> 1G:call FindTimer()<CR>/<C-R><C-A><CR>Nzz<C-L>
 :nmap <C-_> <C-Z><C-N>
+:let loaded_matchparen = 1

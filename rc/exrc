@@ -168,6 +168,7 @@ set sessionoptions=buffers,curdir,globals,localoptions,options,unix
 :	endif
 :endfunction
 
+" this stops the stupidly annoying paren highlighting
 let loaded_matchparen = 1
 
 " restore last known position when opening a new file
