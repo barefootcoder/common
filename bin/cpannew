@@ -11,6 +11,15 @@ dist=${module//::/-}
 [[ -d $dist ]] || die "can't find the newly minted dir $dist"
 repo=${dist,,}
 mv $dist $repo
+cd $repo
+
+# Git stuff
+# (you must make the repo at GitHub first)
+git init
+git remote add origin git@github.com:barefootcoder/$repo.git
+git config branch.master.remote origin
+git config branch.master.merge refs/heads/master
+git pull --rebase --autostash
 
 # figure out abstract
 function get_abstract
@@ -18,7 +27,7 @@ function get_abstract
 	info="$(curl -s https://api.github.com/repos/barefootcoder/$repo)"
 	if echo "$info" | grep -q 'message.*:.*Not Found'
 	then
-		echo "$me: you should create the GitHub repo before you call me, really" >&2
+		echo "$me: create the GitHub repo before you call me" >&2
 	else
 		abstract="$(echo "$info" | perl -lne '/"description"\s*:\s*"(.*)",/ and print $1')"
 	fi
@@ -33,17 +42,15 @@ function get_abstract
 }
 
 # tweaks to newly minted files
-cd $repo
-echo "$dist-*" >.gitignore
+cat <<END >>.gitignore
+
+# \`dzil build\` dists
+$dist-*
+END
 export abstract="$(get_abstract)"
 perl -pi -e 's/# ABSTRACT:/# ABSTRACT: $ENV{abstract}/' `find lib -name "*.pm" | head -n1`
 
-# Git stuff
-# (you should probably make the repo at GitHub first)
-git init
-git remote add origin git@github.com:barefootcoder/$repo.git
-git config branch.master.remote origin
-git config branch.master.merge refs/heads/master
+# commit tweaks
 git add .
 git commit -m "skeleton distro"
 # don't want to do a git push here:
