@@ -4,6 +4,8 @@
 ssh-add-if-necessary
 ssh-add -l
 
+color_msg_block $YELLOW "Show alarm clock applet!"
+
 if dropbox status | grep -q 'not running'
 then
 	if ! dropbox start
