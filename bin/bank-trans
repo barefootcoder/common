@@ -35,8 +35,7 @@ my %DESCRIPTIONS =
 							qr/Time Warner Online/i,
 							qr/Spectrum/i,
 							qr/Netflix/i,
-							qr/amazon digital svcs/i,
-							qr/amazon digital service/i,
+							qr/(amazon|amzn) digital/i,
 							qr/Prime Video/i,
 							qr/Hulu/i,
 						],
@@ -89,9 +88,12 @@ my %DESCRIPTIONS =
 	Pets			=>	[
 							qr/Aquarium Connect./i,
 							qr/Theresas Country Feed/i,
+							qr/Valley Veterinary/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
+							qr/UNDERWOOD FAMI/i,
+							qr/Santa Barbara Zoo/i,
 							qr/school ?fees/i,
 							qr/MOORPARK COL BKSTOR/i,
 							qr/Los Angeles Zoo/i,
@@ -174,6 +176,7 @@ my %DESCRIPTIONS =
 							qr/SM City Parking Meters/i,
 							qr/OPTUM BANK REIMBUR/i,
 							qr/VENTURA CO CCD/i,
+							qr/SOL RESTAURANTS/i,
 						],
 );
 
@@ -199,6 +202,8 @@ my %WHAT_LOOKUP =
 	'OPTUM BANK REIMBUR'		=>	'HSA Reimbursement',
 	'GG Delivers'				=>	'Recreational',
 	'VENTURA CO CCD'			=>	'Moorpark College',
+	'UNDERWOOD FAMI'			=>	'Underwood Farms',
+	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
 );
 
 
@@ -270,12 +275,12 @@ foreach ($file->slurp)
 			$what = 'Petty Cash';
 		}
 
-		when ( /^PAYPAL INST XFER/i )
+		when ( /^PAYPAL INST XFER/i or /IAT PAYPAL$/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
 		}
-		when ( /AMAZON/i or /Prime Video/i )
+		when ( /AMAZON/i or /AMZN/i or /Prime Video/i or /Audible/i )
 		{
 			$source = 'Amazon';
 			if ($category eq 'TV/Internet')
@@ -290,6 +295,10 @@ foreach ($file->slurp)
 					$what = 'Movie purchase:';
 				}
 				$category = "Entertainment" if $what =~ /:$/;
+			}
+			elsif ($category eq 'Books')
+			{
+				$what = /Audible/i ? 'Audible (subscription)' : 'Kindle book';
 			}
 			$what = '<<AMAZON>>' if $what eq $descr;
 		}
