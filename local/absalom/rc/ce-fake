@@ -1,0 +1,12 @@
+setenv VCTOOLS_SHELL vc
+cpanm -n IO::All YAML::XS Digest::MD5::File Cpanel::JSON::XS
+source ~/.vctoolsrc
+setenv CEROOT ~/workproj/CE
+setenv CHEOPSROOT ~/workproj/cheops
+setenv PERL5LIB $CEROOT/lib:$CEROOT/extlib/lib/perl5
+setenv CE_REMOTE_USERNAME bburden
+setenv CE_USE_CONFIG /tmp/cepush
+eval `addpath -e $CEROOT/devtools`
+alias cessh $CHEOPSROOT/shared/bin/cessh
+alias cescp $CHEOPSROOT/shared/bin/cescp
+cd $CEROOT

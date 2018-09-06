@@ -8,3 +8,6 @@ setenv CHEOPSROOT ~/workproj/cheops
 # backcompat for intra-laptop comms
 alias cibrun 'run cib'
 alias cibvag 'vrun cib'
+
+# do some temporary work, pretending to be a CE sandbox
+alias ce-fake 'resrc ; source ~/.ce-fake'
