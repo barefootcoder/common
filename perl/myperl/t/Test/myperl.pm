@@ -13,7 +13,7 @@ our @EXPORT =	(
 				);
 
 
-our %CLASSLET_SNIPPETS =
+our %COMMON_SNIPPETS =
 (
 	q{ $x = 6 						}	=>	qr/requires explicit package/,			# strict
 	q{ 6 + 'fred' 					}	=>	qr/isn't numeric/,						# warnings FATAL => 'all'
@@ -21,9 +21,14 @@ our %CLASSLET_SNIPPETS =
 	q{ given (1) { when (1) {} }	}	=>	undef,									# feature 'switch'
 );
 
+our %CLASSLET_SNIPPETS =
+(
+	%COMMON_SNIPPETS,
+);
+
 our %ALL_SNIPPETS =
 (
-	%CLASSLET_SNIPPETS,
+	%COMMON_SNIPPETS,
 	q{ const my $x => 'fred' 		}	=>	undef,									# Const::Fast
 	q{ dir('packages', 'rent') 		}	=>	undef,									# Path::Class::Tiny
 	q{ class Foo {} 				}	=>	undef,									# MooseX::Declare
