@@ -38,8 +38,13 @@ shift $(( $OPTIND - 1 ))
 module="$(perlfind $1)"
 if [[ -z $module ]]
 then
-	echo "$me: can't find Perl module $1"
-	exit 2
+	# one last try
+	module="$(perlfind -f ${1//::/\/}.pm | head -n1)"
+	if [[ -z $module ]]
+	then
+		echo "$me: can't find Perl module $1"
+		exit 2
+	fi
 fi
 
 for dir in $(perl -le 'print "@INC"')
