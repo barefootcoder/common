@@ -601,6 +601,7 @@ Mail::Sendmail
 WWW::Mechanize
 Regexp::Common
 List::AllUtils
+Devel::Confess
 Module::Install
 Config::General
 MooseX::Declare
