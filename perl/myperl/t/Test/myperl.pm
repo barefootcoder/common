@@ -24,6 +24,12 @@ our %COMMON_SNIPPETS =
 our %CLASSLET_SNIPPETS =
 (
 	%COMMON_SNIPPETS,
+	q{ has foo => Int;						}	=>	undef,
+	q{ has foo => Int, rw;					}	=>	undef,
+	q{ has foo => Int, with 0;				}	=>	undef,
+	q{ has foo => Int, via { 0 };			}	=>	undef,
+	q{ builds foo => Int, via { 0 };		}	=>	undef,
+	q{ builds foo => Int, with 0;			}	=>	undef,
 );
 
 our %ALL_SNIPPETS =
