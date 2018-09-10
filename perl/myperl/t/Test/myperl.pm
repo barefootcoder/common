@@ -30,6 +30,8 @@ our %CLASSLET_SNIPPETS =
 	q{ has foo => Int, via { 0 };			}	=>	undef,
 	q{ builds foo => Int, via { 0 };		}	=>	undef,
 	q{ builds foo => Int, with 0;			}	=>	undef,
+	q{ builds foo => Array, per g => 'get';	}	=>	undef,
+	q{ builds foo => Hash, per g => 'get';	}	=>	undef,
 );
 
 our %ALL_SNIPPETS =
