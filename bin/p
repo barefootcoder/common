@@ -1,0 +1,4 @@
+#! /usr/bin/env perl
+
+my $proglet = pop;
+exec $^X, '-M5.14.0', '-Mwarnings', '-MData::Printer', @ARGV, '-E', $proglet;

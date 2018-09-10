@@ -58,14 +58,15 @@ package myperl::Classlet::keywords
 		my @props;
 		for (my $i = 0; $i < @_; ++$i)
 		{
-			my $prop = $_[$i];
+			my ($prop, $next) = ($_[$i], $_[$i+1]);
 			if (blessed $prop and $prop->isa('Type::Tiny'))
 			{
 				push @props, isa => $prop;
 			}
 			else
 			{
-				push @props, $prop, $_[++$i];
+				push @props, $prop, $next;
+				++$i;			# skip next, 'cause we've already pushed it
 			}
 		}
 		# put these at the beginning, so that if the user contradicts us, they win
