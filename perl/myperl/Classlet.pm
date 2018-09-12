@@ -6,7 +6,7 @@ use autodie ':all';
 package myperl::Classlet::keywords
 {
 	use Exporter;
-	our @EXPORT = qw< rw with via per Array Hash >;
+	our @EXPORT = qw< rw with via by per set clear check Array Hash >;
 
 	use List::Util 'any';
 	use Scalar::Util 'blessed';
@@ -53,7 +53,13 @@ package myperl::Classlet::keywords
 	# these are the official prepositions of Onyx Moose
 	sub with    {                  default =>                  shift          }
 	sub via (&) { my $def = shift; default => sub { local $_ = shift; &$def } }
+	sub by      {                               @_                            }
 	sub per     {                  handles => { @_ }                          }
+
+	# these are the various accessor properties; they all work with `by`
+	sub set   { writer    => @_ }
+	sub clear { clearer   => @_ }
+	sub check { predicate => @_ }
 
 	# these are syntax helpers for "native traits" (more properly called "native delegations")
 	sub Array   { NATIVE => 'Array', }

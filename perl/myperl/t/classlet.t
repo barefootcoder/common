@@ -30,10 +30,13 @@ class AttrTest
 
 	builds g => Array, per add_g => 'push';			# ro, Array trait, with delegation
 	builds h => Hash,  per add_h => 'set';			# ro,  Hash trait, with delegation
+
+	has i => Int, set   by 'si';					# writer
+	has j => Int, check by 'pj', clear by 'cj';		# predicate, clearer (and tests multiples)
 }
 my $t;
 throws_ok	{ $t = AttrTest->new           }	qr/missing required/i,	'required attrs okay';
-lives_ok	{ $t = AttrTest->new( a => 1 ) }							'optional attrs okay';
+lives_ok	{ $t = AttrTest->new( a => 1, i => 2, j => 3, ) }			'optional attrs okay';
 
 is $t->a, 1, 'required attr value okay';
 is $t->b, 3, 'literal def attr value okay';
@@ -50,6 +53,12 @@ eq_or_diff [ $t->g ], [ 1, 2, 3, ], 'Array attr add/retrieve works';
 eq_or_diff { $t->h }, {}, 'Hash attr starts out empty';
 lives_ok { $t->add_h( a => 1, b => 2, c => 3, ) } 'Hash attr basic delegation works';
 eq_or_diff { $t->h }, { a => 1, b => 2, c => 3, }, 'Hash attr add/retrieve works';
+
+lives_ok { $t->si(7) } 'writer was created';
+is $t->i, 7, 'writer functions normally';
+lives_ok { $t->cj } 'clearer was created';
+lives_ok { $t->pj } 'predicate was created';
+is $t->pj, '', 'clearer and predicate function normally';
 
 
 # don't recommend these, but they should still work
