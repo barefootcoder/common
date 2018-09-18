@@ -42,7 +42,8 @@ sub import
 	$package->export_to_level(1, CLASS, @EXPORT);
 
 	# in debug mode, don't use the real timerfile
-	if (main::DEBUG())
+	# (assuming we have one, which wouldn't be true on, say, sandboxes)
+	if (main::DEBUG() and -e $timerfile)
 	{
 		my $testfile = $timerfile =~ s/new$/test/r;
 		if (-e $testfile)
