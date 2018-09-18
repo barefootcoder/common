@@ -89,6 +89,28 @@ OUT
 -
 END
 
+perl_error_is( "proper exit message w/ bad option", <<OUT, <<'END', qw< -b > );
+<one-liner>: Unknown option: b (<one-liner> -h for help)
+OUT
+	use myperl::Script;
+	opts <<"-";
+		[-a]
+		-a : turn a on
+-
+	say STDERR "bmoogle!";
+END
+
+perl_error_is( "proper exit message w/ multiple bad options", <<OUT, <<'END', qw< -bc > );
+<one-liner>: Unknown option: b, Unknown option: c (<one-liner> -h for help)
+OUT
+	use myperl::Script;
+	opts <<"-";
+		[-a]
+		-a : turn a on
+-
+	say STDERR "bmoogle!";
+END
+
 perl_error_is( "provides proper usage_error function", <<OUT, <<'END');
 <one-liner>: aww crap ... (<one-liner> -h for help)
 OUT

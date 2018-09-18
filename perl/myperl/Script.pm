@@ -5,6 +5,7 @@ use 5.14.0;
 use CLASS;
 use Import::Into;
 use File::Basename;
+use List::MoreUtils qw< apply >;
 
 use myperl ();
 use Debuggit DataPrinter => 1;
@@ -86,7 +87,15 @@ sub opts ($)
 	}
 	&$add_help_opt if $block_pos == 0;				# there _were_ no post-option block lines; add help option
 
-	Getopt::Std::getopts($optstring, \%OPT);
+	# turn warnings from `getopts` into something more palatable
+	# and make sure they bomb out the script
+	my @warnings;
+	{
+		local $SIG{__WARN__} = sub { push @warnings, @_ };
+		Getopt::Std::getopts($optstring, \%OPT);
+	}
+	usage_error(join(', ', apply { chomp } @warnings)) if @warnings;
+
 	debuggit(4 => "OPT:", $optstring, "=>", DUMP => \%OPT);
 	HELP_MESSAGE() if $OPT{h};
 }
