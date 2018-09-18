@@ -610,6 +610,7 @@ WWW::Mechanize
 Regexp::Common
 List::AllUtils
 Devel::Confess
+Moose::Autobox
 Module::Install
 Config::General
 MooseX::Declare
@@ -634,6 +635,7 @@ Syntax::Keyword::Try
 MooseX::App::Cmd@0.31
 Net::Google::Calendar
 Archive::Tar::Wrapper
+Lingua::EN::Inflexion
 Net::Google::PicasaWeb
 MooseX::ClassAttribute
 MooseX::Attribute::ENV
