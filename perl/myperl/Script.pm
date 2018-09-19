@@ -8,7 +8,6 @@ use File::Basename;
 use List::MoreUtils qw< apply >;
 
 use myperl ();
-use Debuggit DataPrinter => 1;
 
 
 use parent 'Exporter';
@@ -96,7 +95,10 @@ sub opts ($)
 	}
 	usage_error(join(', ', apply { chomp } @warnings)) if @warnings;
 
-	debuggit(4 => "OPT:", $optstring, "=>", DUMP => \%OPT);
+	# have to call `debuggit` explicitly here, because if you try to `use Debuggit` in this file
+	# then you import it before `myperl` itself can, and that way lies madness
+	main::debuggit(4 => "OPT:", $optstring, "=>", DUMP => \%OPT);
+
 	HELP_MESSAGE() if $OPT{h};
 }
 

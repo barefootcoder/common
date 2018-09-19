@@ -19,6 +19,11 @@ perl_no_error( "script exports basic syntax", <<'END' );
 	debuggit("foo");
 END
 
+perl_error_is( "getting proper dumping", qr/\Ah: \e.*1\e.*\n\Z/, <<'END' );
+	use myperl::Script DEBUG => 1;
+	debuggit("h:", DUMP => \1);
+END
+
 perl_error_is( "script doesn't export advanced syntax",
 		q{Can't locate object method "class" via package "Foo" (perhaps you forgot to load "Foo"?)},
 		<<'END' );

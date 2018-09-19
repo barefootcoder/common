@@ -161,7 +161,12 @@ sub use_and_import_into
 {
 	my $args = ref $_[-1] eq 'ARRAY' ? pop : undef;
 	my ($class, $to_pkg, $from_pkg, $version) = @_;
-	say STDERR ":: importing $from_pkg into $to_pkg ::" if $DISPLAY_IMPORTS;
+	if ($DISPLAY_IMPORTS)
+	{
+		my $msg = "importing $from_pkg into $to_pkg";
+		$msg .= " [args: @$args]" if $args;
+		say STDERR ":: $msg ::";
+	}
 
 	$version ? use_module($from_pkg, $version) : use_module($from_pkg);
 	$from_pkg->import::into($to_pkg, @{ $args || [] }) unless $args and @$args == 0;
@@ -384,18 +389,21 @@ getting imported into where, use this to force a message every time it (attempts
 into a package's namespace.  Results in lots of messages to C<STDERR> that look like this:
 
 	:: importing strict into main ::
-	:: importing warnings into main ::
-	:: importing feature into main ::
-	:: importing experimental into main ::
-	:: importing Debuggit into main ::
-	:: importing List::Util into main ::
-	:: importing List::MoreUtils into main ::
-	:: importing TryCatch into main ::
+	:: importing warnings into main [args: FATAL all] ::
+	:: importing feature into main [args: :5.14] ::
+	:: importing experimental into main [args: smartmatch] ::
+	:: importing Debuggit into main [args: DataPrinter 1] ::
 	:: importing Const::Fast into main ::
+	:: importing Scalar::Util into main [args: blessed] ::
+	:: importing List::Util into main [args: first max min reduce shuffle sum] ::
+	:: importing List::MoreUtils into main [args: apply zip uniq] ::
+	:: importing CLASS into main ::
+	:: importing TryCatch into main ::
+	:: importing Date::Easy into main ::
 	:: importing Path::Class::Tiny into main ::
 	:: importing Perl6::Gather into main ::
 	:: importing myperl::Declare into main ::
-	:: importing Method::Signatures into main ::
+	:: importing myperl into main ::
 
 
 =head1 FUNCTIONS
