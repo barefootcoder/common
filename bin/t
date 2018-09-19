@@ -4,7 +4,7 @@
 # because we want to remain backwards compatible at least back to 5.8.9
 # this helps uses such as ~/bin/test_all_perls (q.v.)
 use strict;
-use autodie qw< :all >;
+use autodie;
 use warnings FATAL => 'all';
 
 sub check_prereqs
@@ -78,6 +78,9 @@ if ($opt->{h})
 ###########################
 
 
+my $precommand;															# will be executed just before main command is run
+my $postcommand;														# executes after command, but *only* if successful
+
 # quick hack: shortcut to spawning `dzil test` if:
 # 	a) we can find a "dist.ini"
 # 	b) we're called with no args (that includes switches!)
@@ -109,7 +112,9 @@ if (-r 'dist.ini' and can_run_dzil())
 				$ENV{'RENT_DEV_YES'} = 1;
 				my $command = "rent test $opts";
 				print_command_if_debug($command, noenv => 1);
-				exec($command);
+				system($command);
+				run_post_commands();
+				exit;
 			}
 		}
 	}
@@ -130,7 +135,9 @@ if (-r 'dist.ini' and can_run_dzil())
 			spacer();
 			my $command = "dzil test --release && dzil clean";
 			print_command_if_debug($command, noenv => 1);
-			exec($command);
+			system($command);
+			run_post_commands();
+			exit;
 		}
 	}
 }
@@ -142,8 +149,6 @@ if (-r 'dist.ini' and can_run_dzil())
 system("make") if -d 'blib/lib' and -e 'Makefile';
 
 
-my $precommand;															# will be executed just before main command is run
-my $postcommand;														# executes after command, but *only* if successful
 # slightly less quick hack:
 # if we're in a Dist::Zilla distro and we _do_ get arguments, we _may_ be able to set up an
 # environment where prove will work properly ...
@@ -383,14 +388,7 @@ else
 	print_command_if_debug($command);
 	system($command);
 }
-if ($?)
-{
-	print_color red => "\nTEST FAILURE\n";
-	exit 1;
-}
-
-$postcommand->() if $postcommand;
-print_color green => "\nALL TESTS PASSED\n";
+run_post_commands();
 
 
 # Devel::Cover reporting
@@ -657,6 +655,18 @@ sub run_pre_commands
 	}
 }
 
+sub run_post_commands
+{
+	if ($?)
+	{
+		print_color red => "\nTEST FAILURE\n";
+		exit 1;
+	}
+
+	$postcommand->() if $postcommand;
+	print_color green => "\nALL TESTS PASSED\n";
+}
+
 
 sub output_if_debug
 {
@@ -689,7 +699,7 @@ sub print_color (@)
 	if (-t STDOUT)
 	{
 		require Term::ANSIColor;
-		print Term::ANSIColor::colored($msg, $color);
+		print Term::ANSIColor::colored($msg, bold => $color);
 	}
 	else
 	{
