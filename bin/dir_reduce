@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 
-use myperl::Script;
+use myperl::Pxb;
 use autodie ':all';
 
 
@@ -22,7 +22,7 @@ my @files = <>;
 chomp @files;
 
 my $dir_files = {};
-$dir_files->{dirname $_}++ foreach @files;
+$dir_files->{ $_->dirname }++ foreach map { file($_) } @files;
 while (1)
 {
 	debuggit(6 => "current list:", DUMP => $dir_files);
@@ -40,21 +40,23 @@ sub reduce_list
 
 	my %parent_files =
 			map		{ $_ => ($dir_files->{$_} // 0)		}				# initial count for parent
-			map		{ dirname $_						}				# get parent
+			map		{ path($_)->dirname					}				# get parent
 					keys %$dir_files;
-	$parent_files{dirname $_} += $dir_files->{$_} foreach keys %$dir_files;
-	foreach my $file (sort { length $b <=> length $a } keys %$dir_files)
+	$parent_files{ path($_)->dirname } += $dir_files->{$_} foreach keys %$dir_files;
+	foreach my $file (sort { length $b <=> length $a } map { path($_) } keys %$dir_files)
 	{
-		my $parent = dirname $file;
+		my $parent = $file->dirname;
 		next if $parent =~ m|^[^/]*/?$|;			# don't consolidate up to the top-level dir
 
-		debuggit(5 => "before [limit $limit] --> file:", $file, "=>", $dir_files->{$file}, "/ parent:", $parent,
+		debuggit(5 => "before [limit $limit] --> file:", $file,
+				"=>", $dir_files->{$file}, "/ parent:", $parent,
 				"=>", $parent_files{$parent});
 		if ($parent_files{$parent} > $dir_files->{$file} and $dir_files->{$file} < $limit)
 		{
 			$dir_files->{$parent} += delete $dir_files->{$file};
 		}
-		debuggit(5 => "└after [limit $limit] --> file:", $file, "=>", $dir_files->{$file}, "/ parent:", $parent,
+		debuggit(5 => "\N{BOX DRAWINGS HEAVY UP AND RIGHT}after [limit $limit] --> file:", $file,
+				"=>", $dir_files->{$file}, "/ parent:", $parent,
 				"=>", $dir_files->{$parent});
 	}
 
