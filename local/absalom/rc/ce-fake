@@ -3,10 +3,12 @@ cpanm -n IO::All YAML::XS Digest::MD5::File Cpanel::JSON::XS
 source ~/.vctoolsrc
 setenv CEROOT ~/workproj/CE
 setenv CHEOPSROOT ~/workproj/cheops
-setenv PERL5LIB $CEROOT/lib:$CEROOT/extlib/lib/perl5
+setenv PERL5LIB $CEROOT/lib:$CEROOT/extlib/lib/perl5:$HOME/common/perl
 setenv CE_REMOTE_USERNAME bburden
 setenv CE_USE_CONFIG /tmp/cepush
 eval `addpath -e $CEROOT/devtools`
+alias ceflow $CEROOT/bin/ceflow
 alias cessh $CHEOPSROOT/shared/bin/cessh
 alias cescp $CHEOPSROOT/shared/bin/cescp
+eval `~/bin/addpath -e $CEROOT/devtools ~/common/local/cibola/sandbox-bin`
 cd $CEROOT

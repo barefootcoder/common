@@ -20,7 +20,7 @@ $regex = qr/$regex/;
 
 
 my @ignores =
-	map  { -d ? ('--ignore-dir' => $_) : -f ? ('--ignore-file' => $_) : die("can't identify: $_") }
+	map  { -d $_ ? ('--ignore-dir' => $_) : -f $_ ? ('--ignore-file' => $_) : die("can't identify: $_") }
 	map  { glob("$CEROOT/$_") }
 	grep { /extlib/ && ! /^#/ }
 		 ( path("$CEROOT/.gitignore")->slurp(chomp => 1) )
