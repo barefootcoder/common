@@ -5,7 +5,9 @@ VCtoolsDir=/var/local/VCtools
 <<include $CEROOT/etc/ceflow/CE.conf>>
 <Project CE>
     ProjectDir=/home/vagrant/CE
-    VC=git
+</Project>
+<Project archer-boot>
+    ProjectDir=/home/vagrant/archer-boot
 </Project>
 
 DefaultVC=git
