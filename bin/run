@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 
-use myperl::Script DEBUG => 4;
+use myperl::Script;
 use autodie ':all';
 
 
