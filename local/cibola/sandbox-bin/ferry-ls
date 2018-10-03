@@ -3,6 +3,9 @@
 use myperl::Script;
 use autodie ':all';
 
+# CE lib modules may be insufficient for Date::Easy
+BEGIN { @INC = grep { not m|/CE/| } @INC }
+
 use Path::Tiny;
 use Date::Easy;
 use PerlX::bash;

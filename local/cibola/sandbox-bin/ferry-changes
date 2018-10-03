@@ -4,10 +4,8 @@
 tarfile=$1
 [[ $tarfile ]] || die "must supply tarfile name"
 
-[[ `pwd` -ef $CEROOT ]] || die 'must run from $CEROOT dir'
-
 # make sure we have creds before we get too far in
-aws-credentials-check
+$CEROOT/devtools/aws-credentials-check
 
 ferrydir=/var/tmp/ferry
 mkdir -p $ferrydir
