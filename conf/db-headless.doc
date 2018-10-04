@@ -1,0 +1,36 @@
+# After `git clone`ing common:, take the following steps:
+
+# Install dropbox for Linux:
+
+	dropbox install
+
+# Connect computer to your account:
+
+	~/.dropbox-dist/dropboxd
+
+# Wait for the line that looks like:
+# 		Please visit https://www.dropbox.com/... to link this device.
+# Paste that URL into a browser.  It should say "you're connected now" or somesuch.
+# Ctrl-C out of the Dropbox daemon.
+
+# Now type these commands, one at a time.  Make sure that each `exclude`
+# command reports back that something was actually excluded.
+
+	cd ~/Dropbox
+	dropbox-ctl start
+	dropbox-ctl exclude add music
+	dropbox-ctl exclude add machine
+	dropbox-ctl exclude add 'Camera Uploads'
+	dropbox-ctl exclude add backup
+	dropbox-ctl exclude add Christy
+	dropbox-ctl exclude add rpg MST3K
+	dropbox-ctl exclude add Archive
+	dropbox-ctl exclude add purple DropboxAdmin
+	dropbox-ctl exclude add personal Customs StoryOfTheWorld
+	dropbox-ctl exclude add cpan-testers sensitive org moz-plugins
+	dropbox-ctl exclude add work/blogs work/conferences work/email work/nami work/rent work/timer
+
+# Verify that everything is working:
+
+	dropbox-ctl exclude list
+	watch dropbox-ctl status
