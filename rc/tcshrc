@@ -186,6 +186,7 @@ alias dzbuild 'dzclean ; dzil build'
 alias dzrel 'dzclean ; dzil release'
 alias dzpod 'dzbuild ; perldoc *[0-9].[0-9]*/\!^ ; dzclean'
 alias dzinst 'dzbuild ; cpanm -n *[0-9].[0-9]*.tar.gz ; dzclean'
+alias pbinst 'perlbrew install -n -j 5 --noman'
 alias cpi 'cpanm -n \!*'
 
 alias resrc "set tcsh_reset ; source ~/.tcshrc"
