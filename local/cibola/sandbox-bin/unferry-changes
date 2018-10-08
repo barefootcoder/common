@@ -30,9 +30,11 @@ then
 	trap "/bin/rm -f $tarfile $tmpfile" EXIT
 	vc clean -y | tee $tmpfile
 	dirty_restore=$(perl -lne '/^Dropped.*\((\w+)\)/ and print $1' $tmpfile)
+	color_msg_block $CYAN "dirty_restore: $dirty_restore"
 fi
 
 old_head=$(git rev-parse HEAD)
+color_msg_block $CYAN "old_head: $old_head"
 first_unpushed=$(vc info %local_commits | tail -n1)
 if [[ $first_unpushed ]]
 then
@@ -46,16 +48,15 @@ then
 	if [[ $branched_from ]]
 	then
 		git reset --hard $branched_from
-	else
-		vc clean -y ||:
 	fi
-	if ! vc branch-update
+	vc clean -y ||:
+	if [[ $(vc info %cur_branch) == feature/* ]] && ! vc branch-update
 	then
 		echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
 		read
 	fi
 	git am $patchdir/*
-	# the `git reset --hard` part throws away our non-patch changes
+	# since we did another `vc clean`, our non-patch changes got lost
 	# so just unpack the tarfile again to get them back
 	tar xvpzf $tarfile
 	/bin/rm -rf $patchdir
