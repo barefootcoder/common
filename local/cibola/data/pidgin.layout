@@ -12,7 +12,7 @@ MAIN:
 COMMS:
 
 	tech-private	+technology		tech-qa
-
+							max
 	company			+technology		push-songs
 			mia				holly
 	leadops			+technology		+tech-offtopic
