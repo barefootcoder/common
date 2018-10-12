@@ -64,7 +64,7 @@ function results
 if [[ $mode == "modfind" ]]
 then
 	
-	perlprog='my $rf = shift; $rf =~ s@::@/@g; $rf .= ".pm"; use '$module'; print $INC{$rf}'
+	perlprog='my $rf = shift; $rf =~ s@::@/@g; $rf .= ".pm"; require '$module'; print $INC{$rf}'
 	modpath=$(perl -e "$perlprog" $module 2>/dev/null)
 	if [[ -z "$modpath" ]]
 	then
