@@ -15,9 +15,9 @@ mod=${mod//\//::}
 if [[ -n $PERLBREW_PERL ]]
 then
 	cpanm -n $mod
-	if perl -M$mod -MTerm::ANSIColor -le 'print colored("installed version $'$mod'::VERSION", bold => "green")'
+	if perl -m$mod -MTerm::ANSIColor -le 'print colored("installed version '$mod'->VERSION", bold => "green")'
 	then
-		printf "%-38s  %s\n" $mod $(perl -M$mod -le 'print $'$mod'::VERSION')
+		printf "%-38s  %s\n" $mod $(perl -m$mod -le 'print '$mod'->VERSION')
 	else
 		perl -MTerm::ANSIColor -le 'print colored("could not install '$mod'", bold => "red")'
 	fi
