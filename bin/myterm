@@ -3,17 +3,21 @@
 me=${0##*/}
 termprog=urxvt
 force=0
-while getopts ":sfD:h" opt
+smaller=0
+while getopts ":sSfD:h" opt
 do
 	case $opt in
 		s)	scaled=1
 			;;
 		D)	desktop=$(( $OPTARG - 1 ))									# because desktops really start at 0
 			;;
+		S)	smaller=1
+			;;
 		f)	force=1
 			;;
-		h)	echo "usage: $me -h | [-sf] [-D num] title pixmap geometry [cmd [args]]" >&2
+		h)	echo "usage: $me -h | [-sSf] [-D num] title pixmap geometry [cmd [args]]" >&2
 			echo "    -s : scaled image (default: tiled)" >&2
+			echo "    -S : smaller font (default: based on screen size)" >&2
 			echo "    -f : force (create even if exists)" >&2
 			echo "    -D : start term on this desktop (default: current)" >&2
 			echo "    -h : this help message" >&2
@@ -109,6 +113,7 @@ case $scrsize in
 	*)			echo "can't determine proper font size for this screen ($scrsize)" >&2
 				exit 1
 esac
+[[ $smaller -eq 1 ]] && fontsize=$(( $fontsize - 2 ))
 
 case $termprog in
 	urxvt)
