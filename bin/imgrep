@@ -10,13 +10,15 @@ use List::AllUtils qw< first apply >;
 
 
 opts <<'-';
-	[-v] { [-t <range>] | [-w<N>] } [-e] text-pattern contact-pattern [...]
+	[-v] { [-t <range>] | [-w<N>] } { [-e] <text-pattern> | -f <pattern-file> } <contact-pattern> [...]
 	-v : verbose mode
 	-t : limit results to timestamp <range> (parsed with Date::Easy; flexible separators)
 	-w : -w<N> is a shortcut for -t'N weeks ago - today'
 	-e : introduce <text-pattern> that starts with a `-' (or use `--' instead)
+	-f : read patterns from <pattern-file>, one per line
 	all patterns Perl-style regexen
 	<text-pattern> automatically considered case-insensitive
+	<pattern-file> patterns automatically considered literal (and case-sensitive)
 -
 
 
@@ -24,7 +26,15 @@ my $range = $OPT{'t'} // ($OPT{'w'} ? "$OPT{'w'} weeks ago - today" : undef);
 my ($start, $end) = validate_date_range($range);
 say "# limiting results to $start through $end" if $start and $OPT{'v'};
 
-my $pattern = $OPT{'e'} // shift // die("must supply pattern!");
+my $pattern;
+if ($OPT{'f'})
+{
+	$pattern = join('|', map { quotemeta } path($OPT{'f'})->lines_utf8({chomp => 1}));
+}
+else
+{
+	$pattern = $OPT{'e'} // shift // die("must supply pattern!");
+}
 $pattern = qr/$pattern/i;
 my $contact_pattern = join('|', @ARGV);
 say "# checking logs that match /$contact_pattern/" if $OPT{'v'};
