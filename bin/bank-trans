@@ -48,6 +48,7 @@ my %DESCRIPTIONS =
 						],
 	House			=>	[
 							qr/travis junge poo/i,
+							qr/carlos ortega/i,
 							qr/jessie flores/i,
 							qr/fidelity nationa/i,
 						],
@@ -80,8 +81,10 @@ my %DESCRIPTIONS =
 	Gas				=>	[
 							qr/chevron/i,
 							qr/shell (oil|service)/i,
+							qr/exxon/i,
 							qr/USA 63216/i,
 							qr/76.*oil/i,
+							qr/gse 76/i,
 							qr/moller retail/i,
 							qr/Costco Gas/i,
 						],
@@ -89,6 +92,7 @@ my %DESCRIPTIONS =
 							qr/Aquarium Connect./i,
 							qr/Theresas Country Feed/i,
 							qr/Valley Veterinary/i,
+							qr/Chewy.com/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
@@ -110,6 +114,7 @@ my %DESCRIPTIONS =
 						],
 	Books			=>	[
 							qr/Audible/i,
+							qr/Kindle/i,
 						],
 	'Eating Out'	=>	[
 							qr/McDonald's/i,
@@ -120,7 +125,7 @@ my %DESCRIPTIONS =
 							qr/Subway/i,
 							qr/In N Out/i,
 							qr/\bKFC\b/i,
-							qr/Popeye's/i,
+							qr/Popeye'?s/i,
 							qr/SMART MANAGEMENT & CO/i,
 							qr/Freddys/i,
 							qr/5Guys/i,
@@ -153,6 +158,7 @@ my %DESCRIPTIONS =
 							qr/Joann\b/i,
 							qr/noa coppa/i,
 							qr/vito rest/i,
+							qr/urban plate/i,
 							qr/Smoke & Vape/i,
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
@@ -212,7 +218,7 @@ opts <<'-';
 	-F : family spending output (default: family finances output)
 	-B : new Budget sheet categorization output
 	-N : only show those lines that didn't get a category assigned
-	-a : only show transactiona after <id>
+	-a : only show transactions after <id>
 	-H : show header line (default: don't)
 	-g : group expenses by category (default: one line per expense)
 	reads transactions file (CSV from Ally)
