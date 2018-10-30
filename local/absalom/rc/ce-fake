@@ -12,3 +12,4 @@ alias cessh $CHEOPSROOT/shared/bin/cessh
 alias cescp $CHEOPSROOT/shared/bin/cescp
 eval `~/bin/addpath -e $CEROOT/devtools ~/common/local/cibola/sandbox-bin`
 cd $CEROOT
+git stash apply `git stash list --grep ce-fake --format=%H`
