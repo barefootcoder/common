@@ -163,6 +163,7 @@ alias vimhelp "vim -s ~/.vim-help"
 alias deparse "perl -MO=Deparse,-p \!*"
 alias perlfunc "perldoc -f"
 alias pdoc perldoc
+alias pdocre "perldoc perlre"						# if `pdoc re` worked, I wouldn't need this ...
 alias pfunc perlfunc
 alias pfind perlfind
 alias unison "unison -ui text"
