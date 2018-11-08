@@ -41,7 +41,7 @@ if ( $OPT{p} )
 
 # start with stuff we *always* ignore
 my @IGNORE_FILES = qw< match:nytprof.* >;
-my @IGNORE_DIRS  = qw< nytprof tmp extlib perl5 var >;
+my @IGNORE_DIRS  = qw< nytprof tmp extlib docker perl5 var >;
 # for -T, we'll use these dirs only
 my @TEST_DIRS    = qw< t tlib >;
 # for -C or -P, ignore the -T dirs + doc dirs
