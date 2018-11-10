@@ -35,7 +35,7 @@ my %DESCRIPTIONS =
 							qr/Time Warner Online/i,
 							qr/Spectrum/i,
 							qr/Netflix/i,
-							qr/(amazon|amzn) digital/i,
+							qr/(amazon|amzn) digit(al)?/i,
 							qr/Prime Video/i,
 							qr/Hulu/i,
 						],
@@ -67,6 +67,7 @@ my %DESCRIPTIONS =
 							qr/Sprouts Farmers/i,
 							qr/Lassens/i,
 							qr/SmartNFinal/i,
+							qr/Smart and Final/i,
 							qr/Ralphs/i,
 							qr/Albertsons/i,
 							qr/Costco Whse/i,
@@ -281,7 +282,7 @@ foreach ($file->slurp)
 			$what = 'Petty Cash';
 		}
 
-		when ( /^PAYPAL INST XFER/i or /IAT PAYPAL$/i )
+		when ( /^PAYPAL INST XFER/i or /IAT PAYPAL/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
@@ -293,10 +294,9 @@ foreach ($file->slurp)
 			{
 				given (abs($amount))
 				{
-					$what = 'Video rental:'	when $_ < 5;
+					$what = 'Video rental:'	when $_ < 6;
 					$what = 'Starz' 		when $_ < 9;
 					$what = 'Showtime' 		when $_ < 11;
-					$what = 'HBO'			when $_ < 15;
 					$what = 'HBO'			when $_ < 15;
 					$what = 'Movie purchase:';
 				}
@@ -307,6 +307,10 @@ foreach ($file->slurp)
 				$what = /Audible/i ? 'Audible (subscription)' : 'Kindle book';
 			}
 			$what = '<<AMAZON>>' if $what eq $descr;
+		}
+		when ( /^Kindle/i )
+		{
+			$source = 'Amazon';
 		}
 		when ( /^TARGET/i )
 		{
