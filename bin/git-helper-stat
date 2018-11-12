@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	-
+	used by `vc stat-plus`; do not use independently
+-
+
+
+my $stat    = sh(git => status =>         );
+my $stash   = sh(git => stash  => list => );
+my $commits = sh('git-helper-log -LNs'    );
+   $commits = "Unpushed commits:\n$commits" if $commits;
+
+print join("\n", map { filter_for_length($_) } $stat, $stash, $commits);
+
+
+sub numlines { scalar shift =~ tr/\n// }
+
+sub filter_for_length
+{
+	my ($output) = @_;
+	return $output if numlines($output) < 35;
+
+	my @new;
+	foreach ( split("\n\n", $output) )
+	{
+		state $color = qr/(?: \e\[ [\d;]*  m )/x;
+		state $line  = qr/(?:          .* \n )/x;
+
+		s|^($line{3}\s*$color?)($line{20,}.*?)($color?)$|$1 . "...{ @{[ numlines($2) ]} more lines }..." . ($3 // '')|e;
+		push @new, $_;
+	}
+	return join("\n\n", @new);
+}
