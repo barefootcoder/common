@@ -1,0 +1,84 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+$| = 1;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-avD] [-n <num>] { -e <pattern> | <pattern> } <file> [...]
+	-a : do a thing (default: don't do that thing)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	-n : do a thing <num> times
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $condition = shift // usage_error('must supply condition');
+$condition = eval "sub { $condition }" or die("your condition won't compile: $@");
+
+
+const my $ESC_CODE => qr/(?:\e\[[\d;]*m)/;
+const my $BOL      => qr/^$ESC_CODE*/m;
+const my $EOL      => qr/$ESC_CODE*$/m;
+
+# this should probably be wrapped up into a "page_output" type function
+# which should be a standard part of Pb
+local *OUT;
+const my $PAGER => $ENV{PAGER} // 'less -F';
+if (-t STDOUT)
+{
+	open OUT, "| $PAGER";
+	binmode OUT, ':utf8';
+	select OUT;
+}
+
+
+my $count = 0;
+#sh(cmd => -v => @files);
+my $contents = slurp \*STDIN;
+my ($file_header, $hunk_header);
+foreach ( split(/($BOL(?:@@|diff --).*\n)/, $contents) )
+{
+	next unless $_;
+#say ++$count, ":$_||";
+	if ( /diff --/ )			# file header
+	{
+#say "\nsetting header at chunk $count";
+		$file_header = $_;
+		undef $hunk_header;
+	}
+	elsif ( /$BOL@@/ )			# hunk header
+	{
+		$hunk_header = $_;
+	}
+	elsif ( not $hunk_header )	# rest of file header
+	{
+		$file_header .= $_;
+	}
+	else						# hunk
+	{
+		if ($condition->())
+		{
+			print "$file_header$hunk_header$_";
+		}
+	}
+}
+
+
+sub plus  { diffline('+' => shift) }
+sub minus { diffline('-' => shift) }
+sub diffline
+{
+	my ($symbol, $qr) = @_;
+	return /^$ESC_CODE*\Q$symbol\E$ESC_CODE*$qr$ESC_CODE*$/m;
+}
