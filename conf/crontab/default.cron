@@ -28,4 +28,4 @@ DISPLAY=:0.0
 
 *     * * * * $HOME/bin/remote-control
 0  0,12 * * * $HOME/bin/dropbox start 2>&1 | logger -t 'dropbox restart'
-*/10  * * * * $HOME/bin/dbsync        2>&1 | logger -t 'dropbox machine sync'
+*/30  * * * * $HOME/bin/dbsync        2>&1 | logger -t 'dropbox machine sync'

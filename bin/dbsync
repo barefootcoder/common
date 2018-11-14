@@ -8,11 +8,12 @@ then
 	exit 1
 fi
 
-for dir in mozilla config
+for dir in mozilla config thunderbird
 do
 	if [[ -d ~/Dropbox/machine/$LOCALHOSTNAME/$dir ]]
 	then
-		/usr/bin/rsync -az --delete ~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
+		/usr/bin/rsync -az --delete --exclude=global-messages-db.sqlite --exclude=lock							\
+				~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
 	fi
 done
 
