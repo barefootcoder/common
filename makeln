@@ -199,23 +199,9 @@ if [[ $1 != refresh && -d ~/Dropbox ]]
 then
 	local_dbdir=~/Dropbox/machine/$LOCALHOSTNAME
 	[[ -d $local_dbdir ]] || mkdir -p $local_dbdir
-	# local copy is a symlink to Dropbox
-	for dir in thunderbird
-	do
-		if [[ ! -e $local_dbdir/$dir ]]
-		then
-			if [[ -d ~/.$dir && ! -L ~/.$dir ]]
-			then
-				mv ~/.$dir $local_dbdir/$dir
-			else
-				mkdir $local_dbdir/$dir
-			fi
-		fi
-		make_link $local_dbdir/$dir ~/.$dir
-	done
 	# Dropbox dir is just a copy of local dir
 	# (copying handled by crontab, set up below)
-	for dir in firefox mozilla config
+	for dir in firefox mozilla config thunderbird
 	do
 		[[ -d $local_dbdir/$dir ]] || mkdir -p $local_dbdir/$dir
 	done
