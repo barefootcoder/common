@@ -16,7 +16,8 @@ my %COMMANDS =
 	down	=>	'-',
 );
 
-const my $REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
+const my $DECIBEL_REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
+const my $CLEMENTINE     => '/usr/bin/clementine';
 
 my $command = shift;
 die("unknown command $command") unless exists $COMMANDS{$command};
@@ -41,7 +42,7 @@ else
 }
 $curvol = force_into_range($curvol, 0, 100);
 
-system(python => $REMOTE, volume => $curvol);
+adjust_volume($curvol);
 say "voume set to: $curvol";
 $curvol_file->spew($curvol);
 
@@ -82,4 +83,17 @@ sub fill_in_adj
 
 	# adjust in place
 	$_[0] = $adj;
+}
+
+
+sub adjust_volume
+{
+	if ( -x $CLEMENTINE )
+	{
+		system($CLEMENTINE, '--volume' => $curvol);
+	}
+	else						# should be decibel
+	{
+		system(python => $DECIBEL_REMOTE, volume => $curvol);
+	}
 }
