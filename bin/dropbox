@@ -50,21 +50,23 @@ start() {
 
         echo -n $"Starting $prog"
 
-        if [ -z $DROPBOX_USERS ] ; then
-                echo -n ": unconfigured: $config"
-                echo
-                rm -f ${lockfile} ${pidfile}
-                RETVAL=6
-                return $RETVAL
-        fi
+		#  We don't appear to use the -ctl dir any more.
+#        if [ -z $DROPBOX_USERS ] ; then
+#                echo -n ": unconfigured: $config"
+#                echo
+#                rm -f ${lockfile} ${pidfile}
+#                RETVAL=6
+#                return $RETVAL
+#        fi
+#
+#        for dbuser in $DROPBOX_USERS; do
+#			if [ $USER = $dbuser ] ; then
+#				mkdir -p $logdir
+#				/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
+#			fi
+#        done
 
-        for dbuser in $DROPBOX_USERS; do
-			if [ $USER = $dbuser ] ; then
-				mkdir -p $logdir
-				/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
-			fi
-        done
-
+		/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
         RETVAL=$?
         echo
         if [ $RETVAL = 0 ] ; then

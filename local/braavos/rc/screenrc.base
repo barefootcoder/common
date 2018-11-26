@@ -1,0 +1,67 @@
+bind ^y source .screenrc.sandbox
+bind ^_ source .screenrc.search
+bind ^v source .screenrc.vctools
+
+screen -t base
+screen -t timer
+	stuff "timer\015"
+screen -t man
+	stuff "man screen\015"
+screen -t top topall
+screen -t root sudo su -
+screen -t launch
+screen -t copy
+screen -t notes
+	number 9
+	stuff "vi ~/docs/notes\015"
+screen -t common
+	source .screenrc.vctools
+	stuff "vcd common\015"
+screen -t bc
+	stuff "bc\015"
+screen -t cheops
+	stuff "vcd cheops\015"
+screen -t vagrant
+	stuff "vcd cheops\015"
+	stuff "vims vagrant\015"
+screen -t proj
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t st
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t sandbox
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t aboot
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t sql
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t cetest
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t server
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t awsess
+	stuff "$CHEOPSROOT/bin/awsess\015"
+screen -t work
+	stuff "cd ~/work\015"
+screen -t lib
+	source .screenrc.vctools
+	stuff "vcd leadpipe\015"
+screen -t ltest
+	source .screenrc.vctools
+	stuff "vcd leadpipe\015"
+screen -t mixes
+	stuff "vims mixes\015"
+screen -t mtest
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+screen -t blog
+	stuff "cd Dropbox/personal/blog\015"
+	stuff "vims blog\015"
+screen -t heroscapers
+	stuff "cd rpg/Heroscape/glasq\015"

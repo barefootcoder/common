@@ -1,0 +1,40 @@
+#!/bin/bash
+. ~/bin/bash_funcs
+
+ssh-add-if-necessary
+ssh-add -l
+
+color_msg_block $YELLOW "Show alarm clock applet!"
+
+if dropbox status | grep -q 'not running'
+then
+	if ! dropbox start
+	then
+		if yn "Reinstall dropbox?"
+		then
+			dropbox install force
+		fi
+	fi
+fi
+
+cd $CHEOPSROOT
+vagrant up
+
+if ( screen -ls ||: ) | grep base
+then
+	cmd="screen -x base"
+else
+	cmd="screen -S base"
+fi
+
+music-player
+xrestore -desktop Music -geometry 1200x798+716+254 kid3
+
+myterm -s Braavos titan 125x50+7+30 $cmd
+if [[ $REMOTE_SANDBOX ]]
+then
+	title=${REMOTE_SANDBOX%%-*}
+	myterm -s ${title^} cityofgold 125x50-0-24 tcsh -c 'cessh $REMOTE_SANDBOX'
+fi
+
+xrestore -v -geometry 350x329+1566+723 -desktop Music "alarm-clock-applet --hidden"

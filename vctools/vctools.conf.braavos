@@ -1,0 +1,32 @@
+# THIS CONFIG IS HOST-SPECIFIC
+
+VCtoolsDir=~/proj/VCtools
+
+WorkingDir=~/proj
+WorkingDir=~/workproj
+
+DefaultVC=git
+<<include ~/proj/VCtools/share/conf/git.conf>>
+<<include ~/proj/VCtools/share/conf/svn.conf>>
+
+DefaultSourcePath=git@github.com:%user/%project.git
+
+
+<Project common>
+	ProjectDir = ~/common
+</Project>
+
+<Project absalom-common>
+	ProjectDir = ~/Dropbox/machine/absalom/common
+</Project>
+
+#<Project caemlyn-common>
+#	ProjectDir = ~/Dropbox/machine/caemlyn/common
+#</Project>
+
+
+
+<<include $CEROOT/etc/ceflow/CE.conf>>
+
+<<include ~/.vctools/custom.conf>>
+<<include ~/.vctools/CE-custom.conf>>
