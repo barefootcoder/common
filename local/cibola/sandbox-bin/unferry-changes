@@ -3,6 +3,7 @@
 
 tarfile=$1
 [[ $tarfile ]] || die "must supply tarfile name/pattern"
+opts=":$2:"
 
 # make sure we have creds before we get too far in
 $CEROOT/devtools/aws-credentials-check
@@ -10,7 +11,7 @@ $CEROOT/devtools/aws-credentials-check
 ferrydir=/var/tmp/ferry
 mkdir -p $ferrydir
 
-tarfile=$(ferry-ls -l "$tarfile")
+[[ $tarfile == "s3://"* ]] || tarfile=$(ferry-ls -l "$tarfile")
 [[ $tarfile ]] || die "ferry file /$1/ doesn't exist"
 [[ $(echo "$tarfile" | wc -l) == 1 ]] || die "too many candidates! [$tarfile]"
 
@@ -59,7 +60,7 @@ then
 	# since we did another `vc clean`, our non-patch changes got lost
 	# so just unpack the tarfile again to get them back
 	tar xvpzf $tarfile
-	/bin/rm -rf $patchdir
+	[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
 fi
 
 echo -e "\n\n\n"
