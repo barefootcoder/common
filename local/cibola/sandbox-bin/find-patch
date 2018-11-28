@@ -1,0 +1,48 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+
+opts <<'-';
+	[-v] [-D <dir>] { -e <pattern> | <pattern> }
+	-v : be more verbose
+	-D : look for patchdir under <dir> (default: $CEROOT)
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<dir>     : directory under which to find tmp/patches
+-
+
+my $pattern = $OPT{e} // shift // usage_error('must supply pattern');
+$pattern =~ s/'/'\\''/g;
+
+const my $ROOT => path( $OPT{D} // $ENV{CEROOT} // usage_error('$CEROOT must be set, or use -D') );
+
+my @files = sort $ROOT->child( tmp => 'patches' )->children or fatal("no patches dir found");
+if ($OPT{v}) { say "searching:"; say "  $_" foreach @files }
+
+
+my @results = sh(grep => -P => "'$pattern'" => @files);
+if ($OPT{v}) { say foreach @results }
+if (@results == 0)
+{
+	fatal("pattern /$pattern/ not found in patches");
+}
+else
+{
+	# if we have multiple results, but they're all from the same patchfile,
+	# that doesn't matter; if we have only one result, we still have to pick
+	# out the name of the patchfile
+	my @patches = sort { $a cmp $b } uniq map { /^(.*?):/ ? $1 : fatal("can't parse line: $_") } @results;
+	if (@patches > 1)
+	{
+		fatal("multiple patchfile candidates: @patches");
+	}
+	else
+	{
+		exec( vi => $patches[0] );
+	}
+}
+die("this should never happen");
