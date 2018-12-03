@@ -1,0 +1,127 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Path::Class::Tiny;
+
+
+my $me = sh(git => config => 'user.email'); chomp $me;
+opts <<"-";
+	[-ilURm] [-d <date> ] { -e <pattern> | <pattern> } [-v]
+	-i : case-insensitive matching
+	-l : only print the SHA1s of matching commits
+	-U : grep only unreachable commits (default: grep all)
+	-R : grep only reachable commits (default: grep all)
+	-m : grep only my commits (only commits for $me)
+	-d : grep only commits since <date>
+	-e : next arg is the <pattern>, even if it starts with -
+	-v : be chatty (add progress messages)
+	<pattern> : Perl-style regex
+-
+
+my $regex = $OPT{e} // shift // usage_error('must supply regex');
+my $filtered = $OPT{m} || $OPT{d};
+$OPT{d} = datetime($OPT{d}) if $OPT{d};
+$regex =~ s/'/'\\''/g; $regex = "'$regex'";
+
+my @grep_args = qw< -P >;
+push @grep_args, '-i' if $OPT{i};
+
+
+# this should probably be wrapped up into a "page_output" type function
+# which should be a standard part of Pb
+# (this is slightly different from the one in `hunks` ... better? not sure)
+local *PAGER;
+if (-t STDOUT)
+{
+	open(PAGER, '|-:encoding(UTF-8)', $ENV{PAGER} // 'less -F');
+	select PAGER;
+}
+
+
+# https://stackoverflow.com/questions/21903972
+# https://stackoverflow.com/questions/746684
+
+my @commits;
+unless ($OPT{R})
+{
+	push @commits,
+		map { /unreachable commit (\w+)/ ? $1 : () }
+			sh(git => fsck => qw< --unreachable --no-reflogs >);
+}
+unless ($OPT{U})
+{
+	push @commits, sh(git => 'rev-list' => '--reflog');
+}
+@commits = uniq sort @commits;
+my $total_commits = @commits;
+say "Grepping $total_commits total commits." if $OPT{v};
+my $progress_target = .8;
+
+my $tmpfile = Path::Tiny->tempfile;
+$tmpfile->spew( map { "$_\n" } @commits );
+@commits = ();
+const my $SEP => '<<|>>';
+foreach ( sh("xargs git show -s --format='%h$SEP%at$SEP%ae$SEP%an' <$tmpfile") )
+{
+	my $commit = {};
+	@$commit{qw< sha1 date author_email author_name >} = split(quotemeta($SEP));
+	if ($OPT{m})
+	{
+		next unless $commit->{author_email} eq $me;
+	}
+	if ($OPT{d})
+	{
+		next unless $commit->{date} >= $OPT{d}->epoch;
+	}
+	push @commits, $commit;
+}
+if ($filtered)
+{
+	$total_commits = scalar @commits;
+	say "Grepping $total_commits filtered commits." if $OPT{v};
+}
+
+my $countdown = $total_commits;
+foreach (sort { $a->{date} <=> $b->{date} } @commits)
+{
+	my $out = eval { sh(git => grep => @grep_args, -e => $regex, $_->{sha1}) };
+	if ($@)
+	{
+		say "Still grepping (${\($countdown - 1)} more commits to go)." if $OPT{v} and $countdown;
+	}
+	elsif ($out)
+	{
+		my $date = datetime($_->{date});
+		my $ref = sh(git => 'name-rev', $_->{sha1}) =~ s/ undefined$//r;
+		chomp $ref;
+		say "\e[96m$ref\e[0m :: $date :: $_->{author_email} [$_->{author_name}] :";
+		print $out =~ s/^/  /mgr unless $OPT{l};
+	}
+	if (--$countdown <= $total_commits * $progress_target)
+	{
+		say "Grepping $countdown more commits." if $OPT{v} and $countdown;
+		$progress_target -= .2;
+	}
+}
+
+# sh("xargs git grep @grep_args -e '$regex' <$tmpfile | git name-rev --stdin");
+
+
+__END__
+
+# original hacky bash version:
+
+#! /bin/bash
+
+for sha1 in $(git fsck --unreachable --no-reflogs | awk '$2 == "commit" {print $3}' | cat - <(git rev-list --reflog) | sort -u)
+do
+	out=$(git grep -P -e "$1" $sha1)
+	if [[ $out ]]
+	then
+		echo -e "\e[96m$sha1:\e[0m" | git name-rev --stdin
+		echo "$out" | sed 's/^/  /'
+	fi
+done | ${PAGER:-less -F}
