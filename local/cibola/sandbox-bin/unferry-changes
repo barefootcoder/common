@@ -51,10 +51,17 @@ then
 		git reset --hard $branched_from
 	fi
 	vc clean -y ||:
-	if [[ $(vc info %cur_branch) == feature/* ]] && ! vc branch-update
+	cur_branch=$(vc info %cur_branch)
+	if [[ $cur_branch == feature/* ]]
 	then
-		echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
-		read
+		if ! vc branch-update
+		then
+			echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
+			read
+		fi
+	elif [[ $cur_branch == $(vc info %Mainline) ]]
+	then
+		vc sync
 	fi
 	git am $patchdir/*
 	# since we did another `vc clean`, our non-patch changes got lost
