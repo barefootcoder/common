@@ -14,6 +14,7 @@ my %DESCRIPTIONS =
 (
 	Reserve			=>	[
 							qr/N6723 CAMPUS EXP DIR DEP/i,
+							qr/N6723 ARCHER EDU DIR DEP/i,
 							qr/Interest Paid/i,
 							qr/internet transfer/i,
 							qr/overdraft transfer/i,
@@ -32,6 +33,7 @@ my %DESCRIPTIONS =
 						],
 	'TV/Internet'	=>	[
 							qr/DirecTv\b/i,
+							qr/Uverse Online/i,
 							qr/Time Warner Online/i,
 							qr/Spectrum/i,
 							qr/Netflix/i,
@@ -71,6 +73,7 @@ my %DESCRIPTIONS =
 							qr/Ralphs/i,
 							qr/Albertsons/i,
 							qr/Costco Whse/i,
+							qr/Costco.com/i,
 							qr|CVS/Pharmacy|i,
 							qr/Pure Indian Foods/i,
 							qr/Ocean Park Pharmacy/i,
@@ -85,6 +88,7 @@ my %DESCRIPTIONS =
 							qr/exxon/i,
 							qr/USA 63216/i,
 							qr/76.*oil/i,
+							qr/Arco/i,
 							qr/gse 76/i,
 							qr/moller retail/i,
 							qr/Costco Gas/i,
@@ -159,7 +163,7 @@ my %DESCRIPTIONS =
 							qr/Joann\b/i,
 							qr/noa coppa/i,
 							qr/vito rest/i,
-							qr/urban plate/i,
+							qr/Urban Plate/i,
 							qr/Smoke & Vape/i,
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
@@ -190,6 +194,7 @@ my %DESCRIPTIONS =
 my %WHAT_LOOKUP =
 (
 	'N6723 CAMPUS EXP DIR DEP'	=>	'Paycheck',
+	'N6723 ARCHER EDU DIR DEP'	=>	'Paycheck',
 	'BAC Home Loans'			=>	'Mortgage Payment',
 	'S CA Edison'				=>	'Electric Bill',
 	'travis junge poo'			=>	'Pool Guy',
@@ -211,6 +216,7 @@ my %WHAT_LOOKUP =
 	'VENTURA CO CCD'			=>	'Moorpark College',
 	'UNDERWOOD FAMI'			=>	'Underwood Farms',
 	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
+	'Uverse Online'				=>	'DirecTv',
 );
 
 
