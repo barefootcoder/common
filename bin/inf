@@ -76,7 +76,7 @@ fi
 # if it's a command, we might be able to get some further information
 if [[ ! $plain_file ]]
 then
-	if man "$arg" >/dev/null 2>&1
+	if man "$(basename "$arg")" >/dev/null 2>&1
 	then
 		echo "man page is available"
 	fi
