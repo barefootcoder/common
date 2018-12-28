@@ -19,10 +19,10 @@ sub USAGE
 	say <<".";
 
 usage: $ME [-v] [-D] [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] [-ps <ps-cmd-line>] "<cmd> [<arg> ...]"
-   or: $ME [-v] [-D] -firefox
+   or: $ME [-v] [-D] -browsers
                    -v : be chatty about it
                    -D : show internal details
-             -firefox : restore browser windows (FF/Chrome must be running, selected tabs must be sane)
+            -browsers : restore browser windows (FF/Chrome must be running, selected tabs must be sane)
                   <W> : desired width of the window
                   <H> : desired height of the window
                   <X> : desired X offset of the window
@@ -41,11 +41,11 @@ GetOptions($OPT,
 	'ps=s',
 	'geometry=s',
 	'desktop=s',
-	'firefox',
+	'browsers',
 	'verbose|v',
 	'debug|D',
 	'help|h',
-);
+) or exit 2;
 if ($OPT->{geometry})
 {
 	$OPT->{geometry} =~ /^((\d+)x(\d+))?([+-]\d+)?([+-]\d+)?$/ or die("unknown geometry format");
@@ -56,11 +56,20 @@ if ($OPT->{geometry})
 }
 USAGE() if $OPT->{help};
 my ($command, $tag);
-if ( $OPT->{firefox} )
+if ( $OPT->{browsers} )
 {
-	$tag = $command = 'firefox';
-	$OPT->{ps}      = '/usr/lib/firefox/firefox';
-	die("you must run Firefox, restore the session, and choose appropriate tabs") unless &get_pid;
+	my %BROWSERS =
+	(
+		firefox		=>	'/usr/lib/firefox/firefox',
+		vivaldi		=>	'/opt/vivaldi/vivaldi-bin',
+	);
+	foreach (keys %BROWSERS)
+	{
+		$tag = $command = $_;
+		$OPT->{ps}      = $BROWSERS{$_};
+		last if &get_pid;
+	}
+	die("you must run Firefox or Vivaldi, restore the session(s), and choose appropriate tabs") unless &get_pid;
 }
 else
 {
@@ -113,7 +122,7 @@ sub X (@)
 	{
 		my $find_wid = "xdotool search --pid $pid";
 		my @wids = grep { is_visible } bash \lines => $find_wid;
-		warn("multiple candidate windows (choosing first one)") if @wids > 1 and not $OPT->{firefox};
+		warn("multiple candidate windows (choosing first one)") if @wids > 1 and not $OPT->{browsers};
 		info("found wid: $wids[0] [via: $find_wid]") if @wids;
 		shift @wids;
 	};
@@ -168,7 +177,7 @@ sub ff_identify_window (;$)
 my $orig_desktop = cur_desktop_num();
 info("currently on desktop $orig_desktop");
 
-if ( $OPT->{firefox} )
+if ( $OPT->{browsers} )
 {
 	print "[$tag] looking for windows ";
 	my $find_wids = "xdotool search --pid ${\(get_pid)}";
