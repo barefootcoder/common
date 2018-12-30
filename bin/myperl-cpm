@@ -1,0 +1,71 @@
+#! /usr/bin/env perl
+
+BEGIN
+{
+	if ( $ARGV[0] ne 'NOLOOP' )
+	{
+		my $err = `$0 NOLOOP 2>&1`;
+		if (	$err =~ /Can't locate (.*) in \@INC/
+			 or $err =~ /(.*) version .* required--/
+			 or $err =~ /is not exported by the (.*) module/
+		   )
+		{
+			-e 'cpanfile' or die("must run from ~/common for bootstrapping");
+			print "bootstrapping [for: $1], then exiting (rerun once successful)\n";
+			system("cpm install -g --feature bootstrap");
+			exit;
+		}
+	}
+}
+exit if $ARGV[0] eq 'NOLOOP';
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Path::Tiny qw< tempdir >;
+
+
+my @DEFAULT_WHAT = qw< build myperl support >;
+
+opts <<"-";
+	{ -l | [-n] [-B] [-vD] [<feature> [...]] }
+	-l : list possible features to install
+	-n : dry-run (install to tmpdir, then remove it; implies -v)
+	-B : build phase (only)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<feature> : feature to install modules for (default: @DEFAULT_WHAT)
+-
+$OPT{v} = 1 if $OPT{D} or $OPT{n};
+
+my @features = @ARGV; @features = @DEFAULT_WHAT unless @features;
+
+fatal("not running under perlbrew") unless $ENV{PERLBREW_ROOT};
+fatal("unexpected Perl version")    unless $ENV{PERLBREW_PERL} eq 'perl-5.14.4';
+
+my $cpm = path($ENV{PERLBREW_ROOT}, bin => 'cpm');
+-x $cpm or fatal("no cpm detected; try `perlbrew cpm-install`");
+
+
+if ( $OPT{l} )
+{
+	say "installable features:";
+	say foreach
+		map { "  $_"								}
+		map { /feature\s+'?(.*?)'?\s*=>/ ? $1 : ()	}
+			( path("~/common/cpanfile")->slurp		)
+	;
+	exit;
+}
+
+my $count   = 0;
+my $where   = $OPT{n}  ? join(' ', '-L', tempdir())         : '-g';
+my $howmuch = $OPT{B}  ? '--without-test --without-runtime' : '';
+my $how     = $OPT{v}  ? sub { print }                      : sub { print '.' if ++$count % 5 == 0 };
+my $what    = join(' ', map { "--feature $_" } @features);
+
+my @opts; push @opts, '-x' if $OPT{D};
+chdir path("~/common");
+sh(@opts => "$cpm install --color $where $howmuch $what |" => $how);
+print ' ' unless $OPT{v};
+say "done";
