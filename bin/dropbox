@@ -39,52 +39,38 @@ logdir=$ctldir/log
 logfile=$logdir/dropboxd.log
 RETVAL=0
 
-# To configure, add line with DROPBOX_USERS="user1 user2" to $config
-# Probably should use a dropbox group in /etc/groups instead.
 [ -f $config ] && . $config
 
 start() {
-		if [[ -n $($0 status) ]] ; then
-			exit 1
-		fi
+	if [[ -n $($0 status) ]] ; then
+		exit 1
+	fi
 
-        echo -n $"Starting $prog"
-
-		#  We don't appear to use the -ctl dir any more.
-#        if [ -z $DROPBOX_USERS ] ; then
-#                echo -n ": unconfigured: $config"
-#                echo
-#                rm -f ${lockfile} ${pidfile}
-#                RETVAL=6
-#                return $RETVAL
-#        fi
-#
-#        for dbuser in $DROPBOX_USERS; do
-#			if [ $USER = $dbuser ] ; then
-#				mkdir -p $logdir
-#				/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
-#			fi
-#        done
+	if [[ -f $lockfile ]] ; then
+		echo $"$prog is locked out; cannot start"
+		RETVAL=13
+	else
+		echo -n $"Starting $prog"
 
 		/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
-        RETVAL=$?
-        echo
-        if [ $RETVAL = 0 ] ; then
-			mkdir $lockdir 2>/dev/null
-			touch ${lockfile}
+		RETVAL=$?
+		echo
+		if [ $RETVAL = 0 ] ; then
 			mkdir $piddir 2>/dev/null
 			$0 status >${pidfile}
 		fi
-        return $RETVAL
+	fi
+	return $RETVAL
 }
 
 status() {
 	dbpid=`pgrep -u $USER -P 1 dropbox`
 	if [ -t 1 ] ; then
 		if [ -z $dbpid ] ; then
-			echo "$prog for USER $USER: not running."
+			echo "$prog for $USER: not running."
+			[[ -e ${lockfile} ]] && echo "$prog is locked out; will not start."
 		else
-			echo "$prog for USER $USER: running (pid $dbpid)"
+			echo "$prog for $USER: running (pid $dbpid)"
 		fi
 	else
 		if [[ -n $dbpid ]] ; then
@@ -95,12 +81,28 @@ status() {
 
 stop() {
 	echo -n $"Stopping $prog"
-    for dbuser in $DROPBOX_USERS; do
-        pkill -f $distdir/dropbox
-    done
+	pkill -f $distdir/dropbox
 	RETVAL=$?
 	echo
-	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+	[ $RETVAL = 0 ] && rm -f ${pidfile}
+}
+
+lock() {
+	echo $"Locking out $prog"
+	mkdir $lockdir 2>/dev/null
+	touch ${lockfile}
+	RETVAL=0
+}
+
+unlock() {
+	if [[ -f $lockfile ]] ; then
+		echo $"Unlocking $prog for use (\`start' to start)"
+		rm -f ${lockfile}
+		RETVAL=$?
+	else
+		echo $"$prog is already unlocked"
+		RETVAL=1
+	fi
 }
 
 install () {
@@ -224,7 +226,6 @@ configure() {
 	mkdir -p $logdir
 	ln -sf $basedir/logs/*/* $logdir
 
-	echo "DROPBOX_USERS=buddy" >$config
 	echo "Gdk-CRITICAL **: IA__gdk_window_get_root_coords: assertion \`GDK_IS_WINDOW (window)' failed" >$filter
 }
 
@@ -242,6 +243,13 @@ case "$1" in
   restart)
         stop
         start
+        ;;
+  lock)
+		stop
+        lock
+        ;;
+  unlock)
+        unlock
         ;;
   install)
 		shift 1
