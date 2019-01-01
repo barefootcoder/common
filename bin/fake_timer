@@ -112,7 +112,14 @@ while ( <> )
 						print_time("GRAND TOTAL", $total) if $lines > 1;
 						print_time("AVAILABILITY", $totals{$AVAIL}) if $totals{$AVAIL};
 					}
-					exit unless $OPT{a};
+					if ($OPT{a})
+					{
+						exit if $OPT{w} and $cur_week > $OPT{w};
+					}
+					else
+					{
+						exit;
+					}
 					say '';
 					$group_found = 0;
 				}
@@ -171,7 +178,7 @@ while ( <> )
 
 	if ($cmd eq 'breakdown')
 	{
-		if ($name eq $tname and $cur_week >= ($OPT{w} // 1))
+		if ($name eq $tname and include_week($cur_week))
 		{
 			breakdown(split(',', $chunks));
 			exit unless $OPT{a};
@@ -180,7 +187,7 @@ while ( <> )
 	}
 	elsif ( $cmd ~~ [qw< total eod daybreak >] )
 	{
-		if ($cur_week >= ($OPT{w} // 1))
+		if (include_week($cur_week))
 		{
 			$group_found = 1 if $cmd eq 'total' and $name eq $tname;
 			my $sub;
@@ -370,6 +377,23 @@ sub range_label
 		$_ = $_->as('/Ymd') unless $_ eq 'N/A';
 	}
 	return "time from $from to $to" . $suffix;
+}
+
+sub include_week
+{
+	my ($week) = @_;
+	if ($OPT{w})
+	{
+		# -a + -w<N> : include all weeks up to and including <N>
+		#      -w<N> : include all weeks beginning with <N>
+		return $OPT{a} ? $cur_week <= $OPT{w} : $cur_week >= $OPT{w};
+	}
+	else
+	{
+		# -a         : include all weeks, period
+		#            : include only the current week
+		return $OPT{a} || $week == 1;
+	}
 }
 
 

@@ -12,6 +12,7 @@ opts <<'-';
 	-v : be more verbose
 	-D : debugging mode
 	-w : only look back <N> weeks
+	-O : identify outliers
 	<N>    : number of weeks (default: all weeks)
 -
 
@@ -28,6 +29,7 @@ if ($OPT{v})
 	say '';
 }
 
+say "      Number of days: $num_days";
 say "        Average time: ", $total_time / $num_days;
 say "Average availability: ", $total_avail / $num_days;
 #say "      Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
@@ -63,11 +65,14 @@ func num_weekdays ($from, $to)
 func time_and_avail ($file)
 {
 	my ($time, $avail) = (0,0);
+	state $OUTLIER_RANGES = { 'GRAND TOTAL' => [25 => 35], AVAILABILITY => [35 => 55] };
 
 	my $min_date = today;
 	my $max_date = today;
-	my $how_far = $OPT{w} ? '-w' . ($OPT{w} + (today->day_of_week < 4)) : '-a';
-	open(IN, "fake_timer $how_far total email $file |") or die("can't open pipe");
+	my $how_far = $OPT{w} ? '-w' . ($OPT{w} + (today->day_of_week < 4)) : '';
+	my $timer_cmd = "fake_timer -a $how_far total email $file";
+	say "running: $timer_cmd" if $OPT{D};
+	open(IN, "$timer_cmd |") or die("can't open pipe");
 	while ( <IN> )
 	{
 		# time from 2013/07/15 to 2013/07/19:
@@ -87,8 +92,16 @@ func time_and_avail ($file)
 		{
 			say "$file :   $timer $hrs:$mins";
 		}
-		$time = $hrs + $mins / 60 if $timer eq 'GRAND TOTAL';
-		$avail = $hrs + $mins / 60 if $timer eq 'AVAILABILITY';
+		my $timer_hours = $hrs + $mins / 60;
+		if ( $OPT{O} and $timer ~~ [keys %$OUTLIER_RANGES] )
+		{
+			my $this_week = $timer_hours - ($timer eq 'AVAILABILITY' ? $avail : $time);
+			my $range     = $OUTLIER_RANGES->{$timer};
+			say "OUTLIER! ", join(' - ', map { $_->as("/Ymd") } $min_date, $min_date + 6 * days), " : $this_week $timer"
+					unless $range->[0] <= $this_week and $this_week <= $range->[1];
+		}
+		$time = $timer_hours if $timer eq 'GRAND TOTAL';
+		$avail = $timer_hours if $timer eq 'AVAILABILITY';
 	}
 	close(IN);
 
