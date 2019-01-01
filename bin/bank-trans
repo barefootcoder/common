@@ -63,6 +63,7 @@ my %DESCRIPTIONS =
 	'Car Maint'		=>	[
 							qr/CALIF DMV/i,
 							qr/\bsmog\b/i,
+							qr/AUTO CLUB SO CAL/i,
 						],
 	Groceries		=>	[
 							qr/Trader Joe's/i,
@@ -75,6 +76,7 @@ my %DESCRIPTIONS =
 							qr/Costco Whse/i,
 							qr/Costco.com/i,
 							qr|CVS/Pharmacy|i,
+							qr/Walgreens/i,
 							qr/Pure Indian Foods/i,
 							qr/Ocean Park Pharmacy/i,
 						],
@@ -108,7 +110,7 @@ my %DESCRIPTIONS =
 							qr/Los Angeles Zoo/i,
 						],
 	Entertainment	=>	[
-							qr/Studo Movie Gr/i,
+							qr/Studio Movie Gr/i,
 							qr/Simi Valley 10 Cinemas/i,
 							qr/Fandango/i,
 							qr/Video on Demand/i,
@@ -144,6 +146,8 @@ my %DESCRIPTIONS =
 							qr/Szechuwan Garden/i,
 							qr/\bBetos\b/i,
 							qr/Yolandas/i,
+							qr/Outback/i,
+							qr/Thai House/i,
 							qr/Red Robin/i,
 							qr/Hook Burger/i,
 							qr/Panera/i,
@@ -168,6 +172,9 @@ my %DESCRIPTIONS =
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
 							qr/Nintendo/i,
+							qr/GameStop/i,
+							qr/Kopy King/i,
+							qr/OFFICE DE\b/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -199,6 +206,7 @@ my %WHAT_LOOKUP =
 	'S CA Edison'				=>	'Electric Bill',
 	'travis junge poo'			=>	'Pool Guy',
 	'jessie flores'				=>	'Gardeners',
+	'carlos ortega'				=>	'Gardener',
 	'internet transfer'			=>	'Account Transfer',
 	'fidelity nationa'			=>	'Warranty Company',
 	'Sprouts Farmers'			=>	'Sprouts',
@@ -217,6 +225,8 @@ my %WHAT_LOOKUP =
 	'UNDERWOOD FAMI'			=>	'Underwood Farms',
 	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
 	'Uverse Online'				=>	'DirecTv',
+	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
+	'OFFICE DE'					=>	'Office Depot',
 );
 
 
