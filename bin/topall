@@ -2,6 +2,7 @@
 
 top
 sudo iotop
+glances
 watch sensors
 sudo powertop
 exec "$0"
