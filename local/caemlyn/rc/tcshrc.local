@@ -1,6 +1,8 @@
 setenv CE_REMOTE_USERNAME bburden
 setenv CEROOT ~/workproj/CE-mounted
 setenv CHEOPSROOT ~/workproj/cheops
+setenv CE_PMML_VM ~/workproj/pmml-vm
+setenv CE_PMML_MODELS ~/workproj/pmml-models
 
 setenv HEATROOT ~/workproj/heat
 
