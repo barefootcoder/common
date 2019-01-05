@@ -43,6 +43,7 @@ feature myperl => sub
 	requires 'Date::Easy';
 	requires 'Test::Trap';
 	requires 'Const::Fast';
+	requires 'Perl6::Form';
 	requires 'Math::Round';
 	requires 'Import::Into';
 	requires 'Sub::Install';
