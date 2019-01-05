@@ -15,16 +15,18 @@ const my $PREFIX => 'CE-branch-';
 
 
 opts <<'-';
-	{ -c | [-al] { -e <pattern> | <pattern> } }
+	{ -c | [-al | -t] [{ -e <pattern> | <pattern> }] }
 	-c : print basenames only (good for tab-completion); implies pattern of `.'
 	-a : show all versions of a file (default: show only the latest)
 	-l : show long name (full S3 URL) (default: show base name and date)
+	-t : sort by time (oldest to newest; default: sort alphabetically by base)
 	-e : next arg is the <pattern>, even if it starts with -
-	<pattern> : Perl-style regex
+	<pattern> : Perl-style regex (default: `.')
 	<file>    : one or more files to process
 -
+usage_error("can't use `-t` with `-l`") if $OPT{t} and $OPT{l};
 
-my $regex = $OPT{c} ? '.' : $OPT{e} // shift or usage_error("must supply regex (try `.' to list all)");
+my $regex = $OPT{c} ? '.' : $OPT{e} // shift // '.';
 $regex = qr/$regex/;
 
 
@@ -37,6 +39,7 @@ foreach (bash \lines => "aws s3 ls $S3_DIR/$PREFIX")
 	push @{ $files{$base} }, $OPT{l} ? "$S3_DIR/$filename" : date($date);
 }
 
+my @output;
 foreach my $base (sort grep { /$regex/ } keys %files)
 {
 	if ($OPT{c})
@@ -47,12 +50,15 @@ foreach my $base (sort grep { /$regex/ } keys %files)
 	{
 		my @urls = sort @{ $files{$base} };
 		@urls = ($urls[-1]) unless $OPT{a};
-		say foreach @urls;
+		push @output, @urls;
 	}
 	else
 	{
 		my @dates = sort map { $_->as('/Ymd') } @{ $files{$base} };
 		@dates = ($dates[-1]) unless $OPT{a};
-		say "  [$_]  $base" foreach @dates;
+		push @output, map { "  [$_]  $base" } @dates;
 	}
 }
+
+@output = sort @output if $OPT{t};
+say foreach @output;
