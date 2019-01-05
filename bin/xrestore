@@ -107,9 +107,15 @@ sub get_pid ()
 
 sub is_visible (;$)
 {
-	local $_ = shift if @_;
-	my ($desktop) = bash \lines => "xdotool get_desktop_for_window $_ 2>/dev/null";
-	die("couldn't find desktop for $_") unless defined $desktop;
+	my $w = @_ ? shift : $_;
+	my $desktop;
+	for (1..5)					# give it a few tries
+	{
+		($desktop) = bash \lines => "xdotool get_desktop_for_window $w 2>/dev/null";
+		last if defined $desktop;
+		usleep 100_000;			# .1 of a second
+	}
+	die("couldn't find desktop for $w") unless defined $desktop;
 	return $desktop != -1;
 }
 
