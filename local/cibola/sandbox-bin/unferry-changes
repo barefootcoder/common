@@ -8,6 +8,14 @@ opts=":$2:"
 # make sure we have creds before we get too far in
 $CEROOT/devtools/aws-credentials-check
 
+
+# current repo check
+CE='campus-explorer'
+read owner repo <<<$(git config --get remote.origin.url | perl -lne 'm|^.*?:(.*?)/(.*)\.git$| and print "$1 $2"')
+[[ $owner && $repo ]] || die "this does not appear to be a valid repo directory"
+[[ $owner == $CE ]]   || die "this repo is not owned by $CE"
+
+
 ferrydir=/var/tmp/ferry
 mkdir -p $ferrydir
 

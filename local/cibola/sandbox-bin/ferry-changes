@@ -7,6 +7,14 @@ tarfile=$1
 # make sure we have creds before we get too far in
 $CEROOT/devtools/aws-credentials-check
 
+
+# current repo check
+CE='campus-explorer'
+read owner repo <<<$(git config --get remote.origin.url | perl -lne 'm|^.*?:(.*?)/(.*)\.git$| and print "$1 $2"')
+[[ $owner && $repo ]] || die "this does not appear to be a valid repo directory"
+[[ $owner == $CE ]]   || die "this repo is not owned by $CE"
+
+
 ferrydir=/var/tmp/ferry
 mkdir -p $ferrydir
 
@@ -28,4 +36,4 @@ fi
 
 ferry=$ferrydir/$tarfile.tgz
 tar cvpzf $ferry $(vc info %mod_files) ${first_unpushed:+$patchdir}
-aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch-$tarfile-$(date +%Y%m%d).tgz
+aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date +%Y%m%d).tgz

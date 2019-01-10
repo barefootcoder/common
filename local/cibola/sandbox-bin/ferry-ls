@@ -10,16 +10,18 @@ use Path::Tiny;
 use Date::Easy;
 use PerlX::bash;
 
+const my $CE     => 'campus-explorer';
 const my $S3_DIR => 's3://backup.campusexplorer.com/sandbox/bburden';
-const my $PREFIX => 'CE-branch-';
+const my $PREFIX => 'CE-branch';
 
 
 opts <<'-';
-	{ -c | [-al | -t] [{ -e <pattern> | <pattern> }] }
+	{ -c | [-al | -t] [-R <repo>] [{ -e <pattern> | <pattern> }] }
 	-c : print basenames only (good for tab-completion); implies pattern of `.'
 	-a : show all versions of a file (default: show only the latest)
 	-l : show long name (full S3 URL) (default: show base name and date)
 	-t : sort by time (oldest to newest; default: sort alphabetically by base)
+	-R : show for this <repo> (default: repo of current directory)
 	-e : next arg is the <pattern>, even if it starts with -
 	<pattern> : Perl-style regex (default: `.')
 	<file>    : one or more files to process
@@ -30,11 +32,20 @@ my $regex = $OPT{c} ? '.' : $OPT{e} // shift // '.';
 $regex = qr/$regex/;
 
 
+# current repo check
+(bash \string => git => config => '--get' => 'remote.origin.url') =~ m|^.*?:(.*?)/(.*)\.git$|
+		or fatal("this does not appear to be a valid repo directory");
+my ($owner, $repo) = ($1,$2);
+$owner eq $CE or fatal("this repo is not owned by $CE");
+$OPT{R} //= $repo;
+
+my $prefix = $OPT{R} ? "$PREFIX\@$repo:" : "$PREFIX-";
+
 my %files;
-foreach (bash \lines => "aws s3 ls $S3_DIR/$PREFIX")
+foreach (bash \lines => "aws s3 ls $S3_DIR/$prefix")
 {
 	my $filename = (split(' '))[-1];
-	my ($base, $date) = $filename =~ /^$PREFIX(.*)-(\d+)/;
+	my ($base, $date) = $filename =~ /^$prefix(.*)-(\d+)/;
 	fatal("can't figure out date for file! [$_]") unless $date;
 	push @{ $files{$base} }, $OPT{l} ? "$S3_DIR/$filename" : date($date);
 }
