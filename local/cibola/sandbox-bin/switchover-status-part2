@@ -1,7 +1,11 @@
 #! /bin/bash
 
+# this doesn't work, for some reason
+eval $(perl -lne 'print if s/^alias ps /alias ps=/' ~/.tcshrc)
+#type ps
+
 vims_pids=$(/usr/bin/pgrep -f bin/vimS)
-[[ $vims_pids ]] && ps h -p $vims_pids
+[[ $vims_pids ]] && ps -wwwo user,group,pid,ppid,pgid,stime,tty8,stat,time,cmd h -p $vims_pids
 
 echo "===="
 bin/ceflow stat-plus | fgrep -v '(use "git' | egrep -v '^#?$' 
