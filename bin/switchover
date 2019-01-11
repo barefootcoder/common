@@ -1,6 +1,7 @@
 #! /bin/bash
 
 killall pidgin
+killall thunderbird
 timer=$(pgrep -f timer-new)
 [[ $timer ]] && kill $timer
 
