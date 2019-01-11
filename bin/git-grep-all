@@ -6,10 +6,12 @@ use autodie ':all';
 use Date::Easy;
 use Path::Class::Tiny;
 
+$| = 1;
+
 
 my $me = sh(git => config => 'user.email'); chomp $me;
 opts <<"-";
-	[-ilURm] [-d <date> ] { -e <pattern> | <pattern> } [-v]
+	[-ilURm] [-d <date> ] { -e <pattern> | <pattern> } [-v] [-D]
 	-i : case-insensitive matching
 	-l : only print the SHA1s of matching commits
 	-U : grep only unreachable commits (default: grep all)
@@ -18,10 +20,11 @@ opts <<"-";
 	-d : grep only commits since <date>
 	-e : next arg is the <pattern>, even if it starts with -
 	-v : be chatty (add progress messages)
+	-D : don't grep; dump out the commit SHA1s (run with `-v` first!)
 	<pattern> : Perl-style regex
 -
 
-my $regex = $OPT{e} // shift // usage_error('must supply regex');
+my $regex = $OPT{e} // shift // $OPT{D} || usage_error('must supply regex');
 my $filtered = $OPT{m} || $OPT{d};
 $OPT{d} = datetime($OPT{d}) if $OPT{d};
 $regex =~ s/'/'\\''/g; $regex = "'$regex'";
@@ -82,6 +85,20 @@ if ($filtered)
 {
 	$total_commits = scalar @commits;
 	say "Grepping $total_commits filtered commits." if $OPT{v};
+}
+
+if ($OPT{D})
+{
+	select()->flush();
+	my $orig = select(STDERR);
+	if (confirm("Will print SHA1s for $total_commits commits; are you sure?"))
+	{
+		select($orig);
+		print form "{<<<<<<<<}  {<<<<<<<<<<<<<<<<<<} {<<<<<<<<<<<<<<<<<<<<<<<<<<<<}",
+				$_->{sha1}, datetime($_->{date})->iso, $_->{author_name}
+			foreach sort { $a->{date} <=> $b->{date} } @commits;
+	}
+	exit;
 }
 
 my $countdown = $total_commits;
