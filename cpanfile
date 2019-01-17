@@ -182,6 +182,7 @@ feature blog => sub
 feature html2bbcode => sub
 {
 	requires 'CSS::Simple';
+	requires 'Archive::Zip';
 	requires 'Marpa::R2::HTML';
 };
 
