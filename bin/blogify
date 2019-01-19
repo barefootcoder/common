@@ -464,7 +464,7 @@ func fmt ($fmt, $text)
 func spanify ($open, $content)
 {
 	my $close = closing_of($open);
-	return join('', $open, $content, $close);
+	return join('', $open, $content, $close) =~ s|\n|<br/>|gr;
 }
 
 func closing_of ($opening)
