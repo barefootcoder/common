@@ -40,6 +40,7 @@ my %WEIGHTS =
 
 
 my $named = 0;
+my $closer = 0;
 my $running_score = 0;
 my $in_header = 1;
 my ($volume, $subtitle, @tracks);
@@ -65,13 +66,14 @@ while ( <> )
 	push @tracks, $_;
 	my ($src, $pos, $vocal, $suit, $track) = /(.)(.)(.)(.) (.*?)(\t|$)/ or die("illegal track format");
 	$named = 1 if $vocal eq '=';
+	$closer = 1 if $suit eq '_';
 	my $score = weight(SOURCE => $src) * weight(POSITION => $pos) * weight(SUITABILITY => $suit);
 	debuggit("##", $score, ":", $track);
 	$running_score += $score;
 }
 
 my $time = get_time($volume);
-my $final_score = final_score($running_score / @tracks, $time, $named);
+my $final_score = final_score($running_score / @tracks, $time, $named, $closer);
 my $stats = @tracks . " tracks, time: " . $time . ", named: " . ($named ? 'yes' : 'no') . ", score: "
 		. sprintf("%5.2f%%", $final_score * 100);
 my @headers = ( $volume, $subtitle || (), "{$stats}" );
@@ -92,11 +94,11 @@ sub weight
 
 sub final_score
 {
-	my ($score, $time, $named) = @_;
+	my ($score, $time, $named, $closer) = @_;
 	$time =~ /^(\d)\d:/;
 	my $factor = (7 - ($1 // 0)) ** 2 * 2;
 	my $weight = 1 - $factor / 100;
-	return ($score == 1 ? $score : $score * $weight) * ($named ? 1 : .75);
+	return ($score == 1 ? $score : $score * $weight) * ($named ? 1 : .75) * ($closer ? 1 : .97);
 }
 
 
