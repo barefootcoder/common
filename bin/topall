@@ -3,6 +3,7 @@
 top
 sudo iotop
 glances
+watch dropbox-ctl status
 watch sensors
 sudo powertop
 exec "$0"
