@@ -4,4 +4,4 @@ file="$1"
 dir=${file%%/*}
 file=${file##$dir/}
 
-cat ~/.purple/logs/*/*/$dir*/$file* | less
+cat ~/.purple/logs/*/*/$dir*/$file* | ${PAGER:-less -aF}
