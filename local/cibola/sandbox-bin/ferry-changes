@@ -36,4 +36,4 @@ fi
 
 ferry=$ferrydir/$tarfile.tgz
 tar cvpzf $ferry $(vc info %mod_files) ${first_unpushed:+$patchdir}
-aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date +%Y%m%d).tgz
+aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date -d "6 hours ago" +%Y%m%d).tgz
