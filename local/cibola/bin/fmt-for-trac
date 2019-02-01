@@ -46,6 +46,10 @@ while (<>)
 	{
 		s/^    //;
 	}
+	elsif ($in_pre == 2 and length > 125)
+	{
+		s/.{125}\K/\n/g;
+	}
 	elsif (not $in_pre)
 	{
 		# as ever, stolen shamelessly from Filter::Simple by The Damian
