@@ -40,6 +40,7 @@ my %DESCRIPTIONS =
 							qr/(amazon|amzn) digit(al)?/i,
 							qr/Prime Video/i,
 							qr/Hulu/i,
+							qr/CBS All Access/i,
 						],
 	Water			=>	[
 							qr/Golden State (Water|Wtr)/i,
@@ -174,6 +175,7 @@ my %DESCRIPTIONS =
 							qr/Nintendo/i,
 							qr/GameStop/i,
 							qr/Kopy King/i,
+							qr/MP3VA.com/i,
 							qr/OFFICE DE\b/i,
 						],
 	Charity			=>	[
@@ -376,6 +378,7 @@ foreach ($file->slurp)
 						'PlayStation Network'	=>	'Perrin',
 						Nintendo				=>	'Perrin',
 						'Smoke & Vape'			=>	'Buddy',
+						'MP3VA.com'				=>	'Buddy',
 						Dropbox					=>	'Buddy',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
