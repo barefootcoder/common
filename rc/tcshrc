@@ -107,7 +107,7 @@ else
 endif
 source ~/bin/tcshrc-DEBUG "finished path/cdpath fiddling"
 
-setenv PAGER "less -RaF -x4 -j4"
+setenv PAGER "less -RaF -x4 -j2"
 setenv EDITOR `which fe_vi`
 eval `~/bin/addpath -efb PERL5LIB ~/common/perl`						# has to override other dirs (cf perl-privatize)
 eval `~/bin/addpath -eb PERL5LIB /usr/barefoot/perl`
