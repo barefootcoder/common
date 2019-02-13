@@ -25,6 +25,17 @@ my $mode = first { $_ } map { $OPT{$_} ? $modes{$_} : () } sort keys %modes
 
 usage_error("must supply file(s) or dir(s)") unless @ARGV;
 
+# Stole this from `hunks`.  As noted there, it really should be wrapped into
+# PerlX::bash or something similar.
+local *OUT;
+const my $PAGER => 'less -rF -x4';
+if (-t STDOUT)
+{
+	open OUT, "| $PAGER";
+	binmode OUT, ':utf8';
+	select OUT;
+}
+
 
 my %KEYWORDS =
 (
@@ -104,7 +115,8 @@ sub process_file
 			# get rid of useless dirs so filename isn't so damn long ...
 			my @parts = split('/', $file);
 			my $i = firstidx { /perl/ or /linux/ or /^\d+\.\d+(\.\d+)?$/ } reverse @parts;
-			$disp_file = join('/', @parts[(@parts-$i)..$#parts]);
+			my $start = $i == -1 ? 0 : @parts - $i;
+			$disp_file = join('/', @parts[$start..$#parts]);
 		}
 
 		my $line = substr($code, $start, $end - $start);
