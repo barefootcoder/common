@@ -11,7 +11,7 @@ opts <<'-';
 
 
 my @files = ($timerfile, glob($timerfile->dir->file('.' . $timerfile->basename . '.sw?')));
-push @files, glob("~/.purple/[abs]*.xml");
+push @files, glob("~/.purple/[bs]*.xml");
 if ($OPT{f})
 {
 	say foreach @files;
