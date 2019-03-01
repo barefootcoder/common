@@ -14,6 +14,7 @@ opts <<'-';
 const my $ON  => "\e[31;1;7;5m";
 const my $OFF => "\e[0m";
 
+my $found = 0;
 foreach (sh(wmctrl => -l =>))
 {
 	my ($wid) = split(' ');
@@ -21,5 +22,7 @@ foreach (sh(wmctrl => -l =>))
 	if ( $info =~ /urgency hint bit/ )
 	{
 		$info =~ /WM_NAME\(STRING\)\s*=\s*"(.*?)"/ and say "$ON$1$OFF";
+		$found = 1;
 	}
 }
+print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found;

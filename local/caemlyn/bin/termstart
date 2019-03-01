@@ -33,7 +33,7 @@ myterm -s -S Quin cityofgold 125x50-24+99 $CEROOT/devtools/cessh i-041633472786d
 
 # stupid hack for not being able to see when Pidgin windows are blinking
 msg_window=PidginMsgs
-myterm -s $msg_window Jade-Agate-Texture 40x5+1552+24 watch -c monitor-pidgin-unseen
+myterm -s $msg_window Jade-Agate-Texture 30x3+1642+24 watch -tc monitor-pidgin-unseen
 while ! xprop -name $msg_window >/dev/null 2>&1
 do
 	# this could be an infinite loop, if something goes wrong and the `myterm` never launches ...
