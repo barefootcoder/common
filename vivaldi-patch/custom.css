@@ -1,0 +1,30 @@
+/* https://forum.vivaldi.net/topic/15834 */
+
+#tabs-container.bottom {
+    order: -1;
+    border-top: none;
+    padding-top: var(--padding);
+    padding-bottom: 0px !important;
+}
+
+/* bookmarks bar above tabs */
+.bookmark-bar {
+    order: -2;
+}
+
+.toolbar.toolbar-addressbar {
+    order: -3;
+}
+
+/* corner rounding */
+.tabs-bottom .tab-position .tab {
+    border-top-left-radius: var(--radiusHalf);
+    border-top-right-radius: var(--radiusHalf);
+    border-bottom-left-radius: unset;
+    border-bottom-right-radius: unset;
+}
+
+/* tab group indicators*/
+.tabs-bottom .tab-strip .tab-group-indicator {
+    bottom: 28px !important;
+};
