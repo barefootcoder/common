@@ -35,7 +35,7 @@ sub print_color(@);
 $| = 1;
 
 my $opt = { N => '', };
-exit 2 unless getopts("hnaTcpvsbAPDRN:Sm:", $opt);
+exit 2 unless getopts("hnaTcpvsbAPDERN:Sm:", $opt);
 $opt->{R} = 1 if $opt->{p};
 
 # help message
@@ -58,6 +58,7 @@ if ($opt->{h})
 	print "           -A: load Carp::Always to get full stack traces on errors\n";
 	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
+	print "           -E: with -D, print all Perl env vars, even if we didn't set them\n";
 	print "           -R: raw mode (don't use prove; run test file with perl directly); implies -a -Nrj\n";
 	print "           -N: do not pass the following switch(es) to prove (must combine multiples)\n";
 	print "                  -Nl: do not add -Ilib for your tests (default: prove -l)\n";
@@ -275,7 +276,8 @@ my %req_modules =
 (
 	A	=>	'Devel::Confess',
 );
-$ENV{PERL5OPT} = join(' ', map { $opt->{$_} ? "-M$req_modules{$_}" : () } keys %req_modules);
+my $perl5opt = join(' ', map { $opt->{$_} ? "-M$req_modules{$_}" : () } keys %req_modules);
+$ENV{PERL5OPT} ? ($ENV{PERL5OPT} .= " $perl5opt") : ($ENV{PERL5OPT} = $perl5opt) if $perl5opt;
 
 # set test method if requested
 if ($opt->{m})
@@ -681,14 +683,17 @@ sub print_command_if_debug
 	my ($command, %args) = @_;
 	return unless $opt->{D};
 
-	output_if_debug("running:", $command);
-	unless ($args{'noenv'})
-	{
-		output_if_debug("         (with BAIL_ON_FAIL=$ENV{BAIL_ON_FAIL})") unless $opt->{a} or $opt->{R};
-		output_if_debug("         (with $HARNESS=$ENV{$HARNESS})") if $opt->{c};
-		output_if_debug("         (with PERL5OPT=$ENV{PERL5OPT})") if grep { $opt->{$_} } keys %req_modules;
-		output_if_debug("         (with TEST_METHOD=$ENV{TEST_METHOD})") if $opt->{m};
-	}
+	my @env_vars = $args{'noenv'} ? () : ('BAIL_ON_FAIL', std_perl_env_vars(), $HARNESS, 'TEST_METHOD');
+	my @var_debug = map { s/=/="/ and s/$/"/ if /\s/; $_ } map { "$_=$ENV{$_}" } grep { exists $ENV{$_} } @env_vars;
+	output_if_debug("running:", join(' ', @var_debug, $command));
+}
+
+sub std_perl_env_vars
+{
+	my @std_vars;
+	push @std_vars, 'PERL5LIB' if $opt->{E};
+	push @std_vars, 'PERL5OPT' if $opt->{E} or $perl5opt;
+	return @std_vars;
 }
 
 
