@@ -65,6 +65,8 @@ nmap <Esc><C-_> /\%V\<<C-R><C-W>\><CR>|														" Ctrl-Alt-/
 nmap <C-N> 1Gn
 " stop the hideously annoying shift+backspace problem
 map!  
+" goto the next buffer, even if current buffer is dirty
+nmap <Esc>n :up<CR>:bnext<CR>																" Alt-N
 " push to testing
 nmap <C-W> :up<CR>:!pusht %<CR>
 " compile check
