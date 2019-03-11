@@ -41,6 +41,7 @@ my %DESCRIPTIONS =
 							qr/Prime Video/i,
 							qr/Hulu/i,
 							qr/CBS All Access/i,
+							qr/Sling.com/i,
 						],
 	Water			=>	[
 							qr/Golden State (Water|Wtr)/i,
@@ -145,6 +146,7 @@ my %DESCRIPTIONS =
 							qr/Golden Tiger/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
+							qr/Michael Ds/i,
 							qr/\bBetos\b/i,
 							qr/Yolandas/i,
 							qr/Outback/i,
@@ -177,6 +179,7 @@ my %DESCRIPTIONS =
 							qr/Kopy King/i,
 							qr/MP3VA.com/i,
 							qr/OFFICE DE\b/i,
+							qr/parking.*playa vista/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -197,6 +200,7 @@ my %DESCRIPTIONS =
 							qr/OPTUM BANK REIMBUR/i,
 							qr/VENTURA CO CCD/i,
 							qr/SOL RESTAURANTS/i,
+							qr/TONY PS DOCKSIDE/i,
 						],
 );
 
@@ -226,6 +230,7 @@ my %WHAT_LOOKUP =
 	'VENTURA CO CCD'			=>	'Moorpark College',
 	'UNDERWOOD FAMI'			=>	'Underwood Farms',
 	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
+	'TONY PS DOCKSIDE'			=>	"Tony P's (Work Team Lunch)",
 	'Uverse Online'				=>	'DirecTv',
 	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
 	'OFFICE DE'					=>	'Office Depot',
@@ -351,6 +356,12 @@ foreach ($file->slurp)
 		{
 			$what = 'Studio Movie Grill';
 			$who = 'family';
+		}
+
+		when ( /parking.*playa vista/i )
+		{
+			$what = 'Lunch parking';
+			$who = 'Buddy';
 		}
 
 		when ( [ qr/THOUSAND OAKS 14/i, qr/AMC ONLINE/i, ] )
