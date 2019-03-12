@@ -1,0 +1,4 @@
+#! /bin/bash
+
+find . -path ./.git -prune -o -printf "%T@ %M %P\n" | sort -n | tail "$@"										\
+		| perl -MDate::Easy -aE 'say "$F[1]  ", datetime(int($F[0])), "  $F[2]"'
