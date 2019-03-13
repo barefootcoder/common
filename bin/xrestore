@@ -61,13 +61,21 @@ if ( $OPT->{browsers} )
 	my %BROWSERS =
 	(
 		firefox		=>	'/usr/lib/firefox/firefox',
-		vivaldi		=>	'/opt/vivaldi/vivaldi-bin',
+		vivaldi		=>	[
+							'/opt/vivaldi/vivaldi-bin',
+							'/opt/vivaldi/vivaldi-bin --process-per-site',
+							'/opt/vivaldi/vivaldi-bin --enable-low-end-device-mode --process-per-site',
+						],
 	);
-	foreach (keys %BROWSERS)
+	BROWSER: foreach (keys %BROWSERS)
 	{
 		$tag = $command = $_;
-		$OPT->{ps}      = $BROWSERS{$_};
-		last if &get_pid;
+		my $browser_cli = $BROWSERS{$_};
+		foreach (ref $browser_cli ? @$browser_cli : $browser_cli)
+		{
+			$OPT->{ps} = $_;
+			last BROWSER if &get_pid;
+		}
 	}
 	die("you must run Firefox or Vivaldi, restore the session(s), and choose appropriate tabs") unless &get_pid;
 }
