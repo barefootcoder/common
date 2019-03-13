@@ -31,6 +31,11 @@ screen -t sandbox
 screen -t st
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
+screen -t aboot
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+	sleep 25
+	stuff "cd ../archer-boot\015"
 screen -t proj
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
@@ -57,12 +62,6 @@ screen -t push
 	stuff "cd $CHEOPSROOT\015"
 	stuff "vagrant-push-box\015"
 	source .screenrc.sandbox
-screen -t tail1
-	stuff "cd $CEROOT\015"
-	stuff "make tail-error-prod\015"
-screen -t tail2
-	stuff "cd $CEROOT\015"
-	stuff "make tail-queue-worker-error-prod\015"
 screen -t mixes
 	stuff "vims mixes\015"
 screen -t mtest
