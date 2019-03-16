@@ -36,6 +36,8 @@ screen -t sandbox
 screen -t aboot
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
+	sleep 15
+	stuff "cd ../archer-boot\015"
 screen -t sql
 	stuff "cd $CHEOPSROOT\015"
 	source .screenrc.sandbox
