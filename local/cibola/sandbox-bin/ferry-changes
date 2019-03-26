@@ -1,8 +1,61 @@
 #! /bin/bash -e
 . ~/bin/bash_funcs
 
+
+function USAGE
+{
+	echo ''
+	echo "usage: $me [-Y] [-f] <base>"
+	echo ''
+	echo '  Save changes to repo (uncommitted and unpushed) to S3 ferry file.'
+	echo ''
+	echo '  Long options:'
+	echo "    --yesterday  : use yesterday's date for ferry file"
+	echo "                   (default: use today's date)"
+	echo '    --force      : force (allow overwriting existing files)'
+	echo '    --help       : this help message'
+	echo ''
+	echo '  Short options:'
+	echo '    -Y           : same as --yesterday'
+	echo '    -f           : same as --force'
+	echo '    -h           : same as --help (also -?)'
+	echo ''
+	echo '  Arguments:'
+	echo '    <base>       : base name of ferry file'
+	echo ''
+}
+
+force=false
+filedate="6 hours ago"
+while [[ $# -gt 0 ]]
+do
+	case $1 in
+		--yesterday|-Y) filedate="$filedate yesterday"
+						shift
+						;;
+		--force|-f)		force=true
+						shift
+						;;
+		--help|-h|-\?)  if [[ -t 1 ]]
+						then
+							USAGE | ${PAGER:-less -F}
+						else
+							USAGE
+						fi
+						exit
+						;;
+		--)             shift
+						break
+						;;
+		-*)             usage_error "Unrecognized option: $1"
+						;;
+		*)              break
+						;;
+	esac
+done
+
 tarfile=$1
-[[ $tarfile ]] || die "must supply tarfile name"
+[[ $tarfile ]] || die "must supply ferry file basename"
 
 # make sure we have creds before we get too far in
 $CEROOT/devtools/aws-credentials-check
@@ -13,6 +66,14 @@ CE='campus-explorer'
 read owner repo <<<$(git config --get remote.origin.url | perl -lne 'm|^.*?:(.*?)/(.*)\.git$| and print "$1 $2"')
 [[ $owner && $repo ]] || die "this does not appear to be a valid repo directory"
 [[ $owner == $CE ]]   || die "this repo is not owned by $CE"
+
+# now make sure we're not going to overwrite anything
+# (unless the user tells us to)
+s3url=s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date -d "$filedate" +%Y%m%d).tgz
+if aws s3 ls $s3url >/dev/null
+then
+	$force || die "ferry exists: $s3url"
+fi
 
 
 ferrydir=/var/tmp/ferry
@@ -36,4 +97,4 @@ fi
 
 ferry=$ferrydir/$tarfile.tgz
 tar cvpzf $ferry $(vc info %mod_files) ${first_unpushed:+$patchdir}
-aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date -d "6 hours ago" +%Y%m%d).tgz
+aws s3 cp $ferry s3://backup.campusexplorer.com/sandbox/bburden/CE-branch@$repo:$tarfile-$(date -d "$filedate" +%Y%m%d).tgz

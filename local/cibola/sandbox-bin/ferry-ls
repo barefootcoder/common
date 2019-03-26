@@ -24,7 +24,6 @@ opts <<'-';
 	-R : show for this <repo> (default: repo of current directory)
 	-e : next arg is the <pattern>, even if it starts with -
 	<pattern> : Perl-style regex (default: `.')
-	<file>    : one or more files to process
 -
 usage_error("can't use `-t` with `-l`") if $OPT{t} and $OPT{l};
 
