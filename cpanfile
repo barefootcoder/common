@@ -29,6 +29,7 @@ feature build => sub
 	requires 'Devel::Confess';
 	requires 'Test::Pod::Coverage';
 	requires 'Module::Install::JSONMETA';
+	requires 'Dist::Zilla::PluginBundle::BAREFOOT';
 };
 
 # required for myperl et al
