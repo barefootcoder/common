@@ -2,20 +2,20 @@
 :se undolevels=1000
 :map g G
 :nmap Y y$
-:map  :files<CR>
+:map <C-Y> :files<CR>
 :map % :up<CR>:!fake_timerchk %<CR>
 :noremap <C-C> :call FindCurrent()<CR>zz<C-L>
 :map <C-T> :up<CR>^:%!fake_timer start <cWORD><CR><C-C>
 :imap <C-T> <Esc><C-T><C-C>
-:map <C-F> :up<CR>^:%!fake_timer half <cWORD><CR>
-:imap <C-F> :up<CR>^:%!fake_timer half <cWORD><CR>
+:map <C-F> :up<CR>^:%!fake_timer half <cWORD><CR><C-C>
+:imap <C-F> <Esc><C-F>
 :map <C-P> :up<CR>^:%!fake_timer pause <cWORD><CR><C-N>
-:imap <C-P> :up<CR>^:%!fake_timer pause <cWORD><CR><C-N>
+:imap <C-P> <Esc><C-P>
 :map <C-B> :up<CR>^:!fake_timer breakdown <cWORD> %<CR>
-:imap <C-B> :up<CR>^:!fake_timer breakdown <cWORD> %<CR>
+:imap <C-B> <Esc><C-B>
 :map <C-B><C-B> :up<CR>^:!fake_timer -w2 breakdown <cWORD> %<CR>
 :map <C-L> :up<CR>^:!fake_timer total <cWORD> %<CR>
-:imap <C-L> :up<CR>^:!fake_timer total <cWORD> %<CR>
+:imap <C-L> <Esc><C-L>
 :map <C-L><C-L> :up<CR>^:!fake_timer -w2 total <cWORD> %<CR>
 :map <C-D><C-D> :up<CR>^:!fake_timer daybreak today %<CR>
 :map <C-D><C-Y> :up<CR>^:!fake_timer daybreak yesterday %<CR>
@@ -23,6 +23,7 @@
 :map <C-D><C-W> :up<CR>^:!fake_timer daybreak 'last friday' %<CR>
 :map <C-D><C-R> :up<CR>^:!fake_timer review <cword> %<CR>
 :map <C-W><C-W> :up<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
+:map <Esc>n /-,<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
 :let g:timer="email"
 :function! GetTimer()
