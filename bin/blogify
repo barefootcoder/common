@@ -27,6 +27,7 @@ my %blog =
 						big			=>	'span style="font-size: larger;"',
 						small		=>	'span style="font-size: smaller;"',
 						smallcap	=>	'span style="font-variant: small-caps;"',
+						super		=>	'sup',
 						quote		=>	'blockquote',
 						center		=>	'div align=center',
 						code		=>	'code',
@@ -42,6 +43,7 @@ my %blog =
 						strike		=>	's',
 						big			=>	'big',
 						small		=>	'small',
+						super		=>	'sup',
 						quote		=>	'blockquote',
 						center		=>	'div align=center',
 						code		=>	'code class="prettyprint"',
@@ -156,6 +158,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
+		s{\^_(.*?)_}{fmt(super => $1)}seg;											# superscript
 		s{\b (\d)\b}{&nbsp;$1}g;													# don't leave single digits hanging
 	}																				#	out on a separate line
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
@@ -178,7 +181,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
-	s[{img(\d+x\d+)? (.*?)}][image($2, $1)]eg;										# embedded images
+	s[\{img(\d+x\d+)? (.*?)}][image($2, $1)]eg;										# embedded images
 	s[{mix (.*?) ($roman_numeral)(\n\s*(.*?)\s*)?}][mix_block($1, $2, $4)]seg;		# mix volume
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
@@ -293,7 +296,7 @@ func block_save ($code)
 	$code =~ s/~~RIGHT~~/->/g;
 
 	push @blocks, $code;
-#warn("$#blocks => [$blocks[-1]]\n");
+#warn("$#blocks => [$blocks[-1]] {from ", (caller(1))[3], "}\n");
 	return "\cQ$#blocks";
 }
 
