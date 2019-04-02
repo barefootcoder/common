@@ -1,0 +1,70 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-v] <dir>
+	-v : be more verbose
+	<dir> : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $new_dir = path(shift // usage_error("must supply dir!"));
+my @parts = grep { $_ ne '.' } $new_dir->components;
+warn("|".join("|",@parts)."|");
+my $old_dir = path(lc($parts[0]), @parts[1..$#parts]);
+
+
+sh(diff => -r => '--brief', $old_dir, $new_dir);
+for my $dir ($old_dir, $new_dir)
+{
+	say '';
+	say "$dir:";
+	sh(ls => -F => $dir);
+}
+
+while (1)
+{
+	say "\n";
+	given ( prompt "(r)eplace, (l)ong list, (c)ount files? " )
+	{
+		exit when '';
+		when ( /^r/ )
+		{
+			maybe_run(rm => -rfv => $new_dir => '&&' => mv => $old_dir, $new_dir);
+		}
+		when ( /^l/ )
+		{
+			for my $dir ($old_dir, $new_dir)
+			{
+				say '';
+				say "$dir:";
+				sh(ls => '-lhF', $dir);
+			}
+		}
+		when ( /^c/ )
+		{
+			say '';
+			print "Files under $new_dir: ";
+			sh(find => $new_dir, -type => 'f', '|'=> wc => '-l');
+		}
+		default { die "unrecognized option: $_" }
+	}
+}
+
+
+sub maybe_run
+{
+	say "run: @_";
+	if (confirm("Proceed?"))
+	{
+		sh(@_);
+	}
+}
