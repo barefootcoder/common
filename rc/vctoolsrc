@@ -44,4 +44,5 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vbranch git-helper-branch
 	alias blameline 'perl -lne '\''($f,$l)=split(":"); print "$f:",`git blame -L$l,$l $f` =~ s/\).*/)/r'\'
 	alias tfix 'checktabs -n ; sleep 1 ; vcpatchws -f `checktabs -nb`'
+	alias vld 'vlog -dLR | $PAGER +"/^commit|"`perl -e "print shift =~ s/^#?/#/r" \!^`'
 endif
