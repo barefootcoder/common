@@ -1,19 +1,15 @@
 #! /bin/bash
 
 host=$1 ; shift
-if [[ $host != *.* ]]
-then
-    host=$host.campusexplorer.com
-fi
-cessh="ssh -p 8822 ${CE_REMOTE_USERNAME:-$USER}@$host"
 
-if ! $cessh cat .bashrc | grep -q "^alias go="
+if ! cessh $host cat .bashrc | grep -q "^alias go="
 then
-	cat <<'END' | $cessh cat ">>.bashrc"
+	cat <<END | cessh $host cat ">>.bashrc"
 
 export CEROOT=/var/local/CE
 export CE_REMOTE_USERNAME=bburden
-export PERL5LIB=$CEROOT/lib:$CEROOT/extlib/lib/perl5
+export PERL5LIB=\$CEROOT/lib:\$CEROOT/extlib/lib/perl5
+export PAGER="$PAGER"
 alias go='sudo -H -u CE -i'
 END
 fi
