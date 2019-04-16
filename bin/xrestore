@@ -158,7 +158,7 @@ sub cur_desktop_num
 }
 
 
-sub ff_identify_window (;$)
+sub identify_browser_window (;$)
 {
 	local $_ = shift if @_;
 	my ($win_name) = bash \lines => "xdotool getwindowname $_";
@@ -177,6 +177,7 @@ sub ff_identify_window (;$)
 
 		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/;
 		return "scapers"	when /\bheroscapers\b/ or /xotli's place/ or /posts for xotli/;
+		return "video"		when /youtube/;
 	}
 	die("can't identify window: $win_name [$_]");
 }
@@ -198,7 +199,7 @@ if ( $OPT->{browsers} )
 	my @wids = grep { is_visible } bash \lines => $find_wids;
 	info("found ", scalar(@wids), " wids [via: $find_wids]");
 
-	my %wids = map { $_ => ff_identify_window } @wids;
+	my %wids = map { $_ => identify_browser_window } @wids;
 	do { require Data::Printer; Data::Printer::p(\%wids) } if $OPT->{debug};
 
 	print '. found ';
@@ -208,10 +209,10 @@ if ( $OPT->{browsers} )
 		my $desktop;
 		given ( $wids{$_} )
 		{
-			$desktop = 'Main'		when [qw< work date-easy map	>];
-			$desktop = 'Comms'		when [qw< comms					>];
-			$desktop = 'Music'		when [qw< music					>];
-			$desktop = 'Personal'	when [qw< personal d&d scapers	>];
+			$desktop = 'Main'		when [qw< work date-easy map			>];
+			$desktop = 'Comms'		when [qw< comms							>];
+			$desktop = 'Music'		when [qw< music							>];
+			$desktop = 'Personal'	when [qw< personal d&d scapers video	>];
 
 			die("logic error (no desktop for $_)");
 		}
