@@ -17,6 +17,7 @@ my %DESCRIPTIONS =
 							qr/N6723 ARCHER EDU DIR DEP/i,
 							qr/Interest Paid/i,
 							qr/internet transfer/i,
+							qr/requested transfer/i,
 							qr/overdraft transfer/i,
 						],
 	Mortgage		=>	[
@@ -73,6 +74,7 @@ my %DESCRIPTIONS =
 							qr/Lassens/i,
 							qr/SmartNFinal/i,
 							qr/Smart and Final/i,
+							qr/StaterBros/i,
 							qr/Ralphs/i,
 							qr/Albertsons/i,
 							qr/Costco Whse/i,
@@ -80,6 +82,7 @@ my %DESCRIPTIONS =
 							qr|CVS/Pharmacy|i,
 							qr/Walgreens/i,
 							qr/Pure Indian Foods/i,
+							qr/Bennets_Honey_Farm/i,
 							qr/Ocean Park Pharmacy/i,
 						],
 	Grooming		=>	[
@@ -168,6 +171,8 @@ my %DESCRIPTIONS =
 							qr/paypal inst xfer/i,
 							qr/Treasured Memories/i,
 							qr/Joann\b/i,
+							qr/HobbyLobb/i,
+							qr/Quilty Pleasures/i,
 							qr/noa coppa/i,
 							qr/vito rest/i,
 							qr/Urban Plate/i,
@@ -213,7 +218,6 @@ my %WHAT_LOOKUP =
 	'travis junge poo'			=>	'Pool Guy',
 	'jessie flores'				=>	'Gardeners',
 	'carlos ortega'				=>	'Gardener',
-	'internet transfer'			=>	'Account Transfer',
 	'fidelity nationa'			=>	'Warranty Company',
 	'Sprouts Farmers'			=>	'Sprouts',
 	'Baskin'					=>	'Baskin Robbins',
@@ -303,6 +307,16 @@ foreach ($file->slurp)
 		when ( /Cardtronics/ )
 		{
 			$what = 'Petty Cash';
+		}
+		when ( /Interest Paid/i or /(Internet|Requested) Transfer/i )
+		{
+			$what = 'Account Transfer';
+			$source = 'Electronic';
+		}
+		when ( /^TFR-/ )
+		{
+			$source = 'Overdraft';
+			$category = 'Reserve';
 		}
 
 		when ( /^PAYPAL INST XFER/i or /IAT PAYPAL/i )
