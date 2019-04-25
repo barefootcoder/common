@@ -28,8 +28,9 @@ use Path::Tiny qw< tempdir >;
 my @DEFAULT_WHAT = qw< build myperl support >;
 
 opts <<"-";
-	{ -l | [-n] [-B] [-vD] [<feature> [...]] }
+	{ -l | [-n] [-B] [-vD] [{ <feature> [...] | -M <module> }] }
 	-l : list possible features to install
+	-M : install a <module> rather than a feature
 	-n : dry-run (install to tmpdir, then remove it; implies -v)
 	-B : build phase (only)
 	-v : be more verbose
@@ -62,7 +63,7 @@ my $count   = 0;
 my $where   = $OPT{n}  ? join(' ', '-L', tempdir())         : '-g';
 my $howmuch = $OPT{B}  ? '--without-test --without-runtime' : '';
 my $how     = $OPT{v}  ? sub { print }                      : sub { print '.' if ++$count % 5 == 0 };
-my $what    = join(' ', map { "--feature $_" } @features);
+my $what    =            $OPT{M}                           // join(' ', map { "--feature $_" } @features);
 
 my @opts; push @opts, '-x' if $OPT{D};
 chdir path("~/common");
