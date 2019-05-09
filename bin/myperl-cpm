@@ -34,7 +34,7 @@ opts <<"-";
 	-B : build phase (only)
 	-v : be more verbose
 	-D : debug mode (implies -v)
-	<feature> : feature to install modules for (default: @DEFAULT_WHAT)
+	<feature> : feature(s) to install modules for (default: @DEFAULT_WHAT)
 -
 $OPT{v} = 1 if $OPT{D} or $OPT{n};
 
@@ -44,7 +44,7 @@ fatal("not running under perlbrew") unless $ENV{PERLBREW_ROOT};
 fatal("unexpected Perl version")    unless $ENV{PERLBREW_PERL} eq 'perl-5.14.4';
 
 my $cpm = path($ENV{PERLBREW_ROOT}, bin => 'cpm');
--x $cpm or fatal("no cpm detected; try `perlbrew cpm-install`");
+-x $cpm or fatal("no cpm detected; try `perlbrew install-cpm`");
 
 
 if ( $OPT{l} )
