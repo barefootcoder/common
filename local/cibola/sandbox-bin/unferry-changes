@@ -85,4 +85,5 @@ cmds=()
 cmds+=("vc clean -y")
 cmds+=("git reset --hard $old_head")
 [[ $dirty_restore ]] && cmds+=("git stash apply $dirty_restore")
+[[ -d $patchdir ]] && cmds+=("rm -rf $patchdir")
 color_msg_block $BOLD "${cmds[@]}"
