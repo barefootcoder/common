@@ -132,7 +132,7 @@ my %DESCRIPTIONS =
 							qr/McDonald's/i,
 							qr/Taco Bell/i,
 							qr/Wendy'?s/i,
-							qr/Carl's Jr/i,
+							qr/Carl'?s Jr/i,
 							qr/Jack in the Box/i,
 							qr/Subway/i,
 							qr/In N Out/i,
@@ -375,6 +375,12 @@ foreach ($file->slurp)
 		when ( /parking.*playa vista/i )
 		{
 			$what = 'Lunch parking';
+			$who = 'Buddy';
+		}
+		when ( /^DRIVETHRU\b.*GA/ )
+		{
+			$what = 'DriveThruRPG';
+			$category = "Personal";
 			$who = 'Buddy';
 		}
 
