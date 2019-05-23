@@ -10,6 +10,14 @@ export CEROOT=/var/local/CE
 export CE_REMOTE_USERNAME=bburden
 export PERL5LIB=\$CEROOT/lib:\$CEROOT/extlib/lib/perl5
 export PAGER="$PAGER"
+export CURRENT_SCREEN=monitor
 alias go='sudo -H -u CE -i'
+alias sr='screen -A -x \$CURRENT_SCREEN'
 END
+fi
+
+if ! cessh $host ls .screenrc >/dev/null 2>&1
+then
+	cescp ~/common/rc/screenrc $host:.screenrc
+	cescp ~/common/rc/screenrc.monitor $host:.screenrc.monitor
 fi

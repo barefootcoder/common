@@ -1,0 +1,8 @@
+screen -t base
+screen -t run
+	stuff "go\015"
+	stuff "cd $CEROOT\015"
+screen -t monitor
+	stuff "cd $CEROOT\015"
+screen -t top top
+screen -t root sudo su -
