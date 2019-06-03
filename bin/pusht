@@ -104,7 +104,7 @@ then
 	elif [[ "$first_line" == '==>'* ]]
 	then
 		wikify "$1"
-	elif [[ $(pwd) == *personal/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
+	elif [[ $(pwd) == *personal/blog* || $(pwd) == *docs/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		set -o pipefail
 		copy-to-clipboard blogify "$1"
