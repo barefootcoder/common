@@ -1,0 +1,14 @@
+#! /usr/local/bin/launch bash -*DEVOPS -*PROJ:$PWD
+source $ABOOTROOT/lib/bash/aws
+
+
+# need creds to access S3
+aws-has-current-credentials
+
+ferry-ls -t
+echo ''
+latest=$(ferry-ls -t | tail -n1 | awk '{print $2}')
+color-msg $CYAN "going to unferry: $latest"
+color-msg $YELLOW "Ctrl-C now if this doesn't look good"
+enter-to-continue
+unferry-changes $latest
