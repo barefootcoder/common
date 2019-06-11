@@ -42,6 +42,7 @@ my %DESCRIPTIONS =
 							qr/Prime Video/i,
 							qr/Hulu/i,
 							qr/CBS All Access/i,
+							qr/Philo/i,
 							qr/Sling.com/i,
 						],
 	Water			=>	[
@@ -94,6 +95,7 @@ my %DESCRIPTIONS =
 							qr/shell (oil|service)/i,
 							qr/exxon/i,
 							qr/USA 63216/i,
+							qr/HD Fuel/i,
 							qr/76.*oil/i,
 							qr/Arco/i,
 							qr/gse 76/i,
@@ -141,14 +143,17 @@ my %DESCRIPTIONS =
 							qr/SMART MANAGEMENT & CO/i,
 							qr/Freddys/i,
 							qr/5Guys/i,
+							qr/Burgerim/i,
 							qr/Domino's/i,
 							qr/Toppers/i,
+							qr/Ameci/i,
 							qr/Little Caesars/i,
 							qr/Panda Express/i,
 							qr/\bThe Hat\b/i,
 							qr/Golden Tiger/i,
 							qr/Indian Haweli/i,
 							qr/Szechuwan Garden/i,
+							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
 							qr/\bBetos\b/i,
 							qr/Yolandas/i,
@@ -343,7 +348,7 @@ foreach ($file->slurp)
 			{
 				$what = /Audible/i ? 'Audible (subscription)' : 'Kindle book';
 			}
-			$what = '<<AMAZON>>' if $what eq $descr;
+			$what = 'Amazon []' if $what eq $descr;
 		}
 		when ( /^Kindle/i )
 		{
@@ -351,19 +356,19 @@ foreach ($file->slurp)
 		}
 		when ( /^TARGET/i )
 		{
-			$what = '<<TARGET>>' if $what eq $descr;
+			$what = 'Target []' if $what eq $descr;
 		}
 		when ( /Wal-Mart/i or /WM SUPERCENTER/i )
 		{
-			$what = '<<WAL-MART>>' if $what eq $descr;
+			$what = 'Wal-Mart []' if $what eq $descr;
 		}
 		when ( /MICHAELS/i )
 		{
-			$what = "<<MICHAEL'S>>" if $what eq $descr;
+			$what = "Michael's []" if $what eq $descr;
 		}
 		when ( [ qr/99.CENTS/i, qr/DOLLAR TR/i, ] )
 		{
-			$what = '<<DOLLAR STORE>>' if $what eq $descr;
+			$what = 'Dollar Store []' if $what eq $descr;
 		}
 
 		when ( /STUDIO MOVIE GR/ )
