@@ -11,3 +11,6 @@ alias cescp $ABOOTROOT/devtools/archer-scp
 
 # Vagrant environment stuff
 alias vscp vagrant-scp
+
+# figure out remote sandbox for pushes
+setenv REMOTE_SANDBOX `perl -lne 'print "quin-$1" if /quin.*(i-[^x]\w+)/' ~/Dropbox/ferry`

@@ -38,3 +38,7 @@ then
 fi
 
 xrestore -v -geometry 350x329+1566+723 -desktop Music "alarm-clock-applet --hidden"
+
+# some windows are just stubborn ...
+xdotool search --name "quin" set_desktop_for_window 0
+xdotool search --name "Thunderbird" set_desktop_for_window 1
