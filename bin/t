@@ -358,7 +358,9 @@ else
 	push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 	push @prove_args, @files;
 	push @prove_args, get_workenv('post_args');
-	$command = "prove @prove_args";
+	my @prove_cmd = get_workenv('cmd');
+	@prove_cmd = qw< prove > unless @prove_cmd;
+	$command = "@prove_cmd @prove_args";
 }
 
 if ($opt->{c})
@@ -492,6 +494,7 @@ sub get_workenv
 							env_var		=>	[ 'CEROOT' ],
 							test_dirs	=>	[qw< t/lib tlib >],
 							pre_cmd		=>	[ 'database/cetest/build-cetest' ],
+							cmd			=>	[ 'ce-prove' ],
 							post_args	=>	[qw< :: --dbconfig utest-main >],
 						},
 		};
