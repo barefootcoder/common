@@ -3,10 +3,14 @@
 source ~/bin/bash_funcs
 
 
-while getopts ":h" opt
+doit=true
+while getopts ":nh" opt
 do
 	case $opt in
-		h)  echo "usage: $me -h | <host> <file> [...]" >&2
+		n)	doit=false
+			;;
+		h)  echo "usage: $me -h | [-n] <host> <file> [...]" >&2
+			echo "    -n : don't actually do the copy" >&2
 			echo "    -h : this help message" >&2
 			echo "    host : name of host to steal file from" >&2
 			echo "    file : file(s) to steal" >&2
@@ -31,6 +35,21 @@ shift
 [[ -d ~/Dropbox/machine/$OTHER ]] || die "never heard of machine $OTHER"
 
 
+function diffit
+{
+	diff $mydir/$file $otherdir/$file | ${PAGER:-less}
+}
+
+function stealit
+{
+	if $doit
+	then
+		cp $otherdir/$file $mydir/$file
+	else
+		echo "would: cp $otherdir/$file $mydir/$file"
+	fi
+}
+
 mydir=~/common
 otherdir=~/Dropbox/machine/$OTHER/common
 cd $mydir
@@ -43,17 +62,21 @@ do
 		[[ -w $mydir/$file ]] || die "don't have permission to overwrite $file locally"
 		if [[ $(git diff $mydir/$file | wc -l) -eq 0 ]]
 		then
-			diff $mydir/$file $otherdir/$file | ${PAGER:-less}
+			diffit
 			echo ''
 			if yn "Overwrite the existing file?"
 			then
-				cp $otherdir/$file $mydir/$file
+				stealit
 			fi
 		else
 			warn "$file has uncommitted changes; will not overwrite"
+			if yn "Do the diff anyway?"
+			then
+				diffit
+			fi
 		fi
 	else
 		[[ -w $(dirname $mydir/$file) ]] || die "can't write to the dir of $file locally"
-		cp $otherdir/$file $mydir/$file
+		stealit
 	fi
 done
