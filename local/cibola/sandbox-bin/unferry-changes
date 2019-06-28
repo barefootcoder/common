@@ -9,6 +9,13 @@ opts=":$2:"
 $CEROOT/devtools/aws-credentials-check
 
 
+# check for `git am` failure
+function git-am-failed
+{
+	git status | grep -E 'in the middle of an am session|git-am is in progress'
+}
+
+
 # current repo check
 CE='campus-explorer'
 read owner repo <<<$(git config --get remote.origin.url | perl -lne 'm|^.*?:(.*?)/(.*)\.git$| and print "$1 $2"')
@@ -50,40 +57,60 @@ then
 	branched_from=$(git rev-parse $first_unpushed^)
 fi
 
-tar xvpzf $tarfile
-
-if [[ -d $patchdir ]]
+# if we have local commits, back up prior to them
+# (effectively expunging them)
+if [[ $branched_from ]]
 then
-	if [[ $branched_from ]]
-	then
-		git reset --hard $branched_from
-	fi
-	vc clean -y ||:
-	cur_branch=$(vc info %cur_branch)
-	if [[ $cur_branch == feature/* ]]
-	then
-		if ! vc branch-update
-		then
-			echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
-			read
-		fi
-	elif [[ $cur_branch == $(vc info %Mainline) ]]
-	then
-		vc sync
-	fi
-	git am $patchdir/*
-	# since we did another `vc clean`, our non-patch changes got lost
-	# so just unpack the tarfile again to get them back
-	tar xvpzf $tarfile
-	[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
+	git reset --hard $branched_from
 fi
 
-echo -e "\n\n\n"
+# regardless of anything else, make sure we're updated with respect to our mainline
+vc clean -y ||:
+cur_branch=$(vc info %cur_branch)
+if [[ $cur_branch == feature/* ]]
+then
+	if ! vc branch-update
+	then
+		echo -n "possible merge conflict; resolve and resume [ENTER to continue ...] "
+		read
+	fi
+elif [[ $cur_branch == $(vc info %Mainline) ]]
+then
+	vc sync
+fi
+
+# restore dirty files and local commits (in the form of patches)
+tar xvpzf $tarfile
+# OTOH, those dirty files can get in our way and bork our `git am`
+STASH_MESSAGE="changes for unferry-changes"
+git stash save -u "$STASH_MESSAGE"
+
+# if we have local commits to restore, do so
+if [[ -d $patchdir ]]
+then
+	if ! git am --3way $patchdir/*
+	then
+		color_msg_block $RED	'Your `git am` failed.  Your repo is currently fairly borked.'					\
+								"You can poke around and see if you can fix it,"								\
+								"or just reset according the instructions below."
+	else
+		[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
+		# safe stash pop
+		# (don't let a merge conflict from the unstash blow us up)
+		[[ $(git stash list | grep "$STASH_MESSAGE") ]] && git stash pop ||:
+	fi
+fi
+
+[[ $(git-am-failed) ]] || echo -e "\n\n\n"
 echo "to restore your repo to its pre-unferry state, do this:" >&2
 cmds=()
-[[ $(git status | grep 'in the middle of an am session') ]] && cmds+=("git am --abort")
+[[ $(git-am-failed) ]] && cmds+=("git am --abort")
+[[ -d $patchdir     ]] && cmds+=("/bin/rm -rf $patchdir")
 cmds+=("vc clean -y")
 cmds+=("git reset --hard $old_head")
 [[ $dirty_restore ]] && cmds+=("git stash apply $dirty_restore")
 [[ -d $patchdir ]] && cmds+=("rm -rf $patchdir")
 color_msg_block $BOLD "${cmds[@]}"
+
+# exit cleanly iff `git am` succeeded
+[[ $(git-am-failed) ]] && exit 1
