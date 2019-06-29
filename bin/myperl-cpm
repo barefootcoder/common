@@ -48,18 +48,20 @@ my $cpm = path($ENV{PERLBREW_ROOT}, bin => 'cpm');
 -x $cpm or fatal("no cpm detected; try `perlbrew install-cpm`");
 
 
+my $cpanfile = path("~/common/cpanfile");
 if ( $OPT{l} )
 {
 	say "installable features:";
 	say foreach
 		map { "  $_"								}
 		map { /feature\s+'?(.*?)'?\s*=>/ ? $1 : ()	}
-			( path("~/common/cpanfile")->slurp		)
+			( $cpanfile->slurp						)
 	;
 	exit;
 }
 
 my $count   = 0;
+my $whence  =            "--cpanfile=$cpanfile";
 my $where   = $OPT{n}  ? join(' ', '-L', tempdir())         : '-g';
 my $howmuch = $OPT{B}  ? '--without-test --without-runtime' : '';
 my $how     = $OPT{v}  ? sub { print }                      : sub { print '.' if ++$count % 5 == 0 };
@@ -67,6 +69,6 @@ my $what    =            $OPT{M}                           // join(' ', map { "-
 
 my @opts; push @opts, '-x' if $OPT{D};
 chdir path("~/common");
-sh(@opts => "$cpm install --color $where $howmuch $what |" => $how);
+sh(@opts => "$cpm install --color $whence $where $howmuch $what |" => $how);
 print ' ' unless $OPT{v};
 say "done";
