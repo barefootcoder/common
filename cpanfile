@@ -24,10 +24,12 @@ feature bootstrap => sub
 # required to build stuff
 feature build => sub
 {
+	requires 'Test::Pod';
 	requires 'Test::Most';
 	requires 'Dist::Zilla';
 	requires 'Devel::Confess';
 	requires 'Test::Pod::Coverage';
+	requires 'Pod::Coverage::TrustPod';
 	requires 'Module::Install::JSONMETA';
 	requires 'Dist::Zilla::PluginBundle::BAREFOOT';
 };
