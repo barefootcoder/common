@@ -127,6 +127,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{e`}{&eacute;}g;																# generalized e accute
 	s{a`}{&agrave;}g;																# generalized a grave
 	s{u`}{&uacute;}g;																# generalized u accute
+	s{\(c\)}{&copy;}g;																# copyright
+	s{\(tm\)}{&trade;}g;															# trademark
 	diacritic_fixup($_);															# lots of words/names w/ accents
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	unless ($blog_type eq 'bbcode')
