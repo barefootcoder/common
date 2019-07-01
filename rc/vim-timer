@@ -19,8 +19,8 @@
 :map <C-L><C-L> :up<CR>^:!fake_timer -w2 total <cWORD> %<CR>
 :map <C-D><C-D> :up<CR>^:!fake_timer daybreak today %<CR>
 :map <C-D><C-Y> :up<CR>^:!fake_timer daybreak yesterday %<CR>
-:map <C-D><C-F> :up<CR>^:!fake_timer -w2 daybreak 'last friday' #<CR>
-:map <C-D><C-W> :up<CR>^:!fake_timer -w2 daybreak 'last friday' %<CR>
+:map <C-D><C-W> :up<CR>^:!fake_timer -w2 daybreak yesterday %<CR>
+:map <C-D><C-F> :up<CR>^:!fake_timer -w2 daybreak 'last friday' %<CR>
 :map <C-D><C-R> :up<CR>^:!fake_timer review <cword> %<CR>
 :map <C-W><C-W> :up<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
 :map <Esc>n /-,<CR>
