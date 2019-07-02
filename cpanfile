@@ -61,6 +61,7 @@ feature myperl => sub
 	requires 'MooseX::Has::Sugar';
 	requires 'Method::Signatures';
 	requires 'Any::Moose', '== 0.26';
+	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';
 	requires 'MooseX::StrictConstructor';
 };
