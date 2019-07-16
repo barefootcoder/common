@@ -20,10 +20,10 @@ DefaultSourcePath=git@github.com:%user/%project.git
 	ProjectDir = ~/common
 </Project>
 
-#<Project absalom-common>
-#	ProjectDir = ~/Dropbox/machine/absalom/common
-#</Project>
-#
+<Project absalom-common>
+	ProjectDir = ~/Dropbox/machine/absalom/common
+</Project>
+
 #<Project cibola-common>
 #	ProjectDir = ~/Dropbox/machine/cibola/common
 #</Project>
