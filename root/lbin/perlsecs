@@ -10,15 +10,18 @@ use Time::ParseDate;
 
 
 my $opts = {};
-getopts('gqh', $opts);
+getopts('gqr:h', $opts);
 my $quiet = defined $opts->{q};
 my $gmtime = defined $opts->{g};
 my $me = basename($0);
 print <<USAGE and exit if $opts->{h};
-usage: $me [-h] [-g | -q] date args
+usage: $me [-h] [-g | -q] { <date> | -r <file> }
 	-h: this help message
 	-g: print verification as GMT (default: local time)
 	-q: quiet (including no verification)
+	-r: treat arg as reference <file> instead of date
+	<date> : date-as-string, arbitrary format, can be multiple args
+	<file> : filename to pull date from (modification time)
 USAGE
 
 
@@ -32,6 +35,14 @@ foreach (@ARGV)
 
 my $perlsecs = @ARGV ? parsedate("@ARGV") : time();
 $perlsecs = str2time("@ARGV") unless $perlsecs;
+
+if (defined $opts->{r})
+{
+	my $file = $opts->{r};
+	die("$me: reference file [$file] is not readable\n") unless -r $file;
+	$perlsecs = (stat _)[9];
+}
+
 if ($perlsecs)
 {
 	if ($quiet)
