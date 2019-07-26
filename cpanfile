@@ -129,6 +129,13 @@ feature music => sub
 	requires 'Lingua::EN::Numbers::Years';
 };
 
+# required for Heroscape scripts
+feature heroscape => sub
+{
+	requires 'Method::Signatures';					# used in transform
+	requires 'Lingua::EN::Inflexion';				# used in analyze
+};
+
 # possibly unused: move to proper section if definite dependency discovered
 suggests 'Config::Any';
 suggests 'Carp::Always';
@@ -141,7 +148,6 @@ suggests 'Getopt::Declare';
 suggests 'Term::ANSIScreen';
 suggests 'Archive::Tar::Wrapper';
 suggests 'MooseX::App::Cmd', '== 0.31';
-suggests 'Lingua::EN::Inflexion';
 
 # required for VCtools
 feature vctools => sub
