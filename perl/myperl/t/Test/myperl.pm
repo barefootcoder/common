@@ -59,11 +59,11 @@ sub test_snippet
 
 	if ($result)
 	{
-		like $@, qr/$result/, "snippet fails as expected: $_";
+		like $@, qr/$result/, "snippet fails as expected: $snippet";
 	}
 	else
 	{
-		is $@, '', "snippet succeeds as expected: $_";
+		is $@, '', "snippet succeeds as expected: $snippet";
 	}
 }
 
