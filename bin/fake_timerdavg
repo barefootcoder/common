@@ -36,16 +36,22 @@ say "Average availability: ", $total_avail / $num_days;
 
 if ($OPT{v})
 {
-	say '';
 	my $num_weeks = $num_days / 5;
-	say "   Number of weeks: $num_weeks";
-	say "Total availability: $total_avail";
-	say "          Avg time: ", $total_time / $num_weeks;
-	say "  Avg availability: ", $total_avail / $num_weeks;
-	my $pct = $total_time / $total_avail;
-	say "              %age: ", 100 * $pct;
-	my $next_week = (ceil($num_weeks)+1) * 40 - $total_avail;
-	say "         Next week: $next_week / ", $next_week * $pct;
+	foreach ( $num_weeks, round(UP => $num_weeks) )
+	{
+		say '';
+		say $num_weeks == int($num_weeks)
+			? "If you stop working right now:"
+			: "If you continue working at this rate:";
+		say "   Number of weeks: $_";
+		say "Total availability: $total_avail";
+		say "          Avg time: ", $total_time / $_;
+		say "  Avg availability: ", $total_avail / $_;
+		my $pct = $total_time / $total_avail;
+		say "              %age: ", 100 * $pct;
+		my $next_week = (ceil($_)+1) * 40 - $total_avail;
+		say "         Next week: $next_week / ", $next_week * $pct;
+	}
 }
 
 
@@ -88,15 +94,16 @@ func time_and_avail ($file)
 		my ($hrs, $mins, $timer) = /^ \s* (\d+) \s+ hrs, \s+ (\d+) \s+ mins \s* : \s* (.+) $/x;
 		next unless $timer and ( $timer eq 'GRAND TOTAL' or $timer eq 'AVAILABILITY' );
 
+		my $timer_hours = $hrs + $mins / 60;
+		my $this_week   = $timer_hours - ($timer eq 'AVAILABILITY' ? $avail : $time);
 		if ($OPT{D})
 		{
-			say "$file :   $timer $hrs:$mins";
+			say sprintf("$file :   %-*s %3d:%02d %*s [%0.2fh]", length('AVAILABILITY'), $timer,
+					$hrs, $mins, $timer eq 'AVAILABILITY' ? 30 : 20, '', $this_week);
 		}
-		my $timer_hours = $hrs + $mins / 60;
 		if ( $OPT{O} and $timer ~~ [keys %$OUTLIER_RANGES] )
 		{
-			my $this_week = $timer_hours - ($timer eq 'AVAILABILITY' ? $avail : $time);
-			my $range     = $OUTLIER_RANGES->{$timer};
+			my $range = $OUTLIER_RANGES->{$timer};
 			say "OUTLIER! ", join(' - ', map { $_->as("/Ymd") } $min_date, $min_date + 6 * days), " : $this_week $timer"
 					unless $range->[0] <= $this_week and $this_week <= $range->[1];
 		}
