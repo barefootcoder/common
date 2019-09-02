@@ -115,6 +115,7 @@ my %DESCRIPTIONS =
 							qr/school ?fees/i,
 							qr/MOORPARK COL BKSTOR/i,
 							qr/Los Angeles Zoo/i,
+							qr/T\.O\. E-LIBRARY/i,
 						],
 	Entertainment	=>	[
 							qr/Studio Movie Gr/i,
@@ -124,6 +125,7 @@ my %DESCRIPTIONS =
 							qr/Universal Cty/i,
 							qr/Six Flags/i,
 							qr/Chuck E Cheese/i,
+							qr/^D&B /i,
 							qr/GG Delivers/i,
 						],
 	Books			=>	[
@@ -147,6 +149,7 @@ my %DESCRIPTIONS =
 							qr/Domino's/i,
 							qr/Toppers/i,
 							qr/Ameci/i,
+							qr/Presto Pasta/i,
 							qr/Little Caesars/i,
 							qr/Panda Express/i,
 							qr/\bThe Hat\b/i,
@@ -182,6 +185,7 @@ my %DESCRIPTIONS =
 							qr/noa coppa/i,
 							qr/vito rest/i,
 							qr/Urban Plate/i,
+							qr/Hopdoddy/i,
 							qr/Smoke & Vape/i,
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
@@ -244,6 +248,8 @@ my %WHAT_LOOKUP =
 	'Uverse Online'				=>	'DirecTv',
 	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
 	'OFFICE DE'					=>	'Office Depot',
+	'^D&B '						=>	"Dave & Buster's",
+	'T\.O\. E-LIBRARY'			=>	'Library (TO)',
 );
 
 
@@ -314,7 +320,12 @@ foreach ($file->slurp)
 		{
 			$what = 'Petty Cash';
 		}
-		when ( /Interest Paid/i or /(Internet|Requested) Transfer/i )
+		when ( 'Interest Paid' )
+		{
+			$category = 'Bank Fees';
+			$source = 'Electronic';
+		}
+		when ( /(Internet|Requested) Transfer/i )
 		{
 			$what = 'Account Transfer';
 			$source = 'Electronic';
