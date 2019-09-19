@@ -64,7 +64,7 @@ fi
 #	# the directory itself will be made if it's not there
 #		(it can't be a symlink because it needs to contains files symlinked from
 #		two different places)
-#	# publicly avaiable stuff from $mydir/dzil
+#	# publicly available stuff from $mydir/dzil
 #	# the config.ini, which contains passwords and therefore isn't public-facing
 #		(that will be symlinked by the "sensitive" section, below)
 [[ -d ~/.dzil ]] || mkdir ~/.dzil
