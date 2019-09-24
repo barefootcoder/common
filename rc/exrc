@@ -10,7 +10,7 @@ set noexpandtab					" yes, I like real tabs in my files; so sue me
 " keyword lookups
 set iskeyword=@,_,48-57			" default definition of word (as opposed to WORD)
 " allow word to expand to include sigils and namespace separators when doing keyword lookup
-nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,_,48-57<CR>
+nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,_,-,48-57<CR>
 " assume keyword lookup means Perl
 set keywordprg=perlref
 
