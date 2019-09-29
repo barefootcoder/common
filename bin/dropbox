@@ -52,7 +52,7 @@ start() {
 	else
 		echo -n $"Starting $prog"
 
-		/bin/sh -c "$distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
+		/bin/sh -c "nice $distdir/$prog 2>&1 | fgrep -vf $filter >>$logfile &"
 		RETVAL=$?
 		echo
 		if [ $RETVAL = 0 ] ; then
