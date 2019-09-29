@@ -152,17 +152,6 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
 	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcript-type blocks
-	unless (bbstyle)
-	{
-		no warnings 'uninitialized';
-		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
-		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
-		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
-		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
-		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
-		s{\^_(.*?)_}{fmt(super => $1)}seg;											# superscript
-		s{\b (\d)\b}{&nbsp;$1}g;													# don't leave single digits hanging
-	}																				#	out on a separate line
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
 	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
@@ -178,6 +167,17 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
 	s{(?<!-)$front_boundary-(\S.*?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;# strikethrough
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
+	unless (bbstyle)
+	{
+		no warnings 'uninitialized';
+		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
+		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
+		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
+		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
+		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
+		s{\^_(.*?)_}{fmt(super => $1)}seg;											# superscript
+		s{\b (\d)\b}{&nbsp;$1}g;													# don't leave single digits hanging
+	}																				#	out on a separate line
 	s{$front_boundary\^=(.+?)=\^$back_boundary}{$1 . fmt(big => $2)}seg;			# larger
 	s{${front_boundary}v=(.+?)=v$back_boundary}{$1 . fmt(small => $2)}seg;			# smaller
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
