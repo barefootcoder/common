@@ -52,6 +52,8 @@ screen -t awsess
 	stuff "$CHEOPSROOT/bin/awsess\015"
 screen -t work
 	stuff "cd ~/work\015"
+screen -t pmml
+	stuff "cd $CEROOT/tmp\015"
 screen -t lib
 	source .screenrc.vctools
 	stuff "vcd method-signatures\015"
@@ -69,3 +71,6 @@ screen -t mtest
 	stuff "source etc/musicsh\015"
 screen -t blog
 	stuff "cd docs/blog\015"
+screen -t rpg
+	stuff "cd rpg\015"
+	stuff "ls\015"

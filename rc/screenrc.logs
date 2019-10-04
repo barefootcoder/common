@@ -1,0 +1,12 @@
+screen -t base
+screen -t logs
+	stuff "cd $CEROOT/var/log\015"
+screen -t apache
+	stuff "go\015"
+	stuff "cd $CEROOT/var/log/apache\015"
+screen -t api
+	stuff "go\015"
+	stuff "cd $CEROOT/var/log/api-request\015"
+screen -t run
+	stuff "go\015"
+	stuff "cd $CEROOT\015"

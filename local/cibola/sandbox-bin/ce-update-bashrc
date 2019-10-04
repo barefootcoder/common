@@ -1,6 +1,11 @@
-#! /bin/bash
+#! /usr/local/bin/launch bash -*PROJ:archer-boot -*DEVOPS
 
 host=$1 ; shift
+function cessh { $ABOOTROOT/devtools/archer-ssh "$@" ; }
+function cescp { $ABOOTROOT/devtools/archer-scp "$@" ; }
+
+screen=monitor										# most machines are used for monitoring something
+[[ $host == dirk* ]] && screen=logs					# but dirk is special in a couple of ways
 
 if ! cessh $host cat .bashrc | grep -q "^alias go="
 then
@@ -9,15 +14,26 @@ then
 export CEROOT=/var/local/CE
 export CE_REMOTE_USERNAME=bburden
 export PERL5LIB=\$CEROOT/lib:\$CEROOT/extlib/lib/perl5
+[[ $PATH == *$HOME/bin* ]] || export PATH=$PATH:$HOME/bin
 export PAGER="$PAGER"
-export CURRENT_SCREEN=monitor
+export CURRENT_SCREEN=$screen
 alias go='sudo -H -u CE -i'
 alias sr='screen -A -x \$CURRENT_SCREEN'
+alias resrc='source ~/.bashrc'
 END
 fi
 
-if ! cessh $host ls .screenrc >/dev/null 2>&1
+cescp -p ~/.exrc $host:
+
+if [[ $(cessh $host ls ".screenrc*" 2>/dev/null | wc -l) -lt 2 ]]
 then
-	cescp ~/common/rc/screenrc $host:.screenrc
-	cescp ~/common/rc/screenrc.monitor $host:.screenrc.monitor
+	cescp ~/common/rc/screenrc         $host:.screenrc
+	cescp ~/common/rc/screenrc.$screen $host:.screenrc.$screen
+fi
+
+# set up for pjawk, but only on dirk
+if [[ $screen == "logs" ]]
+then
+	cessh $host mkdir -p bin/
+	cescp $(find ~/common/ -name build-pjawk) $host:bin/
 fi
