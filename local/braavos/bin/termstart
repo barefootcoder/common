@@ -37,7 +37,7 @@ then
 	myterm -s ${title^} cityofgold 125x50-0-24 tcsh -c 'cessh $REMOTE_SANDBOX'
 fi
 
-xrestore -v -geometry 350x329+1566+723 -desktop Music "alarm-clock-applet --hidden"
+xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidden"
 
 # some windows are just stubborn ...
 xdotool search --name "quin" set_desktop_for_window 0
