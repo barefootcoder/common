@@ -9,7 +9,8 @@ taint=$(perl -lne 'print "T" if /perl -T/; exit if $. > 1' $1)
 
 function syntax-check
 {
-	if [[ $(file $1) == *"shell script"* ]]
+	local ftype=$(file $1)
+	if [[ $ftype == *"shell script"* || $ftype == *"launch bash"* ]]
 	then
 		echo "checking bash syntax ..."
 		bash -n $1
