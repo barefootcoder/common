@@ -103,7 +103,7 @@ do
 			fmtarg="-p"
 			if [[ $grep_diffs != 0 ]]
 			then
-				args="$args -G $grep_diffs"
+				args="$args -G '$grep_diffs'"
 			fi
 			grep_diffs=1
 			;;
@@ -162,7 +162,7 @@ do
 			then
 				args="$args --grep '$OPTARG'"
 			else
-				args="$args -G $OPTARG"
+				args="$args -G '$OPTARG'"
 			fi
 			grep_diffs="$OPTARG"
 			;;
