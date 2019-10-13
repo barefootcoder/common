@@ -112,6 +112,7 @@ my %DESCRIPTIONS =
 							qr/discovery cube/i,
 							qr/UNDERWOOD FAMI/i,
 							qr/Santa Barbara Zoo/i,
+							qr/DojoBoom/i,
 							qr/school ?fees/i,
 							qr/MOORPARK COL BKSTOR/i,
 							qr/Los Angeles Zoo/i,
