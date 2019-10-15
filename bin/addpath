@@ -33,7 +33,7 @@ unless ($opts->{B})
 	@dirs = split(':', $ENV{$opts->{b}} || '');
 	%dirs = map { $_ => 1 } @dirs;
 }
-$opts->{D} and print "starting with ", scalar @dirs, " dirs\n";
+$opts->{D} and print STDERR "starting with ", scalar @dirs, " dirs\n";
 
 my @newdirs;
 my ($before, $after) = (0,0);
@@ -47,15 +47,15 @@ foreach my $dir (@ARGV)
 		++$after;
 	}
 }
-$opts->{D} and print "winnowed $before dirs down to $after\n";
+$opts->{D} and print STDERR "winnowed $before dirs down to $after\n";
 if ($opts->{f})
 {
-	$opts->{D} and print "unshifting ", scalar(@newdirs), " dirs into $opts->{b}\n";
+	$opts->{D} and print STDERR "unshifting ", scalar(@newdirs), " dirs into $opts->{b}\n";
 	unshift @dirs, @newdirs;
 }
 else
 {
-	$opts->{D} and print "pushing ", scalar(@newdirs), " dirs onto $opts->{b}\n";
+	$opts->{D} and print STDERR "pushing ", scalar(@newdirs), " dirs onto $opts->{b}\n";
 	push @dirs, @newdirs;
 }
 
@@ -79,16 +79,16 @@ sub set_for_shell
 	{
 		require Shell::Guess;
 		require Shell::Config::Generate;
-		$opts->{D} and print "using Shell::Guess et al\n";
+		$opts->{D} and print STDERR "using Shell::Guess et al\n";
 
 		my $conf = Shell::Config::Generate->new;
 		$conf->set($base, $path);
 		$output = $conf->generate;										# should be for the shell that called us
-		$opts->{D} and print "Shell::* generated: $output\n";
+		$opts->{D} and print STDERR "Shell::* generated: $output\n";
 	};
 	if ($@ =~ /Can't locate Shell/)										# fallback to old stupid way
 	{																	# if we don't have the cool modules installed
-		$opts->{D} and print "guessing at shell based on $ENV{SHELL}\n";
+		$opts->{D} and print STDERR "guessing at shell based on $ENV{SHELL}\n";
 		if ($ENV{SHELL} =~ /csh/)										# crappier guess than Shell::Guess
 		{																# likely login shell, not shell that called us
 			return "setenv $base $path";
