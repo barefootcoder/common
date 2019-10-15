@@ -199,8 +199,27 @@ then
 	sessionfile=$tmpfile
 fi
 
-dir=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
-eval cd "$dir"
+export VIM_SESSIONFILE_DIR=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
+eval cd "$VIM_SESSIONFILE_DIR"
 arg=$(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
-vim -S $sessionfile -c '"call LoadSessionAuxFiles()"' "$arg"
-perl -i -lpe '$_ = "cd '$dir'" if /^cd /' $sessionfile
+vim -S $sessionfile -c 'call LoadSessionAuxFiles()' "$arg"
+proglet='															# glob is just for the tildes ...
+	BEGIN { use Cwd q<realpath>; $dir = $ENV{VIM_SESSIONFILE_DIR}; $realdir = realpath(glob($dir)) }
+	BEGIN { warn("missing! [$dir||$realdir]") unless $dir and $realdir }
+	# most of this stuff is just cleaning up the mess vim itself makes of the sessionfile
+	$_ = "cd $dir\n" if /^cd /;
+	if ( /^badd\h[+-](\d+)\h(.*)/ )
+	{
+		undef $_, next if -d $2;
+		$save = $2, $_ = "", next if $1 == 1;
+		if ($save)
+		{
+			print "badd +1 $save\n" unless $save eq $2;
+			undef $save;
+		}
+	}
+	s{(\h)~/Dropbox/music/}{$1/export/music/};
+	s{(\h)($dir|$realdir)/(\H)}{$1$2};
+	s/^\$//;
+'
+perl -i -pe "$proglet" $sessionfile
