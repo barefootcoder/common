@@ -5,18 +5,20 @@
 function USAGE
 {
 	echo ''
-	echo "usage: $me [-Y] [-f] <base>"
+	echo "usage: $me [-Y | -D <date>] [-f] <base>"
 	echo ''
 	echo '  Save changes to repo (uncommitted and unpushed) to S3 ferry file.'
 	echo ''
 	echo '  Long options:'
 	echo "    --yesterday  : use yesterday's date for ferry file"
+	echo '    --date       : use given date for ferry file'
 	echo "                   (default: use today's date)"
 	echo '    --force      : force (allow overwriting existing files)'
 	echo '    --help       : this help message'
 	echo ''
 	echo '  Short options:'
 	echo '    -Y           : same as --yesterday'
+	echo '    -D           : same as --date'
 	echo '    -f           : same as --force'
 	echo '    -h           : same as --help (also -?)'
 	echo ''
@@ -32,6 +34,9 @@ do
 	case $1 in
 		--yesterday|-Y) filedate="$filedate yesterday"
 						shift
+						;;
+		--date|-D)		filedate="$filedate $2"
+						shift 2
 						;;
 		--force|-f)		force=true
 						shift
