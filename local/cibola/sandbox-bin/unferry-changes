@@ -114,3 +114,4 @@ color_msg_block $BOLD "${cmds[@]}"
 
 # exit cleanly iff `git am` succeeded
 [[ $(git-am-failed) ]] && exit 1
+exit 0
