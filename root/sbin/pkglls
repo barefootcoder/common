@@ -1,0 +1,4 @@
+#! /usr/bin/bash
+
+# https://unix.stackexchange.com/a/110446
+aptitude search --sort '~installsize' --display-format '%p %I' '~i' | head
