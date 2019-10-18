@@ -95,13 +95,16 @@ then
 								"or just reset according the instructions below."
 	else
 		[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
-		# safe stash pop
-		# (don't let a merge conflict from the unstash blow us up)
-		[[ $(git stash list | grep "$STASH_MESSAGE") ]] && git stash pop ||:
 	fi
 fi
 
-[[ $(git-am-failed) ]] || echo -e "\n\n\n"
+if [[ ! $(git-am-failed) ]]
+then
+	# safe stash pop
+	# (don't let a merge conflict from the unstash blow us up)
+	[[ $(git stash list | grep "$STASH_MESSAGE") ]] && git stash pop ||:
+	echo -e "\n\n\n"
+fi
 echo "to restore your repo to its pre-unferry state, do this:" >&2
 cmds=()
 [[ $(git-am-failed) ]] && cmds+=("git am --abort")
