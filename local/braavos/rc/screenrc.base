@@ -67,3 +67,5 @@ screen -t blog
 	stuff "vims blog\015"
 screen -t heroscapers
 	stuff "cd rpg/Heroscape/glasq\015"
+screen -t rpg
+	stuff "cd rpg/5e-campaigns\015"
