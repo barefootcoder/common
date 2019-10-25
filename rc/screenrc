@@ -49,6 +49,8 @@ termcapinfo xterm 'kh=\E[1~:kI=\E[2~:kD=\E[3~:kH=\E[4~:kP=\E[H:kN=\E[6~'
 
 # special xterm hardstatus: use the window title.
 #termcapinfo xterm 'hs:ts=\E]2;:fs=\007:ds=\E]2;screen\007'
+# stop fucking with the xterm window title
+hardstatus alwaysignore
 
 #terminfo xterm 'vb=\E[?5h$<200/>\E[?5l'
 termcapinfo xterm 'vi=\E[?25l:ve=\E[34h\E[?25h:vs=\E[34l'
