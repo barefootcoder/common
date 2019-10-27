@@ -153,7 +153,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
 	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcript-type blocks
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
-	s{--}{$blog{$blog_type}->{dash}}g;												# em dash
+	s{(\w)--}{"<nobr>$1" . $blog{$blog_type}->{dash} =~ s{;}{;</nobr>}r}ge			# em dash following a word char
+			unless $blog_type eq 'bbcode';											#		(but not under BBcode)
+	s{--}{$blog{$blog_type}->{dash}}g;												# em dash otherwise
 	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
 	s{$LIST_REGEX}{list($2 => $1)}meg;												# un/ordered lists (incl embedded)
 	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
