@@ -203,23 +203,65 @@ export VIM_SESSIONFILE_DIR=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
 eval cd "$VIM_SESSIONFILE_DIR"
 arg=$(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
 vim -S $sessionfile -c 'call LoadSessionAuxFiles()' "$arg"
-proglet='															# glob is just for the tildes ...
-	BEGIN { use Cwd q<realpath>; $dir = $ENV{VIM_SESSIONFILE_DIR}; $realdir = realpath(glob($dir)) }
-	BEGIN { warn("missing! [$dir||$realdir]") unless $dir and $realdir }
+proglet='
+	BEGIN
+	{
+		use Cwd q<realpath>;
+		$origdir = $ENV{VIM_SESSIONFILE_DIR};
+		$expdir  = $origdir =~ s/\$(\w+)/$ENV{$1}/gr;
+		$realdir = realpath(glob($expdir));			# this glob is just for the tildes ...
+		@subdirs = map { realpath($_) } glob("$expdir/*");
+		warn("missing! [$origdir||$expdir||$realdir]") unless $origdir and $expdir and $realdir;
+		sub path_fixup
+		{
+			my $path = shift;
+			my ($epath) = glob($path);				# again, just for the tildes
+			my $newpath;
+			if ( $path =~ m{^$expdir/} )
+			{
+				$newpath = $path =~ s{^$expdir}{}r;
+			}
+			elsif ( ($rpath = realpath($epath)) =~ m{^$realdir} )
+			{
+				$newpath = $rpath =~ s{^$realdir/}{}r;
+			}
+			else
+			{
+				foreach (@subdirs)
+				{
+					if ( $rpath =~ m{^$_} )
+					{
+						$rparent = s{/[^/]+$}{}r;
+						$newpath = $rpath =~ s{^$rparent/}{}r;
+						last;
+					}
+				}
+			}
+			$newpath // $path;
+		}
+	}
 	# most of this stuff is just cleaning up the mess vim itself makes of the sessionfile
-	$_ = "cd $dir\n" if /^cd /;
+	s/^\$//;
+	($directive, $line, $file) = m{^(\w+)\h(?:[+-](\d+)\h)?(.+)$};
 	if ($save)
 	{
-		print "badd +1 $save\n" unless $save eq $2;
+		unless ( $save eq $file )
+		{
+			$save = path_fixup($save);
+			$arg //= $save;
+			print "badd +1 $save\n";
+		}
 		undef $save;
 	}
-	if ( /^badd\h[+-](\d+)\h(.*)/ )
+	$_ = "cd $origdir\n" and next if $directive eq 'cd';
+	if ( $directive eq 'badd' )
 	{
-		undef $_, next if -d $2;
-		$save = $2, $_ = "", next if $1 == 1;
+		undef $_, next if -d $file;
+		$save = $file, $_ = "", next if $line == 1;
+		$arg //= path_fixup($file);
 	}
-	s{(\h)~/Dropbox/music/}{$1/export/music/};
-	s{(\h)($dir|$realdir)/(\H)}{$1$3};
-	s/^\$//;
+	$_ = "argadd $arg\n" and next if $directive eq 'argadd';
+	s{$file}{path_fixup($file)}e if $directive =~ /^(badd|edit)$/
+			and $file =~ m{^[/~]};					# filename is absolute path
 '
 perl -i -pe "$proglet" $sessionfile
