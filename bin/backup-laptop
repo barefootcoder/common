@@ -1,0 +1,27 @@
+#! /bin/bash
+set -e
+set -o pipefail
+source ~/common/functions
+
+[[ -d /export/backup ]] || die "base backup dir doesn't exist!"
+[[ $(realpath /export/backup) == */Dropbox/* ]] || die "base backup dir isn't on Dropbox!"
+tag=$1
+[[ $tag ]] || die "must supply backup tag"
+[[ $LOCALHOSTNAME ]] || die "local hostname not set"
+backup_dir=/export/backup/$LOCALHOSTNAME/$tag
+mkdir -p $backup_dir
+[[ ! $(ls -A $backup_dir) ]] || die "backup dir is not empty!"
+( cd ~/workproj/cheops ; vagrant status | grep -q running ) && die "must stop Vagrant sandbox before backing up"
+
+echo "about to generate a lot of output"
+echo "make sure you're in an appropriate terminal window"
+echo -n "press <ENTER> to continue ... "
+read
+
+sudo tar cvpjf $backup_dir/etc.tbz /etc
+sudo tar cvpjf $backup_dir/var.tbz /var									||:
+sudo tar cvpjf $backup_dir/root-config.tbz /root/.config
+tar cvpjf $backup_dir/home-perl-cpm.tbz ~/.perl-cpm/
+tar cvpjf $backup_dir/home-workproj.tbz ~/workproj/
+
+echo -e "all done\a"
