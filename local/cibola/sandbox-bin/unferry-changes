@@ -88,13 +88,13 @@ git stash save -u "$STASH_MESSAGE"
 # if we have local commits to restore, do so
 if [[ -d $patchdir ]]
 then
-	if ! git am --3way $patchdir/*
+	if git am --3way $patchdir/*
 	then
+		[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
+	else
 		color_msg_block $RED	'Your `git am` failed.  Your repo is currently fairly borked.'					\
 								"You can poke around and see if you can fix it,"								\
 								"or just reset according the instructions below."
-	else
-		[[ $opts == *":keep:"* ]] || /bin/rm -rf $patchdir
 	fi
 fi
 

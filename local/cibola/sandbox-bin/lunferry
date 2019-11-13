@@ -1,5 +1,5 @@
-#! /usr/local/bin/launch bash -*DEVOPS -*PROJ:$PWD
-source $ABOOTROOT/lib/bash/aws
+#! /usr/local/bin/launch bash -*DEVOPS -*PROJ:vagrant
+bashlib-demand aws
 
 
 # need creds to access S3
