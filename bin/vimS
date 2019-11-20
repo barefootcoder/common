@@ -256,7 +256,7 @@ proglet='
 	$_ = "cd $origdir\n" and next if $directive eq 'cd';
 	if ( $directive eq 'badd' )
 	{
-		undef $_, next if -d $file;
+		undef $_, next if -d scalar glob($file);	# as always, just for the tildes
 		$save = $file, $_ = "", next if $line == 1;
 		$arg //= path_fixup($file);
 	}
