@@ -27,6 +27,7 @@ feature build => sub
 	requires 'Test::Pod';
 	requires 'Test::Most';
 	requires 'Dist::Zilla';
+	requires 'File::Which';
 	requires 'Devel::Confess';
 	requires 'Test::Pod::Coverage';
 	requires 'Pod::Coverage::TrustPod';
@@ -164,6 +165,12 @@ feature vctools => sub
 	requires 'MooseX::Has::Sugar';
 	requires 'Method::Signatures';
 	requires 'MooseX::Attribute::ENV';
+};
+
+# required for various CARP scripts
+feature carp => sub
+{
+	requires 'PDF::FDF::Simple';
 };
 
 # required for Leadpipe work
