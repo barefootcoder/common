@@ -63,7 +63,7 @@ tarfile=$1
 [[ $tarfile ]] || die "must supply ferry file basename"
 
 # make sure we have creds before we get too far in
-$CEROOT/devtools/aws-credentials-check
+$CEROOT/devtools/verify-aws-credentials
 
 
 # current repo check

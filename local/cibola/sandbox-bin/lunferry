@@ -3,7 +3,7 @@ bashlib-demand aws
 
 
 # need creds to access S3
-aws-has-current-credentials
+verify-aws-credentials
 
 ferry-ls -t
 echo ''

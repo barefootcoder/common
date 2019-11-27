@@ -6,7 +6,7 @@ tarfile=$1
 opts=":$2:"
 
 # make sure we have creds before we get too far in
-$CEROOT/devtools/aws-credentials-check
+$CEROOT/devtools/verify-aws-credentials
 
 
 # check for `git am` failure
