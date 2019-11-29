@@ -253,14 +253,14 @@ proglet='
 		}
 		undef $save;
 	}
-	$_ = "cd $origdir\n" and next if $directive eq 'cd';
-	if ( $directive eq 'badd' )
+	$_ = "cd $origdir\n" and next if $directive eq "cd";
+	if ( $directive eq "badd" )
 	{
 		undef $_, next if -d scalar glob($file);	# as always, just for the tildes
 		$save = $file, $_ = "", next if $line == 1;
-		$arg //= path_fixup($file);
+		$arg //= path_fixup($file) =~ s/ /\\ /gr;
 	}
-	$_ = "argadd $arg\n" and next if $directive eq 'argadd';
+	$_ = ($arg =~ / / ? q|$| : "") . "argadd $arg\n" and next if $directive eq "argadd";
 	s{$file}{path_fixup($file)}e if $directive =~ /^(badd|edit)$/
 			and $file =~ m{^[/~]};					# filename is absolute path
 '
