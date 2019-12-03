@@ -206,16 +206,17 @@ vim -S $sessionfile -c 'call LoadSessionAuxFiles()' "$arg"
 proglet='
 	BEGIN
 	{
+		sub expand { (glob shift)[0] }				# sometimes you have to glob just for the tildes ...
 		use Cwd q<realpath>;
 		$origdir = $ENV{VIM_SESSIONFILE_DIR};
 		$expdir  = $origdir =~ s/\$(\w+)/$ENV{$1}/gr;
-		$realdir = realpath(glob($expdir));			# this glob is just for the tildes ...
+		$realdir = realpath(expand($expdir));
 		@subdirs = map { realpath($_) } glob("$expdir/*");
 		warn("missing! [$origdir||$expdir||$realdir]") unless $origdir and $expdir and $realdir;
 		sub path_fixup
 		{
 			my $path = shift;
-			my ($epath) = glob($path);				# again, just for the tildes
+			my ($epath) = expand($path);
 			my $newpath;
 			if ( $path =~ m{^$expdir/} )
 			{
@@ -256,7 +257,7 @@ proglet='
 	$_ = "cd $origdir\n" and next if $directive eq "cd";
 	if ( $directive eq "badd" )
 	{
-		undef $_, next if -d scalar glob($file);	# as always, just for the tildes
+		undef $_, next if -d expand($file);
 		$save = $file, $_ = "", next if $line == 1;
 		$arg //= path_fixup($file) =~ s/ /\\ /gr;
 	}
