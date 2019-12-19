@@ -23,6 +23,14 @@ alias sr='screen -A -x \$CURRENT_SCREEN'
 END
 fi
 
+# make aliases
+cat <<'END' | cessh $host cat ">.bash_aliases"
+alias go='sudo -H -u CE -i'
+alias resrc='source ~/.bashrc'
+alias ssh-sock-reset='source ~/bin/ssh-sock-reset'
+END
+
+# make vim behave sanely
 cescp -p ~/.exrc $host:
 
 if [[ $(cessh $host ls ".screenrc*" 2>/dev/null | wc -l) -lt 2 ]]
@@ -31,9 +39,28 @@ then
 	cescp ~/common/rc/screenrc.$screen $host:.screenrc.$screen
 fi
 
+cessh $host mkdir -p bin/
+# have to make sure we can reset the ssh tunnel
+# (this is most important on quin's, but still useful everywhere)
+cat <<'END' | cessh $host cat ">bin/ssh-sock-reset"
+# this needs to be `source`d to be effective
+
+if [[ ! -s $SSH_AUTH_SOCK ]]
+then
+    # try to figure out what the new socket is
+    socket=$(/bin/ls -t1 /run/user/$(id -u)/keyring*/ssh /tmp/ssh-*/agent.* 2>/dev/null | head -n1)
+    if [[ $socket && -S $socket ]]
+    then
+        export SSH_AUTH_SOCK=$socket
+    else
+        echo "$(basename $BASH_SOURCE): can't locate ssh socket" >&2
+        return 1
+    fi
+fi
+END
+
 # set up for pjawk, but only on dirk
 if [[ $screen == "logs" ]]
 then
-	cessh $host mkdir -p bin/
 	cescp $(find ~/common/ -name build-pjawk) $host:bin/
 fi
