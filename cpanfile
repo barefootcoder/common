@@ -176,9 +176,15 @@ feature carp => sub
 # required for Leadpipe work
 feature pb => sub
 {
+	requires 'Safe::Isa';
 	requires 'Data::Rmap';
 	requires 'Test::Trap';
+	requires 'CLI::Osprey';
+	requires 'Import::Into';
+	requires 'Sub::Install';
 	requires 'PerlX::Maybe';
+	requires 'Proc::Pidfile';
+	requires 'Test::Mock::Time';
 };
 
 # required for Onyx work
