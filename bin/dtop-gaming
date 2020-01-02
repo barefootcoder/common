@@ -1,0 +1,10 @@
+#! /bin/bash
+
+if [[ $(xdotool get_num_desktops) -lt 5 ]]
+then
+	xdotool set_num_desktops 5
+	gsettings set org.gnome.desktop.wm.preferences workspace-names '["Main","Comms","Music","Personal","D&D"]'
+fi
+myterm -D5 Music - 80x24+2-33
+myterm -D5 Notes - 118x43-0+29
+xdotool set_desktop 4								# which means 5

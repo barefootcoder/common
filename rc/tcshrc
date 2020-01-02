@@ -261,6 +261,7 @@ complete runon 'p/1/`friendly-hosts`/'
 complete steal-common 'p/1/`friendly-hosts`/'
 complete vims 'C?[^-]*?`vimS -l`?'
 complete vimS 'C?[^-]*?`vimS -l`?'										# should be same as line above
+complete gaming 'p/1/`gaming -C`/'
 
 # many gentoo systems try to be all clever with a huge list of preprogrammed completions for most common commands
 # but for cp/mv/ln, for instance, they define the 2nd arg as having to be a directory

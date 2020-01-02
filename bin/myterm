@@ -78,13 +78,16 @@ function locate_img
 	done
 	echo $file
 }
-img=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
-if [[ -z $img ]]
+if [[ $pixmap != "-" ]]
 then
-	echo "$me: can't find image file for $pixmap" >&2
-	exit 2
+	img=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
+	if [[ -z $img ]]
+	then
+		echo "$me: can't find image file for $pixmap" >&2
+		exit 2
+	fi
+	pixmap=$img
 fi
-pixmap=$img
 
 icondir=/usr/share/icons
 for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
@@ -122,18 +125,21 @@ esac
 
 case $termprog in
 	urxvt)
-					image="-pixmap $pixmap"
+					[[ $pixmap == "-" ]] || image="-pixmap $pixmap"
 					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
 					args="-title $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
 					;;
 	Eterm)
-					if [[ $scaled == 1 ]]
+					if [[ $pixmap != "-" ]]
 					then
-						image="-P $pixmap@155x100:propscaled"
-					else
-						image="-P $pixmap@:tiled"
+						if [[ $scaled == 1 ]]
+						then
+							image="-P $pixmap@155x100:propscaled"
+						else
+							image="-P $pixmap@:tiled"
+						fi
 					fi
 					if [[ -n "$desktop" ]]
 					then

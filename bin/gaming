@@ -1,0 +1,131 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONFIG => path("~/.gaming-trackpos");
+
+my %TRACKLIST =
+(
+	battle		=>	'/export/music/tracklists/gaming/battle.m3u',
+	creepy		=>	'/export/music/tracklists/gaming/creepy.m3u',
+	exotic		=>	'/export/music/tracklists/gaming/exotic.m3u',
+	peaceful	=>	'/export/music/tracklists/gaming/peaceful.m3u',
+	tavern		=>	'/export/music/tracklists/gaming/tavern.m3u',
+	travel		=>	'/export/music/tracklists/gaming/travel.m3u',
+	vista		=>	'/export/music/tracklists/gaming/vista.m3u',
+	wondrous	=>	'/export/music/tracklists/gaming/wondrous.m3u',
+);
+
+
+opts <<'-';
+	[-vD] { -C | -d | <tracklist> }
+	-C : show available tracklists (good for tab completion)
+	-d : done (record pos and stop music)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<tracklist> : tracklist to play (short name)
+-
+$OPT{v} = 1 if $OPT{D};
+
+if ($OPT{C})										# just list available tracklists and exit
+{
+	say foreach sort keys %TRACKLIST;
+	exit;
+}
+
+my $newlist;
+unless ($OPT{d})
+{
+	$newlist = shift // usage_error("must supply tracklist (shortname)");
+	fatal("no such tracklist: $newlist") unless $newlist and exists $TRACKLIST{$newlist};
+}
+our %CONFIG = read_config();
+
+
+sub player_api
+{
+	my @extra;
+	push @extra, shift while $_[0] =~ /^-/;
+	my ($object, $prop) = @_;
+	sh(qdbus => @extra, 'org.mpris.MediaPlayer2.clementine',
+		'/org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
+}
+
+# get current track info
+my $status = head 1 => player_api(Player => 'PlaybackStatus');
+say "player currently: $status" if $OPT{D};
+if ($status eq 'Playing')
+{
+	my $track = head 1 => map { m</music/(.*)$> ? $1 : () } player_api(Player => 'Metadata');
+	my $pos   = int(player_api(Player => 'Position') / 1_000_000);
+	my $list  = head 1 => sh(fgrep => -l => path($track), "/export/music/tracklists/gaming/*");
+	if ($list)
+	{
+		$list  = { reverse %TRACKLIST }->{ $list };
+		$CONFIG{$list} = [$track => $pos];
+		say "setting $list to [$track => $pos]" if $OPT{D};
+		write_config();
+	}
+	else
+	{
+		say "  but not gaming music" if $OPT{D};
+	}
+}
+
+if ($OPT{d})
+{
+	sh(clementine => -t =>);
+}
+else
+{
+	my $newtrack = tracknum($TRACKLIST{$newlist} => $CONFIG{$newlist}->[0]);
+	my $newpos   = $CONFIG{$newlist}->[1];
+	say "switching to: $newlist, track $newtrack, ${newpos}s" if $OPT{v};
+	sh(clementine => -l => $TRACKLIST{$newlist});
+	sh(clementine => -k => $newtrack);
+	sh(clementine => '--seek-to' => $newpos);
+}
+
+
+sub read_config
+{
+	my %config;
+	if (-r $CONFIG)
+	{
+		foreach ($CONFIG->slurp(chomp=>1))
+		{
+			my ($tl, $track, $pos) = split("\t");
+			$config{$tl} = [$track => $pos];
+		}
+	}
+	else
+	{
+		foreach (keys %TRACKLIST)
+		{
+			$config{$_} = [0 => 0];
+		}
+	}
+	return %config;
+}
+
+sub write_config
+{
+	my @data;
+	foreach (keys %CONFIG)
+	{
+		push @data, join("\t", $_, @{ $CONFIG{$_} });
+	}
+	$CONFIG->spew( map { "$_\n" } @data );
+}
+
+
+sub tracknum
+{
+	my ($list, $track) = @_;
+	return 0 unless $track;
+	return $track if $track =~ /^\d+$/;
+	sh(fgrep => -n => path($track), $list) =~ /^(\d+):/ ? $1 - 1 : 0;
+}
