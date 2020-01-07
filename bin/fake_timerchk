@@ -1,14 +1,18 @@
 #! /usr/bin/env perl
 
-use strict;
-use warnings;
+use myperl;
+use autodie ':all';
 
-use Debuggit(DEBUG => 1);
+use List::Util				qw< pairs unpairs pairmap pairgrep >;
+use Date::Easy;
 
 
 my $retval = 0;
 
 my %accrued;
+my $week = 0;
+my $in_week = 0;
+my @lunch;
 while ( <> )
 {
 	next if /^$/;
@@ -19,24 +23,91 @@ while ( <> )
 
 	if ($name =~ /^:/)
 	{
-		# special timers don't count
-		next;
+		if ($name eq ':AVAILABILITY')
+		{
+			my $lunch = $lunch[$week];
+			if (ref $lunch)												# we couldn't find a lunch timer for this week
+			{
+				my ($avail_from, $avail_to, @other) = pairgrep { $b->hour >= 12 } monday_chunks(split(',', $chunks));
+				warn("no Monday time in week $week") unless $avail_from;
+
+				my $mark = $avail_from;
+				my @gaps =
+					map  { join(' ', $_->[1]->as("/mdy"), join(' - ', map { $_->as(":HM") } @$_[1,2]), "($_->[0])") }
+					grep { $_->[2]->hour <= 14 }
+					grep { $_->[0] > 45 }
+					gaps ( $avail_from,
+							pairgrep     { $b <= $avail_to }
+							pairgrep     { $a >= $avail_from }
+							monday_chunks( map { split(',') } @$lunch )
+					)
+				;
+				say STDERR "no team lunch in week $week? [gaps: @gaps]" if @gaps;
+			}
+		}
 	}
 	elsif ($name =~ s/:$//)
 	{
+		$in_week = 0;
 		# comments
 		if (delete $accrued{$name} and not $chunks)
 		{
 			$retval = 1;
-			print STDERR "timer $name needs a comment\n";
+			say STDERR "timer $name in week $week [$.] needs a comment";
 		}
 	}
 	else
 	{
+		unless ($in_week)
+		{
+			my $line = $. - 1;
+			$retval = 1, say STDERR "timer $_ in week $week [$line] lacks a description altogether" foreach keys %accrued;
+			undef %accrued;
+			$in_week = 1;
+			++$week;
+		}
 		# regular timers (but don't count timer-fixes timers)
-		$accrued{$name} = 1 if $chunks and $name !~ /^timer-fixes/;
+		if ($chunks)
+		{
+			$accrued{$name} = 1 if $name !~ /^timer-fixes/;
+			# check Mondays
+			my $first_start_date = datetime($chunks =~ m|^(?:\d/)?(\d+)-|);
+			if ($first_start_date->day_of_week == 1)						# i.e. Monday
+			{
+				# note if there's a lunch timer (or if Monday was a PTO day)
+				$lunch[$week] = $name if $name eq 'lunch' or $name eq 'pto';
+				# elsewise save chunks for later gap-checking
+				$lunch[$week] //= [];
+				push $lunch[$week], $chunks if ref $lunch[$week];
+			}
+		}
 	}
 }
 
-$retval = 1, print STDERR "timer $_ lacks a description altogether\n" foreach keys %accrued;
 exit $retval;
+
+
+sub monday_chunks
+{
+	unpairs
+	sort     { $a->[0] <=> $b->[0] }
+	pairs
+	pairgrep { $a->day_of_week == 1 }
+	pairmap  { datetime($a), $b ? datetime($b) : now }
+	map      { /(\d+)-(\d*)/ }
+			   @_
+}
+
+
+sub gaps
+{
+	state $MIN_ACCEPTABLE_GAP = 5;					# i.e. 5 minutes
+	my $mark = shift;
+	my @gaps;
+	pairmap {
+				my $gap = round(UP => ($a->epoch - $mark->epoch) / 60);
+				push @gaps, [ $gap => ($mark, $a) ] if $gap > $MIN_ACCEPTABLE_GAP;
+				$mark = $b;
+			} @_;
+	return @gaps;
+}
