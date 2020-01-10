@@ -12,13 +12,13 @@ feature bootstrap => sub
 	requires 'CLASS';
 	requires 'Debuggit';
 	requires 'Const::Fast';
-	requires 'PerlX::bash';
 	requires 'Import::Into';
 	requires 'Sub::Install';
 	requires 'version', '0.99';
 	requires 'List::MoreUtils';
 	requires 'Path::Class::Tiny';
 	requires 'List::Util', '1.33';
+	requires 'PerlX::bash', '0.04';
 };
 
 # required to build stuff
