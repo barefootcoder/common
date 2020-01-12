@@ -10,6 +10,7 @@ usage: $me [--restack] [--verbose|-v]
 
     --restack       : only restack the Comms windows
                       (default: launch everything and position it)
+    --no-email      : don't launch Thunderbird (default: do)
     --verbose       : print information messages
                       (default: be only moderately chatty)
     --help          : this help message
@@ -21,6 +22,9 @@ while [ $# -gt 0 ]
 do
 	case $1 in
 		--restack)		only_stack=1
+						shift
+						;;
+		--no-email)		skip_tbird=1
 						shift
 						;;
 		--verbose|-v)	verbose=1
@@ -65,8 +69,11 @@ if [[ ! $only_stack ]]
 then
 	# Desktop 1 == Comms (desktops are zero-based)
 
-	info restoring Thunderbird
-	run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
+	if [[ ! $skip_tbird ]]
+	then
+		info restoring Thunderbird
+		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
+	fi
 
 	PidginWindow="Buddy List"
 	if ! /usr/bin/pgrep pidgin >/dev/null
@@ -98,6 +105,11 @@ fi
 info restacking Comms windows
 for win in leadops company tech-private technology tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
 do
+	if [[ $skip_tbird && "$win" == "$ThunderbirdWindow" ]]
+	then
+		continue
+	fi
+
 	# using anchors to enforce no partial matching of window titles
 	# this mostly seems to limit it to only finding Pidgin windows
 	# *if* we needed to limit it more, though, could do:
