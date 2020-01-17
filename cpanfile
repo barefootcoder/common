@@ -138,8 +138,13 @@ feature heroscape => sub
 	requires 'Lingua::EN::Inflexion';				# used in analyze
 };
 
+# required for building a new sandbox *UNTIL* archer-boot is completed
+feature vagrant => sub
+{
+	requires 'Config::Any';							# used by backup/restore scripts
+};
+
 # possibly unused: move to proper section if definite dependency discovered
-suggests 'Config::Any';
 suggests 'Carp::Always';
 suggests 'Email::Stuff';
 suggests 'Archive::Zip';
