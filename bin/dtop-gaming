@@ -2,9 +2,30 @@
 
 if [[ $(xdotool get_num_desktops) -lt 5 ]]
 then
+	gsettings set org.gnome.desktop.wm.preferences workspace-names '["Main","Comms","Music","Personal","Gaming"]'
 	xdotool set_num_desktops 5
-	gsettings set org.gnome.desktop.wm.preferences workspace-names '["Main","Comms","Music","Personal","D&D"]'
+	marco --replace >/dev/null 2>&1 &
+	sleep 2
 fi
+
+# window for music
 myterm -D5 Music - 80x24+2-33
+
+# browser window for maps etc
+vivaldi
+while ! xdotool search --name "Start Page" windowactivate --sync
+do
+	sleep 0.5
+done
+xdotool search --name "Start Page" set_desktop_for_window 4				# which means 5
+
+# file browser and a few PDFs we'll need
+caja file://$HOME/rpg/5e
+xdotool search --name "5e" set_desktop_for_window 4						# which means 5
+xrestore -desktop Gaming okular /home/buddy/rpg/5e/"D&D 5e - Player’s Handbook".pdf
+
+# text notes window
 myterm -D5 Notes - 118x43-0+29
-xdotool set_desktop 4								# which means 5
+
+# goto our new desktop
+xdotool set_desktop 4													# which means 5

@@ -11,7 +11,7 @@ use Time::HiRes qw< usleep >;
 
 
 my $desktop_num = 0;
-my %DESKTOPS = map { $_ => $desktop_num++ } qw< Main Comms Music Personal >;
+my %DESKTOPS = map { $_ => $desktop_num++ } qw< Main Comms Music Personal Gaming >;
 
 my $ME = $0 =~ s|^.*/||r;
 sub USAGE
