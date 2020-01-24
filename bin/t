@@ -55,7 +55,7 @@ if ($opt->{h})
 	print "           -v: run tests in verbose mode\n";
 	print "           -s: show only test summary\n";
 	print "           -b: beep three times at end of run\n";
-	print "           -A: load Carp::Always to get full stack traces on errors\n";
+	print "           -A: load Devel::Confess to get full stack traces on errors\n";
 	print "           -P: load Test::Pretty to get nicer test output (forces -Nj)\n";
 	print "           -D: debug mode\n";
 	print "           -E: with -D, print all Perl env vars, even if we didn't set them\n";

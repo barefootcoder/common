@@ -26,15 +26,15 @@ set prompt="[${LOCALHOSTNAME}:%{\e[96m%}%.04%{\e[0m%}] "
 source ~/bin/tcshrc-DEBUG "set shell stuff"
 
 if ( $?PERL5OPT ) then
-	echo $PERL5OPT | grep -q Carp::Always
+	echo $PERL5OPT | grep -q Devel::Confess
 	if ( $? == 0 ) then
-		set prompt="[Carp::Always debugging] "
+		set prompt="[Devel::Confess debugging] "
 		alias carpalways 'unsetenv PERL5OPT ; resrc'
 	else
 		unalias carpalways
 	endif
 else
-	alias carpalways 'setenv PERL5OPT -MCarp::Always ; resrc'
+	alias carpalways 'setenv PERL5OPT -MDevel::Confess ; resrc'
 endif
 
 if ( $?METHOD_SIGNATURES_DEBUG ) then
