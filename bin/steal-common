@@ -62,7 +62,10 @@ do
 		[[ -w $mydir/$file ]] || die "don't have permission to overwrite $file locally"
 		if [[ $(git diff $mydir/$file | wc -l) -eq 0 ]]
 		then
-			diffit
+			if diffit
+			then
+				die "files are not different; nothing to steal"
+			fi
 			echo ''
 			if yn "Overwrite the existing file?"
 			then
