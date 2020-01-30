@@ -288,7 +288,7 @@ source ~/bin/tcshrc-DEBUG "finished perlbrew et al"
 if ( $?tcsh_reset ) then
 	# this will start dropbox if not started, and not do anything if it is
 	if ( -d ~/.dropbox-dist ) then
-		$HOME/bin/dropbox start
+		$HOME/bin/dropboxd start
 	endif
 
 	# refresh or create ssh-agent vars

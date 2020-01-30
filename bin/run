@@ -25,7 +25,7 @@ if ( $OPT{l} )
 my $machine = choose(shift);
 say "running on: $machine";
 
-if ( `dropbox status` eq '' )
+if ( `dropboxd status` eq '' )
 {
 	die "can't communicate: dropbox is not running";
 }

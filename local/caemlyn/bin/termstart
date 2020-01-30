@@ -4,11 +4,11 @@
 ssh-add-if-necessary
 ssh-add -l
 
-if [[ -z $(dropbox status) ]] && ! dropbox start
+if [[ -z $(dropboxd status) ]] && ! dropboxd start
 then
 	if yn "Reinstall dropbox?"
 	then
-		dropbox install force
+		dropboxd install force
 	fi
 fi
 

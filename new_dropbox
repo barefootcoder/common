@@ -41,7 +41,7 @@ then
 		exit
 	fi
 
-	scp ~/common/new_dropbox ~/bin/dropbox $remote:
+	scp ~/common/new_dropbox ~/bin/dropboxd $remote:
 	ssh $remote echo ~/$(basename $0) $arch \> .login
 
 	exec ssh $remote

@@ -2,7 +2,8 @@
 
 # Install dropbox for Linux:
 
-	dropbox install
+	dropboxd install
+	sudo apt install dropbox
 
 # Connect computer to your account:
 
@@ -17,20 +18,20 @@
 # command reports back that something was actually excluded.
 
 	cd ~/Dropbox
-	dropbox-ctl start
-	dropbox-ctl exclude add music
-	dropbox-ctl exclude add machine
-	dropbox-ctl exclude add 'Camera Uploads'
-	dropbox-ctl exclude add backup
-	dropbox-ctl exclude add Christy
-	dropbox-ctl exclude add rpg MST3K
-	dropbox-ctl exclude add Archive
-	dropbox-ctl exclude add purple DropboxAdmin
-	dropbox-ctl exclude add personal Customs StoryOfTheWorld
-	dropbox-ctl exclude add cpan-testers sensitive org moz-plugins
-	dropbox-ctl exclude add work/blogs work/conferences work/email work/nami work/rent work/timer
+	dropbox start
+	dropbox exclude add music
+	dropbox exclude add machine
+	dropbox exclude add 'Camera Uploads'
+	dropbox exclude add backup
+	dropbox exclude add Christy
+	dropbox exclude add rpg MST3K
+	dropbox exclude add Archive
+	dropbox exclude add purple DropboxAdmin
+	dropbox exclude add personal Customs StoryOfTheWorld
+	dropbox exclude add cpan-testers sensitive org moz-plugins
+	dropbox exclude add work/blogs work/conferences work/email work/nami work/rent work/timer
 
 # Verify that everything is working:
 
-	dropbox-ctl exclude list
-	watch dropbox-ctl status
+	dropbox exclude list
+	watch dropbox status

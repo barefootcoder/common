@@ -6,8 +6,8 @@ timer=$(pgrep -f timer-new)
 [[ $timer ]] && kill $timer
 
 # make sure Dropbox is running
-~/bin/dropbox unlock
-~/bin/dropbox start
+~/bin/dropboxd unlock
+~/bin/dropboxd start
 
 sleep 1
 $(basename $0)-status
