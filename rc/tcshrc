@@ -183,11 +183,11 @@ alias xff "xrestore -browsers"
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
-alias dzclean 'rm -f `'"perl -lne '$filter' $bundle_file"'`; dzil clean'
-alias dzbuild 'dzclean ; dzil build'
-alias dzrel 'dzclean ; dzil release'
-alias dzpod 'dzbuild ; perldoc *[0-9].[0-9]*/\!^ ; dzclean'
-alias dzinst 'dzbuild ; cpanm -n *[0-9].[0-9]*.tar.gz ; dzclean'
+alias dzclean 'dz clean'
+alias dzbuild 'dz build'
+alias dzrel 'dz release'
+alias dzpod 'dz pod'
+alias dzinst 'dz install'
 alias pbinst 'perlbrew install -n -j 5 --noman'
 alias cpi 'cpanm -n \!*'
 
@@ -262,6 +262,7 @@ complete steal-common 'p/1/`friendly-hosts`/'
 complete vims 'C?[^-]*?`vimS -l`?'
 complete vimS 'C?[^-]*?`vimS -l`?'										# should be same as line above
 complete gaming 'p/1/`gaming -C`/'
+complete dz 'C?[^-]*?`dz commands`?' 'c?--?(help pretend)?'
 
 # many gentoo systems try to be all clever with a huge list of preprogrammed completions for most common commands
 # but for cp/mv/ln, for instance, they define the 2nd arg as having to be a directory

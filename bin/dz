@@ -1,0 +1,79 @@
+#! /usr/bin/env perl
+
+use Pb;
+
+use Const::Fast;
+use Type::Utils -all;
+use Path::Class::Tiny;
+use Parse::CPAN::Meta;
+use Types::Standard -types;
+
+
+const our $ARCHIVE_GLOB => '*[0-9].[0-9]*';
+
+
+# rm -f `perl -lne '/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1' \
+# /home/buddy/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm`; dzil clean
+command clean =>
+flow
+{
+	my $dzil_code = path("~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm");
+	foreach ( map { /exclude_generated_files\s*=\s*qw<(.*?)>/ ? split(' ', $1) : () } $dzil_code->slurp )
+	{
+		SH rm => $_ if -f;
+	}
+	SH dzil => 'clean';
+};
+
+
+# dzclean ; dzil build
+command build =>
+flow
+{
+	RUN 'clean';
+	SH dzil => 'build';
+};
+
+
+# dzbuild ; perldoc *[0-9].[0-9]*/!^ ; dzclean
+command pod =>
+	arg file => must_be subtype(as Str, where { /\.pm$/ }),
+flow
+{
+	RUN 'build';
+	SH perldoc => glob("$ARCHIVE_GLOB/$FLOW->{file}");
+	RUN 'clean';
+};
+
+
+# dzbuild ; cpanm -n *[0-9].[0-9]*.tar.gz ; dzclean
+command install =>
+flow
+{
+	RUN 'build';
+	SH cpanm => -n => glob("$ARCHIVE_GLOB.tar.gz");
+	RUN 'clean';
+};
+
+
+# dzclean ; dzil release
+command release =>
+flow
+{
+	RUN 'clean';
+	RUN 'build';
+	CODE 'check for "provides" in META' => sub
+	{
+		my $meta = Parse::CPAN::Meta->load_file(glob("$ARCHIVE_GLOB/META.json"));
+		my $provides = $meta->{provides};
+		my @p = sort keys %$provides;
+		say "provides: ", join(', ', @p);
+		@p
+	};
+
+	RUN 'clean';
+	SH dzil => 'release';
+};
+
+
+Pb->go;
