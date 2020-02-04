@@ -118,7 +118,7 @@ sub get_time
 	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
 	while ( <PIPE> )
 	{
-		close(PIPE) and return $1 if /^ $vol_num \s+ .*? (\d?\d:\d\d) /x;
+		close(PIPE) and return $1 if /^ $vol_num \s+ .*? (\d*\d:\d\d) /x;
 	}
 	close(PIPE);
 	die("couldn't find total for volume $vol_num");
