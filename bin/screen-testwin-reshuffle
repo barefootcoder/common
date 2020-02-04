@@ -1,0 +1,100 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+my $ON_VAGRANT = sh('hostname') =~ /vagrant/;
+exec vagrant_run_on_host(), $ME, @ARGV if $ON_VAGRANT;
+
+opts <<'-';
+	[-n] [-D]
+	-n : do not run `screen` commands (probably only useful with `-D`)
+	-D : debug mode
+-
+
+
+our %PREFIXES = map { $_ . 'test' => 1 } qw< ce l m >;
+say STDERR "all possible test windows: ", join(' ', keys %PREFIXES) if $OPT{D};
+my $curwin = screen(-Q => 'title');
+say STDERR "  provisional current window: $curwin" if $OPT{D};
+if ($curwin eq 'reshuffle')							# a window created just for running this script
+{
+	screen(-X => 'other');							# switch back to previous window
+	$curwin = screen(-Q => 'title');				# and see what the name of _that_ one is
+}
+say STDERR "real current window: $curwin" if $OPT{D};
+
+my @commands;
+if ( $curwin eq 'test' )
+{
+	push @commands, 'echo "You have already designated this window as test."';
+}
+elsif ( $curwin =~ /test$/ )
+{
+	my @test_windows = grep { /test/ } split(':', screen(-Q => windows => '%t:'));
+	say STDERR "found test windows: @test_windows" if $OPT{D};
+	delete $PREFIXES{$_} foreach @test_windows;
+	say STDERR "test windows unaccounted for: ", join(' ', keys %PREFIXES) if $OPT{D};
+	if (keys %PREFIXES == 0)
+	{
+		push @commands,
+				"title test",
+				"echo \"Current window renamed to test.\"",
+		;
+	}
+	elsif (keys %PREFIXES == 1)
+	{
+		my ($should_be) = keys %PREFIXES;
+		push @commands,
+				"select test",
+				"title $should_be",
+				"select $curwin",
+				"title test",
+				"echo \"Former test renamed to $should_be, current window renamed to test.\"",
+		;
+	}
+	else
+	{
+		push @commands, 'echo "Too many candidates for renaming test window: ' . join(' ', sort keys %PREFIXES) . '."';
+	}
+}
+else
+{
+	push @commands, "echo 'You are not in a test window! [$curwin]'";
+}
+
+if ( $OPT{D} )
+{
+	say STDERR "commands to send:";
+	say STDERR "    $_" foreach @commands;
+}
+foreach (@commands)
+{
+	eval { screen(-X => $_) };
+	if ($@)
+	{
+		my $log = ">/tmp/$ME.error";
+		local *LOG;
+		open LOG, $log;
+		print LOG $@;
+		close(LOG);
+		fatal("command to `screen` died: try `cat $log` to see error");
+	}
+	say STDERR "sent command: $_" if $OPT{D};
+}
+
+
+sub vagrant_run_on_host
+{
+	ssh => join('@', $ENV{CE_HOST_USERNAME}, '10.0.2.2');
+}
+
+sub screen
+{
+	state $commands = $ON_VAGRANT
+			? [ vagrant_run_on_host() => screen => ]
+			: [                          screen => ];
+	return if $OPT{n} and $_[0] ne '-Q';
+	sh(@$commands, map { $commands->[0] eq 'ssh' && /\s/ ? "'$_'" : $_ } @_);
+}

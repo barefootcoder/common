@@ -1,6 +1,7 @@
 bind ^y source .screenrc.sandbox
 bind ^_ source .screenrc.search
 bind ^v source .screenrc.vctools
+bind ^t screen -t reshuffle screen-testwin-reshuffle
 
 screen -t base
 screen -t timer
