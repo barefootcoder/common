@@ -129,7 +129,7 @@ case $termprog in
 					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
-					args="-name $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
+					args="-title $title -name $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
 					;;
 	Eterm)
 					if [[ $pixmap != "-" ]]
