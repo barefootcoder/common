@@ -17,7 +17,7 @@ my $stash   = sh(git => stash  => list => );
 my $commits = sh('git-helper-log -LNs'    );
    $commits = "Unpushed commits:\n$commits" if $commits;
 
-print join("\n", map { filter_for_length($_) } $stat, $stash, $commits);
+say join("\n\n", map { filter_for_length($_) } $stat, $stash, $commits);
 
 
 sub numlines { scalar shift =~ tr/\n// }
