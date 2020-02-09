@@ -54,9 +54,10 @@ fi
 
 # do pidgin.layout, if any
 p_layout=$mydir/local/$LOCALHOSTNAME/data/pidgin.layout
-if [[ -f $p_layout ]]
+dest_dir=$HOME/local/data
+if [[ -f $p_layout && ! -L $dest_dir ]]
 then
-	dest=$HOME/local/data/pidgin.layout
+	dest=$dest_dir/pidgin.layout
 	make_link $p_layout $dest
 fi
 
