@@ -28,6 +28,12 @@ my $start_time; BEGIN { $start_time = [gettimeofday]; }
 END { local $Time::Duration::MILLISECOND = 1; print "Runtime: ", duration_exact(tv_interval($start_time)), "\n"; }
 
 our $WORKDIR;
+our $NUM_PROCS = do
+{
+	my $cpuinfo = '/proc/cpuinfo';
+	my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
+	$num_cores + 1;
+};
 
 sub print_color(@);
 
@@ -127,14 +133,15 @@ if (-r 'dist.ini' and can_run_dzil())
 		{
 			output_if_debug("giving up on `dzil` due to having arguments:", @ARGV);
 		}
-		elsif ( $opts !~ /^D?N$/ )
+		elsif ( $opts !~ /^D?Nj?$/ )
 		{
 			output_if_debug("giving up on `dzil` due to having options:", $opts);
 		}
 		else
 		{
 			spacer();
-			my $command = "dzil test --release && dzil clean";
+			my $parallel_opt = $opt->{N} eq 'j' ? '' : "-j$NUM_PROCS";
+			my $command = "dzil test --release $parallel_opt && dzil clean";
 			print_command_if_debug($command, noenv => 1);
 			system($command);
 			run_post_commands();
@@ -347,13 +354,7 @@ else
 	# 	-	the user specifically requested that we not do so with -Nj
 	# 	-	we're using -c (coverage testing and parallelizing don't mix)
 	# 	-	we're using -P (Test::Pretty won't play nice with -j either)
-	unless ($single_file or $opt->{N} =~ /j/ or $opt->{c} or $opt->{P})
-	{
-		my $cpuinfo = '/proc/cpuinfo';
-		my $num_cores = -r $cpuinfo ? ()= grep { /^processor/ } slurp $cpuinfo : 4;
-		my $num_procs = $num_cores + 1;
-		push @prove_args, "-j$num_procs";
-	}
+	push @prove_args, "-j$NUM_PROCS" unless $single_file or $opt->{N} =~ /j/ or $opt->{c} or $opt->{P};
 	push @prove_args, '-PPretty' if $opt->{P};
 	push @prove_args, map { "-I$_" } split(':', $ENV{PERL5LIB}) if $opt->{T} and $ENV{PERL5LIB};
 	push @prove_args, @files;
