@@ -80,11 +80,14 @@ my %DESCRIPTIONS =
 							qr/Albertsons/i,
 							qr/Costco Whse/i,
 							qr/Costco.com/i,
-							qr|CVS/Pharmacy|i,
-							qr/Walgreens/i,
 							qr/Pure Indian Foods/i,
 							qr/Bennets_Honey_Farm/i,
+						],
+	Pharmacy		=>	[
+							qr|CVS/Pharmacy|i,
+							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
+							qr/WW INT'L/i,
 						],
 	Grooming		=>	[
 							qr/SuperCuts/i,
@@ -106,7 +109,7 @@ my %DESCRIPTIONS =
 							qr/Aquarium Connect./i,
 							qr/Theresas Country Feed/i,
 							qr/Valley Veterinary/i,
-							qr/Chewy.com/i,
+							qr/Chewy\.?com/i,
 						],
 	School			=>	[
 							qr/discovery cube/i,
@@ -127,6 +130,7 @@ my %DESCRIPTIONS =
 							qr/Six Flags/i,
 							qr/Chuck E Cheese/i,
 							qr/^D&B /i,
+							qr/Great Wolf Lodge/i,
 							qr/GG Delivers/i,
 						],
 	Books			=>	[
@@ -147,7 +151,7 @@ my %DESCRIPTIONS =
 							qr/Freddy'?s/i,
 							qr/5Guys/i,
 							qr/Burgerim/i,
-							qr/Domino's/i,
+							qr/Domino'?s/i,
 							qr/Toppers/i,
 							qr/Ameci/i,
 							qr/Presto Pasta/i,
@@ -157,6 +161,7 @@ my %DESCRIPTIONS =
 							qr/Golden Tiger/i,
 							qr/Indian Haweli/i,
 							qr/Baja Fresh/i,
+							qr/118 Cafe/i,
 							qr/Szechuwan Garden/i,
 							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
@@ -165,10 +170,12 @@ my %DESCRIPTIONS =
 							qr/Outback/i,
 							qr/Thai House/i,
 							qr/Bollywood Indian/i,
+							qr/Fire Island Grill/i,
 							qr/Red Robin/i,
 							qr/Hook Burger/i,
 							qr/Panera/i,
 							qr/Corner Bakery/i,
+							qr/Lucky'?s Dog House/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
 							qr/Tutti Frutti/i,
@@ -230,6 +237,7 @@ my %WHAT_LOOKUP =
 	'N6723 ARCHER EDU DIR DEP'	=>	'Paycheck',
 	'BAC Home Loans'			=>	'Mortgage Payment',
 	'S CA Edison'				=>	'Electric Bill',
+	'Golden State (Water|Wtr)'	=>	'Water Bill',
 	'BRETT MORGAN'				=>	'Pool Guy',
 	'jessie flores'				=>	'Gardeners',
 	'carlos ortega'				=>	'Gardener',
@@ -254,7 +262,8 @@ my %WHAT_LOOKUP =
 	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
 	'OFFICE DE'					=>	'Office Depot',
 	'^D&B '						=>	"Dave & Buster's",
-	'T\.O\. E-LIBRARY'			=>	'Library (TO)',
+	'T.O. E-LIBRARY'			=>	'Library (TO)',
+	"WW INT'L"					=>	'Weight Watchers',
 );
 
 
@@ -370,6 +379,7 @@ foreach ($file->slurp)
 		when ( /^Kindle/i )
 		{
 			$source = 'Amazon';
+			$what = 'Kindle';
 		}
 		when ( /^TARGET/i )
 		{
@@ -421,7 +431,7 @@ foreach ($file->slurp)
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
-				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*]//gr if $descr =~ /$_/;
+				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*]//gr =~ s/\\//gr if $descr =~ /$_/;
 			}
 			$what = $WHAT_LOOKUP{$what} // $what;
 			$who  = {
@@ -435,7 +445,7 @@ foreach ($file->slurp)
 						Dropbox					=>	'Buddy',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
-			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 15;
+			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 30;
 		}
 
 	}
