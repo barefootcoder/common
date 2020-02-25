@@ -5,7 +5,7 @@ then
 	gsettings set org.gnome.desktop.wm.preferences workspace-names '["Main","Comms","Music","Personal","Gaming"]'
 	xdotool set_num_desktops 5
 	marco --replace >/dev/null 2>&1 &
-	sleep 2
+	sleep 5
 fi
 
 # window for music

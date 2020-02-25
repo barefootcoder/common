@@ -51,7 +51,7 @@ sub player_api
 	push @extra, shift while $_[0] =~ /^-/;
 	my ($object, $prop) = @_;
 	sh(qdbus => @extra, 'org.mpris.MediaPlayer2.clementine',
-		'/org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
+		'/org/mpris/MediaPlayer2', 'org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
 }
 
 # get current track info
@@ -85,6 +85,7 @@ else
 	my $newpos   = $CONFIG{$newlist}->[1];
 	say "switching to: $newlist, track $newtrack, ${newpos}s" if $OPT{v};
 	sh(clementine => -l => $TRACKLIST{$newlist});
+	sleep 1;
 	sh(clementine => -k => $newtrack);
 	sh(clementine => '--seek-to' => $newpos);
 }
