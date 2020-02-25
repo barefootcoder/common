@@ -66,7 +66,21 @@ my $list = [ sh(echo => -e => q|"one\ntwo\nthree"|) ];
 eq_or_diff $list, [qw< one two three >], "sh in list context returns as lines";
 
 my $string = sh(echo => -e => q|"one\ntwo\nthree"|);
-is $string, "one\ntwo\nthree\n", "sh in scalar context returns as a string";
+is $string, "one\ntwo\nthree", "sh in scalar context returns as a string";
+
+
+# verify debugging works
+my @lines = ('+ echo bmoogle', '+ pwd', '+ test a == b');
+perl_error_is( "-D sets bash -x", join('', map { "$_\n" } @lines), <<'END', '-D' );
+	use myperl::Pxb;
+	opts <<"-";
+		[-D]
+		-D : debug
+-
+	sh(echo => 'bmoogle');
+	sh(pwd => );
+	sh(test => qw< a == b >);
+END
 
 
 done_testing;

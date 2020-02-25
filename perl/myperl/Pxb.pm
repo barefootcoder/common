@@ -64,6 +64,7 @@ sub import
 sub sh
 {
 	unshift @_, wantarray ? \'lines' : \'string' if defined wantarray;
+	unshift @_, -x => if $myperl::Script::OPT{D};
 	# Yes, the Carp POD says don't do this.  Alternative suggestions welcomed.
 	local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 	PerlX::bash::bash @_;
