@@ -201,7 +201,7 @@ fi
 
 export VIM_SESSIONFILE_DIR=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
 eval cd "$VIM_SESSIONFILE_DIR"
-arg=$(awk '$1 == "args" || $1 == "argadd" { print $2 }' $sessionfile)
+arg=$(perl -nE '/^\$?arg(s|add)\h+(.*)$/ and say $2 =~ s/\\//gr' $sessionfile)
 vim -S $sessionfile -c 'call LoadSessionAuxFiles()' "$arg"
 proglet='
 	BEGIN
@@ -238,7 +238,8 @@ proglet='
 					}
 				}
 			}
-			$newpath // $path;
+			# newpath if we made one, old path if not, escape the spaces unless they already are
+			($newpath // $path) =~ s/(?<!\\) /\\ /gr;
 		}
 	}
 	# most of this stuff is just cleaning up the mess vim itself makes of the sessionfile
@@ -262,7 +263,7 @@ proglet='
 		$arg //= path_fixup($file) =~ s/ /\\ /gr;
 	}
 	$_ = ($arg =~ / / ? q|$| : "") . "argadd $arg\n" and next if $directive eq "argadd";
-	s{$file}{path_fixup($file)}e if $directive =~ /^(badd|edit)$/
+	s{\Q$file}{path_fixup($file)}e if $directive =~ /^(badd|edit)$/
 			and $file =~ m{^[/~]};					# filename is absolute path
 '
 perl -i -pe "$proglet" $sessionfile
