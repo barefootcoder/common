@@ -1,1 +1,7 @@
-../../cibola/bin/vagrant-scp
+#! /bin/bash
+
+args="${*/#v:/vagrant@localhost:}"
+
+options=$(vagrant ssh-config | sed -n '/HostName/,$p' | awk -v ORS=' ' '$1 {print "-o " $1 "=" $2}')
+
+scp -p $options $args

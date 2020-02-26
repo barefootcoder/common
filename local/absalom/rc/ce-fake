@@ -10,6 +10,6 @@ eval `addpath -e $CEROOT/devtools`
 alias ceflow $CEROOT/bin/ceflow
 alias cessh $CHEOPSROOT/shared/bin/cessh
 alias cescp $CHEOPSROOT/shared/bin/cescp
-eval `~/bin/addpath -e $CEROOT/devtools ~/common/local/cibola/sandbox-bin`
+eval `~/bin/addpath -e $CEROOT/devtools ~/common/local/vagrant-sandbox/bin`
 cd $CEROOT
 git stash apply `git stash list --grep ce-fake --format=%H`
