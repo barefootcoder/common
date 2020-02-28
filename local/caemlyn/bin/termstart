@@ -29,7 +29,7 @@ xrestore -desktop Music -geometry 1200x798+715+285 kid3
 
 myterm -s Caemlyn sunset-capital 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
-myterm -s -S Quin cityofgold 125x50-24+99 $CEROOT/devtools/cessh i-041633472786d4030
+myterm -s -S Quin cityofgold 125x50-24+99 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
 
 # stupid hack for not being able to see when Pidgin windows are blinking
 msg_window=PidginMsgs

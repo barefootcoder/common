@@ -27,8 +27,9 @@ fi
 music-player
 xrestore -desktop Music -geometry 1200x798+716+254 kid3
 
+push_machine=$($MYDIR/local/vagrant-sandbox/bin/push-machine)
 myterm -s Absalom city-spires 125x50+7+30 $cmd
-myterm -s Quin cityofgold 125x50-0-24 tcsh -c 'ce-fake ; cessh quin-i-0f4c9e0c2e4dff484'
+myterm -s Quin cityofgold 125x50-0-24 tcsh -c 'ce-fake ; $CEROOT/devtools/cessh '$push_machine
 
 # have to run this twice, for some bizarre reason
 xrestore -v -geometry 350x329+1566+723 -desktop Music "alarm-clock-applet --hidden"

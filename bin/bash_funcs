@@ -15,6 +15,9 @@ shopt -s extglob                                    					# and allow us to use e
 
 readonly me=${0##*/}													# slightly prettier than $0
 
+readonly ME=$me															# slightly prettier than $me
+readonly MYDIR=~/common													# use this as little as possible
+
 
 # I hate that I can't just use an alias here ...
 eval $(grep VCtoolsDir ~/.vctools/vctools.conf)
