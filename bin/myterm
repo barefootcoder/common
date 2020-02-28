@@ -170,7 +170,12 @@ function run-term
 
 if [[ $# -ge 1 ]]
 then
-	run-term -e "$@"
+	faux_term=
+	if [[ $1 == *ssh* ]]		# immediately launching to a new server
+	then
+		faux_term="-tn vt100"	# see e.g. https://superuser.com/a/792701
+	fi
+	run-term $faux_term -e "$@"
 else
 	run-term
 fi
