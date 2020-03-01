@@ -33,3 +33,6 @@ xprop -id $win_id | perl -lne '
 		print "(for winoptions file: $class.$name", $role ? ".$role" : "", ".xxx)";
 	}
 '
+echo
+pid=$(xdotool getwindowpid $(perl -le 'print hex(shift)' $win_id))
+ps -wwwo user,group,pid,ppid,pgid,stime,tty8,ni,stat,time,cmd -p $pid
