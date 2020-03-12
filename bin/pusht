@@ -124,7 +124,8 @@ then
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
-	elif [[ $1 == *.testing.notes || $fullpath == */C3V/* || $(basename "$1") == github.reply || $fullpath == */custom/* ]]
+	elif [[ $1 == *.testing.notes || $fullpath == */C3V/* || $(basename "$1") == github.reply ||				\
+			$fullpath == */custom/* || $fullpath == */GMBinder*/* ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
