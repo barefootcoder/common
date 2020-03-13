@@ -6,7 +6,7 @@ use autodie ':all';
 package myperl::Classlet::keywords
 {
 	use Exporter;
-	our @EXPORT = qw< rw with via by per set clear check Array Hash >;
+	our @EXPORT = qw< rw via by per set clear check Array Hash >;
 
 	use List::Util 'any';
 	use Scalar::Util 'blessed';
@@ -35,6 +35,25 @@ package myperl::Classlet::keywords
 		}
 	}
 
+	# similar to the above, but call one or the other, not both (depending on `wantarray`)
+	sub _caller_func_unless_wantarray
+	{
+		my ($method, $alt_coderef) = @_;
+		my $caller = caller(1);
+
+		my $caller_glob = qualify_to_ref($method => $caller);
+		if (exists &$caller_glob)
+		{
+			no warnings 'redefine';
+			my $caller_ref  = \&$caller_glob;
+			  *$caller_glob = sub { wantarray ? goto &$alt_coderef : goto &$caller_ref };
+		}
+		else
+		{
+			die("the caller apparently has no $method");
+		}
+	}
+
 	sub import
 	{
 		# wrap our caller's `has` with our own version
@@ -42,6 +61,9 @@ package myperl::Classlet::keywords
 
 		# now our other `has` wrappers
 		_wrap_caller_func(builds => \&myperl::Classlet::keywords::_pre_builds);
+
+		# now make `with` context sensitive
+		_caller_func_unless_wantarray(with => \&myperl::Classlet::keywords::_with);
 
 		goto &Exporter::import;
 	}
@@ -51,7 +73,7 @@ package myperl::Classlet::keywords
 	sub rw () { is => 'rw' }
 
 	# these are the official prepositions of Onyx Moose
-	sub with    {                  default =>                  shift          }
+	sub _with   {                  default =>                  shift          }
 	sub via (&) { my $def = shift; default => sub { local $_ = shift; &$def } }
 	sub by      {                               @_                            }
 	sub per     {                  handles => { @_ }                          }

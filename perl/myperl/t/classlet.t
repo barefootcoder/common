@@ -61,6 +61,14 @@ lives_ok { $t->pj } 'predicate was created';
 is $t->pj, '', 'clearer and predicate function normally';
 
 
+# make sure `with` is context sensitive
+role RoleTest { method foo {} }
+class WithTest1 { with 'RoleTest'; }
+class WithTest2 with RoleTest {}
+ok (WithTest1->new->can("foo"), "role composition still works (internal)");
+ok (WithTest2->new->can("foo"), "role composition still works (external)");
+
+
 # don't recommend these, but they should still work
 class MooseyAttrs
 {
