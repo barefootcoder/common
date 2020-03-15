@@ -200,6 +200,7 @@ my %DESCRIPTIONS =
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
 							qr/TrollAndToad/i,
+							qr/ONEBOOKSHELF.COM/i,
 							qr/Nintendo/i,
 							qr/GameStop/i,
 							qr/Kopy King/i,
@@ -258,6 +259,7 @@ my %WHAT_LOOKUP =
 	'UNDERWOOD FAMI'			=>	'Underwood Farms',
 	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
 	'TONY PS DOCKSIDE'			=>	"Tony P's (Work Team Lunch)",
+	'ONEBOOKSHELFCOM'			=>	"DriveThruRPG []",
 	'Uverse Online'				=>	'DirecTv',
 	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
 	'OFFICE DE'					=>	'Office Depot',
@@ -303,7 +305,7 @@ foreach ($file->slurp)
 	# amount is always negative for withdrawals, positive for deposits
 
 	my $category = derive_category_from($descr);
-	my $source = $type eq 'Withdrawal' ? 'CC' : 'Check';
+	my $source = $type eq 'Withdrawal' && $descr !~ /check.*#/i ? 'CC' : 'Check';
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
 	my $id = datetime("$date $time")->epoch;		# should be good enough for a unique ID
@@ -443,6 +445,7 @@ foreach ($file->slurp)
 						'Smoke & Vape'			=>	'Buddy',
 						'MP3VA.com'				=>	'Buddy',
 						Dropbox					=>	'Buddy',
+						'DriveThruRPG []'		=>	'Buddy',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
 			$category = 'Gas' if $what eq '7-Eleven' and abs($amount) >= 30;
