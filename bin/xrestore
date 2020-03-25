@@ -168,6 +168,7 @@ sub identify_browser_window (;$)
 	{
 		return "work"		when /archer education/ or /campus explorer/ or /\bce\b/ or /markdown editor/;
 		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /do not read this blog/ or /perl weekly/;
+		return "personal"	when /\bgm binder\b/;
 		return "music"		when /mp3(va\.com| album)/ or /azlyrics/ or /discogs/ or /allmusic/ or /musicbrainz/;
 		return "music"		when /rate your music/;
 
