@@ -8,10 +8,11 @@ use POSIX qw< ceil >;
 
 
 opts <<'-';
-	[-vD] [-w<N>]
+	[-vD] [-w<N>] [-H<avg>] [-O]
 	-v : be more verbose
 	-D : debugging mode
 	-w : only look back <N> weeks
+	-H : show # hours to bring the average to <avg> hours
 	-O : identify outliers
 	<N>    : number of weeks (default: all weeks)
 -
@@ -34,9 +35,9 @@ say "        Average time: ", $total_time / $num_days;
 say "Average availability: ", $total_avail / $num_days;
 #say "      Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
 
+my $num_weeks = $num_days / 5;
 if ($OPT{v})
 {
-	my $num_weeks = $num_days / 5;
 	foreach ( $num_weeks, round(UP => $num_weeks) )
 	{
 		say '';
@@ -52,6 +53,13 @@ if ($OPT{v})
 		my $next_week = (ceil($_)+1) * 40 - $total_avail;
 		say "         Next week: $next_week / ", $next_week * $pct;
 	}
+}
+
+if ($OPT{H})
+{
+	say '';
+	say "             To bring average up to: ", $OPT{H};
+	say "Work this many more hours this week: ", $num_weeks * $OPT{H} - $total_time;
 }
 
 
