@@ -10,7 +10,7 @@ set noexpandtab					" yes, I like real tabs in my files; so sue me
 " keyword lookups
 set iskeyword=@,_,48-57			" default definition of word (as opposed to WORD)
 " allow word to expand to include sigils and namespace separators when doing keyword lookup
-nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,_,-,48-57<CR>
+nnoremap K :set iskeyword=@,48-57,_,$,@-@,%,:<CR>K:set iskeyword=@,_,48-57<CR>
 " assume keyword lookup means Perl
 set keywordprg=perlref
 
@@ -68,7 +68,7 @@ map!  
 " goto the next buffer, even if current buffer is dirty
 nmap <Esc>n :up<CR>:bnext<CR>																" Alt-N
 " push to testing
-nmap <C-W> :up<CR>:!pusht %<CR>
+nmap <C-W> :up<CR>:!pusht "%"<CR>
 " compile check
 nmap <C-C> :up<CR>:!ccheck %<CR>
 " VC blame + jump to current line
