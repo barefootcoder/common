@@ -1,0 +1,28 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+
+
+my $tw_tmpfile = path('/tmp/testwin-current');
+
+opts <<'-';
+	[-D] [<testwin>]
+	-D : debug mode
+	<testwin> : window to designate as the new testwin
+-
+
+if (@ARGV)
+{
+	my $testwin = shift;
+	$tw_tmpfile->spew($testwin);
+	say "current test window is now: $testwin";
+}
+elsif (-r $tw_tmpfile)
+{
+	my $testwin = $tw_tmpfile->slurp;
+	exec screen => -X => select => $testwin;
+}
+else
+{
+	exec screen => -X => echo => "test window not yet set!";
+}
