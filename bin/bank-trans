@@ -17,6 +17,7 @@ my %DESCRIPTIONS =
 							qr/N6723 ARCHER EDU DIR DEP/i,
 							qr/Interest Paid/i,
 							qr/internet transfer/i,
+							qr/booster transfer/i,
 							qr/requested transfer/i,
 							qr/overdraft transfer/i,
 						],
@@ -85,6 +86,7 @@ my %DESCRIPTIONS =
 						],
 	Pharmacy		=>	[
 							qr|CVS/Pharmacy|i,
+							qr/CVS\.com/i,
 							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
 							qr/WW INT'L/i,
@@ -172,6 +174,7 @@ my %DESCRIPTIONS =
 							qr/Bollywood Indian/i,
 							qr/Fire Island Grill/i,
 							qr/Red Robin/i,
+							qr/Eggs N Things/i,
 							qr/Hook Burger/i,
 							qr/Panera/i,
 							qr/Corner Bakery/i,
