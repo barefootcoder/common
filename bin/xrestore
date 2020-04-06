@@ -117,7 +117,7 @@ sub is_visible (;$)
 {
 	my $w = @_ ? shift : $_;
 	my $desktop;
-	for (1..5)					# give it a few tries
+	for (1..10)					# give it a few tries
 	{
 		($desktop) = bash \lines => "xdotool get_desktop_for_window $w 2>/dev/null";
 		last if defined $desktop;
@@ -176,9 +176,9 @@ sub identify_browser_window (;$)
 		return "map"		when /google maps/;
 		return "comms"		when /my drive/ or /miss the point/;
 
-		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/;
+		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/ or /dungeon master's/i;
 		return "scapers"	when /\bheroscapers\b/ or /xotli's place/ or /posts for xotli/;
-		return "video"		when /youtube/;
+		return "video"		when /youtube/ or /new movies/i;
 	}
 	die("can't identify window: $win_name [$_]");
 }
