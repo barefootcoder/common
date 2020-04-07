@@ -1,0 +1,6 @@
+#! /bin/bash
+
+killall thunderbird
+dropbox stop
+cd $CHEOPSROOT
+vagrant halt
