@@ -69,6 +69,6 @@ my $what    =            $OPT{M}                           // join(' ', map { "-
 
 my @opts; push @opts, '-x' if $OPT{D};
 chdir path("~/common");
-sh(@opts => "$cpm install --color $whence $where $howmuch $what |" => $how);
+sh(@opts => "$cpm", install => '--color' => $whence, $where, $howmuch, $what, '|' => $how);
 print ' ' unless $OPT{v};
 say "done";
