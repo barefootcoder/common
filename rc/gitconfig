@@ -22,3 +22,5 @@
 	untracked = "bold green"
 [rerere]
 	enabled = true
+[pager]
+	diff = diff-highlight | $PAGER
