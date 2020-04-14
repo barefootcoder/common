@@ -18,10 +18,37 @@ echo "make sure you're in an appropriate terminal window"
 echo -n "press <ENTER> to continue ... "
 read
 
-sudo tar cvpjf $backup_dir/etc.tbz /etc
-sudo tar cvpjf $backup_dir/var.tbz /var									||:
-sudo tar cvpjf $backup_dir/root-config.tbz /root/.config
-tar cvpjf $backup_dir/home-perl-cpm.tbz ~/.perl-cpm/
-tar cvpjf $backup_dir/home-workproj.tbz ~/workproj/
+fail_list=
+missing_list=
+
+function backup-dir
+{
+	local dir=$1
+	local name=$2
+	local maybe_sudo=$3
+	if [[ -d $dir ]]
+	then
+		$maybe_sudo tar cvpjf $backup_dir/$name.tbz $dir || fail_list="$fail_list $dir"
+	else
+		missing_list="$missing_list $dir"
+	fi
+}
+
+function root-backup-dir
+{
+	local dir=$1
+	local name=$2
+	backup-dir $dir $name sudo
+	[[ -e $backup_dir/$name.tbz ]] && sudo chown $USER:users $backup_dir/$name.tbz
+	true
+}
+
+root-backup-dir /etc          etc
+root-backup-dir /var          var
+root-backup-dir /root/.config root-config
+backup-dir      ~/.perl-cpm/  home-perl-cpm
+backup-dir      ~/workproj/   home-workproj
 
 echo -e "all done\a"
+[[ $missing_list ]] && echo "these dirs don't exist:      $missing_list" >&2
+[[ $fail_list ]]    && echo "these dirs failed to backup! $fail_list"    >&2
