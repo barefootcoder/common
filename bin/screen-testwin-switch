@@ -6,16 +6,18 @@ use myperl::Pxb;
 my $tw_tmpfile = path('/tmp/testwin-current');
 
 opts <<'-';
-	[-D] [<testwin>]
+	[-q] [-D] { [<testwin>] | -S }
+	-S : make current screen window the test window
+	-q : quiet mode
 	-D : debug mode
 	<testwin> : window to designate as the new testwin
 -
 
-if (@ARGV)
+if ( @ARGV or $OPT{S} )
 {
-	my $testwin = shift;
+	my $testwin = $OPT{S} ? sh screen => -Q => 'title' : shift;
 	$tw_tmpfile->spew($testwin);
-	say "current test window is now: $testwin";
+	say "current test window is now: $testwin" unless $OPT{q};
 }
 elsif (-r $tw_tmpfile)
 {

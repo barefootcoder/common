@@ -1,6 +1,7 @@
 bind ^y source .screenrc.sandbox
 bind ^_ source .screenrc.search
 bind ^v source .screenrc.vctools
+bind  T exec screen-testwin-switch -S
 bind ^t exec screen-testwin-switch
 
 screen -t base
