@@ -31,6 +31,9 @@ myterm -s Caemlyn sunset-capital 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
 myterm -s -S Quin cityofgold 125x50-24+99 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
 
+# temporary hack while home laptop is out of commission
+xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidden"
+
 # stupid hack for not being able to see when Pidgin windows are blinking
 msg_window=PidginMsgs
 myterm -s $msg_window Jade-Agate-Texture 30x3+1642+24 watch -tc monitor-pidgin-unseen
