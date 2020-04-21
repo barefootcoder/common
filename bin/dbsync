@@ -18,7 +18,7 @@ lockfile=/tmp/$(basename $0).lock
 		if [[ -d ~/Dropbox/machine/$LOCALHOSTNAME/$dir ]]
 		then
 			/usr/bin/rsync -az --delete --exclude=global-messages-db.sqlite										\
-					--exclude=lock --exclude=CacheStorage														\
+					--exclude=lock --exclude=CacheStorage --exclude='Safe Browsing'								\
 					~/.$dir/ ~/Dropbox/machine/$LOCALHOSTNAME/$dir/
 		fi
 	done
