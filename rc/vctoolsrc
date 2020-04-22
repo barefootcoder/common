@@ -47,4 +47,5 @@ if ( $?VCTOOLS_SHELL ) then
 			set page_and_hilite='$PAGER +"/^commit|"`perl -e "print shift =~ s/^#?/#/r" \!^`'
 	alias vld "vlog -dLR | $page_and_hilite"
 	alias vLd 'vlog -dR -- --grep \"\!^\" | '"$page_and_hilite"
+	alias vls vc ls-mods
 endif
