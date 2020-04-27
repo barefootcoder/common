@@ -6,9 +6,12 @@ host=$(archer-hostname $host)
 function cessh { $ABOOTROOT/devtools/archer-ssh "$@" ; }
 function cescp { $ABOOTROOT/devtools/archer-scp "$@" ; }
 
+instance_id=$(cessh $host ec2metadata --instance-id)
+hostclass=$(ec2-tag $instance_id class)
 screen=monitor										# most machines are used for monitoring something
-[[ $host == *@dirk* ]] && screen=logs				# but dirk is special in a couple of ways
-[[ $host == *@quin* ]] && screen=push				# and quin's are even special-er
+[[ $hostclass == dirk* ]] && screen=logs			# but dirk is special in a couple of ways
+[[ $hostclass == quin* ]] && screen=push			# and quin's are even special-er
+echo "# setting up for: $screen"
 
 if ! cessh $host cat .bashrc | grep -q "^export CURRENT_SCREEN="
 then
