@@ -65,7 +65,7 @@ my $whence  =            "--cpanfile=$cpanfile";
 my $where   = $OPT{n}  ? join(' ', '-L', tempdir())         : '-g';
 my $howmuch = $OPT{B}  ? '--without-test --without-runtime' : '';
 my $how     = $OPT{v}  ? sub { print }                      : sub { print '.' if ++$count % 5 == 0 };
-my $what    =            $OPT{M}                           // join(' ', map { "--feature $_" } @features);
+my $what    =            $OPT{M}                           // join(' ', map {; '--feature' => $_ } @features);
 
 my @opts; push @opts, '-x' if $OPT{D};
 chdir path("~/common");
