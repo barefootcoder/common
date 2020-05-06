@@ -83,4 +83,13 @@ perl_error_is( "-D sets bash -x", join('', map { "$_\n" } @lines), <<'END', '-D'
 END
 
 
+# verify types
+perl_no_error( "pxb exports Path type stuff", <<'END', '-a' );
+	use myperl::Pxb;
+	my $foo = path("/some/path");
+	die("fail sanity check") unless $foo->isa('Path::Class::Tiny');
+	die("fail") unless Path->check($foo);
+END
+
+
 done_testing;

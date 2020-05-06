@@ -34,14 +34,38 @@ our $timerfile = path('~/timer/timer-new');
 ######################
 
 
+##############
+# TYPE STUFF #
+##############
+
+package myperl::Pxb::Types
+{
+	use Type::Utils -all;
+	use Type::Library -base;
+
+
+	class_type Path => { class => "Path::Class::Tiny" };
+}
+
+##################
+# END TYPE STUFF #
+##################
+
+
 sub import
 {
 	my $package = shift;
 	my $caller = caller;
 
-	# pass through to myperl::Script
-	myperl::Script->import::into(main => @_);
-
+	if ( $caller eq 'main' )
+	{
+		# pass through to myperl::Script
+		myperl::Script->import::into(main => @_);
+	}
+	else
+	{
+		myperl::Pxb::Types->import::into($caller => 'Path');
+	}
 	$package->export_to_level(1, CLASS, @EXPORT);
 
 	# in debug mode, don't use the real timerfile
