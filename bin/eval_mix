@@ -6,9 +6,11 @@ use warnings FATAL => 'all';
 
 use Debuggit;
 use Const::Fast;
+use File::Basename;
 use List::Util qw< max >;
 use File::Glob qw< bsd_glob>;
 
+const my $MUSICHOME => '/export/music';
 
 my %WEIGHTS =
 (
@@ -44,7 +46,8 @@ my $named = 0;
 my $closer = .95;
 my $running_score = 0;
 my $in_header = 1;
-my ($volume, $subtitle, @tracks);
+my ($volume, $subtitle, $tracklist_ref, @tracks);
+$volume = basename($ARGV[0], /\..+?$/) if @ARGV;
 while ( <> )
 {
 	chomp;
@@ -55,8 +58,9 @@ while ( <> )
 		{
 			$volume = $_		when /^[A-Z8]/;		# mix name and volume
 			$subtitle = $_		when /^\[.*?\]\??/;	# volume subtitle
+			$tracklist_ref = $_	when /^==>/;		# pointer to real tracklist name
 			''					when /^\{/;			# old statistics; throw these away
-			$in_header = 0		when /^===/;		# end of header
+			$in_header = 0		when /^[=-]{3,}/;	# end of header
 			# otherwise:
 			die("can't understand header line: $_");
 		}
@@ -74,11 +78,15 @@ while ( <> )
 	$running_score += $score;
 }
 
-my $time = get_time($volume);
+my $time = time_for_volume($volume);
 my $final_score = final_score($running_score / @tracks, $time, $named, $closer);
 my $stats = @tracks . " tracks, time: " . $time . ", named: " . ($named ? 'yes' : 'no') . ", score: "
 		. sprintf("%5.2f%%", $final_score * 100);
-my @headers = ( $volume, $subtitle || (), "{$stats}" );
+my @headers;
+	push @headers, $volume			unless @ARGV;
+	push @headers, $tracklist_ref	if $tracklist_ref;
+	push @headers, $subtitle		if $subtitle;
+	push @headers, "{$stats}";
 debuggit("headers:", DUMP => \@headers);
 
 say foreach @headers;
@@ -104,9 +112,8 @@ sub final_score
 }
 
 
-sub get_time
+sub time_for_volume
 {
-	const my $MUSICHOME => '/export/music';
 	const my $ROMAN_NUMERAL => qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
 
 	my ($volume) = @_;
@@ -117,7 +124,15 @@ sub get_time
 	my ($mix_file) = bsd_glob("$MUSICHOME/tracklists/*/$mix_name.m3u");
 	die("cannot find mix file for: $mix_name") unless $mix_file;
 	$mix_file =~ s/'/'\\''/g;
-	open(PIPE, "$MUSICHOME/bin/total_time '$mix_file' |");
+
+	return get_time($mix_file, $vol_num);
+}
+
+sub get_time
+{
+	my ($tracklist, $vol_num) = @_;
+
+	open(PIPE, "$MUSICHOME/bin/total_time '$tracklist' |");
 	while ( <PIPE> )
 	{
 		close(PIPE) and return $1 if /^ $vol_num \s+ .*? (\d*\d:\d\d) /x;
