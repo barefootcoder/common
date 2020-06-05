@@ -176,9 +176,9 @@ sub identify_browser_window (;$)
 		return "map"		when /google maps/;
 		return "comms"		when /my drive/ or /miss the point/;
 
-		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/ or /dungeon master's/i;
+		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/ or /dungeon master's/;
 		return "scapers"	when /\bheroscapers\b/ or /xotli's place/ or /posts for xotli/;
-		return "video"		when /youtube/ or /new movies/i;
+		return "video"		when /youtube/ or /new movies/ or /justwatch/;
 	}
 	die("can't identify window: $win_name [$_]");
 }
