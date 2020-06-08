@@ -180,6 +180,7 @@ alias lctime "history | tail -n2 | head -n1 | awk '{print "'$2'"}'"
 alias ferry "vi ~/Dropbox/ferry"
 alias updreq "perl -e 'print time' > \!^/update-request"
 alias xff "xrestore -browsers"
+alias daystart 'echo "\nDAYSTART\n`date`\n"'
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
