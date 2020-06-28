@@ -36,7 +36,7 @@ xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidd
 
 # stupid hack for not being able to see when Pidgin windows are blinking
 msg_window=PidginMsgs
-myterm -s $msg_window Jade-Agate-Texture 30x3+1642+24 watch -tc monitor-pidgin-unseen
+myterm -s $msg_window Jade-Agate-Texture 30x3-5+76 watch -tc monitor-pidgin-unseen
 while ! xprop -name $msg_window >/dev/null 2>&1
 do
 	# this could be an infinite loop, if something goes wrong and the `myterm` never launches ...
