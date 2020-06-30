@@ -18,6 +18,7 @@ opts <<'-';
 -
 
 
+my $how_far = 1 + $OPT{w} // 0;
 my ($min_date, $max_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
 my $num_days = num_weekdays($min_date, $max_date);
 
@@ -59,7 +60,7 @@ if ($OPT{H})
 {
 	say '';
 	say "             To bring average up to: ", $OPT{H};
-	say "Work this many more hours this week: ", $num_weeks * $OPT{H} - $total_time;
+	say "Work this many more hours this week: ", $how_far * $OPT{H} - $total_time;
 }
 
 
@@ -83,8 +84,7 @@ func time_and_avail ($file)
 
 	my $min_date = today;
 	my $max_date = today;
-	my $how_far = $OPT{w} ? '-w' . ($OPT{w} + (today->day_of_week < 4)) : '';
-	my $timer_cmd = "fake_timer -a $how_far total email $file";
+	my $timer_cmd = "fake_timer -a -w$how_far total email $file";
 	say "running: $timer_cmd" if $OPT{D};
 	open(IN, "$timer_cmd |") or die("can't open pipe");
 	while ( <IN> )
