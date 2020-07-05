@@ -172,8 +172,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	unless (bbstyle)
 	{
 		no warnings 'uninitialized';
-		s{ \.\.\.}{&nbsp;...}g;														# ellipsis
 		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
+		s{ \.\.\.}{&nbsp;...}g;														# normal ellipsis
 		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
@@ -472,7 +472,8 @@ func fmt ($fmt, $text)
 func spanify ($open, $content)
 {
 	my $close = closing_of($open);
-	return join('', $open, $content, $close) =~ s|\n|<br/>|gr;
+	$content =~ s|\n|<br/>|g unless bbstyle;
+	return join('', $open, $content, $close);
 }
 
 func closing_of ($opening)
