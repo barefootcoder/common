@@ -44,6 +44,7 @@ my %DESCRIPTIONS =
 							qr/Hulu/i,
 							qr/CBS All Access/i,
 							qr/Philo/i,
+							qr/DisneyPlus/i,
 							qr/Sling.com/i,
 						],
 	Water			=>	[
@@ -72,6 +73,7 @@ my %DESCRIPTIONS =
 						],
 	Groceries		=>	[
 							qr/Trader Joe's/i,
+							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
 							qr/Lassens/i,
 							qr/SmartNFinal/i,
@@ -162,14 +164,17 @@ my %DESCRIPTIONS =
 							qr/\bThe Hat\b/i,
 							qr/Golden Tiger/i,
 							qr/Indian Haweli/i,
+							qr/FunBurger/i,
 							qr/Baja Fresh/i,
 							qr/118 Cafe/i,
 							qr/Szechuwan Garden/i,
+							qr/Guido['`]s Pizza/i,
 							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
 							qr/\bBeto.?s\b/i,
 							qr/Yolandas/i,
 							qr/Outback/i,
+							qr/Junkyard/i,
 							qr/Thai House/i,
 							qr/Bollywood Indian/i,
 							qr/Fire Island Grill/i,
@@ -269,6 +274,7 @@ my %WHAT_LOOKUP =
 	'^D&B '						=>	"Dave & Buster's",
 	'T.O. E-LIBRARY'			=>	'Library (TO)',
 	"WW INT'L"					=>	'Weight Watchers',
+	'JUNKYARD'					=>	'Junkyard Cafe',
 );
 
 
@@ -436,7 +442,8 @@ foreach ($file->slurp)
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
-				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*]//gr =~ s/\\//gr if $descr =~ /$_/;
+				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*]//gr =~
+						s/(?<!\\)\[(.).*\]/$1/gr =~ s/\\//gr if $descr =~ /$_/;
 			}
 			$what = $WHAT_LOOKUP{$what} // $what;
 			$who  = {
