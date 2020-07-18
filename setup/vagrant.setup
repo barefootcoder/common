@@ -1,0 +1,19 @@
+as per https://github.com/campus-explorer/cheops/blob/master/vagrant/doc/setup-sandbox.md:
+	vagrant/bin/new-sandbox
+	vagrant up
+	vagrant/bin/prepare
+
+personal setup:
+	^A^Y						# to login
+	# this kicks off installing local CPAN modules
+	cd ~/.vctools
+	mv vctools.conf vctools.orig
+	cd ~
+	mv bin bin-orig
+	resrc
+	cd ~/common
+	./makeln
+	# verify that VCtools points to /var/local/VCtools
+	# if not:
+	# 			rm ~/.vctools.conf
+	# 			./makeln

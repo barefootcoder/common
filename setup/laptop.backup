@@ -1,0 +1,29 @@
+Consider backing up the following:
+==================================
+Vagrant sandbox repos
+	(for CE machines)
+/var/install
+/var/log
+	(in case you need to see what went on before reformatting)
+	you must tar this one, due to restrictive permissions
+~/SpiderOak Hive/
+~/Downloads/ ~/Music/ ~/Pictures/ ~/Videos/
+	(if not empty)
+~/hold
+	(if exists)
+	(may have to tar to preserve symlinks)
+~/local
+	(tar to preserve symlinks)
+/etc
+	(tar to preserve symlinks)
+/etc/apt
+	(untarred, for easy repo restoration)
+~/.ssh
+~/.ce-vagrant-prep
+~/.kde
+
+lll -R ~ >/tmp/home.listing
+sudo apt list --installed >/tmp/installed.packages
+
+Save a FF session
+after final shutdown, rename machine backup on Dropbox side (via web browser)

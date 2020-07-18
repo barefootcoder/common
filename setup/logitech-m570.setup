@@ -1,0 +1,22 @@
+# taken from the following URLs:
+# http://forums.logitech.com/t5/Mice-and-Pointing-Devices/M570-and-Linux/td-p/545324
+# http://th0th.me/log/pairing-logitech-unifying-devices-on-gnulinux/
+
+# To re-pair a Logitech M570 trackball on linux:
+
+# as user:
+cp ~/docs/laptop-local/unifying_pair.c /var/install
+cd /var/install
+gcc -o unifying_pair unifying_pair.c
+
+# unplug USB receiver
+# turn mouse off
+
+# as root:
+ls /dev/hidraw*
+# plug receiver in
+ls /dev/hidraw*
+# note which device is new (prolly the last one in the list)
+# (if multiple ones are new, prolly the first new one)
+/var/install/unifying_pair /dev/hidrawX
+# turn mouse on
