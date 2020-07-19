@@ -200,6 +200,7 @@ then
 fi
 
 export VIM_SESSIONFILE_DIR=$(awk '$1 == "cd"' $sessionfile | sed 's/^cd //')
+export VIM_SESSIONFILE_FILE1=$(perl -lne 'print $1 =~ s/ /\\\\ /gr and exit if /^badd\s+.\d+\s+(.*)/' $sessionfile)
 eval cd "$VIM_SESSIONFILE_DIR"
 arg=$(perl -nE '/^\$?arg(s|add)\h+(.*)$/ and say $2 =~ s/\\//gr' $sessionfile)
 vim -S $sessionfile -c 'call LoadSessionAuxFiles()' "$arg"
@@ -209,6 +210,7 @@ proglet='
 		sub expand { (glob shift)[0] }				# sometimes you have to glob just for the tildes ...
 		use Cwd q<realpath>;
 		$origdir = $ENV{VIM_SESSIONFILE_DIR};
+		$filearg = $ENV{VIM_SESSIONFILE_FILE1};
 		$expdir  = $origdir =~ s/\$(\w+)/$ENV{$1}/gr;
 		$realdir = realpath(expand($expdir));
 		@subdirs = map { realpath($_) } glob("$expdir/*");
@@ -262,7 +264,7 @@ proglet='
 		$save = $file, $_ = "", next if $line == 1;
 		$arg //= path_fixup($file) =~ s/ /\\ /gr;
 	}
-	$_ = ($arg =~ / / ? q|$| : "") . "argadd $arg\n" and next if $directive eq "argadd";
+	$_ = ($filearg =~ / / ? q|$| : "") . "argadd $filearg\n" and next if $directive eq "argadd";
 	s{\Q$file}{path_fixup($file)}e if $directive =~ /^(badd|edit)$/
 			and $file =~ m{^[/~]};					# filename is absolute path
 '
