@@ -10,8 +10,7 @@ use Perl6::Slurp;
 use Time::HiRes qw< usleep >;
 
 
-my $desktop_num = 0;
-my %DESKTOPS = map { $_ => $desktop_num++ } qw< Main Comms Music Personal Gaming >;
+my %DESKTOPS = reverse map { $_->[0] => $_->[-1] } map { [split] } bash \lines => wmctrl => -d =>;
 
 my $ME = $0 =~ s|^.*/||r;
 sub USAGE
@@ -195,6 +194,19 @@ info("currently on desktop $orig_desktop");
 
 if ( $OPT->{browsers} )
 {
+	state $PLACE_BROWSER =
+	{
+		work		=>	[qw< Main            >],
+		personal	=>	[qw< Personal Main   >],
+		music		=>	[qw< Music           >],
+		scapers		=>	[qw< Personal Main   >],
+		'd&d'		=>	[qw< Gaming Personal >],
+		video		=>	[qw< Media           >],
+		comms		=>	[qw< Comms           >],
+		map			=>	[qw< Main            >],
+		'date-easy'	=>	[qw< Main            >],
+	};
+
 	print "[$tag] looking for windows ";
 	my $find_wids = "xdotool search --pid ${\(get_pid)}";
 	my @wids = grep { is_visible } bash \lines => $find_wids;
@@ -210,12 +222,12 @@ if ( $OPT->{browsers} )
 		my $desktop;
 		given ( $wids{$_} )
 		{
-			$desktop = 'Main'		when [qw< work date-easy map			>];
-			$desktop = 'Comms'		when [qw< comms							>];
-			$desktop = 'Music'		when [qw< music							>];
-			$desktop = 'Personal'	when [qw< personal d&d scapers video	>];
-
-			die("logic error (no desktop for $_)");
+			die("logic error (no desktop placement for $_)") unless $PLACE_BROWSER->{$_};
+			for (@{ $PLACE_BROWSER->{$_} })
+			{
+				$desktop = $_ if exists $DESKTOPS{$_};
+			}
+			die("logic error (no desktop on this machine for $_)") unless $desktop;
 		}
 		X set_desktop_for_window => $_ => $DESKTOPS{$desktop};
 
@@ -226,11 +238,11 @@ if ( $OPT->{browsers} )
 			($x, $y) = (0, 289)		when 'music';
 		}
 		X windowmove => $_ => $x, $y if defined $x;
-
-		# any Chrome windows just go to Personal
-		X set_desktop_for_window => $_ => $DESKTOPS{'Personal'}
-			foreach grep { is_visible } bash \lines => "xdotool search --name 'Google Chrome'";
 	}
+	# any Chrome windows just go to Personal (on a work machine) or Main (on a personal machine)
+	X set_desktop_for_window => $_ => $DESKTOPS{'Personal'} // $DESKTOPS{'Main'}
+		foreach grep { is_visible } bash \lines => "xdotool search --name 'Google Chrome'";
+
 	say '. restored';
 }
 else

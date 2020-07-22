@@ -8,11 +8,11 @@
 ##############################################
 
 if [ $UID != 0 ] ; then
-    echo "Please use 'sudo' or log in as root."
+    echo "Please use 'sudo' (don't run as root)."
     exit 255
 fi
 
-mod_dir=$HOME/common/vivaldi-patch
+mod_dir=/home/$SUDO_USER/common/vivaldi-patch
 if [ ! "$1" = "" ] ; then
     mod_dir=$1
 fi
