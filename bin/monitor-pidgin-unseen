@@ -5,9 +5,11 @@ use autodie ':all';
 
 
 opts <<'-';
-	[-f]
-	-f : just display filenames instead of doing a full status
+	[-q]
+	-q : if no incoming messages found, just exit silently
 -
+
+$ENV{DISPLAY} //= ':0.0';
 
 
 # red, bold, reverse, blink
@@ -25,4 +27,4 @@ foreach (sh(wmctrl => -l =>))
 		$found = 1;
 	}
 }
-print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found;
+print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
