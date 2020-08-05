@@ -1,5 +1,4 @@
 #! /bin/bash
 
-id1="d6360f21091f7124ececf168c52663f1"
-id2="2bca9bb04d9b5dfcf0c7487dfccb3f9b4e423bfc"
-curl -sL "https://gist.githubusercontent.com/barefootcoder/$id1/raw/$id2/push-server"
+id="d6360f21091f7124ececf168c52663f1"
+curl -sL "https://gist.githubusercontent.com/barefootcoder/$id/raw"
