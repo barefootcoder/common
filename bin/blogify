@@ -70,7 +70,7 @@ my %blog =
 					},
 );
 $blog{'html'} = { %{$blog{'blogspot'}} };
-$blog{'html'}->{'para'} = sub { s{^(.*?)\n\n}{<p>$1</p>\n}mg };
+$blog{'html'}->{'para'} = sub { s{^(.+?)\n(\n+)}{ "<p>$1</p>\n" . "<br/>" x (length($2) - 1) . "\n" }emg };
 $blog{'article'} = { %{$blog{'bbcode'}} };
 $blog{'article'}->{$_} = $blog{'html'}->{$_} foreach grep { $blog{'html'}->{$_} =~ /^\&/ } keys $blog{'html'};
 
@@ -95,7 +95,7 @@ my $hash = '#';
 my $front_boundary = qr/(^|[^\w\\])/;
 my $back_boundary = qr/(?=\W|$)/;
 my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
-my $endnote_header = '<div style="line-height: 80%;">' . "\n" . '_' x 10 . "\n\n";
+my $endnote_header = '<br/><br/><div style="line-height: 80%;">' . "\n" . '_' x 10 . "\n\n";
 my $section_break = <<EOT;
 
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
@@ -156,7 +156,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)--}{"<nobr>$1" . $blog{$blog_type}->{dash} =~ s{;}{;</nobr>}r}ge			# em dash following a word char
 			unless $blog_type eq 'bbcode';											#		(but not under BBcode)
 	s{--}{$blog{$blog_type}->{dash}}g;												# em dash otherwise
-	s{ - }{ $blog{$blog_type}->{ndash} }g;											# en dash
+	s{ - }{&nbsp;$blog{$blog_type}->{ndash} }g;										# en dash
 	s{$LIST_REGEX}{list($2 => $1)}meg;												# un/ordered lists (incl embedded)
 	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
 	if (bbstyle)
@@ -185,7 +185,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
-	s[\{img(\d+x\d+)? (.*?)}][image($2, $1)]eg;										# embedded images
+	s[\{img(\d+x\d+)? (.*?)\}][image($2, $1)]eg;									# embedded images
 	s[{mix (.*?) ($roman_numeral)(\n\s*(.*?)\s*)?}][mix_block($1, $2, $4)]seg;		# mix volume
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
@@ -270,6 +270,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\A}{fmt(italic =>
 			{ alt => "or, $subtitle", vol => qq{"$subtitle"}, paren => "($subtitle)", }->{$subtitle_type}) . "\n"}e
 		if $subtitle;
+	# provide outer `div` for html types
+	$_ = "<div>\n$_\n</div>";
 
 	print;
 }
