@@ -85,6 +85,7 @@ END
 
 # verify types
 perl_no_error( "pxb exports Path type stuff", <<'END', '-a' );
+	package Foo;
 	use myperl::Pxb;
 	my $foo = path("/some/path");
 	die("fail sanity check") unless $foo->isa('Path::Class::Tiny');

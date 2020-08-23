@@ -40,6 +40,7 @@ our $timerfile = path('~/timer/timer-new');
 
 package myperl::Pxb::Types
 {
+	no thanks;					# don't try to load this module
 	use Type::Utils -all;
 	use Type::Library -base;
 
@@ -70,7 +71,7 @@ sub import
 
 	# in debug mode, don't use the real timerfile
 	# (assuming we have one, which wouldn't be true on, say, sandboxes)
-	if (main::DEBUG() and -e $timerfile)
+	if (main->can('DEBUG') and main::DEBUG() and -e $timerfile)
 	{
 		my $testfile = $timerfile =~ s/new$/test/r;
 		if (-e $testfile)

@@ -78,6 +78,7 @@ sub _perl_command
 
 sub perl_output_is
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $expected, $cmd, @extra) = @_;
 
 	$expected .= "\n" unless $expected =~ /\n\Z/;
@@ -87,6 +88,7 @@ sub perl_output_is
 
 sub perl_no_output
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $cmd, @extra) = @_;
 
 	my $test_cmd = Test::Command->new( cmd => _perl_command($cmd, @extra) );
@@ -95,6 +97,7 @@ sub perl_no_output
 
 sub perl_error_is
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $expected, $cmd, @extra) = @_;
 
 	if ( ref $expected eq 'Regexp' )
@@ -114,6 +117,7 @@ sub perl_error_is
 
 sub perl_no_error
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $cmd, @extra) = @_;
 
 	stderr_is_eq(_perl_command($cmd, @extra), '', $tname);
@@ -121,6 +125,7 @@ sub perl_no_error
 
 sub perl_combined_is
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $expected, $cmd, @extra) = @_;
 
 	my $full_cmd = _perl_command($cmd, @extra);
@@ -129,6 +134,7 @@ sub perl_combined_is
 
 sub perl_exit_is
 {
+	local $Test::Builder::Level = $Test::Builder::Level + 1;
 	my ($tname, $expected, $cmd, @extra) = @_;
 
 	$expected .= "\n" unless $expected =~ /\n\Z/;
