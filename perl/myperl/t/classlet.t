@@ -69,6 +69,11 @@ ok (WithTest1->new->can("foo"), "role composition still works (internal)");
 ok (WithTest2->new->can("foo"), "role composition still works (external)");
 
 
+# make sure `required` isn't over-eager
+class VeryLazy { has foo => (Maybe[Int], lazy => 1); builds bar => (Maybe[Int]); }
+lives_ok { VeryLazy->new } "lazy attributes not being marked `required`";
+
+
 # don't recommend these, but they should still work
 class MooseyAttrs
 {

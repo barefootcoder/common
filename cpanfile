@@ -40,6 +40,7 @@ feature myperl => sub
 {
 	requires 'CLASS';
 	requires 'parent';
+	requires 'thanks';
 	requires 'version';
 	requires 'Debuggit';
 	requires 'TryCatch';

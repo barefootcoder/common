@@ -5,9 +5,11 @@ use autodie ':all';
 
 package myperl::Classlet::keywords
 {
+	no thanks;					# don't try to load this module
 	use Exporter;
 	our @EXPORT = qw< rw via by per set clear check Array Hash >;
 
+	use Debuggit;
 	use List::Util 'any';
 	use Scalar::Util 'blessed';
 	use Symbol 'qualify_to_ref';
@@ -142,9 +144,10 @@ package myperl::Classlet::keywords
 				$attr_name = '_' . $attr_name;
 			}
 		}
-		unshift @props, required => 1 unless exists $props{default} or exists $props{builder};
+		unshift @props, required => 1 unless exists $props{default} or exists $props{builder} or $props{lazy};
 		unshift @props, is => 'ro'    unless exists $props{is};
 		unshift @props, $attr_name;
+		debuggit(6 => 'has', @props);
 		@_ = @props;
 	}
 
@@ -153,9 +156,6 @@ package myperl::Classlet::keywords
 		splice @_, 1, 0, lazy => 1;
 	}
 }
-
-# this keeps Moops::import from trying to load a non-existent keywords.pm file
-$INC{'myperl/Classlet/keywords.pm'} = __FILE__;
 
 
 package myperl::Classlet
