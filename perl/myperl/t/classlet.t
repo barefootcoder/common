@@ -68,6 +68,12 @@ class WithTest2 with RoleTest {}
 ok (WithTest1->new->can("foo"), "role composition still works (internal)");
 ok (WithTest2->new->can("foo"), "role composition still works (external)");
 
+# and that it doesn't eat remaining args
+class DefaultArg { has foo => (Int, with 0, set by 'set_foo'); }
+my $da;
+lives_ok { $da = DefaultArg->new; $da->set_foo(6) } "`with` as a property didn't eat remaining props";
+is $da->foo, 6, "sanity check: setter after `with` worked";
+
 
 # make sure `required` isn't over-eager
 class VeryLazy { has foo => (Maybe[Int], lazy => 1); builds bar => (Maybe[Int]); }

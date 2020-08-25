@@ -75,7 +75,7 @@ package myperl::Classlet::keywords
 	sub rw () { is => 'rw' }
 
 	# these are the official prepositions of Onyx Moose
-	sub _with   {                  default =>                  shift          }
+	sub _with   {                  default =>                  shift, @_      }
 	sub via (&) { my $def = shift; default => sub { local $_ = shift; &$def } }
 	sub by      {                               @_                            }
 	sub per     {                  handles => { @_ }                          }
@@ -147,7 +147,7 @@ package myperl::Classlet::keywords
 		unshift @props, required => 1 unless exists $props{default} or exists $props{builder} or $props{lazy};
 		unshift @props, is => 'ro'    unless exists $props{is};
 		unshift @props, $attr_name;
-		debuggit(6 => 'has', @props);
+		debuggit(6 => '#', 'has', @props);
 		@_ = @props;
 	}
 
