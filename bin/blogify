@@ -80,7 +80,7 @@ my $LIST_REGEX    = qr/( (?: ^ \h* ([#*]) \h+ .+? \n )+ )/xm;			# $1 => whole li
 my $EMBEDDED_LIST = qr/( (?: ^ \h+ ([#*]) \h+ .+? \n )+ )/xm;
 
 
-my $blog_type = 'blogspot';												# default blog type
+my $blog_type = 'html';													# default blog type
 sub bbstyle () { $blog_type ~~ [qw< bbcode article >] }					# [tag] instead of <tag>
 
 my @blocks;																# for codeblocks et al
