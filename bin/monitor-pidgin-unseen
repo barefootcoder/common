@@ -11,20 +11,29 @@ opts <<'-';
 
 $ENV{DISPLAY} //= ':0.0';
 
+my $remote_host = shift;
 
-# red, bold, reverse, blink
-const my $ON  => "\e[31;1;7;5m";
-const my $OFF => "\e[0m";
 
-my $found = 0;
-foreach (sh(wmctrl => -l =>))
+if ($remote_host)
 {
-	my ($wid) = split(' ');
-	my $info = sh(xprop => -id => $wid);
-	if ( $info =~ /urgency hint bit/ )
-	{
-		$info =~ /WM_NAME\(STRING\)\s*=\s*"(.*?)"/ and say "$ON$1$OFF";
-		$found = 1;
-	}
+	bash ssh => $remote_host, $ME => '-q' ? say "message!" : "no message :-(";
 }
-print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
+else
+{
+	# red, bold, reverse, blink
+	const my $ON  => "\e[31;1;7;5m";
+	const my $OFF => "\e[0m";
+
+	my $found = 0;
+	foreach (sh(wmctrl => -l =>))
+	{
+		my ($wid) = split(' ');
+		my $info = sh(xprop => -id => $wid);
+		if ( $info =~ /urgency hint bit/ )
+		{
+			$info =~ /WM_NAME\(STRING\)\s*=\s*"(.*?)"/ and say "$ON$1$OFF";
+			$found = 1;
+		}
+	}
+	print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
+}
