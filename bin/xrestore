@@ -166,7 +166,7 @@ sub identify_browser_window (;$)
 	given (lc $win_name)
 	{
 		return "work"		when /archer education/ or /campus explorer/ or /\bce\b/ or /markdown editor/;
-		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /do not read this blog/ or /perl weekly/;
+		return "personal"	when /\btodo\b/ or /\bourgroceries\b/ or /blogger/ or /do not read this blog/ or /perl weekly/;
 		return "personal"	when /\bgm binder\b/;
 		return "music"		when /mp3(va\.com| album)/ or /azlyrics/ or /discogs/ or /allmusic/ or /musicbrainz/;
 		return "music"		when /rate your music/;
@@ -177,7 +177,7 @@ sub identify_browser_window (;$)
 
 		return "d&d"		when /faerun/ or /\b5e\b/ or /google sheets/ or /dungeon master's/;
 		return "scapers"	when /\bheroscapers\b/ or /xotli's place/ or /posts for xotli/;
-		return "video"		when /youtube/ or /new movies/ or /justwatch/;
+		return "video"		when /youtube/ or /new movies/ or /justwatch/ or /where to watch/;
 	}
 	die("can't identify window: $win_name [$_]");
 }
@@ -196,7 +196,7 @@ if ( $OPT->{browsers} )
 {
 	state $PLACE_BROWSER =
 	{
-		work		=>	[qw< Main            >],
+		work		=>	[qw< Media Main      >],
 		personal	=>	[qw< Personal Main   >],
 		music		=>	[qw< Music           >],
 		scapers		=>	[qw< Personal Main   >],
