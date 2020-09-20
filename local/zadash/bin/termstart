@@ -32,7 +32,7 @@ xrestore -desktop Music -geometry 1200x798+716+254 kid3
 
 myterm -s Zadash night-in-zadash 125x50+7+30 $cmd
 
-xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet"
+xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidden"
 
 # some windows are just stubborn ...
 xdotool search --name "Thunderbird" set_desktop_for_window 1

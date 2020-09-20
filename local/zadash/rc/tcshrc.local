@@ -1,0 +1,5 @@
+# necessary for local VCtools libs
+setenv VCTOOLS_EXTLIB_DIR /var/tmp/VCtools-extlib
+
+# Ruby stuff
+setenv GEM_HOME ~/ruby/gems

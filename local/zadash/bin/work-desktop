@@ -4,12 +4,9 @@ caemlyn_win='NoMachine - Caemlyn'
 desktop_save=/tmp/pre-caemlyn.desktop-num
 if [[ $(xdotool getactivewindow getwindowname) == $caemlyn_win ]]
 then
-echo "inside caemlyn" >/tmp/out
-	xdotool key meta+Delete
-echo "minimized window" >>/tmp/out
+	xdotool search --name "$caemlyn_win" windowminimize
 	if [[ -r $desktop_save ]]
 	then
-echo "going to set desktop" >>/tmp/out
 		xdotool set_desktop $(cat $desktop_save)
 	fi
 else
