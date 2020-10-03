@@ -85,8 +85,9 @@ my %DESCRIPTIONS =
 							qr/Ralphs/i,
 							qr/Albertsons/i,
 							qr/Costco Whse/i,
-							qr/Costco.com/i,
+							qr/Costco\.com/i,
 							qr/Costco by Instacart/i,
+							qr/Imperfect Foods/i,
 							qr/Pure Indian Foods/i,
 							qr/Bennets_Honey_Farm/i,
 						],
@@ -280,6 +281,7 @@ my %WHAT_LOOKUP =
 	'T.O. E-LIBRARY'			=>	'Library (TO)',
 	"WW INT'L"					=>	'Weight Watchers',
 	'JUNKYARD'					=>	'Junkyard Cafe',
+	'Imperfect Foods'			=>	'Veggie box',
 );
 
 
