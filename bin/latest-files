@@ -1,0 +1,20 @@
+#! /bin/bash
+
+if [[ -t 1 ]]
+then
+	$0 "$@" | ${PAGER:-less -aF}
+	exit
+fi
+
+days=1
+while true
+do
+	files=$(find . -type f "$@" -ctime +$(( $days - 2 )) -ctime -$days)
+	if [[ $files ]]
+	then
+		echo "$days days old"
+		echo "=============="
+		echo "$files"
+	fi
+	days=$(( $days + 1 ))
+done
