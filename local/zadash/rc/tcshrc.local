@@ -3,3 +3,6 @@ setenv VCTOOLS_EXTLIB_DIR /var/tmp/VCtools-extlib
 
 # Ruby stuff
 setenv GEM_HOME ~/ruby/gems
+
+# have `daystart` run on Caemlyn too
+alias daystart 'echo "\nDAYSTART\n`date`\n" ; '"ssh caemlyn screen -p launch -X stuff 'daystart\\n'"
