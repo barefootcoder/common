@@ -55,7 +55,6 @@ feature myperl => sub
 	requires 'Perl6::Slurp';
 	requires 'IO::Prompter';
 	requires 'Perl6::Gather';
-	requires 'Data::Printer';
 	requires 'Test::Command';
 	requires 'MooseX::Declare';
 	requires 'Text::Capitalize';
@@ -65,6 +64,7 @@ feature myperl => sub
 	requires 'Any::Moose', '== 0.26';
 	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';
+	requires 'Data::Printer', '== 0.40';
 	requires 'MooseX::StrictConstructor';
 };
 feature 'myperl-google' => sub

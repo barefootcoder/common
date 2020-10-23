@@ -71,7 +71,7 @@ function make_link
 function make_copy
 {
 	# $1 == source file
-	# $2 == destination (will be the symlink)
+	# $2 == destination file
 
 	if [[ ! -e $1 ]]
 	then
