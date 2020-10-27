@@ -16,7 +16,16 @@ my $remote_host = shift;
 
 if ($remote_host)
 {
-	bash ssh => $remote_host, $ME => '-q' ? say "message!" : "no message :-(";
+	if ( bash \string => ssh => $remote_host, $ME => '-q' )
+	{
+		my $title = 'URGENT';
+		my $message = 'IMs are awaiting your attention on ' . ucfirst $remote_host . '.';
+		bash zenity => '--warning', '--title', $title, '--width', 250,
+				'--text', shq(qq|<span foreground="red" size="x-large"><b>$message</b></span>|), '&';
+		sleep 1;
+		bash xdotool => search => '--name', $title, windowmove => 1550, 50;
+		bash wmctrl => -r => $title, -b => 'add,above,sticky';
+	}
 }
 else
 {

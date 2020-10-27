@@ -6,3 +6,7 @@ setenv GEM_HOME ~/ruby/gems
 
 # have `daystart` run on Caemlyn too
 alias daystart 'echo "\nDAYSTART\n`date`\n" ; '"ssh caemlyn screen -p launch -X stuff 'daystart\\n'"
+
+# CE/archer setup
+setenv CHEOPSROOT ~/workproj/cheops
+setenv CE_REMOTE_USERNAME bburden
