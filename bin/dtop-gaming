@@ -1,31 +1,90 @@
-#! /bin/bash
+#! /usr/bin/env perl
 
-if [[ $(xdotool get_num_desktops) -lt 6 ]]
-then
-	gsettings set org.gnome.desktop.wm.preferences workspace-names '["Main","Comms","Music","Personal","Gaming"]'
-	xdotool set_num_desktops 5
-	marco --replace >/dev/null 2>&1 &
-	sleep 5
-fi
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Path::Class::Tiny;
+use Time::HiRes qw< usleep >;
+use List::AllUtils qw< first firstidx >;
+
+const my $GAMING => 'Gaming';
+
+
+opts <<'-';
+	-D : debug mode
+	build "Gaming" desktop
+-
+
+
+my $workspaces = sh(gsettings => get => 'org.gnome.desktop.wm.preferences', 'workspace-names');
+my @workspaces = map { s/[][']//gr } split(/,\h*/, $workspaces);
+say "# workspaces: ", join(", ", @workspaces) if $OPT{D};
+
+if (not $GAMING ~~ @workspaces)
+{
+	say "# going to build new desktop" if $OPT{D};
+	push @workspaces, $GAMING;
+	$workspaces = '[' . join(', ', map { "'$_'" } @workspaces) . ']';
+	sh(gsettings => set => 'org.gnome.desktop.wm.preferences', 'workspace-names', shq($workspaces));
+	sh(xdotool => set_num_desktops => 5);
+	sh(marco => '--replace', '>/dev/null', '2>&1', '&');
+	sleep 5;
+}
+
+my $desktop = firstidx { $_ eq $GAMING } @workspaces;					# index-0 desktop (good for `xdotool`)
+my $myterm_desktop = '-D' . ($desktop + 1);								# because `myterm` expects index-1 desktops
+say "# gaming windows will land on desktop $desktop (index 0)" if $OPT{D};
 
 # window for music
-myterm -D5 Music - 80x24+2-33
+term_window('Music', '80x24+2-33');
 
 # browser window for maps etc
-vivaldi
-while ! xdotool search --name "Start Page" windowactivate --sync
-do
-	sleep 0.5
-done
-xdotool search --name "Start Page" set_desktop_for_window 4				# which means 5
+if ( not (find_window("Gaming Checklist") or find_window("Campaign")) )
+{
+say "find window results: ", find_window("Gaming Checklist") ? 'true' : 'false';
+	say "# going to build new browser window" if $OPT{D};
+exit;
+	sh('vivaldi');
+	usleep(0.5) until sh(xdotool => search => '--name' => "Start Page", windowactivate => '--sync');
+	put_window_on_gaming("Start Page");
+}
 
-# file browser and a few PDFs we'll need
-caja file://$HOME/rpg/5e
-xdotool search --name "5e" set_desktop_for_window 4						# which means 5
-xrestore -desktop Gaming okular /home/buddy/rpg/5e/"D&D 5e - Player’s Handbook".pdf
+# file browser and the PDF we'll need
+unless (find_window("5e"))
+{
+	say "# going to build file browser" if $OPT{D};
+	sh(caja => "file://$ENV{HOME}/rpg/5e");
+	put_window_on_gaming("5e");
+}
+my $phb = first { /Player.*Handbook/ } path("~/rpg/5e")->children;
+#sh(xrestore => -desktop => $GAMING, okular => shq($phb));
 
 # text notes window
-myterm -D5 Notes - 118x43-0+29
+term_window('Notes', '118x43-0+29');
 
 # goto our new desktop
-xdotool set_desktop 4													# which means 5
+sh(xdotool => set_desktop => $desktop);
+
+# restack
+sh(xdotool => search => '--name' => $_, windowactivate => '--sync')
+	foreach ('Gaming Checklist', 'Campaign', 'Notes', 'Music');
+
+
+sub find_window
+{
+	my ($name) = @_;
+	return sh(xdotool => search => '--desktop' => $desktop, '--name' => $name);
+}
+
+sub put_window_on_gaming
+{
+	my ($name) = @_;
+	sh(xdotool => search => '--name' => $name, set_desktop_for_window => $desktop);
+}
+
+sub term_window
+{
+	my ($name, $geometry) = @_;
+	sh(myterm => $myterm_desktop, $name, '-', $geometry, '&');
+}

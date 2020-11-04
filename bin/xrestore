@@ -80,7 +80,7 @@ if ( $OPT->{browsers} )
 }
 else
 {
-	($command)      = @ARGV or die("must specify command");
+	$command        = "@ARGV" or die("must specify command");
 	$OPT->{ps}    //= $command;
 	$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop") if $OPT->{desktop};
 	$tag            = $command =~ s/ .*$//r;
