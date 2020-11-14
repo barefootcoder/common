@@ -312,7 +312,8 @@ if ($cmd eq 'total' and $OPT{a})
 	my $DAY = 24 * 60 * 60;
 	my $WEEK = 7 * $DAY;
 	debuggit(3 => "mondays:", DUMP => \@mondays);
-	@mondays = sort { $a <=> $b } map { int($_->epoch / $WEEK) } map { datetime($_) } @mondays;
+	@mondays = sort { $a <=> $b } map { int($_->epoch / $WEEK) } @mondays;
+	debuggit(3 => "week nums:", DUMP => \@mondays);
 	for (1..$#mondays)
 	{
 		foreach ( ($mondays[$_-1] + 1)..($mondays[$_] - 1) )
@@ -320,7 +321,7 @@ if ($cmd eq 'total' and $OPT{a})
 			# the beginning of the epoch was a Thursday ... in England
 			# in the U.S., it was still Wednesday
 			# so, to get a Monday, we have to add 5 days
-			my $date =  ($_ * $WEEK + $DAY * 5)->strftime("%m/%d/%Y");
+			my $date = datetime($_ * $WEEK + $DAY * 5)->strftime("%m/%d/%Y");
 			say STDERR "Missing week: $date";
 		}
 	}

@@ -4,6 +4,7 @@ use myperl DEBUG => 1;
 use myperl::Script;
 use autodie ':all';
 
+use Perl6::Form;
 use POSIX qw< ceil >;
 
 
@@ -11,16 +12,37 @@ opts <<'-';
 	[-vD] [-w<N>] [-H<avg>] [-O]
 	-v : be more verbose
 	-D : debugging mode
-	-w : only look back <N> weeks
+	-w : look back <N> weeks (overridden by -S)
+	-S : look back to the week that includes <date>
+	-s : show week-by-week summary
+	-r : reverse order of weeks in summary
 	-H : show # hours to bring the average to <avg> hours
 	-O : identify outliers
 	<N>    : number of weeks (default: all weeks)
+	<date> : date in arbitrary format
 -
 
 
-my $how_far = 1 + $OPT{w} // 0;
+my $how_far = 1 + ($OPT{S} ? round(UP => (date("last mon") - date($OPT{S})) / 7) : $OPT{w} // 0);
 my ($min_date, $max_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
 my $num_days = num_weekdays($min_date, $max_date);
+
+my @week_by_week;									# filled in by `time_and_avail()`
+if ($OPT{s})
+{
+	@week_by_week = apply { $_->{running_avail} = $a += $_->{avail} } apply { $_->{running_time} = $b += $_->{time} } reverse @week_by_week if $OPT{r};
+	my $counter = 0;
+	say '';
+	say			"    WEEK               TIME              ||     AVAILABILITY";
+	say			"  Num Start Day     Curr   Total   Avg   ||  Curr   Total   Avg ";
+	say			"  === ==========    ===== ======= =====  ||  ===== ======= =====";
+	print form	"  {>} {<<<<<<<<}    {>.0} {>>>.0} {>.0}  ||  {>.0} {>>>.0} {>.0}",
+				++$counter, $_->{date}->as("/Ymd"),
+							$_->{time}, $_->{running_time}, $_->{running_time} / $counter,
+												$_->{avail}, $_->{running_avail}, $_->{running_avail} / $counter,
+			foreach @week_by_week;
+	say '';
+}
 
 if ($OPT{v})
 {
@@ -96,6 +118,7 @@ func time_and_avail ($file)
 			print "$file : $_" if $OPT{D};
 			$min_date = min($min_date, date($1));
 			$max_date = max($max_date, date($2));
+			push @week_by_week, { date => $min_date } if $OPT{s};
 		}
 
 		#  0 hrs, 36 mins : cpan
@@ -108,6 +131,12 @@ func time_and_avail ($file)
 		{
 			say sprintf("$file :   %-*s %3d:%02d %*s [%0.2fh]", length('AVAILABILITY'), $timer,
 					$hrs, $mins, $timer eq 'AVAILABILITY' ? 30 : 20, '', $this_week);
+		}
+		if ($OPT{s})
+		{
+			my $which = $timer eq 'AVAILABILITY' ? 'avail' : 'time';
+			$week_by_week[-1]->{              $which } = $this_week;
+			$week_by_week[-1]->{ 'running_' . $which } = $timer_hours;
 		}
 		if ( $OPT{O} and $timer ~~ [keys %$OUTLIER_RANGES] )
 		{
