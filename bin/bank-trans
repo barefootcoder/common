@@ -91,7 +91,7 @@ my %DESCRIPTIONS =
 							qr/Pure Indian Foods/i,
 							qr/Bennets_Honey_Farm/i,
 						],
-	Pharmacy		=>	[
+	Health			=>	[
 							qr|CVS/Pharmacy|i,
 							qr/CVS\.com/i,
 							qr/Walgreens/i,
@@ -166,6 +166,7 @@ my %DESCRIPTIONS =
 							qr/Presto Pasta/i,
 							qr/Little Caesars/i,
 							qr/Panda Express/i,
+							qr/Great Steak Hoagie/i,
 							qr/\bThe Hat\b/i,
 							qr/^Habit\b/i,
 							qr/Golden Tiger/i,
@@ -178,9 +179,11 @@ my %DESCRIPTIONS =
 							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
 							qr/\bBeto.?s\b/i,
+							qr/Viva la Pasta/i,
 							qr/Yolandas/i,
 							qr/Outback/i,
 							qr/Junkyard/i,
+							qr/Sharky's/i,
 							qr/Thai House/i,
 							qr/Bollywood Indian/i,
 							qr/Fire Island Grill/i,
@@ -203,6 +206,7 @@ my %DESCRIPTIONS =
 							qr/paypal inst xfer/i,
 							qr/Kickstarter/i,
 							qr/Treasured Memories/i,
+							qr/Jimmy Beans Wool/i,
 							qr/Joann\b/i,
 							qr/HobbyLobb/i,
 							qr/Quilty Pleasures/i,
@@ -290,7 +294,7 @@ opts <<'-';
 	-F : family spending output (default: family finances output)
 	-B : new Budget sheet categorization output
 	-N : only show those lines that didn't get a category assigned
-	-a : only show transactions after <id>
+	-a : only show transactions after <id> (and before midnight)
 	-H : show header line (default: don't)
 	-g : group expenses by category (default: one line per expense)
 	reads transactions file (CSV from Ally)
@@ -331,6 +335,7 @@ foreach ($file->slurp)
 
 	if ($OPT{a})
 	{
+		next if $id >= datetime("midnight");
 		next unless $id > $OPT{a};
 	}
 
@@ -455,6 +460,7 @@ foreach ($file->slurp)
 			$what = $WHAT_LOOKUP{$what} // $what;
 			$who  = {
 						'Treasured Memories'	=>	'Christy',
+						'Jimmy Beans Wool'		=>	'Christy',
 						Panera					=>	'Christy',
 						Starbucks				=>	'Christy',
 						'PlayStation Network'	=>	'Perrin',
