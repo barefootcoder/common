@@ -33,10 +33,12 @@ class AttrTest
 
 	has i => Int, set   by 'si';					# writer
 	has j => Int, check by 'pj', clear by 'cj';		# predicate, clearer (and tests multiples)
+
+	has k => Int, as 'x';							# init_arg
 }
 my $t;
 throws_ok	{ $t = AttrTest->new           }	qr/missing required/i,	'required attrs okay';
-lives_ok	{ $t = AttrTest->new( a => 1, i => 2, j => 3, ) }			'optional attrs okay';
+lives_ok	{ $t = AttrTest->new( a => 1, i => 2, j => 3, x => 4 ) }	'optional attrs okay';
 
 is $t->a, 1, 'required attr value okay';
 is $t->b, 3, 'literal def attr value okay';
@@ -45,6 +47,8 @@ is $t->c, 3, 'coderef def attr value okay';
 is $t->d, 5, 'lazy literal attr value okay';
 is $t->e, 5, 'lazy coderef def attr value okay';
 is $t->f, 8, 'lazy builder def attr value okay';
+
+is $t->k, 4, 'set by init_arg attr value okay';
 
 eq_or_diff [ $t->g ], [], 'Array attr starts out empty';
 lives_ok { $t->add_g( 1..3 ) } 'Array attr basic delegation works';

@@ -7,7 +7,7 @@ package myperl::Classlet::keywords
 {
 	no thanks;					# don't try to load this module
 	use Exporter;
-	our @EXPORT = qw< rw via by per set clear check Array Hash >;
+	our @EXPORT = qw< rw via by per as set clear check Array Hash >;
 
 	use Debuggit;
 	use List::Util 'any';
@@ -75,10 +75,11 @@ package myperl::Classlet::keywords
 	sub rw () { is => 'rw' }
 
 	# these are the official prepositions of Onyx Moose
-	sub _with   {                  default =>                  shift, @_      }
-	sub via (&) { my $def = shift; default => sub { local $_ = shift; &$def } }
-	sub by      {                               @_                            }
-	sub per     {                  handles => { @_ }                          }
+	sub _with   {                  default  =>                  shift, @_      }
+	sub via (&) { my $def = shift; default  => sub { local $_ = shift; &$def } }
+	sub by      {                                @_                            }
+	sub per     {                  handles  => { @_ }                          }
+	sub as      {                  init_arg =>   @_                            }
 
 	# these are the various accessor properties; they all work with `by`
 	sub set   { writer    => @_ }
@@ -170,6 +171,7 @@ package myperl::Classlet
 		push @{ $opts{imports} //= [] },
 		(
 			warnings						=>	[ FATAL => 'all' ],
+			Kavorka							=>	[ qw< classmethod >],
 			'myperl::Classlet::keywords'	=>	[ @myperl::Classlet::keywords::EXPORT ],
 		);
 
