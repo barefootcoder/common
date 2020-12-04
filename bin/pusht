@@ -114,7 +114,7 @@ then
 		set -o pipefail
 		copy-to-clipboard fmt-for-trac "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.md || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $fullpath == */exercises/* ]]
+	elif [[ "$1" == *.txt || "$1" == *.md || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $1 == *.testing.notes ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
@@ -124,7 +124,7 @@ then
 	elif [[ -x gen_pdf ]]
 	then
 		gen_pdf
-	elif [[ $1 == *.testing.notes || $fullpath == */C3V/* || $(basename "$1") == github.reply ||				\
+	elif [[ $fullpath == */C3V/* || $fullpath == */exercises/* || $(basename "$1") == github.reply ||				\
 			$fullpath == */custom/* || $fullpath == */GMBinder*/* ]]
 	then
 		copy-to-clipboard cat "$1"
