@@ -31,6 +31,7 @@ my %DESCRIPTIONS =
 						],
 	Phone			=>	[
 							qr/Verizon/i,
+							qr/VZWRLSS/i,
 							qr/asurion wireless/i,
 							qr/Google Fi/i,
 						],
@@ -76,6 +77,7 @@ my %DESCRIPTIONS =
 						],
 	Groceries		=>	[
 							qr/Trader Joe's/i,
+							qr/HLLFRSH/i,
 							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
 							qr/Lassens/i,
@@ -129,6 +131,7 @@ my %DESCRIPTIONS =
 							qr/MOORPARK COL BKSTOR/i,
 							qr/Los Angeles Zoo/i,
 							qr/T\.O\. E-LIBRARY/i,
+							qr/OwlCrate/i,
 						],
 	Entertainment	=>	[
 							qr/Studio Movie Gr/i,
@@ -141,6 +144,7 @@ my %DESCRIPTIONS =
 							qr/^D&B /i,
 							qr/Great Wolf Lodge/i,
 							qr/GG Delivers/i,
+							qr/Sunday Scaries/i,
 						],
 	Books			=>	[
 							qr/Audible/i,
@@ -179,6 +183,8 @@ my %DESCRIPTIONS =
 							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
 							qr/\bBeto.?s\b/i,
+							qr/Old Susana/i,
+							qr/Olivios Trattoria/i,
 							qr/Viva la Pasta/i,
 							qr/Yolandas/i,
 							qr/Outback/i,
@@ -225,6 +231,7 @@ my %DESCRIPTIONS =
 							qr/MP3VA.com/i,
 							qr/OFFICE DE\b/i,
 							qr/parking.*playa vista/i,
+							qr/GOOGLE \*INNERSLOTH/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -257,10 +264,12 @@ my %WHAT_LOOKUP =
 	'BAC Home Loans'			=>	'Mortgage Payment',
 	'S CA Edison'				=>	'Electric Bill',
 	'Golden State (Water|Wtr)'	=>	'Water Bill',
+	'VZWRLSS'					=>	'Verizon Wireless',
 	'BRETT MORGAN'				=>	'Pool Guy',
 	'jessie flores'				=>	'Gardeners',
 	'carlos ortega'				=>	'Gardener',
 	'fidelity nationa'			=>	'Warranty Company',
+	'HLLFRSH'					=>	'Hello Fresh',
 	'Sprouts Farmers'			=>	'Sprouts',
 	'Baskin'					=>	'Baskin Robbins',
 	'SMART MANAGEMENT & CO'		=>	'Arbys',
@@ -286,6 +295,7 @@ my %WHAT_LOOKUP =
 	"WW INT'L"					=>	'Weight Watchers',
 	'JUNKYARD'					=>	'Junkyard Cafe',
 	'Imperfect Foods'			=>	'Veggie box',
+	'GOOGLE *INNERSLOTH',		=>	'Android Game',
 );
 
 
@@ -373,7 +383,7 @@ foreach ($file->slurp)
 			$category = 'Reserve';
 		}
 
-		when ( /^PAYPAL INST XFER/i or /IAT PAYPAL/i )
+		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
@@ -438,6 +448,12 @@ foreach ($file->slurp)
 			$category = "Personal";
 			$who = 'Buddy';
 		}
+		when ( /(Knit(Crate|Picks))/i )
+		{
+			($what = lc $1) =~ s/knit(.)/'Knit' . uc $1/ie;
+			$category = "Personal";
+			$who = 'Christy';
+		}
 
 		when ( [ qr/THOUSAND OAKS 14/i, qr/AMC ONLINE/i, ] )
 		{
@@ -469,6 +485,7 @@ foreach ($file->slurp)
 						'MP3VA.com'				=>	'Buddy',
 						Dropbox					=>	'Buddy',
 						'DriveThruRPG []'		=>	'Buddy',
+						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
 			$category = 'Travel' if $what eq '7-Eleven' and abs($amount) >= 30;
