@@ -1,0 +1,358 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb DEBUG => 1;
+use autodie ':all';
+use myperl::Classlet;
+
+use Date::Easy;
+use Data::Printer;
+use Path::Class::Tiny;
+
+
+#########
+# TYPES #
+#########
+
+BEGIN
+{
+	package local::Types
+	{
+		use Type::Utils -all;
+		use Type::Library -base;
+		no thanks;                  				# don't try to load this module
+
+		class_type Path => { class => "Path::Class::Tiny" };
+		class_type FileList => { class => "FileList" };
+	}
+}
+
+
+#################
+# LOCAL CLASSES #
+#################
+
+class FileList
+{
+	builds files    => Array,       per file_at => 'get', new_file => 'push', num_files => 'count';
+	builds file_pos => Hash,        per get_pos => 'get', set_pos  => 'set' ;
+	builds curidx   => Int, with 0, set by '_set_curidx' ;
+	builds altidx   => Maybe[Int],  set by '_set_altidx' ;
+
+	method add_file ($file, $pos, $which?)
+	{
+		$self->new_file($file);
+		$self->set_pos($file => $pos);
+		$which //= ' ';
+		given ($which)
+		{
+			break										when ' ';
+			$self->_set_curidx($self->num_files - 1)	when '%';
+			$self->_set_altidx($self->num_files - 1)	when '#';
+			# otherwise
+			die("unknown file designator: $which");
+		}
+	}
+}
+
+class SessionTemplate
+{
+	use Carp;
+	use Debuggit;
+	use Path::Class::Tiny;
+	use List::AllUtils qw< uniq pairmap >;
+
+	use local::Types qw< :types >;
+
+
+	# filter subs
+
+	sub quote_filename
+	{
+		local $_ = @_ ? shift : $_;
+		s/([ #])/\\$1/gr;
+	}
+
+	sub parse_mappings (@)
+	{
+		local $_ = @_ ? shift : $_;
+
+		return () unless /^\w*map /;					# only care about the `map`s
+
+		s/\cV//g;
+		s/\e/<Esc>/g;
+		s/\t/<Tab>/g;
+		s/\r/<CR>/g;
+		chomp;											# only do this after handling <CR>s, or else they get chomped too
+		s/([\cA-\cZ])/ '<C-' . chr( ord('A') - 1 + ord($1) ) . '>' /ge;
+		s/\037/<C-_>/g;
+		s/(<C-\w>)<Tab>/$1<C-I>/g;
+		s/(<C-\w>)<CR>/$1<C-M>/g;
+		s/\|/<Bar>/g;
+		s/(<Tab>)+" .*$//;
+		$_;
+	}
+
+	sub diff_mappings (\@\@)
+	{
+		state $KEY_MAPPED = qr/map\h+(\H+)/;
+		my ($before, $after) = @_;
+		my %before = map { $_ => 1 } @$before;
+		my %new;
+		foreach (@$after)
+		{
+			if (exists $before{$_})
+			{
+				delete $before{$_};
+			}
+			else
+			{
+				/$KEY_MAPPED/ or die("can't determine what key is being mapped [$_]");
+				$new{$1} = $_;
+			}
+		}
+		my @new = map { s/(nore)?map/unmap/r } map { s/($KEY_MAPPED)\h+.*$/$1/ && $new{$2} ? () : $_ } sort keys %before;
+		push @new, sort values %new;
+		return @new;
+	}
+
+
+	# attributes
+
+	has    session_name => Str;
+	has    session_dir  => Str;
+	has    dir          => Maybe[Str], with undef, set by '_set_dir';
+	has    Debug        => Bool,       with 0;
+	builds filelist		=> FileList,   via { FileList->new }, per map { $_ => $_ } qw< files add_file >;
+	builds mappings		=> Array,                             per add_map => 'push';
+	builds func_defs	=> Array,                             per _add_fndef_line => 'push';
+
+	# alternate ctors
+
+	classmethod from_template ($file, %extra_args)
+	{
+		my $full_path = path($file)->absolute;
+		my $basename  = $full_path->basename;
+		my $dirname   = $full_path->parent;
+		# interpolation below disables any magic from Path::*
+		return $class->new( session_name => "$basename", session_dir => "$dirname", %extra_args )->load;
+	}
+
+	classmethod from_old_session ($old, :$filelist_file, :$mapfile, ArrayRef :$base_mappings, CodeRef :$name_xform)
+	{
+		my @post_mappings = $class->extract_mappings($mapfile);
+		my @new_mappings = diff_mappings @$base_mappings, @post_mappings;
+		if ( $old->Debug )
+		{
+			map { say } map { "#--> POST: $_" } @new_mappings;
+			map { say } 'SESSION FILE (after):', '=' x 23, $filelist_file->slurp(chomp => 1), '-' x 23;
+		}
+
+		my $new_name = $name_xform->( $old->session_name );
+		my $new = SessionTemplate->new(
+			session_name	=> $new_name,
+			session_dir		=> $old->session_dir,
+			dir				=> $old->dir,
+			func_defs		=> [ $old->func_defs ],
+			Debug			=> $old->Debug,
+		);
+		foreach ( $filelist_file->slurp(chomp => 1) )
+		{
+			next if /^$/;
+			my ($num, $which, $name, $line) = /^ \h* (\d+) .(.)... \h* "(.*)" \h+ line \h (\d+) $/x
+					or die("can't parse line from :files [$_]");
+			my $old_file = $old->file_num($num);
+			$name = $old_file if path($old_file)->ef($name);
+			$new->add_file($name, $line, $which);
+		}
+		$new->add_map($_) foreach @new_mappings;
+		$new->save;
+		return $new;
+	}
+
+
+	# properties
+	method filepath { path($self->session_dir, $self->session_name)                                                 }
+	method contents {      $self->filepath->slurp                                                                   }
+	method curfile  {                                   $self->filelist->file_at( $self->filelist->curidx )         }
+	method altfile  { defined $self->filelist->altidx ? $self->filelist->file_at( $self->filelist->altidx ) : undef }
+
+	# builder-related mutators
+	method add_dir ($new_dir)
+	{
+		croak("attempt to re-add dir!") if defined $self->dir;
+		$self->_set_dir($new_dir);
+	}
+
+	# curried methods
+	method file_pos ($file) { $self->filelist->get_pos($file)  }
+	method file_num ($num)  { $self->filelist->file_at($num-1) }		# have to convert from 1-index to 0-index
+
+	# action methods
+	method chdir { chdir path($self->dir) }
+
+	# read methods
+
+	method load
+	{
+		my $file = $self->filepath;
+		my $section = 'FILES';
+		foreach ($file->slurp( chomp => 1 ))
+		{
+			if ( /^=DIR (.*)$/ )
+			{
+				$section = 'DIR';
+				$self->add_dir($1);
+			}
+			elsif ( /^=([A-Z]+)$/ )
+			{
+				$section = $1;
+			}
+			elsif ( $section eq 'FILES' )
+			{
+				my ($which, $pos, $fname) = /^(.)\h*(\d+)\h+(.*)$/ or die("cannot parse file line: $_");
+				$self->add_file($fname, $pos, $which);
+			}
+			elsif ($section eq 'MAPS')
+			{
+				$self->add_map($_);
+			}
+			elsif ($section eq 'FUNCS')
+			{
+				$self->_add_fndef_line($_);
+			}
+			else
+			{
+				die("don't know what to do! [section=$section, line=$_]");
+			}
+		}
+		return $self;													# for chaining
+	}
+
+	method extract_mappings (Path $vim_sessionfile)						# doesn't use invocant, so class method okay
+	{
+		return uniq map { parse_mappings } $vim_sessionfile->slurp;
+	}
+
+	# write methods
+
+	method save
+	{
+		my @lines;
+
+		# first section is implicitly FILES
+		my $cur = $self->curfile;
+		my $alt = $self->altfile // '';
+		foreach my $file ($self->files)
+		{
+			my $marker = $file eq $cur ? '%' : $file eq $alt ? '#' : ' ';
+			push @lines, sprintf('%s%4d %s', $marker, $self->file_pos($file), $file);
+		}
+
+		# DIR section is only one line
+		push @lines, "=DIR " . $self->dir;
+
+		# MAPS section is one line per map
+		push @lines, '=MAPS';
+		push @lines, $self->mappings;
+
+		# only do FUNCS section if there are any lines in it
+		my @fndef_lines = $self->func_defs;
+		if (@fndef_lines)
+		{
+			push @lines, '=FUNCS';
+			push @lines, @fndef_lines;
+		}
+
+		# now write it all out
+		$self->filepath->spew( map { "$_\n" } @lines );
+	}
+
+	method write_vim_session_file (Path $file, Str :$on_exit!)
+	{
+		our ($a, $b);								# this is necessary until I upgrade to 5.19 or higher
+
+		# https://vi.stackexchange.com/questions/8378
+		my   @session_lines = pairmap { ":e $a", ":$b" } map { quote_filename($_), $self->file_pos($_) } $self->files;
+		push @session_lines,  map { ":$_" } $self->mappings;
+		push @session_lines,  map { ":$_" } $self->func_defs;
+		push @session_lines,  ":e " . quote_filename( $self->altfile // $self->file_num(1) );
+		push @session_lines,  ":e " . quote_filename( $self->curfile                       );
+		push @session_lines,  ":autocmd VimLeave * $on_exit";
+		map { say } 'SESSION FILE (before):', '=' x 23, @session_lines, '-' x 23 if $self->Debug;
+		$file->spew( map { "$_\n" } @session_lines );
+	}
+}
+
+
+########
+# MAIN #
+########
+
+opts <<'-';
+	-l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-n] [-D] <templ>
+	-l : list all possible session files
+	-g : list possible session files which load a file matching <pattern> (Perl regex)
+	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
+	-v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines
+	-e : edit <templ> (instead of starting session); with -l, edit all; with -g|-G, edit all matching
+	-C : create a template from a vim session file (default name: add .V to session filename)
+	-n : do not autosave the session (default: autosave any changes back to the template)
+	-D : debug mode (print lots of behind-the-scenes info)
+	<pattern> : Perl-style regex
+	<session> : actual vim session file (or partial name)
+	<templ>   : session template file (usually ends in `.V`)
+-
+my $grepargs = $OPT{v} ? '-hP' : '-lP';
+my $pattern;
+$pattern = "^badd .*$OPT{g}" if $OPT{g};
+$pattern =          $OPT{G}  if $OPT{G};
+
+$pattern = qr/$pattern/ if defined $pattern;
+my $file = shift;
+my @prefixes = qw< ~/.vimS- ~/vimS/ ~/local/data/vimS/ ~/proj/vimS/ ./vimS/ >;
+
+
+$file = first { -r } $file, "$file.V", map { ("$_$file.V", "$_$file") } @prefixes if defined $file;
+fatal "session file $file not specified, doesn't exist, or is unreadable" unless $file;
+
+
+my $session = SessionTemplate->from_template( $file, Debug => $OPT{D} );
+debuggit(4 => DUMP => $session);
+debuggit(3 => "SessionTemplate->dir =>", $session->dir);
+debuggit(3 => "SessionTemplate->curfile =>", $session->curfile);
+debuggit(3 => "SessionTemplate->altfile =>", $session->altfile);
+debuggit(4 => DUMP => $session->files);
+
+my $vim_script = tempfile();
+sh vim => -c => "mksession! $vim_script", -c => 'quit', '>/dev/null', '2>&1';
+my @baseline_mappings = $session->extract_mappings($vim_script);
+map { say } map { "#--> PRE: $_" } @baseline_mappings if $OPT{D};
+
+my $faux_session = tempfile();
+my @save_commands =
+(
+	"mksession! $vim_script",
+	"redir! >$faux_session",											# https://vi.stackexchange.com/questions/8378
+	"silent files",
+	"redir END",
+);
+$session->write_vim_session_file($faux_session, on_exit => join(' | ', @save_commands));
+
+$session->chdir;
+sh vim => -S => $faux_session, $session->file_num(1);
+
+my $new_sess = SessionTemplate->from_old_session ($session,
+	filelist_file	=>	$faux_session,
+	mapfile			=>	$vim_script,
+	base_mappings	=>	[@baseline_mappings],
+	name_xform		=>	sub { shift . '.upd' },
+);
+
+if ($session->contents ne $new_sess->contents)
+{
+	my $orig_file = $session->filepath;
+	my $bakfile   = "$orig_file.bak";
+	unlink $bakfile if -e $bakfile;
+	$session ->filepath->move_to( $bakfile   );
+	$new_sess->filepath->move_to( $orig_file );
+}

@@ -137,9 +137,7 @@ set sessionoptions=buffers,curdir,globals,localoptions,options,unix
 
 " save session with the current name
 :function! SaveSession()
-:	if v:this_session == ''
-:		echo "No current session"
-:	else
+:	if v:this_session != ''
 :		exe "mksession! " . v:this_session
 :		if exists("g:MarksFile")
 :			call SaveMarks()

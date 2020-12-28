@@ -4,6 +4,84 @@
 
 # restore a vim session, only *exactly* like it was before
 #
+#
+# **ALERT!!**
+#
+# As newer and newer versions of `vim` have come out, loading a sessionfile has become less and less
+# useful--that is, a restored session in a newer `vim` is even *less* like the original session than
+# it was in older `vim`s.  This is remarkably frustrating, and has led to deeper and deeper hacks in
+# this script, until I finally decided to rewrite the whole thing altogether, and then before I
+# could finish that effort the situation got even *worse.*  At this point, the advantages that
+# loading a `vim`-created sessionfile provide are *vastly* outweighed by the disadvantages.
+#
+# So we're doing something completely different.
+#
+# I'm just going to make my own format of "sessionfile."  I refer to this format as a "session
+# template," partially just to make it clear which type of file we're talking about, and partially
+# because I use it a bit like a template, to generate an actual sessionfile--not as complete as a
+# standard `vim`-created sessionfile, but serving the same purpose.  The session template won't
+# bother to try to restore most of the stuff that the sessionfile did, because I never cared about
+# most of that stuff anyway.  It will *only* try store three things, at least for now, plus a fourth
+# soon(ish):
+#
+# FILES:
+# Which files are loaded, what order they are loaded in, what directory any relative paths are
+# relative to, and which files are current (`%`) and alternate (`#`).  Traditional `vim`
+# sessionfiles are good at the first one of those, okay at the third, and have never bothered with
+# the fourth at all.  As for the second, the situation used to be sort of okay (and making it better
+# was the original raison d'être for this script), but now (as of vim 8.x) has devolved to the point
+# where it changes the order all the time, depending on what the current file is when you save the
+# session.  For the session template, all I have to do is parse the output of `:files` and call it a
+# day.
+#
+# MAPS:
+# What key mappings *have been added or updated* in this session.  Standard `vim` sessionfiles only
+# track _all_ mappings.  This may seem like a decent compromise, until I start adding new mappings
+# (e.g.  in my `~/.exrc`) that I want available everywhere and then realize that I have dozens of
+# existing sessionfiles that will never get those updates.  Sometimes I can just `:source ~/.exrc`
+# after loading an old session, but I've also inadvertently wiped out added mappings that way (e.g.
+# if I had reused the same key for a new mapping, perhaps because the original mapping wasn't
+# relevant to that particular session).  This is tricky to solve; what I actually need to do is save
+# the set of mappings from a bare `vim` (with no session), then compare that to the set of mappings
+# at end-of-session.  In both cases, I need to parse a sessionfile; originally I considered pulling
+# the mappings from the output of `:map`, because sessionfiles don't properly escape special
+# characters.  But `:map` output turned out to be worse, as it was too hard to figure out which of
+# the 80 million variations of `map` (e.g. `nmap`, `vmap`, `omap`, `nnoremap`, etc) corresponded to
+# each line of the output.  Sessionfiles at least get _that_ part right, plus they require no
+# parsing *other* than fixing the special characters (which is admittedly annoying, but in the end
+# doable).
+#
+# FUNCTIONS:
+# It's rare that I define functions in `vim`, but it does happen.  Typically, sessionfiles keep
+# track of these pretty well, but every once in a while they will inexplicably disappear.  As a
+# result, I usually maintain function defs in a separate file anyhow, just in case I need to
+# redefine them.  Thus, functions can be manually added to a session template, and must be also
+# manually mantained therein.  It's rare enough that that's not much of a downside though.
+#
+# MARKS:
+# What local marks (that is, those marks which are designated by lower-case letters) are in effect
+# for a given file.  Sessionfiles don't bother to store this _at all_, which is very frustrating.
+# However, to be fair, it is quite difficult to do properly, since you need to save the marks
+# separately for each file, and there can be many, many files.  Consequently the first cut will omit
+# this part, and hopefully I can come up with a good idea for the second major version.
+#
+# I'm irked that I have to put this much work into essentially recreating what `vim` should be doing
+# already.  But it is what it is.
+#
+# This original script will still handle old-format files for those cases where I haven't converted
+# everything over yet.  I'm also going to leave (at least for now) the logic for _finding_ the
+# sessionfiles, editing them, etc.  None of that will change: I'll just use a new extension and,
+# when a file with that extension is detected, it can hand off processing to a separate script.
+#
+# The remainder of this script (including the extensive comments below) really have to do more with
+# the old format.  For full details on the new format and its algorithms, please see `vim-session`.
+#
+#
+#
+# **ORIGINAL COMMENTS AND SCRIPT FOLLOW**
+#
+#
+#
 # Normally, using `vim -S sessionfile` leaves buffer #1 empty, and starts loading files at buffer
 # #2.  When searching for solutions for this online, most people advised that you shouldn't really
 # care (or rely on) which files were set to which buffers.  However, I find that, after working with
@@ -167,17 +245,22 @@ fi
 
 
 sessionfile=$1
-if [[ ! -f $sessionfile ]]
+if [[ ! -f $sessionfile && ! -f $sessionfile.V ]]
 then
 	sessionfile=$1.vimS
 fi
-if [[ ! -f $sessionfile ]]
+if [[ ! -f $sessionfile && ! -f $sessionfile.V ]]
 then
 	for prefix in $prefixes
 	do
-		[[ -f $sessionfile ]] && break
 		sessionfile=$prefix$1
+		[[ -f $sessionfile || -f $sessionfile.V ]] && break
 	done
+fi
+
+if [[ -f $sessionfile.V ]]
+then
+	exec vim-session $sessionfile.V
 fi
 
 if [[ ! -f $sessionfile ]]

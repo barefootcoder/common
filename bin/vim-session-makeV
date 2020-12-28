@@ -1,0 +1,75 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Array::Diff;
+
+
+sub parse_mappings(@);
+sub ignore_old_mappings(@);
+
+
+# Note that we can't use `chomp=>1` in the slurp calls below.  That's because it will "chomp" `\r\n`
+# just as happily as `\n`, which is, to be fair, normally the right thing to do.  In this case,
+# however, many of our mapping lines will end in `\r`, and we can't afford to lose those.
+
+my $baseline_mapping = tempfile();
+sh vim => -c => "mksession! $baseline_mapping", -c => 'q', '>/dev/null', '2>&1';
+my @baseline_mappings = uniq grep { ignore_old_mappings } map { parse_mappings } apply { chomp } $baseline_mapping->slurp;
+#say foreach @baseline_mappings;
+
+my $sessionfile = path(shift);
+my @commands    = apply { chomp } $sessionfile->slurp;
+my @session_files    =      grep { /^badd\b/      } @commands;
+my @session_mappings = uniq map  { parse_mappings } @commands;
+my ($curfile) = head 1 => map { /^ edit \h+ (.*) /x ? $1 : () } @commands;
+my ($dir    ) = head 1 => map { /^ cd   \h+ (.*) /x ? $1 : () } @commands;
+die("no mappings in sessionfile? (highly suspicious)") unless @session_mappings;
+
+my $map_diffs = Array::Diff->diff( [ sort @baseline_mappings ], [ sort @session_mappings ] );
+@session_mappings = @{ $map_diffs->added };
+
+local *OUT;
+open OUT, ">$sessionfile.V";
+say OUT foreach
+		map { sprintf('%s%4d %s', @$_)                                          }
+		map { $_->[1] eq $curfile ? [ '%' => @$_ ] : [ ' ' => @$_ ]             }
+		map { /^badd \+?(\d+)\s(.*)$/ ? [$1 => $2] : die("bad file format: $_") }
+		    ( @session_files                                                    )
+;
+say OUT "=DIR ", $dir =~ s/^cd //r;
+say OUT "=MAPS";
+say OUT foreach @session_mappings;
+close(OUT);
+
+
+sub parse_mappings (@)
+{
+	local $_ = @_ ? shift : $_;
+
+	return () unless /^\w*map /;					# only care about the `map`s
+
+	s/\cV//g;
+	s/\e/<Esc>/g;
+	s/\t/<Tab>/g;
+	s/\r/<CR>/g;
+	s/([\cA-\cZ])/ '<C-' . chr( ord('A') - 1 + ord($1) ) . '>' /ge;
+	s/\037/<C-_>/g;
+	s/(<C-\w>)<Tab>/$1<C-I>/g;
+	s/(<C-\w>)<CR>/$1<C-M>/g;
+	s/\|/<Bar>/g;
+	s/(<Tab>)+" .*$//;
+	$_;
+}
+
+sub ignore_old_mappings (@)
+{
+	local $_ = @_ ? shift : $_;
+
+	return 0 if /<Plug>/;							# these are useless
+	return 0 if /:w\cV\r/;							# these are old and wrong
+	return 0 if /:set iskeyword/;					# ditto
+	return 0 if /pusht %/;							# been upgraded since this
+	return 1;
+}
