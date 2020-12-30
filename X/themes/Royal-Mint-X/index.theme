@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Royal-Mint-X
+Type=X-GNOME-Metatheme
+Comment=Mostly Mint-X-Purple, but with some tweaks.
+
+[X-GNOME-Metatheme]
+GtkTheme=Royal-Mint-X
+MetacityTheme=Splint
+IconTheme=Mint-X-Purple
+GtkColorScheme=link_color:#08c
+CursorTheme=default
+CursorSize=18
