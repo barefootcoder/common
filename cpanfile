@@ -10,6 +10,7 @@ feature bootstrap => sub
 
 	# need this much just to run the `cpm` wrapper
 	requires 'CLASS';
+	requires 'thanks';
 	requires 'Debuggit';
 	requires 'Const::Fast';
 	requires 'Import::Into';
