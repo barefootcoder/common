@@ -1,0 +1,81 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+
+opts <<'-';
+	[-k <threshold>] [-v] <cmd>
+	-k : kill the process found if it exceeds the <threshold>
+	-v : verbose mode
+	<threshold> : percentage of total RAM (excluding swap)
+	<cmd>       : string to search proc table for (identifies proc)
+	if <cmd> results in multiple processes, report on them all
+	however, multiple procs with -k is a fatal error
+-
+fatal("must supply command") unless @ARGV;
+
+
+#my @procs = grep { $_ != $$ } sh pgrep => -f => @ARGV;
+my @procs = sh pgrep => -f => @ARGV;
+my $to_remove = $$;									# remove current process ...
+my $removed = 1;
+while ($to_remove)									# ... and all its ancestors
+{
+	$removed = 0;
+	@procs = grep { $_ == $to_remove ? ($to_remove = ppid($_), $removed = 1, 0) : 1 } @procs;
+	undef $to_remove unless $removed;
+}
+fatal("no matching processes found") unless @procs;
+
+my $total_ram = head 1 => map { /(\d+)/ and $1 } grep { /MemTotal/ } path( '/proc' => 'meminfo' )->slurp;
+say "# total mem (in kB) : $total_ram" if $OPT{v};
+
+my @PS_COLS = qw< pid user stime tty8 stat time cmd >;
+
+
+if ( defined $OPT{k} )
+{
+	fatal("won't kill multiple processes") if @procs > 1;
+	my $proc = shift @procs;
+	my ($proc_mem, $mem_pct) = get_mem($proc);
+	$mem_pct = sprintf("%.2f", $mem_pct);			# just to make it prettier for logging
+	if ( $mem_pct >= $OPT{k} )
+	{
+		sh sudo => kill => $proc;
+		my $msg = "sent default kill signal to process $proc "
+				. "because its memory usage ($mem_pct%) exceeded specified threshold of $OPT{k}%";
+		sh logger => -t => $ME, $OPT{v} ? '--stderr' : (), $msg;
+	}
+	else
+	{
+		say "process $proc not killed (usage currently only $mem_pct%)" if $OPT{v};
+	}
+}
+else
+{
+	foreach (@procs)
+	{
+		my $ps_out = sh ps => -wwwo => join(',', map { "$_=" } @PS_COLS), -p => $_;
+		my ($proc_mem, $mem_pct) = get_mem($_);
+		printf "%6.1fGb %5.2f%%  %s\n", $proc_mem / 1024 / 1024, $mem_pct, $ps_out;
+	}
+}
+
+
+sub get_mem
+{
+	my ($proc) = @_;
+
+	my $proc_mem = tail -1 => map { /(\d+)/ } sh sudo => pmap => $proc;
+	my $mem_pct  = 100 * $proc_mem / $total_ram;
+	return ($proc_mem, $mem_pct);
+}
+
+
+sub ppid
+{
+	scalar sh ps => -o => 'ppid=', -p => shift;
+}
