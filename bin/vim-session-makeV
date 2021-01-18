@@ -3,11 +3,10 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Array::Diff;
-
 
 sub parse_mappings(@);
 sub ignore_old_mappings(@);
+sub diff_mappings(\@\@);
 
 
 # Note that we can't use `chomp=>1` in the slurp calls below.  That's because it will "chomp" `\r\n`
@@ -16,7 +15,7 @@ sub ignore_old_mappings(@);
 
 my $baseline_mapping = tempfile();
 sh vim => -c => "mksession! $baseline_mapping", -c => 'q', '>/dev/null', '2>&1';
-my @baseline_mappings = uniq grep { ignore_old_mappings } map { parse_mappings } apply { chomp } $baseline_mapping->slurp;
+my @baseline_mappings = uniq map { parse_mappings } apply { chomp } $baseline_mapping->slurp;
 #say foreach @baseline_mappings;
 
 my $sessionfile = path(shift);
@@ -27,8 +26,7 @@ my ($curfile) = head 1 => map { /^ edit \h+ (.*) /x ? $1 : () } @commands;
 my ($dir    ) = head 1 => map { /^ cd   \h+ (.*) /x ? $1 : () } @commands;
 die("no mappings in sessionfile? (highly suspicious)") unless @session_mappings;
 
-my $map_diffs = Array::Diff->diff( [ sort @baseline_mappings ], [ sort @session_mappings ] );
-@session_mappings = @{ $map_diffs->added };
+@session_mappings = grep { ignore_old_mappings } diff_mappings @baseline_mappings, @session_mappings;
 
 local *OUT;
 open OUT, ">$sessionfile.V";
@@ -72,4 +70,27 @@ sub ignore_old_mappings (@)
 	return 0 if /:set iskeyword/;					# ditto
 	return 0 if /pusht %/;							# been upgraded since this
 	return 1;
+}
+
+sub diff_mappings (\@\@)
+{
+	state $KEY_MAPPED = qr/map\h+(\H+)/;
+	my ($before, $after) = @_;
+	my %before = map { $_ => 1 } @$before;
+	my %new;
+	foreach (@$after)
+	{
+		if (exists $before{$_})
+		{
+			delete $before{$_};
+		}
+		else
+		{
+			/$KEY_MAPPED/ or die("can't determine what key is being mapped [$_]");
+			$new{$1} = $_;
+		}
+	}
+	my @new = map { s/(nore)?map/unmap/r } map { s/($KEY_MAPPED)\h+.*$/$1/ && $new{$2} ? () : $_ } sort keys %before;
+	push @new, sort values %new;
+	return @new;
 }

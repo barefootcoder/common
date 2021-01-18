@@ -1,0 +1,12 @@
+#! /bin/bash
+source ~/common/functions
+
+[[ -r $1 ]] || die "must supply file to convert"
+
+mkdir -p old/
+mkdir -p transition/
+vim-session-makeV $1
+mv $1 old/$1
+cp $1.V transition/$1.V.orig-converted
+vi $1.V
+diff transition/$1.V.orig-converted $1.V >/dev/null || cp $1.V transition/$1.V.orig-tweaked

@@ -152,7 +152,7 @@ alias cal ~/bin/cal
 alias ff 'bash -c "find . -name /proc -prune -o -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
 alias ffd 'bash -c "find . -name /proc -prune -o -type d -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
 alias vi "fe_vi"
-alias vims "vimS"
+alias vims "vim-session"
 alias list "vi -v +'map   '"
 alias less "less -a -x4"
 alias dlocate "locate -be \!^ | each -l '[ -d {} ] && echo x'"
@@ -260,8 +260,7 @@ complete svn 'p/1/(add checkout cleanup commit remove diff help log mkdir propde
 complete psync 'C?[^-]*?`friendly-hosts`?'
 complete runon 'p/1/`friendly-hosts`/'
 complete steal-common 'p/1/`friendly-hosts`/'
-complete vims 'C?[^-]*?`vimS -l`?'
-complete vimS 'C?[^-]*?`vimS -l`?'										# should be same as line above
+complete vims 'C?[^-]*?`vim-session -l`?'
 complete gaming 'p/1/`gaming -C`/'
 complete dz 'C?[^-]*?`dz commands`?' 'c?--?(help pretend)?'
 

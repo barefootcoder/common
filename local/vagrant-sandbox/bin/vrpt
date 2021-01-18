@@ -91,4 +91,4 @@ then
 	report=report2
 fi
 
-vimS -n $report
+vim-session -n $report

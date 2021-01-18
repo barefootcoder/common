@@ -1,12 +1,8 @@
 #! /usr/bin/env perl
 
-use myperl::Pxb DEBUG => 1;
+use myperl::Pxb;
 use autodie ':all';
 use myperl::Classlet;
-
-use Date::Easy;
-use Data::Printer;
-use Path::Class::Tiny;
 
 
 #########
@@ -70,6 +66,13 @@ class SessionTemplate
 	{
 		local $_ = @_ ? shift : $_;
 		s/([ #])/\\$1/gr;
+	}
+
+	sub to_path
+	{
+		local $_ = @_ ? shift : $_;
+		s/(?<!\\)\$(\w+)/$ENV{$1}/g;				# allow env var substitution (unless preceded by `\`)
+		path($_);									# convert to Path::Class::Tiny on the way out
 	}
 
 	sub parse_mappings (@)
@@ -161,7 +164,7 @@ class SessionTemplate
 			my ($num, $which, $name, $line) = /^ \h* (\d+) .(.)... \h* "(.*)" \h+ line \h (\d+) $/x
 					or die("can't parse line from :files [$_]");
 			my $old_file = $old->file_num($num);
-			$name = $old_file if path($old_file)->ef($name);
+			$name = $old_file if $old_file and to_path($old_file)->ef($name);
 			$new->add_file($name, $line, $which);
 		}
 		$new->add_map($_) foreach @new_mappings;
@@ -188,7 +191,7 @@ class SessionTemplate
 	method file_num ($num)  { $self->filelist->file_at($num-1) }		# have to convert from 1-index to 0-index
 
 	# action methods
-	method chdir { chdir path($self->dir) }
+	method chdir { chdir to_path($self->dir) }
 
 	# read methods
 
@@ -289,7 +292,7 @@ class SessionTemplate
 ########
 
 opts <<'-';
-	-l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-n] [-D] <templ>
+	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-n] [-D] <templ> }
 	-l : list all possible session files
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
@@ -308,11 +311,23 @@ $pattern = "^badd .*$OPT{g}" if $OPT{g};
 $pattern =          $OPT{G}  if $OPT{G};
 
 $pattern = qr/$pattern/ if defined $pattern;
-my $file = shift;
-my @prefixes = qw< ~/.vimS- ~/vimS/ ~/local/data/vimS/ ~/proj/vimS/ ./vimS/ >;
+my $file = $ARGV[0];
+my @search_paths = map { path($_) } qw< ~/vimS ~/local/data/vimS ~/proj/vimS ./vimS >;
 
 
-$file = first { -r } $file, "$file.V", map { ("$_$file.V", "$_$file") } @prefixes if defined $file;
+# handle modes which don't require a session template
+do_list() if $OPT{l};
+do_grep() if $OPT{g};
+
+
+# first, search for a session template
+if ( defined $file )
+{
+	$file .= ".V" unless $file =~ /\.V$/;
+	$file = first { -r } $file, map { $_->child($file) } @search_paths;
+	# if that didn't work, check for an old-style sessionfile
+	handle_old_sessionfile() if not -r $file;
+}
 fatal "session file $file not specified, doesn't exist, or is unreadable" unless $file;
 
 
@@ -336,23 +351,93 @@ my @save_commands =
 	"silent files",
 	"redir END",
 );
+@save_commands = ('echo "Autosave of session disabled"') if $OPT{n};
 $session->write_vim_session_file($faux_session, on_exit => join(' | ', @save_commands));
 
 $session->chdir;
 sh vim => -S => $faux_session, $session->file_num(1);
 
-my $new_sess = SessionTemplate->from_old_session ($session,
-	filelist_file	=>	$faux_session,
-	mapfile			=>	$vim_script,
-	base_mappings	=>	[@baseline_mappings],
-	name_xform		=>	sub { shift . '.upd' },
-);
-
-if ($session->contents ne $new_sess->contents)
+unless ($OPT{n})
 {
-	my $orig_file = $session->filepath;
-	my $bakfile   = "$orig_file.bak";
-	unlink $bakfile if -e $bakfile;
-	$session ->filepath->move_to( $bakfile   );
-	$new_sess->filepath->move_to( $orig_file );
+	my $new_sess = SessionTemplate->from_old_session ($session,
+		filelist_file	=>	$faux_session,
+		mapfile			=>	$vim_script,
+		base_mappings	=>	[@baseline_mappings],
+		name_xform		=>	sub { shift . '.upd' },
+	);
+
+	if ($session->contents ne $new_sess->contents)
+	{
+		my $orig_file = $session->filepath;
+		my $bakfile   = "$orig_file.bak";
+		unlink $bakfile if -e $bakfile;
+		$session ->filepath->move_to( $bakfile   );
+		$new_sess->filepath->move_to( $orig_file );
+	}
+}
+
+
+##############
+# LOCAL SUBS #
+##############
+
+sub handle_old_sessionfile
+{
+	return unless @ARGV;							# nothing to check if no args were passed
+	my $file = $ARGV[0];
+	return if $file =~ /\./;						# old-style files are extensionless
+
+	$file = first { -r } map { $_->child($file) } @search_paths;
+	if (-r $file)
+	{
+		print "$ME: found potential old-style sessionfile; try to convert it? [y/N] ";
+		if ( <STDIN> =~ /^y/i )
+		{
+			chdir $file->parent;
+			exec 'vim-session-convert', $file->basename;
+		}
+		else
+		{
+			say STDERR "$ME: launching old script to handle old file";
+			my @opts = map { "-$_" } grep { $OPT{$_} } qw< n e >;
+			exec 'vimS', @opts, $file;
+		}
+	}
+}
+
+
+sub do_list
+{
+	my $fmt = "%-25s  %-8s  %s\n";
+	if ( $OPT{v} )
+	{
+		printf $fmt, 'Name', 'Type', 'Path';
+		say '=' x 100;
+	}
+	foreach my $file ( grep { -r and not -d } map { $_->children } grep { -d } @search_paths )
+	{
+		my $base = $file->basename;
+		my $type = '???';
+		if ($base =~ s/\.V$//)
+		{
+			# .V files are new-style (session templates)
+			$type = 'template';
+		}
+		elsif ($file =~ /\./)
+		{
+			# other files with extensions aren't useful
+			next;
+		}
+		else
+		{
+			# no extension and not a directory; probably old-style (sessionfile)
+			$type = 'sessfile';
+		}
+		$OPT{v} ? printf $fmt, $base, $type, $file : say $base;
+	}
+	exit;
+}
+
+sub do_grep
+{
 }
