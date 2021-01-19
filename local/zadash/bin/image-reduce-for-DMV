@@ -1,0 +1,58 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $TARGET_SIZE => 128 * 1024;				# 128Kb
+
+
+opts <<'-';
+	[-f] <image>
+	-f : overwrite an existing file
+	-D : debug mode
+	<image> : file containing .png or .jpg image
+-
+
+my ($dir) = glob("tiny-*");
+die("can't find dir of tiny images to save to [$dir]") unless -d $dir;
+
+my $file = shift // usage_error('must supply image');
+die("can't read file $file") unless -r $file;
+my $dest = path($dir)->child( path($file)->basename =~ s/\./-tiny./r );
+say "# saving to $dest" if $OPT{D};
+
+if ( -r $dest and not $OPT{f} )
+{
+	die("file exists (-f to overwrite)");
+}
+
+
+my $top = 100;
+my $bottom = 0;
+my $size;
+while ($top != $bottom)
+{
+	my $target = $bottom + int(($top - $bottom) / 2);
+	last if $target == $top or $target == $bottom;						# this avoids infinite loops
+
+	say "# trying $target% ..." if $OPT{D};
+	convert($target);
+	$size = -s $dest;
+	if ($size > $TARGET_SIZE)
+	{
+		$top = $target;
+		say "# top and bottom have met!" if $top == $bottom;
+		--$bottom if $top == $bottom;
+	}
+	else
+	{
+		$bottom = $target;
+		say "# bottom and top have met!" if $top == $bottom;
+	}
+}
+convert($bottom - 1) if $size > $TARGET_SIZE;
+sh(ls => -lh => $dest);
+
+sub convert { sh(convert => -resize => shift . '%', $file, $dest); }
