@@ -45,14 +45,14 @@ OUT
 END
 
 
-perl_output_is( "timerfile set properly", <<OUT, <<'END');
+perl_output_is( "timerfile set properly", <<OUT, <<'END') if -d path("~/timer");
 timer-new
 OUT
 	use myperl::Pxb;
 	say $timerfile->basename;
 END
 
-perl_output_is( "timerfile set properly in DEBUG mode", <<OUT, <<'END');
+perl_output_is( "timerfile set properly in DEBUG mode", <<OUT, <<'END') if -d path("~/timer");
 timer-test
 OUT
 	use myperl::Pxb DEBUG => 1;
