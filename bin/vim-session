@@ -297,7 +297,7 @@ opts <<'-';
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
 	-v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines
-	-e : edit <templ> (instead of starting session); with -l, edit all; with -g|-G, edit all matching
+	-e : edit template (instead of starting session); with -l, edit all; with -g|-G, edit all matching
 	-C : create a template from a vim session file (default name: add .V to session filename)
 	-n : do not autosave the session (default: autosave any changes back to the template)
 	-D : debug mode (print lots of behind-the-scenes info)
@@ -306,29 +306,32 @@ opts <<'-';
 	<templ>   : session template file (usually ends in `.V`)
 -
 my $grepargs = $OPT{v} ? '-hP' : '-lP';
-my $pattern;
-$pattern = "^badd .*$OPT{g}" if $OPT{g};
-$pattern =          $OPT{G}  if $OPT{G};
+my $pattern = $OPT{G} // $OPT{g};
 
 $pattern = qr/$pattern/ if defined $pattern;
 my $file = $ARGV[0];
 my @search_paths = map { path($_) } qw< ~/vimS ~/local/data/vimS ~/proj/vimS ./vimS >;
+const my $DOT_V => qr/\.V$/;
 
 
 # handle modes which don't require a session template
 do_list() if $OPT{l};
-do_grep() if $OPT{g};
+do_grep() if $pattern;
 
 
-# first, search for a session template
+# next, search for a session template
 if ( defined $file )
 {
-	$file .= ".V" unless $file =~ /\.V$/;
+	$file .= ".V" unless $file =~ $DOT_V;
 	$file = first { -r } $file, map { $_->child($file) } @search_paths;
 	# if that didn't work, check for an old-style sessionfile
 	handle_old_sessionfile() if not -r $file;
 }
 fatal "session file $file not specified, doesn't exist, or is unreadable" unless $file;
+
+
+# then, handle modes which require a template but don't actually use it for a session
+do_edit($file) if $OPT{e};
 
 
 my $session = SessionTemplate->from_template( $file, Debug => $OPT{D} );
@@ -418,7 +421,7 @@ sub do_list
 	{
 		my $base = $file->basename;
 		my $type = '???';
-		if ($base =~ s/\.V$//)
+		if ($base =~ s/$DOT_V//)
 		{
 			# .V files are new-style (session templates)
 			$type = 'template';
@@ -440,4 +443,38 @@ sub do_list
 
 sub do_grep
 {
+	my $found = 0;
+	foreach my $file ( grep { -f } map { $_->children($DOT_V) } grep { -d } @search_paths )
+	{
+		my @matches = grep /$pattern/, grep { $OPT{G} ? 1 : scalar 1../^=/ } $file->slurp;
+		#my @matches = grep { $OPT{G} ? 1 : scalar 1../^=/ } $file->slurp;
+		if (@matches)
+		{
+			$found = 1;
+			if ( $OPT{v} )
+			{
+				print foreach map { join(':', $file->basename, $_) } @matches;
+			}
+			else
+			{
+				say $file->basename($DOT_V);
+			}
+		}
+	}
+	_grep_old_sessionfiles();
+	exit $found ? 0 : 1;
+}
+	sub _grep_old_sessionfiles
+	{
+		my @opts;
+		push @opts, '-g', $OPT{g} if $OPT{g};
+		push @opts, '-G', $OPT{G} if $OPT{G};
+		push @opts, '-v'          if $OPT{v};
+		eval { system( vimS => @opts ) };
+	}
+
+sub do_edit
+{
+	my ($file) = @_;
+	exec vim => $file;
 }

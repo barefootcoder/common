@@ -196,6 +196,12 @@ then
 		local base="$1"
 		local file="$2"
 
+		if [[ -d $file || $file == *.V || $file == *.V.bak ]]
+		then
+			# should be handled by `vim-session`
+			continue
+		fi
+
 		if [[ $pattern ]]
 		then
 			if ! grep $grepargs -q "$pattern" "$file"
