@@ -2,7 +2,7 @@
 /* ... later ... */
 /* https://forum.vivaldi.net/topic/42105 */
 
-#tabs-container.bottom {
+#tabs-tabbar-container.bottom {
     order: -1;
     border-top: none;
     padding-bottom: 0px !important;
@@ -15,6 +15,11 @@
 
 .toolbar.UrlBar {
     order: -3;
+}
+
+/* newly required for 3.6 */
+.tabs-bottom .tab.active:not(.marked):not(.tab-mini):after {
+  transform: unset;
 }
 
 /* corner rounding */
