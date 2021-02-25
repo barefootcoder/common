@@ -13,8 +13,8 @@ COMMS:
 
 	tech-private	+technology		tech-qa
 							max
-	company			+technology		push-songs
-			mia				holly
+					+technology		push-songs
+							holly
 	leadops			+technology		+tech-offtopic
 
 
