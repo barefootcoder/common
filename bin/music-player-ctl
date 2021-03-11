@@ -1,0 +1,406 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Sys::RunAlone;
+use Time::HiRes qw< usleep >;
+use List::AllUtils qw< firstidx >;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	{ -l | [-nvD] <cmd> [...] }
+	-l : list possible commands
+	-n : no action (do a dry run)
+	-v : verbose
+	-D : debug mode (implies -v)
+	<cmd>  : command to process (maybe with args)
+-
+$OPT{v} = 1 if $OPT{D} or $OPT{n};
+
+
+# I know I keep saying this, but this *really* needs to get moved into a common lib somewhere ...
+const my $ROMAN_NUMERAL => qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
+
+const my $DECIBEL_REMOTE => '/usr/share/decibel-audio-player/src/remote.py';
+const my $CLEMENTINE     => '/usr/bin/clementine';
+
+const my $MUSIC_HOME    => path( $ENV{MUSIC_HOME} // '/export/music' );
+const my $TRACKLIST_DIR => $MUSIC_HOME->child("tracklists");
+const my $TL_POS_FILE   => $MUSIC_HOME->child(etc => "tracklist.pos");
+
+# NOTE! The `list_pos` field is the position of the track in the list *at the time it was saved.*
+# It could have (and often will have) changed since then.  Thus, while it is informative for humans,
+# *code should never use it.*
+const my @POSFILE_FIELDS => qw< playlist list_pos track seconds >;
+
+my %COMMAND_MODES =
+(
+	vol		=>	'change_volume',
+	plist	=>	'set_playlist',
+	pos		=>	'handle_pos_subcommand',
+);
+if ( $OPT{l} )
+{
+	say sprintf("%-10s: %s", $_, $COMMAND_MODES{$_} =~ s/_/ /rg) foreach sort keys %COMMAND_MODES;
+	exit;
+}
+
+my %COMMAND_ALIASES =
+(
+	'music-player-volume'	=>	'vol',
+);
+
+my %VOL_COMMANDS =
+(
+	reset	=>	'=49',
+	set		=>	'=',
+	up		=>	'+',
+	down	=>	'-',
+	show	=>	undef,
+);
+
+my $command;
+if (exists $COMMAND_ALIASES{$ME})
+{
+	$command = $COMMAND_ALIASES{$ME};
+}
+elsif (@ARGV)
+{
+	$command = shift;
+}
+die("must supply some command") unless $command;
+die("unrecognized command: $command") unless exists $COMMAND_MODES{$command};
+my $dispatch = main->can($COMMAND_MODES{$command}) or die("logic error: $command not defined");
+$dispatch->(@ARGV);
+
+
+#############
+# MODE SUBS #
+#############
+
+sub change_volume
+{
+	die("must specify volume command") unless @_;
+	my $subcommand = shift;
+	die("unknown volume command $subcommand") unless exists $VOL_COMMANDS{$subcommand};
+
+	my $curvol_file = path(File::Spec->tmpdir, 'curvol');
+	my $curvol = -e $curvol_file ? $curvol_file->slurp : $VOL_COMMANDS{'reset'};
+	$curvol =~ s/^=//;
+	if ($subcommand eq 'show')
+	{
+		say "volume currently: $curvol";
+		exit;
+	}
+
+	my $adj = $VOL_COMMANDS{$subcommand};
+	unless ($adj =~ /\d+$/)
+	{
+		fill_in_adj($adj, $curvol);
+	}
+	if ($adj =~ s/^=//)
+	{
+		$curvol = $adj;
+	}
+	else
+	{
+		$curvol += $adj;
+	}
+	$curvol = force_into_range($curvol, 0, 100);
+
+	adjust_volume($curvol);
+	say "voume set to: $curvol";
+	$curvol_file->spew($curvol) unless $OPT{n};
+}
+
+sub set_playlist
+{
+	die("must specify playlist to set") unless @_;
+	my $list = shift;
+	if (not -r $list and -r $TRACKLIST_DIR->child($list))
+	{
+		$list = $TRACKLIST_DIR->child($list);
+	}
+	elsif (not -r $list and $list =~ /^\w{1,5}/)
+	{
+		my $found = 0;
+		foreach ($MUSIC_HOME->child( mixes => 'mixes' )->slurp)
+		{
+			if ( /=$list=/i )
+			{
+				$found = 1;
+			}
+			elsif ($found)
+			{
+				next if /^$/;
+				chomp;
+				$found = s/\s+$ROMAN_NUMERAL$//r =~ s/^\s*\{(.*)\}$/$1/r;
+				($list) = glob("$TRACKLIST_DIR/*/$found.m3u");
+				die("resolved to playlist $found, but couldn't locate tracklist file") unless $list and -r $list;
+				last;
+			}
+		}
+	}
+	die("unknown playlist $list") unless -r $list;
+
+	my $playlist = path($list)->relative($TRACKLIST_DIR);
+	say $OPT{n} ? "would play" : "playing", ": $playlist" if $OPT{v};
+	if ( -x $CLEMENTINE )
+	{
+		run($CLEMENTINE, '--load' => $list);
+	}
+	else						# should be decibel
+	{
+		run(python => $DECIBEL_REMOTE, 'pl-set' => $list);
+	}
+	return $playlist;
+}
+
+sub handle_pos_subcommand
+{
+	usage_error("must specify pos command") unless @_;
+	my $subcommand = shift;
+
+	given ($subcommand)
+	{
+		when ('cur')
+		{
+			my $info = get_playlist_info();
+			print_playlist_info($info);
+		}
+		when ('save')
+		{
+			my $info = get_playlist_info();
+			say "\nwould save:" if $OPT{n};
+			print_playlist_info($info) if $OPT{v};
+			my $tracklists = read_playlist_posfile();
+			$tracklists->{ $info->{playlist} } = $info;
+			write_playlist_posfile($tracklists) unless $OPT{n};
+		}
+		when ('load')
+		{
+			my $plist = shift or die("must specify playlist to load");
+			handle_pos_subcommand('save');
+			my $tracklists = read_playlist_posfile();
+			# `set_playlist` may expand an abbreviated or alias arg
+			$plist = set_playlist($plist);
+			my $info = $tracklists->{$plist};
+			if ($info)
+			{
+				my $trackpos = tracknum($plist, $info->{track});
+				# by this point, we must be using Clementine, or we'd have bombed out by now
+				if ( $OPT{n} )
+				{
+					say "would jump to track: $info->{track} [$trackpos]";
+					say "would seek to time:  ", display_time($info->{seconds});
+				}
+				else
+				{
+					my $count = 0;
+					print "waiting for playlist to load ." if $OPT{v};
+					while ( get_playlist_info()->{playlist} ne $plist )
+					{
+						usleep(100_000);
+						print "." if $OPT{v} and ++$count % 10 == 0;
+					}
+					say " done" if $OPT{v};
+					sh( clementine => -k          => $trackpos        );
+					sh( clementine => '--seek-to' => $info->{seconds} );
+				}
+			}
+			else
+			{
+				warn("could not find a position to restore");
+			}
+		}
+		default { usage_error("unknown pos subcommand $subcommand") }
+	}
+}
+
+
+##################
+# SHARED SUBS    #
+# (of mode subs) #
+##################
+
+
+sub player_api
+{
+	my @extra;
+	push @extra, shift while $_[0] =~ /^-/;
+	my ($object, $prop) = @_;
+	sh(qdbus => @extra, 'org.mpris.MediaPlayer2.clementine',
+		'/org/mpris/MediaPlayer2', 'org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
+}
+
+sub get_playlist_info
+{
+	die("only know how to get playlist info for clementine") unless -x $CLEMENTINE;
+
+	my @metadata  = player_api(Player => 'Metadata');
+	my $cur_track = head 1 => map { m</music/(.*)$>       ? $1 : () } @metadata;
+	my $plist_pos = head 1 => map { m<:trackid:.*?(\d+)$> ? $1 : () } @metadata;
+	my $playlist;
+	foreach ( sh fgrep => -l => $cur_track, "$TRACKLIST_DIR/*/*.m3u" )
+	{
+		my $track = tracknum($_, $plist_pos);
+		$playlist = path($_) if $track and $track =~ /\Q$cur_track\E$/;
+	}
+	if ($playlist)
+	{
+		# This list of keys really needs to match @POSFILE_FIELDS (see constants, at the top of the
+		# file), but I haven't figured out a way to guarantee that yet.
+		return
+		{
+			playlist	=>	$playlist->relative($TRACKLIST_DIR),
+			list_pos	=>	$plist_pos,
+			track		=>	$cur_track,
+			seconds		=>	int(player_api(Player => 'Position') / 1_000_000),
+		};
+	}
+	else
+	{
+		fatal_error("cannot determine playlist for $cur_track at $plist_pos");
+	}
+}
+
+sub print_playlist_info
+{
+	my ($info) = @_;
+	my $min_sec = display_time($info->{seconds});
+
+	say '';
+	say "$info->{playlist} [$info->{list_pos}]:";
+	say "  $info->{track} [$min_sec]";
+	say '';
+}
+
+
+sub read_playlist_posfile
+{
+
+	my $tlists = {};
+	foreach ( $TL_POS_FILE->slurp(chomp=>1) )
+	{
+		my $info = {};
+		@$info{@POSFILE_FIELDS} = split("\t");
+
+		$tlists->{ $info->{playlist} } = $info;
+	}
+
+	return $tlists;
+}
+
+sub write_playlist_posfile
+{
+	my ($tlists) = @_;
+	my @data;
+	foreach ( sort keys %$tlists )
+	{
+		my $info = $tlists->{$_};
+#use Data::Printer; p @POSFILE_FIELDS; p $info;
+		push @data, join("\t", @$info{@POSFILE_FIELDS}) . "\n";
+	}
+	$TL_POS_FILE->spew(@data);
+}
+
+
+################
+# GENERAL SUBS #
+################
+
+sub run
+{
+	say $OPT{n} ? "would run" : "running", ": @_" if $OPT{D};
+	system(@_) unless $OPT{n};
+}
+
+
+sub force_into_range
+{
+	my ($n, $min, $max) = @_;
+	return $n < $min ? $min : $n > $max ? $max : $n;
+}
+
+
+sub display_time
+{
+	my $seconds = shift;
+	my $min = int($seconds / 60);
+	my $sec = sprintf("%02d", $seconds % 60);
+	return "$min:$sec";
+}
+
+
+sub fill_in_adj
+{
+	my ($adj, $curvol) = @_;
+	$_[0] .= shift @ARGV, return if $adj eq '=';
+
+	my $is_below = sub { my $n = shift; return $curvol < $n || $curvol == $n && $adj eq '-'; };
+	if ($is_below->(10))
+	{
+		$adj .= 1;
+	}
+	elsif ($is_below->(30))
+	{
+		$adj .= 2;
+	}
+	elsif ($is_below->(45))
+	{
+		$adj .= 3;
+	}
+	elsif ($is_below->(65))
+	{
+		$adj .= 4;
+	}
+	else
+	{
+		$adj .= 5;
+	}
+
+	# adjust in place
+	$_[0] = $adj;
+}
+
+
+sub adjust_volume
+{
+	my ($curvol) = @_;
+	if ( -x $CLEMENTINE )
+	{
+		run($CLEMENTINE, '--volume' => $curvol);
+	}
+	else						# should be decibel
+	{
+		run(python => $DECIBEL_REMOTE, volume => $curvol);
+	}
+}
+
+
+sub tracknum
+{
+	my ($list, $which) = @_;
+	$list = path($list);
+	$list = $TRACKLIST_DIR->child($list) if $list->is_relative;
+	my @tracks = grep { not /^#/ } $list->slurp;
+
+	if ( $which =~ /^\d+$/ )						# it's a number; return the name
+	{
+		return $tracks[$which];
+	}
+	else											# it's a name; return the number
+	{
+		return firstidx { /\Q$which\E$/ } @tracks;
+	}
+
+	# not sure it's possible to get here ...
+	return undef;
+}
+
+
+__END__
