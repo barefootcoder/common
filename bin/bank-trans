@@ -14,7 +14,7 @@ my %DESCRIPTIONS =
 (
 	Reserve			=>	[
 							qr/N6723 CAMPUS EXP DIR DEP/i,
-							qr/N6723 ARCHER EDU DIR DEP/i,
+							qr/N6723 ARCHER ED/i,
 							qr/Interest Paid/i,
 							qr/internet transfer/i,
 							qr/booster transfer/i,
@@ -38,7 +38,7 @@ my %DESCRIPTIONS =
 	'TV/Internet'	=>	[
 							qr/DirecTv\b/i,
 							qr/Uverse Online/i,
-							qr/Time Warner Online/i,
+							qr/Time Warner/i,
 							qr/Spectrum/i,
 							qr/Netflix/i,
 							qr/(amazon|amzn) digit(al)?/i,
@@ -123,6 +123,7 @@ my %DESCRIPTIONS =
 							qr/Chewy\.?com/i,
 						],
 	School			=>	[
+							qr/CuriosityStream/i,
 							qr/discovery cube/i,
 							qr/UNDERWOOD FAMI/i,
 							qr/Santa Barbara Zoo/i,
@@ -167,6 +168,7 @@ my %DESCRIPTIONS =
 							qr/Burgerim/i,
 							qr/Domino'?s/i,
 							qr/Toppers/i,
+							qr/Burger Express/i,
 							qr/Ameci/i,
 							qr/Presto Pasta/i,
 							qr/Little Caesars/i,
@@ -320,32 +322,19 @@ opts <<'-';
 my $file = file(shift);
 -r $file or fatal("can't open $file");
 
-my $line;
-my %ids;
 my %categories;
-my $count = 0;
-foreach ($file->slurp)
+my @transactions = get_rows_from_file($file);
+foreach (@transactions)
 {
-	chomp;
-	if (not $line++)
-	{
-		say join("\t", csv_split) if $OPT{H};
-		next;
-	}
-
-	my ($date,$time,$amount,$type,$descr) = csv_split;
-	# time is useless
-	# type is always either "Deposit" or "Withdrawal"
+	my ($id,$date,$seq,$amount,$type,$descr) = @$_;
+	# seq is useless
+	# type either is_debit() or !is_debit() (i.e. credit)
 	# amount is always negative for withdrawals, positive for deposits
 
 	my $category = derive_category_from($descr);
-	my $source = $type eq 'Withdrawal' && $descr !~ /check.*#/i ? 'CC' : 'Check';
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
-	my $id = datetime("$date $time")->epoch;		# should be good enough for a unique ID
-	# tweak ID if we get a duplicate
-	--$id while $ids{$id};
-	$ids{$id} = 1;
+	my $source = $descr =~ /Online Payment/ ? 'BillPay' : is_debit($type) && $descr !~ /check.*#/i ? 'CC' : 'Check';
 
 	if ($OPT{a})
 	{
@@ -355,7 +344,7 @@ foreach ($file->slurp)
 
 	given ($descr)
 	{
-		if ( $type eq 'Deposit' and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
+		if ( not is_debit($type) and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
 		{
 			$category = 'Reimburse';
 		}
@@ -501,7 +490,7 @@ foreach ($file->slurp)
 	$display = 0 if $OPT{N} and $category;
 	if ($OPT{F})
 	{
-		$amount = -$amount if $type eq 'Withdrawal';
+		$amount = -$amount if is_debit($type);
 		$amount = round($amount);
 		$display = 0 unless $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
 		say join("\t", $what,$who,$amount,$source,$date) if $display;
@@ -516,9 +505,8 @@ foreach ($file->slurp)
 	}
 	else
 	{
-		say join("\t", $id,$date,$time,$amount,$type,$descr) if $display;
+		say join("\t", $id,$date,$seq,$amount,$type,$descr) if $display;
 	}
-	++$count;
 }
 
 if ($OPT{g})
@@ -527,13 +515,26 @@ if ($OPT{g})
 }
 else
 {
-	say STDERR "transaction rows: $count";
+	say STDERR "transaction rows: ", scalar @transactions;
 }
 
 
 ########
 # SUBS #
 ########
+
+sub get_rows_from_file
+{
+	my ($filename) = @_;
+	$filename =~ /\.(\w+)$/ or die("can't handle a file without an extension");
+	given ($1)
+	{
+		return parse_csv($filename) when /csv/i;
+		return parse_ofx($filename) when /ofx|qfx/i;
+		# otherwise ...
+		die("don't know how to parse a .$1 file");
+	}
+}
 
 # This is an update of CSV::split(), from the old Barefoot libs.
 sub csv_split (;$)
@@ -546,6 +547,55 @@ sub csv_split (;$)
 	return $csv->fields;
 }
 
+sub parse_csv
+{
+	my ($file) = @_;
+
+	my (@rows, %ids);
+	my $headers_seen = 0;
+	foreach ($file->slurp)
+	{
+		chomp;
+		if (not $headers_seen)
+		{
+			say join("\t", csv_split) if $OPT{H};
+			$headers_seen = 1;
+			next;
+		}
+
+		my @fields = csv_split;
+		my $id = datetime("@fields[0,1]")->epoch;	# should be good enough for a unique ID
+		--$id while $ids{$id};						# tweak ID if we get a duplicate
+		$ids{$id} = 1;
+		push @rows, [$id, @fields];
+	}
+	return @rows;
+}
+
+sub parse_ofx
+{
+	my ($file) = @_;
+	require Finance::OFX::Parse::Simple or die("cannot load Finance::OFX::Parse::Simple; install it?");
+
+	my (@rows, %dates);
+	my $ofx = Finance::OFX::Parse::Simple->new->parse_file($file);
+	die("cannot handle multiple accounts!") if @$ofx > 1;
+	foreach (@{ $ofx->[0]->{transactions} })
+	{
+		$_->{seq} = ++$dates{$_->{date}};			# we don't have a time, so make a faux sequence number
+		push @rows, [@$_{qw< fitid date seq amount trntype name >}];
+	}
+	return reverse @rows;
+}
+
+
+
+sub is_debit
+{
+	my ($type) = @_;
+	return 1 if $type eq 'Withdrawal';
+	return 1 if $type eq 'DEBIT';
+}
 
 sub derive_category_from
 {

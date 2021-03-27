@@ -99,6 +99,7 @@ feature dropbox => sub
 feature bank => sub
 {
 	requires 'Text::CSV';
+	requires 'Finance::OFX::Parse::Simple';
 };
 
 # required for misc support scripts
