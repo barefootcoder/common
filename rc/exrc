@@ -95,8 +95,8 @@ map Lock :map ZZ LockZZ<CR>:echo "Locked"<CR>
 
 set formatoptions=croqv													" only autoformat comments
 set textwidth=0															" set this on a file-by-file basis
-" comment markers (only works for Perl and piqt, sort of for Mason, and a little for bulleted lists)
-set comments=b:#,b://,b:--\!\ print,b:--,fb:*
+" comment markers (primarily for Perl, SQL, and piqt; bulleted lists are a WIP)
+set comments=b:#,b://,b:--\!\ print,b:--,b:*
 " reformat current comment block (using Alt-R)
 nnoremap <Esc>r ^gq/^$\<Bar>^<Tab>*#$\<Bar>^<Tab>*[^<Tab>#]\<Bar>^--! print$<CR>|			" Alt-R
 nnoremap <Esc>r<Esc>r gqgq|																	" Alt-R Alt-R
