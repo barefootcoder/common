@@ -49,7 +49,6 @@ if ($OPT{v})
 	say "Time from: ", $min_date->as('/Ymd');
 	say "       to: ", $max_date->as('/Ymd');
 	say "     days: $num_days";
-	say "     time: $total_time";
 	say '';
 }
 
@@ -59,22 +58,25 @@ say "Average availability: ", $total_avail / $num_days;
 #say "      Time Remaining: ", print_time( (30 - $this_week) + ($num_weeks * 30 - $total_time) );
 
 my $num_weeks = $num_days / 5;
+my $whole_weeks = round(UP => $num_weeks);
 if ($OPT{v})
 {
-	foreach ( $num_weeks, round(UP => $num_weeks) )
+	say '';
+	say "          Total time: $total_time";
+	say "  Total availability: $total_avail";
+	foreach ( $num_weeks, $whole_weeks )
 	{
 		say '';
-		say $num_weeks == int($num_weeks)
+		say $_ == int($_)
 			? "If you stop working right now:"
 			: "If you continue working at this rate:";
 		say "   Number of weeks: $_";
-		say "Total availability: $total_avail";
-		say "          Avg time: ", $total_time / $_;
-		say "  Avg availability: ", $total_avail / $_;
+		say "            Avg time: ", $total_time / $_;
+		say "    Avg availability: ", $total_avail / $_;
 		my $pct = $total_time / $total_avail;
-		say "              %age: ", 100 * $pct;
-		my $next_week = (ceil($_)+1) * 40 - $total_avail;
-		say "         Next week: $next_week / ", $next_week * $pct;
+		say "    %age time logged: ", 100 * $pct;
+		#my $next_week = ($whole_weeks+1) * 40 - $total_avail;
+		#say "           Next week: $next_week / ", $next_week * $pct;
 	}
 }
 
@@ -82,7 +84,15 @@ if ($OPT{H})
 {
 	say '';
 	say "             To bring average up to: ", $OPT{H};
-	say "Work this many more hours this week: ", $how_far * $OPT{H} - $total_time;
+	if ($total_time / $whole_weeks >= $OPT{H})
+	{
+		say "     You have already exceeded goal: congratulations";
+	}
+	else
+	{
+		say "Work this many more hours this week: ", $whole_weeks * $OPT{H} - $total_time;
+	}
+	say " By end of next week, add this many: ", ++$whole_weeks * $OPT{H} - $total_time;
 }
 
 
