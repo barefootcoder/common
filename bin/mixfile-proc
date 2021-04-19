@@ -39,6 +39,11 @@ my $MODES =
 								block_line		=>	\&check_for_blogged,
 								end_of_file		=>	\&print_completed_mix_summary,
 							},
+	'mix-stats-unblogged'=>	{
+								end_of_block	=>	\&gather_mixes,
+								block_line		=>	\&check_for_blogged,
+								end_of_file		=>	\&print_unblogged_mix_summary,
+							},
 	'mix-artists'		=>	{
 								end_of_block	=>	\&print_volume_summary,
 								block_line		=>	\&collect_artist,
@@ -313,11 +318,29 @@ sub print_completed_mix_summary
 	# and print all mixes, even the 100% ones
 	printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score}, _subtitle)
 		foreach
-			sort  { $a->{tempo} <=> $b->{tempo} || $a->{volno} <=> $b->{volno}	}
+			sort  { $a->{tempo} <=> $b->{tempo} || $a->{volno} <=> $b->{volno}						}
 			apply { $_->{tempo} = $spectrum{ $_->{mix} } // (warn("no tempo! [$_->{name}]"), -1)	}
 			apply { $_->{volno} = arabic( $_->{volno} // 'I' )										}
 			apply { $_->{mix}   = $_->{name} =~ s/\s+ ($roman_numeral) $//xr						}
 			grep  { ($_->{score} // 0) >= 100 * 2/3													}
+				  ( @mixes																			)
+	;
+}
+
+sub print_unblogged_mix_summary
+{
+	debuggit(3 => "found:", DUMP => \@mixes);
+	debuggit(4 => "spectrum:", DUMP => \@spectrum);
+	my $maxlen = max map { length $_->{name} } @mixes;
+	my %spectrum = map { $spectrum[$_] => $_ } 0..$#spectrum;
+
+	# only care about those that are not yet blogged (but at least has to have a socre)
+	printf(&FMT, $_->{blogged} ? '+' : ' ', $maxlen, $_->{name}, $_->{score}, _subtitle)
+		foreach
+			sort  { $a->{score} <=> $b->{score}														}
+			apply { $_->{volno} = arabic( $_->{volno} // 'I' )										}
+			apply { $_->{mix}   = $_->{name} =~ s/\s+ ($roman_numeral) $//xr						}
+			grep  { $_->{score} and not $_->{blogged}												}
 				  ( @mixes																			)
 	;
 }
