@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if [[ -t 1 ]]
+then
+	$0 "$@" | $PAGER
+	exit
+fi
+
+find ~/ -name .cache -prune -o -path ~/Dropbox/.dropbox.cache -prune -o -path ./.config/google-chrome-gsheets/Default/IndexedDB -prune -o -path ./.config/vivaldi/Default/IndexedDB -prune -o -path './.config/google-chrome/Profile 1/IndexedDB' -prune -o -path './.config/google-chrome-gsheets/Default/Service Worker/CacheStorage' -prune -o -mtime -1 -print0 | xargs -0 ls -ldrt | fgrep -v /Dropbox/machine/ | fgrep -v /CacheStorage/
