@@ -5,6 +5,7 @@ use autodie ':all';
 
 use Date::Easy;
 use Path::Class::Tiny;
+use List::AllUtils qw< pairfirst >;
 
 
 sub csv_split(;$);
@@ -23,17 +24,20 @@ my %DESCRIPTIONS =
 						],
 	Mortgage		=>	[
 							qr/BAC Home Loans/i,
-							qr/Bank of America Online Pmt/i,
+							qr/Bank of America/i,
 						],
 	'Power/Heat'	=>	[
 							qr/S CA Edison/i,
+							qr/So Cal Edison/i,
 							qr/Southern Cal Gas/i,
+							qr/So Cal Gas Co/i,
 						],
 	Phone			=>	[
 							qr/Verizon/i,
 							qr/VZWRLSS/i,
 							qr/asurion wireless/i,
 							qr/Google Fi/i,
+							qr/GOOGLE \*GOOGLE/i,
 						],
 	'TV/Internet'	=>	[
 							qr/DirecTv\b/i,
@@ -50,9 +54,10 @@ my %DESCRIPTIONS =
 							qr/DisneyPlus/i,
 							qr/Sling.com/i,
 							qr/DisneyPlus/i,
+							qr/OTT\* DROPOUT/i,
 						],
 	Water			=>	[
-							qr/Golden State (Water|Wtr)/i,
+							qr/Golden State (Water|Wtr|Wat)/i,
 						],
 	Trash			=>	[
 							qr/Anderson Rubbish/i,
@@ -106,7 +111,7 @@ my %DESCRIPTIONS =
 						],
 	Travel				=>	[
 							qr/chevron/i,
-							qr/shell (oil|service)/i,
+							qr/shell (oil|service|\d+)/i,
 							qr/exxon/i,
 							qr/USA 63216/i,
 							qr/HD Fuel/i,
@@ -118,6 +123,7 @@ my %DESCRIPTIONS =
 						],
 	Pets			=>	[
 							qr/Aquarium Connect./i,
+							qr/THE AQUARIUM CO/i,
 							qr/Theresas Country Feed/i,
 							qr/Valley Veterinary/i,
 							qr/Chewy\.?com/i,
@@ -167,6 +173,7 @@ my %DESCRIPTIONS =
 							qr/5Guys/i,
 							qr/Burgerim/i,
 							qr/Domino'?s/i,
+							qr/Pizza Hut/i,
 							qr/Toppers/i,
 							qr/Burger Express/i,
 							qr/Ameci/i,
@@ -205,6 +212,7 @@ my %DESCRIPTIONS =
 							qr/Lucky'?s Dog House/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
+							qr/Sub Zero Ice Cr/i,
 							qr/Tutti Frutti/i,
 							qr/7-Eleven/i,
 							qr/Simi Donuts/i,
@@ -218,7 +226,7 @@ my %DESCRIPTIONS =
 							qr/paypal inst xfer/i,
 							qr/Kickstarter/i,
 							qr/Treasured Memories/i,
-							qr/Jimmy Beans Wool/i,
+							qr/Jimmy Beans Wool?/i,
 							qr/Joann\b/i,
 							qr/HobbyLobb/i,
 							qr/Quilty Pleasures/i,
@@ -231,6 +239,7 @@ my %DESCRIPTIONS =
 							qr/Miniature Market/i,
 							qr/TrollAndToad/i,
 							qr/ONEBOOKSHELF.COM/i,
+							qr/MCDM Prod/i,
 							qr/Nintendo/i,
 							qr/GameStop/i,
 							qr/Kopy King/i,
@@ -265,43 +274,47 @@ my %DESCRIPTIONS =
 
 my %WHAT_LOOKUP =
 (
-	'N6723 CAMPUS EXP DIR DEP'	=>	'Paycheck',
-	'N6723 ARCHER EDU DIR DEP'	=>	'Paycheck',
-	'BAC Home Loans'			=>	'Mortgage Payment',
-	'S CA Edison'				=>	'Electric Bill',
-	'Golden State (Water|Wtr)'	=>	'Water Bill',
-	'VZWRLSS'					=>	'Verizon Wireless',
-	'BRETT MORGAN'				=>	'Pool Guy',
-	'jessie flores'				=>	'Gardeners',
-	'carlos ortega'				=>	'Gardener',
-	'fidelity nationa'			=>	'Warranty Company',
-	'HLLFRSH'					=>	'Hello Fresh',
-	'Sprouts Farmers'			=>	'Sprouts',
-	'Baskin'					=>	'Baskin Robbins',
-	'SMART MANAGEMENT & CO'		=>	'Arbys',
-	'acsc-huon'					=>	'AAA Car Insurance',
-	'CITI AUTOPAY'				=>	'Costco CC',
-	'AMZ[ _-]STORECARD'			=>	'Amazon Credit Card',
-	'SM City Parking Meters'	=>	'Parking Meters',
-	'noa coppa'					=>	'Nintendo',
-	'MOORPARK COL BKSTOR'		=>	'College Bookstore',
-	'Body Positive'				=>	'Yoga Club',
-	'OPTUM BANK REIMBUR'		=>	'HSA Reimbursement',
-	'GG Delivers'				=>	'Recreational',
-	'VENTURA CO CCD'			=>	'Moorpark College',
-	'UNDERWOOD FAMI'			=>	'Underwood Farms',
-	'SOL RESTAURANTS'			=>	'Sol (Work Team Lunch)',
-	'TONY PS DOCKSIDE'			=>	"Tony P's (Work Team Lunch)",
-	'ONEBOOKSHELFCOM'			=>	"DriveThruRPG []",
-	'Uverse Online'				=>	'DirecTv',
-	'AUTO CLUB SO CAL'			=>	'AAA (Roadside Assistance)',
-	'OFFICE DE'					=>	'Office Depot',
-	'^D&B '						=>	"Dave & Buster's",
-	'T.O. E-LIBRARY'			=>	'Library (TO)',
-	"WW INT'L"					=>	'Weight Watchers',
-	'JUNKYARD'					=>	'Junkyard Cafe',
-	'Imperfect Foods'			=>	'Veggie box',
-	'GOOGLE *INNERSLOTH',		=>	'Android Game',
+	'N6723 CAMPUS EXP DIR DEP'		=>	'Paycheck',
+	'N6723 ARCHER EDU DIR DEP'		=>	'Paycheck',
+	'N6723 ARCHER ED'				=>	'Paycheck',
+	'BAC Home Loans'				=>	'Mortgage Payment',
+	'S CA Edison'					=>	'Electric Bill',
+	'Golden State (Water|Wtr|Wat)'	=>	'Water Bill',
+	'VZWRLSS'						=>	'Verizon Wireless',
+	'BRETT MORGAN'					=>	'Pool Guy',
+	'jessie flores'					=>	'Gardeners',
+	'carlos ortega'					=>	'Gardener',
+	'fidelity nationa'				=>	'Warranty Company',
+	'HLLFRSH'						=>	'Hello Fresh',
+	'Sprouts Farmers'				=>	'Sprouts',
+	'Baskin'						=>	'Baskin Robbins',
+	'SMART MANAGEMENT & CO'			=>	'Arbys',
+	'acsc-huon'						=>	'AAA Car Insurance',
+	'CITI AUTOPAY'					=>	'Costco CC',
+	'AMZ[ _-]STORECARD'				=>	'Amazon Credit Card',
+	'SM City Parking Meters'		=>	'Parking Meters',
+	'noa coppa'						=>	'Nintendo',
+	'MOORPARK COL BKSTOR'			=>	'College Bookstore',
+	'Body Positive'					=>	'Yoga Club',
+	'OPTUM BANK REIMBUR'			=>	'HSA Reimbursement',
+	'GG Delivers'					=>	'Recreational',
+	'VENTURA CO CCD'				=>	'Moorpark College',
+	'UNDERWOOD FAMI'				=>	'Underwood Farms',
+	'SOL RESTAURANTS'				=>	'Sol (Work Team Lunch)',
+	'TONY PS DOCKSIDE'				=>	"Tony P's (Work Team Lunch)",
+	'ONEBOOKSHELFCOM'				=>	"DriveThruRPG []",
+	'Uverse Online'					=>	'DirecTv',
+	'AUTO CLUB SO CAL'				=>	'AAA (Roadside Assistance)',
+	'OFFICE DE'						=>	'Office Depot',
+	'^D&B '							=>	"Dave & Buster's",
+	'T.O. E-LIBRARY'				=>	'Library (TO)',
+	"WW INT'L"						=>	'Weight Watchers',
+	'JUNKYARD'						=>	'Junkyard Cafe',
+	'Imperfect Foods'				=>	'Veggie box',
+	'GOOGLE *INNERSLOTH',			=>	'Android Game',
+	'THE AQUARIUM CO',				=>	'Aquarium Connect',
+	'GOOGLE *GOOGLE',				=>	'Google Fi',
+	'OTT* DROPOUT',					=>	'DropoutTV',
 );
 
 
@@ -324,27 +337,33 @@ my $file = file(shift);
 
 my %categories;
 my @transactions = get_rows_from_file($file);
+my $trans_rows = 0;
 foreach (@transactions)
 {
 	my ($id,$date,$seq,$amount,$type,$descr) = @$_;
 	# seq is useless
-	# type either is_debit() or !is_debit() (i.e. credit)
-	# amount is always negative for withdrawals, positive for deposits
+	# type can be very useful or practically useless
+	# amount is always negative for debits, positive for credits
 
 	my $category = derive_category_from($descr);
 	my $who = '';									# might get set later
 	my $what = $descr;								# just as the default
-	my $source = $descr =~ /Online Payment/ ? 'BillPay' : is_debit($type) && $descr !~ /check.*#/i ? 'CC' : 'Check';
+	# let source default to type, but update for the more useless ones
+	my $source = $type;
+	$source = 'BillPay' if $descr =~ /Online Payment/;
+	$source = 'Check' if is_debit($amount) and $descr =~ /check\b.*#?\d/i;
+	$source = 'CC' if $source eq 'Withdrawal';
 
 	if ($OPT{a})
 	{
-		next if $id >= datetime("midnight");
-		next unless $id > $OPT{a};
+		next if date($date) >= today;
+		last if $id eq $OPT{a};
 	}
+	++$trans_rows;
 
 	given ($descr)
 	{
-		if ( not is_debit($type) and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
+		if ( not is_debit($amount) and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
 		{
 			$category = 'Reimburse';
 		}
@@ -376,7 +395,7 @@ foreach (@transactions)
 			$category = 'Reserve';
 		}
 
-		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i )
+		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
@@ -389,8 +408,9 @@ foreach (@transactions)
 				given (abs($amount))
 				{
 					$what = 'Video rental:'	when $_ < 6;
-					$what = 'Starz' 		when $_ < 9;
-					$what = 'Showtime' 		when $_ < 11;
+					$what = 'Disney+' 		when $_ < 9;
+					#$what = 'Starz' 		when $_ < 9;
+					#$what = 'Showtime' 	when $_ < 11;
 					$what = 'HBO'			when $_ < 15;
 					$what = 'Movie purchase:';
 				}
@@ -447,6 +467,10 @@ foreach (@transactions)
 			$category = "Personal";
 			$who = 'Christy';
 		}
+		when ( 'DropoutTV' )
+		{
+			$category = "TV/Internet";
+		}
 
 		when ( [ qr/THOUSAND OAKS 14/i, qr/AMC ONLINE/i, ] )
 		{
@@ -478,6 +502,7 @@ foreach (@transactions)
 						'MP3VA.com'				=>	'Buddy',
 						Dropbox					=>	'Buddy',
 						'DriveThruRPG []'		=>	'Buddy',
+						'MCDM Prod'				=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
@@ -490,7 +515,7 @@ foreach (@transactions)
 	$display = 0 if $OPT{N} and $category;
 	if ($OPT{F})
 	{
-		$amount = -$amount if is_debit($type);
+		$amount = -$amount if is_debit($amount);
 		$amount = round($amount);
 		$display = 0 unless $category ~~ [ 'Personal', 'Charity', 'Entertainment', 'Eating Out', '' ];
 		say join("\t", $what,$who,$amount,$source,$date) if $display;
@@ -515,7 +540,7 @@ if ($OPT{g})
 }
 else
 {
-	say STDERR "transaction rows: ", scalar @transactions;
+	say STDERR "transaction rows: $trans_rows";
 }
 
 
@@ -529,8 +554,9 @@ sub get_rows_from_file
 	$filename =~ /\.(\w+)$/ or die("can't handle a file without an extension");
 	given ($1)
 	{
-		return parse_csv($filename) when /csv/i;
-		return parse_ofx($filename) when /ofx|qfx/i;
+		return parse_csv($filename)  when /csv/i;
+		return parse_html($filename) when /m?html/i;
+		return parse_ofx($filename)  when /ofx|qfx/i;
 		# otherwise ...
 		die("don't know how to parse a .$1 file");
 	}
@@ -572,6 +598,102 @@ sub parse_csv
 	return @rows;
 }
 
+sub parse_html
+{
+	my ($file) = @_;
+	require HTML::TreeBuilder        or die("cannot load HTML::TreeBuilder; install it?");
+	require HTML::TableContentParser or die("cannot load HTML::TableContentParser; install it?");
+
+	my $contents = path($file)->slurp;
+	my $table = first { $_->{class} =~ /account.table/ } @{ HTML::TableContentParser->new->parse( $contents ) }
+			or die("cannot determine which HTML table is the account table!");
+
+	my @headers = map { lc s/ /-/gr } map { $_->{data} } @{ $table->{headers} };
+	debuggit(3 => "table headers:", DUMP => [@headers]);
+	my (@trans, %details);
+	while ( my ($i, $row) = each $table->{rows} )
+	{
+		next if $details{$i};						# skip details row, because we already handled those (below)
+		my $date = extract_html_content_from_row( date => $row );
+		next unless $date;							# "details" rows and a few others don't have dates; ignore those
+		#next if blessed $date;						# pending rows have an element for a date (weirdly)
+
+		# at this point, we've got a row that we need to extract data from
+		my $details = $table->{rows}->[$i + 1];		# next row might be a "details" row ...
+		debuggit(6 => "cells for [$date] row", $i, DUMP => $row, $details ? (DUMP => $details) : undef);
+		$details{$i + 1} = 1, next
+			if $row->{class} =~ /pending/;			# pending transactions are not particularly useful
+		undef $details unless						# ... but only if its first cell has a "hidden" class
+				$details->{cells}
+			and $details->{cells}->[0]
+			and $details->{cells}->[0]->{class}
+			and $details->{cells}->[0]->{class} =~ /\bhidden\b/;
+		$details{$i + 1} = 1 if $details;			# so we know to skip this row on the next go-round
+		my $data = { date => $date };
+		$data->{desc } = extract_html_content_from_row( inner_desc       => $row     ) =~ s/ =20//gr =~ s/(^ )|( $)//gr;
+		$data->{amt  } = extract_html_content_from_row( amount_cell      => $row     ) =~ s/\$//r;
+		$data->{ttype} = extract_html_content_from_row( transaction_type => $details );
+		# if we couldn't get a transaction type, try to extract it from the description
+		$data->{ttype} //=	first { !!$_ }
+							  map { $data->{desc} =~ s/$_// && $1 }
+								  (
+									qr/\s+(Online Payment)\b/,
+									qr/\b(ACH Withdrawal)\s+/,
+									qr/\b(ACH Deposit) From\s+/,
+									qr/^(?=(Check) )/,
+									qr/^(?=(Transfer) )/i,
+									qr/^(?=(Interest) Paid)/i,
+								  );
+		debuggit(5 => "cells for row", $i, ':', map { $_ => $data->{$_} } qw< date desc amt ttype >);
+		push @trans, $data;
+	}
+
+	# we don't have times, so make faux sequence numbers
+	# have to reverse the rows to make them be in the right order ...
+	# ... and then have to reverse them _again_ in order to be in the order the output expects
+	my %dates;
+	@trans = reverse apply { $_->{seq} = ++$dates{$_->{date}} } reverse @trans;
+
+	# now that we have sequence numbers, we can fake up some ids
+	$_->{id} = sprintf("%8d%03d", date($_->{date})->strftime("%Y%m%d"), $_->{seq}) foreach @trans;
+	debuggit(6 => "all rows:", DUMP => \@trans);
+
+	# now just turn the hashrefs into arrayrefs and we're all good
+	return map { [ @$_{qw< id date seq amt ttype desc >} ] } @trans;
+}
+
+sub extract_html_content_from_row
+{
+	my ($type, $row) = @_;
+	return unless $row->{cells};					# some rows are blank (i.e. no cells)
+	my @cells = grep { $_->{data}    }				# some cells are blank (esp the 1st cell of "details" rows)
+	                @{ $row->{cells} };
+	$type =~ s/_/[ _-]/g;							# underscore might represent another separator
+	my $match = qr/ \b $type \b /ix;
+	debuggit(4 => "  using regex to find class:", $match);
+
+	# start by looking for a cell that just has the given type as its class
+	my $c = first { $_->{class} =~ /$match/ } grep { $_->{class} } @cells;
+	return $c->{data} if $c and $c->{data};
+
+	# next, let's see if we can find a span inside the data with the given type as its class
+	my @data_html = map { HTML::TreeBuilder->new_from_content($_->{data}) } @cells;
+	my $e = first { defined() } map { scalar $_->look_down( class => qr/$match/ ) } @data_html;
+	debuggit(6 => "  extract html 2nd pass:", DUMP => $e);
+	return $e->content->[0] if $e;					# there _should_ only be one match in this particular case
+
+	# still no luck? guess we better scour the data for "col-xs" cells (whatever *that* is) and find
+	# the one whose content matches the type we're looking for (sort of a header), then take the
+	# _next_ content after that (which will be the value)
+	my (undef, $d) =
+		pairfirst { $a =~ /$match/                           }
+			 grep { not blessed $_ and $_ !~ /^\s*=20\s*$/   }
+		      map { @{ $_->content }                         }			# multiple matches expected for this one
+		      map { $_->look_down( class => qr/\bcol-xs\b/ ) }
+		            @data_html;
+	return $d;										# defined or not, we're out of tricks
+}
+
 sub parse_ofx
 {
 	my ($file) = @_;
@@ -580,21 +702,42 @@ sub parse_ofx
 	my (@rows, %dates);
 	my $ofx = Finance::OFX::Parse::Simple->new->parse_file($file);
 	die("cannot handle multiple accounts!") if @$ofx > 1;
+
 	foreach (@{ $ofx->[0]->{transactions} })
 	{
 		$_->{seq} = ++$dates{$_->{date}};			# we don't have a time, so make a faux sequence number
-		push @rows, [@$_{qw< fitid date seq amount trntype name >}];
+		my $id = gen_ofx_id(@$_{qw< date amount name >});
+		push @rows, [$id, @$_{qw< date seq amount trntype name >}];
 	}
 	return reverse @rows;
+}
+
+# The fact that I can't rely on my bank to produce the same FITID for the same
+# transaction on consecutive downloads is ... troubling.  But it is what it is,
+# so there's nothing for it but to make our own.
+sub gen_ofx_id
+{
+	my ($date, $amount, $descr) = @_;
+	require Digest::CRC or die("cannot load Digest::CRC; install it?");
+
+	# Christy and I can't agree on what day we actually moved in, but this is
+	# the date when I wrote the first blog post from the new house, so at the
+	# very least we were well settled in by then.  And there will damn sure be
+	# no financial transactions prior to the new house.
+	state $EPOCH_DAY = date("12/5/2010");
+
+	my $day_num = sprintf("%04d", date($date) - $EPOCH_DAY);
+	my $cents   = sprintf("%05d", $amount * 100);
+	my $digest  = Digest::CRC->new(type => "crc32")->add("$cents$descr")->hexdigest;
+	return "$day_num-$digest";
 }
 
 
 
 sub is_debit
 {
-	my ($type) = @_;
-	return 1 if $type eq 'Withdrawal';
-	return 1 if $type eq 'DEBIT';
+	my ($amount) = @_;
+	return $amount =~ s/,//gr < 0;
 }
 
 sub derive_category_from
