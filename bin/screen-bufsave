@@ -1,0 +1,42 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Time::HiRes qw< usleep >;
+use List::AllUtils qw< pairmap >;
+
+
+opts <<'-';
+	[-f] [-n] <name>
+	-f : force overwrite of existing file (without asking first)
+	-n : don't actually do it (do a dry-run)
+	-D : debug mode
+	<name>  : name of window in `screen` to save
+-
+
+my $name = shift or usage_error("must supply at name of screen buf to save");
+# this is just a hacky way to verify the window exists: from that window, query
+# the window title, and you should get back the same name
+sh(screen => -p => $name, -Q => 'title') eq $name or usage_error("cannot locate window $name");
+
+
+my $today = today->as("-Ymd");
+my $dir = path("~/local/data/screen-buflog/$today");
+-d $dir or mkdir $dir;
+
+my $file = $dir->child("$name.buf");
+if (-e $file)
+{
+	confirm("$file exists; overwrite?") or exit 1 unless $OPT{f};
+	unlink $file;														# or else it'll be there when we check for it
+}
+say "would save scrollback buffer of $name to $file" and exit if $OPT{n};
+
+# the main event: from the requested window, save the entire scrollback buffer
+# (`hardcopy -h`) to our filefile
+sh(screen => -p => $name, -X => hardcopy => -h => $file);
+usleep 50 until -s $file;												# give `hardcopy` a chance to finish writing
+# oblig SO ref: https://stackoverflow.com/questions/1935081
+sh(sed => -i => '/./,$!d', $file);										# ditch those pesky blank lines at the top
