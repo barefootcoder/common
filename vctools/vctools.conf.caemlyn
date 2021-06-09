@@ -28,9 +28,9 @@ DefaultSourcePath=git@github.com:%user/%project.git
 #	ProjectDir = ~/Dropbox/machine/cibola/common
 #</Project>
 
-<Project braavos-common>
-	ProjectDir = ~/Dropbox/machine/braavos/common
-</Project>
+#<Project braavos-common>
+#	ProjectDir = ~/Dropbox/machine/braavos/common
+#</Project>
 
 
 

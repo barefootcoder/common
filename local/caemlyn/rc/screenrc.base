@@ -54,8 +54,6 @@ screen -t awsess
 	stuff "$CHEOPSROOT/bin/awsess\015"
 screen -t work
 	stuff "cd ~/work\015"
-screen -t pmml
-	stuff "cd $CEROOT/tmp\015"
 screen -t lib
 	source .screenrc.vctools
 	stuff "vcd method-signatures\015"
@@ -72,3 +70,9 @@ screen -t blog
 screen -t rpg
 	stuff "cd rpg\015"
 	stuff "ls\015"
+screen -t vbuild
+	stuff "vcd cheops\015"
+	stuff "vagrant/bin/new-sandbox --help\015"
+screen -t cloudfront
+	source .screenrc.sandbox
+	stuff "cd ../ce-cloudfront-event-tracking/\015"
