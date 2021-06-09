@@ -24,6 +24,7 @@ trap "/bin/rm -rf $tmpdir" EXIT
 cd $tmpdir
 touch "$base"
 vim -r "$base" +'w "$tmpdir/$base"' +q >/dev/null 2>&1
+cd -
 
 if [[ $mode == "diff" ]]
 then
@@ -33,6 +34,7 @@ then
 	arcdir=$(dirname "$origfile")/archive
 	mkdir -p $arcdir
 	arcfile="$arcdir/$base.$(perl -e 'shift =~ m|copy (\d{4}-\d{2}-\d{2})\)| and print $1 =~ s/-//gr' "$swapfile")"
+	[[ $arcfile == *. ]] && arcfile="$arcdir/$base.$(date -r "$swapfile" +%Y%m%d)"
 	[[ -e $arcfile ]] && die "can't save to $arcfile; already exists"
 	mv "$tmpdir/$base" "$arcfile"
 	echo "saved to $arcfile"
