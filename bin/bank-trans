@@ -169,6 +169,7 @@ my %DESCRIPTIONS =
 							qr/\bKFC\b/i,
 							qr/Popeye'?s/i,
 							qr/SMART MANAGEMENT & CO/i,
+							qr/Arbys/i,
 							qr/Freddy'?s/i,
 							qr/5Guys/i,
 							qr/Burgerim/i,
@@ -180,7 +181,7 @@ my %DESCRIPTIONS =
 							qr/Presto Pasta/i,
 							qr/Little Caesars/i,
 							qr/Panda Express/i,
-							qr/Great Steak Hoagie/i,
+							qr/Great Steak( Hoagie)?/i,
 							qr/\bThe Hat\b/i,
 							qr/^Habit\b/i,
 							qr/Golden Tiger/i,
@@ -220,7 +221,7 @@ my %DESCRIPTIONS =
 							qr/Dairy Queen/i,
 						],
 	Personal		=>	[
-							qr/PlayStation Network/i,
+							qr/PlayStation Net(work)?/i,
 							qr/PlayStationNetwork/i,
 							qr/SteamGames/i,
 							qr/paypal inst xfer/i,
@@ -238,7 +239,7 @@ my %DESCRIPTIONS =
 							qr/Dropbox/i,
 							qr/Miniature Market/i,
 							qr/TrollAndToad/i,
-							qr/ONEBOOKSHELF.COM/i,
+							qr/ONEBOOKSHELF.COM?/i,
 							qr/MCDM Prod/i,
 							qr/Nintendo/i,
 							qr/GameStop/i,
@@ -263,8 +264,14 @@ my %DESCRIPTIONS =
 	'Professional Fees'=>	[
 							qr/HLW Tax/i,
 						],
+	Medical			=>	[
+							qr/Simi Chiro/i,
+							qr/Family Psych/i,
+							qr/Mojgan Makhsoosi?/i,
+						],
 	Reimburse		=>	[
 							qr/SM City Parking Meters/i,
+							qr/Optum Bank/i,
 							qr/OPTUM BANK REIMBUR/i,
 							qr/VENTURA CO CCD/i,
 							qr/SOL RESTAURANTS/i,
@@ -302,6 +309,7 @@ my %WHAT_LOOKUP =
 	'UNDERWOOD FAMI'				=>	'Underwood Farms',
 	'SOL RESTAURANTS'				=>	'Sol (Work Team Lunch)',
 	'TONY PS DOCKSIDE'				=>	"Tony P's (Work Team Lunch)",
+	'DRIVETHRU'						=>	"DriveThruRPG []",
 	'ONEBOOKSHELFCOM'				=>	"DriveThruRPG []",
 	'Uverse Online'					=>	'DirecTv',
 	'AUTO CLUB SO CAL'				=>	'AAA (Roadside Assistance)',
@@ -392,6 +400,12 @@ foreach (@transactions)
 		when ( /^TFR-/ )
 		{
 			$source = 'Overdraft';
+			$category = 'Reserve';
+		}
+		when ( /transfer (to|from) (\w+ )?(checking|savings)/i )
+		{
+			$what = join(' ', Transfer => map { lc } $1, $3);
+			$source = 'Transfer';
 			$category = 'Reserve';
 		}
 
@@ -487,7 +501,7 @@ foreach (@transactions)
 		{
 			foreach ( @{ $DESCRIPTIONS{$category} } )
 			{
-				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*^]//gr =~
+				$what = s/\(.*?:(\\b)?(.*?)(\\b)?\)/$2/r =~ s/(?<!\\)[.?*^()]//gr =~
 						s/(?<!\\)\[(.).*\]/$1/gr =~ s/\\//gr if $descr =~ /$_/;
 			}
 			$what = $WHAT_LOOKUP{$what} // $what;
@@ -638,7 +652,7 @@ sub parse_html
 							  map { $data->{desc} =~ s/$_// && $1 }
 								  (
 									qr/\s+(Online Payment)\b/,
-									qr/\b(ACH Withdrawal)\s+/,
+									qr/\b(ACH Withdrawal)\s*/,
 									qr/\b(ACH Deposit) From\s+/,
 									qr/^(?=(Check) )/,
 									qr/^(?=(Transfer) )/i,
