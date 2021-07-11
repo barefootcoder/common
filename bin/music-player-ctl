@@ -11,6 +11,11 @@ use List::AllUtils qw< firstidx >;
 const my $CONST => 'Some Constant';
 
 
+sub VolumeFile();
+sub CurrentVolume();
+sub PlaybackMode();
+
+
 opts <<'-';
 	{ -l | [-nvD] <cmd> [...] }
 	-l : list possible commands
@@ -42,12 +47,20 @@ my %COMMAND_MODES =
 	vol		=>	'change_volume',
 	plist	=>	'set_playlist',
 	pos		=>	'handle_pos_subcommand',
+	info	=>	'print_info',
 );
 if ( $OPT{l} )
 {
 	say sprintf("%-10s: %s", $_, $COMMAND_MODES{$_} =~ s/_/ /rg) foreach sort keys %COMMAND_MODES;
 	exit;
 }
+
+my %PLAY_MODES =
+(
+	play	=>	'Playing',
+	pause	=>	'Paused',
+	stop	=>	'Stopped',
+);
 
 my %COMMAND_ALIASES =
 (
@@ -88,9 +101,7 @@ sub change_volume
 	my $subcommand = shift;
 	die("unknown volume command $subcommand") unless exists $VOL_COMMANDS{$subcommand};
 
-	my $curvol_file = path(File::Spec->tmpdir, 'curvol');
-	my $curvol = -e $curvol_file ? $curvol_file->slurp : $VOL_COMMANDS{'reset'};
-	$curvol =~ s/^=//;
+	my $curvol = CurrentVolume;
 	if ($subcommand eq 'show')
 	{
 		say "volume currently: $curvol";
@@ -114,12 +125,17 @@ sub change_volume
 
 	adjust_volume($curvol);
 	say "voume set to: $curvol";
-	$curvol_file->spew($curvol) unless $OPT{n};
+	VolumeFile->spew($curvol) unless $OPT{n};
 }
 
 sub set_playlist
 {
 	die("must specify playlist to set") unless @_;
+	if ($command eq 'plist' and PlaybackMode ne 'stop')
+	{
+		handle_pos_subcommand(save => qw< only if existing and with confirm >);
+	}
+
 	my $list = shift;
 	if (not -r $list and -r $TRACKLIST_DIR->child($list))
 	{
@@ -174,23 +190,26 @@ sub handle_pos_subcommand
 		}
 		when ('save')
 		{
+			my %save_opt = map { $_ => 1 } @_;
 			my $info = get_playlist_info();
 			say "\nwould save:" if $OPT{n};
 			print_playlist_info($info) if $OPT{v};
 			my $tracklists = read_playlist_posfile();
+			return if $save_opt{existing} and not exists $tracklists->{ $info->{playlist} };
+			do { print "save position of playlist? [y/N] "; return unless <STDIN> =~ /^y/i } if $save_opt{confirm};
 			$tracklists->{ $info->{playlist} } = $info;
 			write_playlist_posfile($tracklists) unless $OPT{n};
 		}
-		when ('load')
+		when ('start')
 		{
-			my $plist = shift or die("must specify playlist to load");
-			handle_pos_subcommand('save');
+			my $plist = shift or die("must specify playlist to start");
 			my $tracklists = read_playlist_posfile();
 			# `set_playlist` may expand an abbreviated or alias arg
 			$plist = set_playlist($plist);
 			my $info = $tracklists->{$plist};
 			if ($info)
 			{
+				print_playlist_info($info, "  aiming at: ") if $OPT{v};
 				my $trackpos = tracknum($plist, $info->{track});
 				# by this point, we must be using Clementine, or we'd have bombed out by now
 				if ( $OPT{n} )
@@ -217,8 +236,25 @@ sub handle_pos_subcommand
 				warn("could not find a position to restore");
 			}
 		}
+		when ('load')
+		{
+			my $plist = shift or die("must specify playlist to load");
+			handle_pos_subcommand('save');
+			handle_pos_subcommand( start => $plist );
+		}
 		default { usage_error("unknown pos subcommand $subcommand") }
 	}
+}
+
+
+sub print_info
+{
+	say '';
+	say "  currently: ", player_api(Player => 'PlaybackStatus');
+	say "     volume: ", player_api(Player => 'Volume') * 100, "        [should be: ", CurrentVolume, "]";
+
+	my $info = get_playlist_info();
+	print_playlist_info($info, "   playlist: ");
 }
 
 
@@ -226,6 +262,17 @@ sub handle_pos_subcommand
 # SHARED SUBS    #
 # (of mode subs) #
 ##################
+
+
+sub VolumeFile () { state $f = path(File::Spec->tmpdir, 'curvol') }
+
+sub CurrentVolume ()
+{
+	my $curvol_file = VolumeFile;
+	my $curvol = -e VolumeFile ? VolumeFile->slurp : $VOL_COMMANDS{'reset'};
+	$curvol =~ s/^=//;
+	return $curvol;
+}
 
 
 sub player_api
@@ -237,9 +284,17 @@ sub player_api
 		'/org/mpris/MediaPlayer2', 'org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
 }
 
+sub PlaybackMode ()
+{
+	state $mode_lookup = { reverse %PLAY_MODES };
+	my $status = player_api(Player => 'PlaybackStatus');
+	return $mode_lookup->{$status} // die("can't determine playback status [$status]");
+}
+
 sub get_playlist_info
 {
 	die("only know how to get playlist info for clementine") unless -x $CLEMENTINE;
+	die("no playlist is playing currently") if PlaybackMode eq 'stop';
 
 	my @metadata  = player_api(Player => 'Metadata');
 	my $cur_track = head 1 => map { m</music/(.*)$>       ? $1 : () } @metadata;
@@ -264,17 +319,20 @@ sub get_playlist_info
 	}
 	else
 	{
-		fatal_error("cannot determine playlist for $cur_track at $plist_pos");
+		die("cannot determine playlist for $cur_track at $plist_pos");
 	}
 }
 
 sub print_playlist_info
 {
-	my ($info) = @_;
+	my ($info, $leader) = @_;
 	my $min_sec = display_time($info->{seconds});
+	my $track = '[' . ($leader ? 'track ' : '') . $info->{list_pos} . ']' . ($leader ? '' : ':');
 
 	say '';
-	say "$info->{playlist} [$info->{list_pos}]:";
+	print $leader if $leader;
+	say "$info->{playlist} $track";
+	print ' ' x length($leader) if $leader;
 	say "  $info->{track} [$min_sec]";
 	say '';
 }
