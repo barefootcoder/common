@@ -137,27 +137,47 @@ sub set_playlist
 	}
 
 	my $list = shift;
-	if (not -r $list and -r $TRACKLIST_DIR->child($list))
+	if (not -r $list)
 	{
-		$list = $TRACKLIST_DIR->child($list);
-	}
-	elsif (not -r $list and $list =~ /^\w{1,5}/)
-	{
-		my $found = 0;
-		foreach ($MUSIC_HOME->child( mixes => 'mixes' )->slurp)
+		if (-r $TRACKLIST_DIR->child($list))
 		{
-			if ( /=$list=/i )
+			$list = $TRACKLIST_DIR->child($list);
+		}
+		else
+		{
+			if ($list =~ /^\w{1,5}/)
 			{
-				$found = 1;
+				my $found = 0;
+				foreach ($MUSIC_HOME->child( mixes => 'mixes' )->slurp)
+				{
+					if ( /=$list=/i )
+					{
+						$found = 1;
+					}
+					elsif ($found)
+					{
+						next if /^$/;
+						chomp;
+						$found = s/\s+$ROMAN_NUMERAL$//r =~ s/^\s*\{(.*)\}$/$1/r;
+						($list) = glob("$TRACKLIST_DIR/*/$found.m3u");
+						die("resolved to playlist $found, but couldn't locate tracklist file") unless $list and -r $list;
+						last;
+					}
+				}
 			}
-			elsif ($found)
+
+			if (not -r $list)
 			{
-				next if /^$/;
-				chomp;
-				$found = s/\s+$ROMAN_NUMERAL$//r =~ s/^\s*\{(.*)\}$/$1/r;
-				($list) = glob("$TRACKLIST_DIR/*/$found.m3u");
-				die("resolved to playlist $found, but couldn't locate tracklist file") unless $list and -r $list;
-				last;
+				my $pattern = $TRACKLIST_DIR->child('*' => "$list*.m3u");
+				my @candidates = glob($pattern);
+				if (@candidates == 1)
+				{
+					($list) = @candidates;
+				}
+				elsif (@candidates > 1)
+				{
+					die("too many possibilities for $pattern");
+				}
 			}
 		}
 	}
