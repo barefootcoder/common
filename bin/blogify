@@ -95,7 +95,7 @@ my $hash = '#';
 my $front_boundary = qr/(^|[^\w\\])/;
 my $back_boundary = qr/(?=\W|$)/;
 my $roman_numeral = qr/\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/;
-my $endnote_header = '<br/><br/><div style="line-height: 80%;">' . "\n" . '_' x 10 . "\n\n";
+my $endnote_header = '<br/>' x 4 . '<div style="line-height: 80%;">' . "\n" . '_' x 10 . "\n\n";
 my $section_break = <<EOT;
 
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
@@ -116,7 +116,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	# save URLs so they don't get messed with later
 	s{(?<![\\^])\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;					# ]] <-- to keep % from freaking out
 
-	s{\A/(\w+)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
+	s{\A/(\w*)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
 	unless (bbstyle)
 	{
 		s{\\?<}{&lt;}g;																# literal <'s
@@ -167,7 +167,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
-	s{(?<!-)$front_boundary-(\S.*?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}seg;# strikethrough
+	s{(?<!-)$front_boundary-(\S.*?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}eg;	# strikethrough
 	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
 	unless (bbstyle)
 	{
@@ -250,7 +250,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		$_ .= $endnote_header . join('', map { "<p>$_</p>\n" } map { fmt(small => $_) } @notes) . '</div>';
 	}
 	# this makes footnote links work better,
-	# and also make single-line final paragraphs stand out
+	# and also makes single-line final paragraphs stand out
 	$_ .= '<br>' x 10 if $blog_type eq 'blogspot' or $blog_type eq 'html';
 	# do any accent fixups for musical references
 	MixUtil->fixup_accents($_);
@@ -279,8 +279,11 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 
 func change_type ($type, $extra)
 {
-	die("unknown blog type $type") unless exists $blog{$type};
-	$blog_type = $type;
+	if ($type)
+	{
+		die("unknown blog type $type") unless exists $blog{$type};
+		$blog_type = $type;
+	}
 	$footnote_style = '1' if $blog_type eq 'perl';
 	$section_break = '\_' x 10 if bbstyle;
 
@@ -414,6 +417,7 @@ func diacritic_fixup ($string is alias)
 		risque			=>	{ 6 => 'acute', },
 		voila			=>	{ 5 => 'grave', },
 		outre			=>	{ 5 => 'acute', },
+		naivete			=>	{ 3 => 'uml',   },
 		'a la'			=>	{ 1 => 'grave', },
 		facade			=>	{ 3 => 'cedil', plural => 1, },
 		uber			=>	{ 1 => 'uml',   },
@@ -512,10 +516,12 @@ func mix_block ($mix_name, $vol, $extra?)
 		}
 		my $track = 0;
 		my @newblock;
+		my $EOL = qr{(?:<br/>)?\n?};
 		foreach (split("\n", $block))
 		{
 			if (/^\s*(<.*?>)?&ldquo;/)				# then it's a track line
 			{
+				s/($EOL)$//; my $eol = $1;
 				debuggit(5 => "checking track", $track + 1);
 				if (my $code = $mods{++$track})
 				{
@@ -525,6 +531,7 @@ func mix_block ($mix_name, $vol, $extra?)
 						die("code block for track $track failed");
 					}
 				}
+				$_ .= $eol;
 			}
 			push @newblock, $_;
 		}
