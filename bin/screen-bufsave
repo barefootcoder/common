@@ -37,6 +37,16 @@ say "would save scrollback buffer of $name to $file" and exit if $OPT{n};
 # the main event: from the requested window, save the entire scrollback buffer
 # (`hardcopy -h`) to our filefile
 sh(screen => -p => $name, -X => hardcopy => -h => $file);
-usleep 50 until -s $file;												# give `hardcopy` a chance to finish writing
+# make sure file both exists and is done being written to
+for ( my ($size, $last_size, $count) = (0,0,0); $size = -s $file, $count < 3; usleep 50 )
+{
+	say STDERR "size $size / last size $last_size / count $count" if $OPT{D};
+	if ( $size )
+	{
+		++$count if $last_size == $size;
+		$last_size = $size;
+	}
+}
 # oblig SO ref: https://stackoverflow.com/questions/1935081
 sh(sed => -i => '/./,$!d', $file);										# ditch those pesky blank lines at the top
+say STDERR "done";
