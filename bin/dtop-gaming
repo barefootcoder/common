@@ -4,6 +4,7 @@ use myperl::Pxb;
 use autodie ':all';
 
 use Date::Easy;
+use PerlX::Maybe;
 use Path::Class::Tiny;
 use Time::HiRes qw< usleep >;
 use List::AllUtils qw< first firstidx >;
@@ -42,12 +43,20 @@ term_window('Music', '80x24+2-33');
 # browser window for maps etc
 if ( not (find_window("Gaming Checklist") or find_window("Campaign")) )
 {
-say "find window results: ", find_window("Gaming Checklist") ? 'true' : 'false';
-	say "# going to build new browser window" if $OPT{D};
-exit;
-	sh('vivaldi');
-	usleep(0.5) until sh(xdotool => search => '--name' => "Start Page", windowactivate => '--sync');
-	put_window_on_gaming("Start Page");
+	# trying to combine the below into one assignment statement doesn't work, for some reason ...
+	my @windows;
+	push @windows, find_window("Gaming Checklist",			desktop => 'ALL');
+	push @windows, find_window("Campaign",					desktop => 'ALL');
+	push @windows, find_window("GM Binder",					desktop => 'ALL');
+	push @windows, find_window("Dungeon Master's Vault",	desktop => 'ALL');
+	if (@windows)
+	{
+		put_window_on_gaming($_) foreach @windows;
+	}
+	else
+	{
+		fatal("start Vivaldi first!");
+	}
 }
 
 # file browser and the PDF we'll need
@@ -73,14 +82,26 @@ sh(xdotool => search => '--name' => $_, windowactivate => '--sync')
 
 sub find_window
 {
-	my ($name) = @_;
-	return sh(xdotool => search => '--desktop' => $desktop, '--name' => $name);
+	my ($name, %opts) = @_;
+	$opts{desktop} //= $desktop;
+	delete $opts{desktop} if $opts{desktop} eq 'ALL';
+	return sh(xdotool => search =>
+		maybe	'--desktop' => $opts{desktop},
+				'--name' => $name
+			 );
 }
 
 sub put_window_on_gaming
 {
-	my ($name) = @_;
-	sh(xdotool => search => '--name' => $name, set_desktop_for_window => $desktop);
+	my ($id) = @_;
+	if ($id =~ /^\d+$/)								# window ID
+	{
+		sh(xdotool => set_desktop_for_window => $id, $desktop);
+	}
+	else											# window name
+	{
+		sh(xdotool => search => '--name' => $id, set_desktop_for_window => $desktop);
+	}
 }
 
 sub term_window
