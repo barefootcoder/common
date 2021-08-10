@@ -72,12 +72,13 @@ while (<>)
 
 		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
 		s{(^|\W)_(.+?)_(\W|$)}{$1//$2//$3}g;							# italics
-		s/\[(.*?)\|(.*?)\]/[$1 $2]/g;									# links
+		s{\[(.*?)\|(.*?)\]}{[$1 $2]}g;									# external links
 		s/(#\d\d?)(?!\d)/!$1/g;											# numbered things that aren't tickets
 		s/(?<!-)--(?!-)/—/g;											# em dashes
 		s/ - / – /g;													# en dashes
 
-		s{\b([A-Z][a-z/]+[A-Z][a-z/]+\w*)\b}{!$1}g;						# stop auto-linking to Wiki pages for camel case
+		s{[^[]\b([A-Z][a-z/]+[A-Z][a-z/]+\w*)\b}{!$1}g;					# stop auto-linking to Wiki pages for camel case
+		s/\[(\S*?)\]/$1/g;												# internal links
 
 		# put any quoted strings back
 		s/{Q(\d+)}/${$quoted_strings[$1]}/g;
