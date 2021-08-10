@@ -292,18 +292,21 @@ class SessionTemplate
 ########
 
 opts <<'-';
-	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-n] [-D] <templ> }
+	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-N <dir>] [-n] [-D] <templ> [<file> ...] }
 	-l : list all possible session files
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
 	-v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines
 	-e : edit template (instead of starting session); with -l, edit all; with -g|-G, edit all matching
 	-C : create a template from a vim session file (default name: add .V to session filename)
+	-N : create a new template in <dir>; session dir is $PWD; file list is the given files, if any
 	-n : do not autosave the session (default: autosave any changes back to the template)
 	-D : debug mode (print lots of behind-the-scenes info)
 	<pattern> : Perl-style regex
 	<session> : actual vim session file (or partial name)
 	<templ>   : session template file (usually ends in `.V`)
+	<dir>     : directory where session template file will be created
+	<file>    : file(s) to edit (only used with `-N`)
 -
 my $grepargs = $OPT{v} ? '-hP' : '-lP';
 my $pattern = $OPT{G} // $OPT{g};
@@ -323,9 +326,38 @@ do_grep() if $pattern;
 if ( defined $file )
 {
 	$file .= ".V" unless $file =~ $DOT_V;
-	$file = first { -r } $file, map { $_->child($file) } @search_paths;
-	# if that didn't work, check for an old-style sessionfile
-	handle_old_sessionfile() if not -r $file;
+	if ( $OPT{N} )
+	{
+		my $dir = first { -d } path($OPT{N}), grep { /\b$OPT{N}\b/ } @search_paths;
+		fatal "can't create new session file: requested dir doesn't exist" unless $dir;
+		confirm("$dir doesn't look like a session file dir; use it anyway?") or exit unless glob($dir->child("*.V"));
+
+		shift;										# now we know we won't need to handle_old_sessionfile(), we can do this
+		fatal "you have to give me at least one file to load" unless @ARGV;
+		my $flist = FileList->new;
+		$flist->add_file( $_ => 1 ) foreach @ARGV;
+
+		# interpolation to disable any magic from Path::*
+		my $templ = SessionTemplate->new(
+			session_name	=> $file,
+			session_dir		=> "$dir",
+			dir				=> pwd,
+			filelist		=> $flist,
+			Debug			=> $OPT{D},
+		);
+		fatal "can't create new session file: $file already exists" if -r $templ->filepath;
+		confirm("there is an old session file in the way; are you sure?") or exit if -r $templ->filepath =~ s/$DOT_V//r;
+
+		$templ->save;
+		say "made new file: ", $templ->filepath;
+		exit;
+	}
+	else
+	{
+		$file = first { -r } $file, map { $_->child($file) } @search_paths;
+		# if that didn't work, check for an old-style sessionfile
+		handle_old_sessionfile() if not -r $file;
+	}
 }
 fatal "session file $file not specified, doesn't exist, or is unreadable" unless $file;
 
