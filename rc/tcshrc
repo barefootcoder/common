@@ -123,6 +123,7 @@ setenv CDA_EXCLUDE /usr/src/kernels:/export/arc/laptop/hold
 
 alias pd pushd
 alias cda 'cd "`$HOME/bin/cda \!*`"'
+alias cdp 'cd "`$HOME/bin/cda -p \!*`"'
 alias ls ls -CFL
 alias ll ls -lh
 alias lll /bin/ls -lhF
