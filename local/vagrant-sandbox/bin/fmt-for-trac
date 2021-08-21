@@ -14,11 +14,9 @@ my $commit_sha_re = qr/\[([0-9a-f]{10})\]/;
 const my $REPO_URL => 'https://github.com/campus-explorer/CE/commit';
 
 my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block
-my $in_list = 0;
+my $in_list = '';				# one char per type of list currently nested in (thus, '' == not in any lists)
 while (<>)
 {
-	$_ = expand($_);
-
 	if ( not $in_pre and ( /$pre_re/ or /^\s+(.)/ and !($1 ~~ ['*','#']) and not $in_list) )
 	{
 		if ( /$pre_re/ )
@@ -38,17 +36,15 @@ while (<>)
 		$in_pre == 1 ? say '}}}' : ($_ = "}}}\n");
 		$in_pre = 0;
 	}
-	elsif ($in_list and /^$/)
-	{
-		$in_list = 0;
-	}
 	elsif ($in_pre == 1)
 	{
+		$_ = expand($_);
 		s/^    //;
 	}
-	elsif ($in_pre == 2 and length > 125)
+	elsif ($in_pre == 2)
 	{
-		s/.{125}\K/\n/g;
+		$_ = expand($_);
+		s/.{125}\K/\n/g if length > 125;
 	}
 	elsif (not $in_pre)
 	{
@@ -64,9 +60,9 @@ while (<>)
 			])
 		);
 
-		s/^  (\s*\*\s+)/$1/ and $in_list = 1;							# bullet lists
-		s/^  (\s*)#(\s+)/${1}1.$2/ and $in_list = 1;					# numbered lists
-		s/^  // if $in_list and not /^\s+[*#\d]/;						# continuation of bullet items
+		$in_list = '' if /^\S/;											# out of list if not continuation
+		s/^(\s*)([*#]|\d+\.)(\s+)/calc_indent($1, $2) . $2 . $3/e		# bullet or numbered lists
+			or $in_list && s/^(\s+)\n/calc_indent($1)/e;				# continuation of list items
 
 		s{$commit_sha_re}{[$REPO_URL/$1 $1]}g;							# link to GitHub via commit SHA1
 
@@ -85,4 +81,41 @@ while (<>)
 	}
 
 	print;
+}
+
+
+sub _curindent
+{
+	join('', map { $_ eq '*' ? '  ' : '   ' } @_);
+}
+
+sub calc_indent
+{
+	my ($pre, $leader) = @_;
+	my @indents = split(//, $in_list);
+
+#say "--> prior to popping: @indents ; pre: ", $pre =~ s/\t/T/gr =~ s/ /S/gr;
+	if ( $pre =~ /^\t*$/ )
+	{
+#say "---> indents is " . @indents . " long and pre is " . length($pre) . " long";
+		pop @indents while @indents > length($pre);
+	}
+	elsif ( $pre =~ /^ *$/ )
+	{
+		pop @indents while length(_curindent(@indents)) > length($pre);
+	}
+	else
+	{
+		die("can't work out leading spaces: " . $pre =~ s/\t/'\t'/egr);
+	}
+
+#say "-> calculating indent based on: @indents";
+	my $indent = _curindent(@indents);
+	if ($leader)
+	{
+		push @indents, $leader eq '*' ? '*' : '#';
+	}
+
+	$in_list = join('', @indents);
+	return $indent;
 }
