@@ -1,0 +1,30 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use PerlX::bash;
+use Path::Class::Tiny;
+
+
+my $TICKET = '18447';
+
+my $table_name = shift;
+my $ticket_file = bash \string => find => '~/work/', -name => "$TICKET.descr";
+die("can't figure out ticket file! [$ticket_file]") unless -r $ticket_file;
+
+my @def =
+	map  { $.++ ? $_ : s/,/ /r       }
+	map  { s/`\h*$//r                }
+	grep { s/^\s+\* `/  , /          }
+	grep { /$table_name/../^$/       }
+	     ( path($ticket_file)->slurp )
+;
+#print foreach @def;
+
+while ( <> )
+{
+	print /^\s/ ? @def : $_;
+	undef @def if /^\s/;
+}
