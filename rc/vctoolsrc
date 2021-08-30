@@ -33,6 +33,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias branch vbranch
 
 	alias vd git diff
+	alias vcf vc commit-filedate
 	alias vnew git add -N
 	alias vdel git rm
 	alias vg  'vgrep -e \!*'
