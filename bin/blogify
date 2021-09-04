@@ -415,6 +415,7 @@ func diacritic_fixup ($string is alias)
 		cliche			=>	{ 6 => 'acute', plural => 1, },
 		cafe			=>	{ 4 => 'acute', plural => 1, },
 		risque			=>	{ 6 => 'acute', },
+		passe			=>	{ 5 => 'acute', },
 		voila			=>	{ 5 => 'grave', },
 		outre			=>	{ 5 => 'acute', },
 		naivete			=>	{ 3 => 'uml',   },
@@ -435,6 +436,7 @@ func diacritic_fixup ($string is alias)
 		'mon frere'		=>  { 7 => 'grave', },
 		'deja vu'		=>	{ 2 => 'acute', 4 => 'grave', },
 		'raison detre'	=>	{ 9 => 'circ',  8 => q|'|,    },
+		'Pokemon'		=>	{ 4 => 'acute',	},
 		'Ingy dot Net'	=>	{ 7 => 'uml',   },
 		'Gabor'			=>	{ 2 => 'acute', },
 		'Szabo'			=>	{ 5 => 'acute', },
@@ -492,7 +494,8 @@ func image ($source, $size)
 {
 	my %props = ( src => $source );
 	@props{qw< width height >} = split('x', $size) if $size;
-	return '<img ' . join(' ', map { qq{$_="$props{$_}"} } keys %props) . '>';
+	my $img = '<img ' . join(' ', map { qq{$_="$props{$_}"} } keys %props) . '>';
+	return $size ? url_block($source, $img) : $img;
 }
 
 
