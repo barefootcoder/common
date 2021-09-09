@@ -1,0 +1,59 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use PerlX::bash;
+use Path::Class::Tiny;
+
+
+my $TICKET = '18447';
+my $TABLE_HEADER = '====';
+my $TABLE_LEADER = '-- Table       :';
+my $DESCR_LEADER = '-- Description :';
+my $CREATE_TABLE = 'create table cerpt."';
+my $FIELD_LEADER = '  ,';
+my $DISTKEY      = 'DISTKEY (lead_request_transaction_id)';
+my $SORTKEY      = 'SORTKEY (';
+my $FOOTER       = <<END;
+-- END YIELD OPTIMIZATION TABLES
+-- ############################################################################
+END
+
+my $schema = path("$ENV{CEROOT}/database/schema-redshift-cerpt.sql")->slurp;
+$schema =~ s/ \A .*? ^ -- \h \#\#\# .*? \n\n //mx;
+$schema =~ s/`(\w+)_event` Firehose/`event_$1` Firehose/g;				# tweak for new event stream names
+my %description = $schema =~ /^$TABLE_LEADER (\w+)\n$DESCR_LEADER (.*?)$/mg;
+#use Data::Printer; p %description;
+
+my $table_name = shift;
+my $ticket_file = bash \string => find => '~/work/', -name => "$TICKET.descr";
+die("can't figure out ticket file! [$ticket_file]") unless -r $ticket_file;
+
+my $text = path($ticket_file)->slurp;
+$text =~ s/ \A .*? (?=^$TABLE_HEADER) //xsm;							# useless description stuff
+
+# fixup table group headers
+my $count = 0;
+$text =~ s/ ^ $TABLE_HEADER \h* (.*?) \h* $TABLE_HEADER $ /-- ${\(++$count)}) YO $1 (XXX)/xmg;
+
+# fixup table names
+$text =~ s/ ^ \d+\. \h* `(.*?)` \h* $ /$TABLE_LEADER XXX_$1\n$DESCR_LEADER $description{$1}\n${CREATE_TABLE}XXX_$1" (/xmg;
+
+# fixup columns
+$text =~ s/ ^ \h*? \* \h* `(.*?)` \h* $ /$FIELD_LEADER $1/xmg;
+$text =~ s/ ^ (\H .*? \n \h+) , /$1 /xmg;
+$text =~ s/ ( -- \h Table .*? , \h (\w+_time) .*? \n)\n /$1)\n$DISTKEY\n$SORTKEY$2)\n;\n\n/xsg;
+
+# remove any interstitial notes
+$text =~ s/ \n\n \h+ Notes?: .*? $ //xmg;
+$text =~ s/ ^ \h+ \* .*? \n //xmg;
+
+
+my $prod = $text =~ s/XXX/prod/gr;
+my $dev  = $text =~ s/XXX/dev/gr;
+$dev =~ s/($TABLE_LEADER dev_(\w+)\n)$DESCR_LEADER .*$/$1$DESCR_LEADER Dev version of `prod_$2`./mg;
+say $prod;
+say $dev;
+print $FOOTER;
