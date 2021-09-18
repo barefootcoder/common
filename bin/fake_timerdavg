@@ -24,6 +24,7 @@ opts <<'-';
 
 
 my $how_far = 1 + ($OPT{S} ? round(UP => (date("last mon") - date($OPT{S})) / 7) : $OPT{w} // 0);
+debuggit(2 => "looking back", $how_far, "weeks");
 my ($min_date, $max_date, $total_time, $total_avail) = time_and_avail("$ENV{HOME}/timer/timer-new");
 my $num_days = num_weekdays($min_date, $max_date);
 
@@ -64,7 +65,9 @@ if ($OPT{v})
 	say '';
 	say "          Total time: $total_time";
 	say "  Total availability: $total_avail";
-	foreach ( $num_weeks, $whole_weeks )
+	my @report_on = ($num_weeks);
+	push @report_on, $whole_weeks if $whole_weeks != $num_weeks;
+	foreach ( @report_on )
 	{
 		say '';
 		say $_ == int($_)
@@ -105,7 +108,9 @@ func num_weekdays ($from, $to)
 	my $date = Date::Gregorian::Business->new([ [ SATURDAY, SUNDAY ], [] ]);
 	$date->set_ymd($from->split);
 
-	return $date->get_businessdays_until(Date::Gregorian->new->set_ymd($to->split)) + 1;
+	my $interim = $date->get_businessdays_until(Date::Gregorian->new->set_ymd($to->split));
+	my $lastday = $date->set_ymd($to->split)->is_businessday ? 1 : 0;	# only count the last day if it's a weekday
+	return $interim + $lastday;
 }
 
 
