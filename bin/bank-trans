@@ -31,6 +31,7 @@ my %DESCRIPTIONS =
 							qr/So Cal Edison/i,
 							qr/Southern Cal Gas/i,
 							qr/So Cal Gas Co/i,
+							qr/SOUTHERN CALIFOR Online Payment/i,
 						],
 	Phone			=>	[
 							qr/Verizon/i,
@@ -51,7 +52,7 @@ my %DESCRIPTIONS =
 							qr/Hulu/i,
 							qr/CBS All Access/i,
 							qr/Philo/i,
-							qr/DisneyPlus/i,
+							qr/Disney ?Plus/i,
 							qr/Sling.com/i,
 							qr/DisneyPlus/i,
 							qr/OTT\* DROPOUT/i,
@@ -76,7 +77,7 @@ my %DESCRIPTIONS =
 							qr/acsc-huon/i,
 						],
 	'Car Maint'		=>	[
-							qr/CALIF DMV/i,
+							qr/CA(LIF)? DMV/i,
 							qr/\bsmog\b/i,
 							qr/AUTO CLUB SO CAL/i,
 						],
@@ -219,6 +220,7 @@ my %DESCRIPTIONS =
 							qr/Simi Donuts/i,
 							qr/Donuts Plus/i,
 							qr/Dairy Queen/i,
+							qr/Coldstone( Creamery)?/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Net(work)?/i,
@@ -281,48 +283,49 @@ my %DESCRIPTIONS =
 
 my %WHAT_LOOKUP =
 (
-	'N6723 CAMPUS EXP DIR DEP'		=>	'Paycheck',
-	'N6723 ARCHER EDU DIR DEP'		=>	'Paycheck',
-	'N6723 ARCHER ED'				=>	'Paycheck',
-	'BAC Home Loans'				=>	'Mortgage Payment',
-	'S CA Edison'					=>	'Electric Bill',
-	'Golden State (Water|Wtr|Wat)'	=>	'Water Bill',
-	'VZWRLSS'						=>	'Verizon Wireless',
-	'BRETT MORGAN'					=>	'Pool Guy',
-	'jessie flores'					=>	'Gardeners',
-	'carlos ortega'					=>	'Gardener',
-	'fidelity nationa'				=>	'Warranty Company',
-	'HLLFRSH'						=>	'Hello Fresh',
-	'Sprouts Farmers'				=>	'Sprouts',
-	'Baskin'						=>	'Baskin Robbins',
-	'SMART MANAGEMENT & CO'			=>	'Arbys',
-	'acsc-huon'						=>	'AAA Car Insurance',
-	'CITI AUTOPAY'					=>	'Costco CC',
-	'AMZ[ _-]STORECARD'				=>	'Amazon Credit Card',
-	'SM City Parking Meters'		=>	'Parking Meters',
-	'noa coppa'						=>	'Nintendo',
-	'MOORPARK COL BKSTOR'			=>	'College Bookstore',
-	'Body Positive'					=>	'Yoga Club',
-	'OPTUM BANK REIMBUR'			=>	'HSA Reimbursement',
-	'GG Delivers'					=>	'Recreational',
-	'VENTURA CO CCD'				=>	'Moorpark College',
-	'UNDERWOOD FAMI'				=>	'Underwood Farms',
-	'SOL RESTAURANTS'				=>	'Sol (Work Team Lunch)',
-	'TONY PS DOCKSIDE'				=>	"Tony P's (Work Team Lunch)",
-	'DRIVETHRU'						=>	"DriveThruRPG []",
-	'ONEBOOKSHELFCOM'				=>	"DriveThruRPG []",
-	'Uverse Online'					=>	'DirecTv',
-	'AUTO CLUB SO CAL'				=>	'AAA (Roadside Assistance)',
-	'OFFICE DE'						=>	'Office Depot',
-	'^D&B '							=>	"Dave & Buster's",
-	'T.O. E-LIBRARY'				=>	'Library (TO)',
-	"WW INT'L"						=>	'Weight Watchers',
-	'JUNKYARD'						=>	'Junkyard Cafe',
-	'Imperfect Foods'				=>	'Veggie box',
-	'GOOGLE *INNERSLOTH',			=>	'Android Game',
-	'THE AQUARIUM CO',				=>	'Aquarium Connect',
-	'GOOGLE *GOOGLE',				=>	'Google Fi',
-	'OTT* DROPOUT',					=>	'DropoutTV',
+	'N6723 CAMPUS EXP DIR DEP'			=>	'Paycheck',
+	'N6723 ARCHER EDU DIR DEP'			=>	'Paycheck',
+	'N6723 ARCHER ED'					=>	'Paycheck',
+	'BAC Home Loans'					=>	'Mortgage Payment',
+	'S CA Edison'						=>	'Electric Bill',
+	'SOUTHERN CALIFOR Online Payment'	=> 	'So Cal Gas Co',
+	'Golden State (Water|Wtr|Wat)'		=>	'Water Bill',
+	'VZWRLSS'							=>	'Verizon Wireless',
+	'BRETT MORGAN'						=>	'Pool Guy',
+	'jessie flores'						=>	'Gardeners',
+	'carlos ortega'						=>	'Gardener',
+	'fidelity nationa'					=>	'Warranty Company',
+	'HLLFRSH'							=>	'Hello Fresh',
+	'Sprouts Farmers'					=>	'Sprouts',
+	'Baskin'							=>	'Baskin Robbins',
+	'SMART MANAGEMENT & CO'				=>	'Arbys',
+	'acsc-huon'							=>	'AAA Car Insurance',
+	'CITI AUTOPAY'						=>	'Costco CC',
+	'AMZ[ _-]STORECARD'					=>	'Amazon Credit Card',
+	'SM City Parking Meters'			=>	'Parking Meters',
+	'noa coppa'							=>	'Nintendo',
+	'MOORPARK COL BKSTOR'				=>	'College Bookstore',
+	'Body Positive'						=>	'Yoga Club',
+	'OPTUM BANK REIMBUR'				=>	'HSA Reimbursement',
+	'GG Delivers'						=>	'Recreational',
+	'VENTURA CO CCD'					=>	'Moorpark College',
+	'UNDERWOOD FAMI'					=>	'Underwood Farms',
+	'SOL RESTAURANTS'					=>	'Sol (Work Team Lunch)',
+	'TONY PS DOCKSIDE'					=>	"Tony P's (Work Team Lunch)",
+	'DRIVETHRU'							=>	"DriveThruRPG []",
+	'ONEBOOKSHELFCOM'					=>	"DriveThruRPG []",
+	'Uverse Online'						=>	'DirecTv',
+	'AUTO CLUB SO CAL'					=>	'AAA (Roadside Assistance)',
+	'OFFICE DE'							=>	'Office Depot',
+	'^D&B '								=>	"Dave & Buster's",
+	'T.O. E-LIBRARY'					=>	'Library (TO)',
+	"WW INT'L"							=>	'Weight Watchers',
+	'JUNKYARD'							=>	'Junkyard Cafe',
+	'Imperfect Foods'					=>	'Veggie box',
+	'GOOGLE *INNERSLOTH',				=>	'Android Game',
+	'THE AQUARIUM CO',					=>	'Aquarium Connect',
+	'GOOGLE *GOOGLE',					=>	'Google Fi',
+	'OTT* DROPOUT',						=>	'DropoutTV',
 );
 
 
@@ -409,7 +412,7 @@ foreach (@transactions)
 			$category = 'Reserve';
 		}
 
-		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i )
+		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
 		{
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
@@ -576,6 +579,24 @@ sub get_rows_from_file
 	}
 }
 
+# This is used by some of the parse functions.
+sub generate_seq_and_id
+{
+	my (@rows) = @_;
+
+	# if we don't have times, make faux sequence numbers
+	# have to reverse the rows to make them be in the right order ...
+	# ... and then have to reverse them _again_ in order to be in the order the output expects
+	my %dates;
+	@rows = reverse apply { $_->{seq} = ++$dates{$_->{date}} } reverse @rows;
+
+	# now that we have sequence numbers, we can fake up some ids
+	$_->{id} = sprintf("%8d%03d", date($_->{date})->strftime("%Y%m%d"), $_->{seq}) foreach @rows;
+	debuggit(6 => "all rows:", DUMP => \@rows);
+
+	return @rows;
+}
+
 # This is an update of CSV::split(), from the old Barefoot libs.
 sub csv_split (;$)
 {
@@ -593,23 +614,53 @@ sub parse_csv
 
 	my (@rows, %ids);
 	my $headers_seen = 0;
+	my $bank;
 	foreach ($file->slurp)
 	{
 		chomp;
+		my @fields = csv_split;
+
 		if (not $headers_seen)
 		{
-			say join("\t", csv_split) if $OPT{H};
+			say join("\t", @fields) if $OPT{H};
 			$headers_seen = 1;
+			$bank = $fields[-1] eq 'Balance' ? 'discover' : 'ally';
 			next;
 		}
 
-		my @fields = csv_split;
-		my $id = datetime("@fields[0,1]")->epoch;	# should be good enough for a unique ID
-		--$id while $ids{$id};						# tweak ID if we get a duplicate
-		$ids{$id} = 1;
-		push @rows, [$id, @fields];
+		if ($bank eq 'ally')
+		{
+			my $id = datetime("@fields[0,1]")->epoch;	# should be good enough for a unique ID
+			--$id while $ids{$id};						# tweak ID if we get a duplicate
+			$ids{$id} = 1;
+			push @rows, [$id, @fields];
+		}
+		elsif ($bank eq 'discover')
+		{
+			# Transaction Date,Transaction Description,Transaction Type,Debit,Credit,Balance
+			my ($date, $descr, $type, $debit, $credit, $balance) = @fields;
+			next unless $balance;										# rows with no balance are "pending"
+			my $trans = { date => $date, ttype => $type, desc => $descr };
+			$trans->{amt} = ($credit ? $credit : "-$debit") =~ s/\$//r;
+			push @rows, $trans;
+		}
+		else
+		{
+			die("don't recognize CSV format");
+		}
+
 	}
-	return @rows;
+	given ($bank)
+	{
+		return @rows when 'ally';
+		when ('discover')
+		{
+			# add the seq and id fileds, then turn the hashrefs into arrayrefs
+			return map { [ @$_{qw< id date seq amt ttype desc >} ] } generate_seq_and_id(@rows);
+		}
+		# otherwise
+		die("weird bank [$bank]");
+	}
 }
 
 sub parse_html
@@ -657,20 +708,14 @@ sub parse_html
 									qr/^(?=(Check) )/,
 									qr/^(?=(Transfer) )/i,
 									qr/^(?=(Interest) Paid)/i,
+									qr/\b(Zelle Payment)/i
 								  );
+		die("cannot figure out transaction type [$data->{desc}]") unless $data->{ttype};
 		debuggit(5 => "cells for row", $i, ':', map { $_ => $data->{$_} } qw< date desc amt ttype >);
 		push @trans, $data;
 	}
 
-	# we don't have times, so make faux sequence numbers
-	# have to reverse the rows to make them be in the right order ...
-	# ... and then have to reverse them _again_ in order to be in the order the output expects
-	my %dates;
-	@trans = reverse apply { $_->{seq} = ++$dates{$_->{date}} } reverse @trans;
-
-	# now that we have sequence numbers, we can fake up some ids
-	$_->{id} = sprintf("%8d%03d", date($_->{date})->strftime("%Y%m%d"), $_->{seq}) foreach @trans;
-	debuggit(6 => "all rows:", DUMP => \@trans);
+	@trans = generate_seq_and_id(@trans);
 
 	# now just turn the hashrefs into arrayrefs and we're all good
 	return map { [ @$_{qw< id date seq amt ttype desc >} ] } @trans;
