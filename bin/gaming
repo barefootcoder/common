@@ -12,11 +12,12 @@ my %TRACKLIST =
 	battle		=>	'/export/music/tracklists/gaming/battle.m3u',
 	creepy		=>	'/export/music/tracklists/gaming/creepy.m3u',
 	exotic		=>	'/export/music/tracklists/gaming/exotic.m3u',
-	peaceful	=>	'/export/music/tracklists/gaming/peaceful.m3u',
+	peace		=>	'/export/music/tracklists/gaming/peaceful.m3u',
 	tavern		=>	'/export/music/tracklists/gaming/tavern.m3u',
 	travel		=>	'/export/music/tracklists/gaming/travel.m3u',
 	vista		=>	'/export/music/tracklists/gaming/vista.m3u',
-	wondrous	=>	'/export/music/tracklists/gaming/wondrous.m3u',
+	wonder		=>	'/export/music/tracklists/gaming/wondrous.m3u',
+	tense		=>	'/export/music/tracklists/gaming/tense.m3u',
 );
 
 
