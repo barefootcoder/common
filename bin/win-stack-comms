@@ -72,7 +72,7 @@ then
 	if [[ ! $skip_tbird ]]
 	then
 		info restoring Thunderbird
-		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird
+		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird &
 	fi
 
 	PidginWindow="Buddy List"
@@ -103,7 +103,7 @@ then
 fi
 
 info restacking Comms windows
-for win in leadops company tech-private technology tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
+for win in leadops technology tech-private tech-pm tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
 do
 	if [[ $skip_tbird && "$win" == "$ThunderbirdWindow" ]]
 	then
