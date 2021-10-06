@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
 use myperl::Script;
-use autodie qw< :all >;
+use autodie ':all';
+use charnames ':full';
 
 use Try::Tiny;
 use Date::Easy;
@@ -9,11 +10,13 @@ use Path::Tiny;
 use List::AllUtils qw< first apply >;
 
 
-opts <<'-';
+const my $NL => "/\N{SYMBOL FOR NEWLINE}/";
+opts <<"-";
 	[-v] { [-t <range>] | [-w<N>] } { [-e] <text-pattern> | -f <pattern-file> } <contact-pattern> [...]
 	-v : verbose mode
 	-t : limit results to timestamp <range> (parsed with Date::Easy; flexible separators)
 	-w : -w<N> is a shortcut for -t'N weeks ago - today'
+	-s : output multi-line messages as single lines (using $NL separators)
 	-e : introduce <text-pattern> that starts with a `-' (or use `--' instead)
 	-f : read patterns from <pattern-file>, one per line
 	all patterns Perl-style regexen
@@ -111,6 +114,7 @@ sub process
 	s/^\((.*?)\)//;
 	$1 or die("line: $file:$_");
 	my $timestamp = $1; $timestamp = "$curdate $timestamp" unless $timestamp =~ m|/|;
+	s|\n(?!\Z)|$NL|g if $OPT{s};
 	try
 	{
 		$timestamp = datetime($timestamp);
