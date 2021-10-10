@@ -1,15 +1,21 @@
 #! /bin/bash
 
+LOGFILE=/tmp/$(basename $0).log
+function log
+{
+	echo "$$: $1" >>$LOGFILE
+}
+exec 2>>$LOGFILE
+
 caemlyn_win='NoMachine - Caemlyn'
-desktop_save=/tmp/pre-caemlyn.desktop-num
+log "running"
 if [[ $(xdotool getactivewindow getwindowname) == $caemlyn_win ]]
 then
-	xdotool search --name "$caemlyn_win" windowminimize
-	if [[ -r $desktop_save ]]
-	then
-		xdotool set_desktop $(cat $desktop_save)
-	fi
+	log "already focussed"
+	# can't maximize with xdotool, for some reason
+	wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz
 else
-	xdotool get_desktop >$desktop_save
-	xdotool search --name "$caemlyn_win" windowactivate
+	log "focussing"
+	ssh caemlyn bash -c "'DISPLAY=:0.0 xdotool search --name PidginMsgs windowfocus'"
+	xdotool search --name "$caemlyn_win" windowactivate key 'Meta_L+r' 'Meta_L+r'
 fi
