@@ -21,3 +21,4 @@ alias vagrant-latest-test \
 			'vagrant box list | perl -lane '\''print $F[0] if $F[0] =~ /ce-dev-sandbox-202/'\'' | sort | tail -n1'
 alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
+alias vagrant-env-clear    'unsetenv CE_VAGRANT_*'
