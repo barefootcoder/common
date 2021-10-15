@@ -141,6 +141,12 @@ feature heroscape => sub
 	requires 'Lingua::EN::Inflexion';				# used in analyze
 };
 
+# required for CE/Archer-adjacent scripts that have to run on the host
+feature CE => sub
+{
+	requires 'IO::All';								# used by push song data collater
+};
+
 # required for building a new sandbox *UNTIL* archer-boot is completed
 feature vagrant => sub
 {
