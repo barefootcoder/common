@@ -3,19 +3,32 @@
 LOGFILE=/tmp/$(basename $0).log
 function log
 {
-	echo "$$: $1" >>$LOGFILE
+	echo "$$: $(date "+%Y-%m-%d %T"): $1" >>$LOGFILE
 }
 exec 2>>$LOGFILE
 
 caemlyn_win='NoMachine - Caemlyn'
 log "running"
-if [[ $(xdotool getactivewindow getwindowname) == $caemlyn_win ]]
+workdesktop=$(xdotool search --name "$caemlyn_win")
+curdesktop=$(xdotool get_desktop)
+if [[ $(xdotool getwindowfocus) == $workdesktop ]]
 then
 	log "already focussed"
 	# can't maximize with xdotool, for some reason
 	wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz
 else
 	log "focussing"
-	ssh caemlyn bash -c "'DISPLAY=:0.0 xdotool search --name PidginMsgs windowfocus'"
-	xdotool search --name "$caemlyn_win" windowactivate key 'Meta_L+r' 'Meta_L+r'
+	xdotool windowactivate --sync $workdesktop key 'Meta_L+r' 'Meta_L+r'
+	log "waiting for return"
+	while true
+	do
+		sleep .4
+		if [[ $(xdotool getwindowfocus) != $workdesktop ]]
+		then
+			xdotool set_desktop $curdesktop
+			out=$(ssh caemlyn bash -c "'DISPLAY=:0.0 xdotool search --name Buddy\ List windowactivate'" 2>&1)
+			log "reset receiving window: $out"
+			exit
+		fi
+	done
 fi
