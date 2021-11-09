@@ -10,7 +10,6 @@ feature bootstrap => sub
 
 	# need this much just to run the `cpm` wrapper
 	requires 'CLASS';
-	requires 'thanks';
 	requires 'Debuggit';
 	requires 'Const::Fast';
 	requires 'Import::Into';
@@ -62,11 +61,12 @@ feature myperl => sub
 	requires 'Path::Class::Tiny';
 	requires 'MooseX::Has::Sugar';
 	requires 'Method::Signatures';
-	requires 'Any::Moose', '== 0.26';
+	requires 'Any::Moose', '== 0.26';				# newer version breaks Method::Signatures
 	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';
 	requires 'Data::Printer', '== 0.40';
 	requires 'MooseX::StrictConstructor';
+	requires 'Devel::Declare', '== 0.006022';		# newer version breaks Method::Signatures
 };
 feature 'myperl-google' => sub
 {
