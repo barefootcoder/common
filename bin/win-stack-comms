@@ -103,7 +103,7 @@ then
 fi
 
 info restacking Comms windows
-for win in leadops technology tech-private tech-pm tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
+for win in leadops technology tech-private tech-classic tech-offtopic push-songs tech-qa "$ThunderbirdWindow"
 do
 	if [[ $skip_tbird && "$win" == "$ThunderbirdWindow" ]]
 	then

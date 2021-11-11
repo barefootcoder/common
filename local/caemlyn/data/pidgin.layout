@@ -11,11 +11,11 @@ MAIN:
 
 COMMS:
 
-	tech-private	+tech-pm		tech-qa
+	tech-private	+tech-classic	tech-qa
 							max
-	technology		+tech-pm		push-songs
+	technology		+tech-classic	push-songs
 							holly
-	leadops			+tech-pm		+tech-offtopic
+	leadops			+tech-classic	+tech-offtopic
 
 
 
@@ -27,8 +27,8 @@ MUSIC:
 
 PERSONAL:
 
-	+christy		+perrin			+sam
-							merrick
+	+christy		+perrin			+merrick
+			+local-family	+family
 
-
-	chuck							david_hand
+			+local-family	+family
+	chuck			+sam			david_hand

@@ -213,7 +213,7 @@ if ( $OPT->{browsers} )
 	info("found ", scalar(@wids), " wids [via: $find_wids]");
 
 	my %wids = map { $_ => identify_browser_window } @wids;
-	do { require Data::Printer; Data::Printer::p(\%wids) } if $OPT->{debug};
+	do { require Data::Printer; &Data::Printer::np(\%wids) } if $OPT->{debug};
 
 	print '. found ';
 	foreach (keys %wids)
