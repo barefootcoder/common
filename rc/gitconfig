@@ -24,3 +24,9 @@
 	enabled = true
 [pager]
 	diff = diff-highlight | $PAGER
+[interactive]
+	diffFilter = diff-highlight
+[init]
+	defaultBranch = main
+[maintenance]
+	repo = /home/vagrant/CE

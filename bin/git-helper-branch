@@ -60,7 +60,7 @@ function run
 	fi
 }
 
-if [[ $mode != "show" ]] && [[ $force == 0 ]] && ! git status | fgrep -q "working directory clean"
+if [[ $mode != "show" ]] && [[ $force == 0 ]] && ! git status | grep -qP "working (\w+) clean"
 then
 	echo "$me: won't branch or create branch with unstashed changes" >&2
 	exit 1
@@ -70,7 +70,7 @@ then
 	exit 2
 fi
 
-curbranch=$(git branch --contains HEAD | sed 's/^\* //')
+curbranch=$(git branch --show-current)
 
 case $mode in
 	create)	from_branch=$master
@@ -86,7 +86,7 @@ case $mode in
 				fi
 			fi
 
-			if [[ $(vctools-config --project) == rent* ]]
+			if [[ $(vc info %project) == rent* ]]
 			then
 				run $WEBROOT/bin/util/create-branch $branch $from_branch
 			else

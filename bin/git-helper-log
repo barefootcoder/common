@@ -51,8 +51,8 @@ function Mainline
 
 function current_branch
 {
-	branch=$(vc info %cur_branch)
-	if [[ $branch == "HEAD" ]]
+	branch=$(capture_git "branch --show-current")
+	if [[ $branch == "" ]]
 	then
 		die "can't show branch logs with a detached HEAD"
 	fi
@@ -85,7 +85,7 @@ show_local=0
 show_me=0
 pretend=0
 grep_diffs=0
-date_format=local
+date_format=human
 while getopts ":vdscHDCNpbln:LmU:g:RGh" opt
 do
 	case $opt in

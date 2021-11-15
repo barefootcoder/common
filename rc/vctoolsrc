@@ -32,7 +32,7 @@ if ( $?VCTOOLS_SHELL ) then
 
 	alias branch vbranch
 
-	alias vd git diff
+	alias vd git diff --color-moved
 	alias vcf vc commit-filedate
 	alias vnew git add -N
 	alias vdel git rm
