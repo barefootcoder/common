@@ -25,6 +25,7 @@ my %DESCRIPTIONS =
 	Mortgage		=>	[
 							qr/BAC Home Loans/i,
 							qr/Bank of America/i,
+							qr/Nationstar dba/i,
 						],
 	'Power/Heat'	=>	[
 							qr/S CA Edison/i,
@@ -160,7 +161,7 @@ my %DESCRIPTIONS =
 							qr/Kindle/i,
 						],
 	'Eating Out'	=>	[
-							qr/McDonald's/i,
+							qr/McDonald'?s/i,
 							qr/Taco Bell/i,
 							qr/Wendy'?s/i,
 							qr/Carl'?s Jr/i,
@@ -239,7 +240,7 @@ my %DESCRIPTIONS =
 							qr/Hopdoddy/i,
 							qr/Smoke & Vape/i,
 							qr/Dropbox/i,
-							qr/Miniature Market/i,
+							qr/Miniature Market?/i,
 							qr/TrollAndToad/i,
 							qr/ONEBOOKSHELF.COM?/i,
 							qr/MCDM Prod/i,
@@ -287,6 +288,7 @@ my %WHAT_LOOKUP =
 	'N6723 ARCHER EDU DIR DEP'			=>	'Paycheck',
 	'N6723 ARCHER ED'					=>	'Paycheck',
 	'BAC Home Loans'					=>	'Mortgage Payment',
+	'Nationstar dba'					=>	'Mortgage Payment',
 	'S CA Edison'						=>	'Electric Bill',
 	'SOUTHERN CALIFOR Online Payment'	=> 	'So Cal Gas Co',
 	'Golden State (Water|Wtr|Wat)'		=>	'Water Bill',
