@@ -1,1 +1,2 @@
 */30  * * * * tcsh -c "$HOME/bin/proc-mem -k 50 thunderbird"
+*     * * * * $HOME/local/bin/unfocus-alarms
