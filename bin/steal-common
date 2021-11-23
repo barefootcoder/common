@@ -24,15 +24,15 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-ME=$LOCALHOSTNAME
-OTHER=$1
+HERE=$LOCALHOSTNAME
+THERE=$1
 shift
 
-[[ $OTHER ]] || usage_error "must supply hostname to steal from"
+[[ $THERE ]] || usage_error "must supply hostname to steal from"
 [[ $# -ge 1 ]] || usage_error "give me at least one file to steal"
 
-[[ $ME == $OTHER ]] && die "can't steal from myself"
-[[ -d ~/Dropbox/machine/$OTHER ]] || die "never heard of machine $OTHER"
+[[ $HERE == $THERE ]] && die "can't steal from myself"
+[[ -d ~/Dropbox/machine/$THERE ]] || die "never heard of machine $THERE"
 
 
 function diffit
@@ -51,12 +51,12 @@ function stealit
 }
 
 mydir=~/common
-otherdir=~/Dropbox/machine/$OTHER/common
+otherdir=~/Dropbox/machine/$THERE/common
 cd $mydir
 
 for file
 do
-	[[ -r $otherdir/$file ]] || die "can't read file $file on $OTHER"
+	[[ -r $otherdir/$file ]] || die "can't read file $file on $THERE"
 	if [[ -e $mydir/$file ]]
 	then
 		[[ -w $mydir/$file ]] || die "don't have permission to overwrite $file locally"
