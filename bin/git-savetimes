@@ -1,0 +1,433 @@
+#! /usr/bin/env perl
+
+use 5.10.0;
+use strict;
+use warnings;
+use autodie ':all';
+
+# core to Perl since forever
+use File::stat							;
+use File::Glob			qw< bsd_glob >	;
+use List::Util			qw< first    >	;
+use Getopt::Long						;
+use File::Basename						;
+
+# you probably need to install these
+use File::Set							;
+use File::Which							;
+use PerlX::bash			qw< bash head >	;
+use File::lchown		qw< lutimes   >	;
+
+
+my $ME = basename($0);								# just for diagnostic messages
+my $DEBUG = $ENV{GIT_STASH_SAFE_DEBUG};				# in case you need more info
+
+my $DEFAULT_LABEL = 'temp';
+sub USAGE
+{
+	say <<".";
+
+usage: $ME [--debug] --save    [--if-exists|--auto] [--untracked] [<label>]
+usage: $ME [--debug] --restore [--if-exists|--auto]               [<label>]
+usage: $ME [--debug] --rm      [--if-exists]                      [<label>]
+   or: $ME [--debug] --stash   <git-stash-arg> ...
+
+               --save : save times of modified files
+            --restore : restore previously saved times
+                 --rm : remove previously saved times
+              --stash : run `git stash' and preserve or restore as appropriate
+          --if-exists : don't whinge if there's nothing to do
+          --untracked : with `save', preserve times for untracked files as well
+               --auto : make optimal choices for scripted solutions (see below)
+              --debug : print copious amount of debug info
+
+       WARNING! `--stash' not yet implemented!
+
+                   -u : same as --untracked
+                   -D : same as --debug
+
+              <label> : a name for the set of times
+                        default name is "$DEFAULT_LABEL"
+                        with `--stash', uses SHA1 as the label
+
+       `--auto' changes the following modes in the following ways:
+               --save : first, do `--rm --if-exists`
+                        then, do `--save --if-exists`
+            --restore : if no modified files, exit (cleanly)
+                        otherwise, do `--restore --no-if-exists`
+       `--auto' with other switches:
+          --if-exists : is overridden
+          --untracked : is respected
+        --rm, --stash : `--auto` is ignored
+.
+    exit;
+}
+
+my $mode;
+sub set_mode { $mode = shift }
+my $OPT =
+{
+	auto		=>	0,
+	untracked	=>	0,
+	debug		=>	0,
+	'if-exists'	=>	0,
+};
+
+OPTIONS:
+{
+	local $SIG{__WARN__} = sub { msg(WARN => shift) };					# just make this look a bit nicer
+	# note: posix_default == no_auto_abbrev + no_getopt_compat + no_permute
+	Getopt::Long::Configure(qw< posix_default no_ignore_case bundling_values >);
+	GetOptions($OPT,
+		qw< untracked|u! auto! if-exists! debug|D! >,
+		save			=> \&set_mode,
+		restore			=> \&set_mode,
+		rm				=> \&set_mode,
+		stash			=>	sub { $mode = 'run-stash'; die("!FINISH") },
+		'help|h|?'		=>	sub { USAGE() },
+	) || exit 2;														# any error(s) would have already been printed
+}
+
+$DEBUG ||= $OPT->{debug};
+
+msg(USAGE => "must specify command") unless $mode;
+my $label = shift // $DEFAULT_LABEL;
+
+
+my $GIT = which("git") || msg(FATAL => "cannot locate `git' in your \$PATH");
+my $GIT_COREDIR = bash \string => $GIT => '--exec-path';
+my $ORIG_GIT_STASH = do								# I have no idea how `git-stash` is impmlemented on Windows,
+{													# but this should work no matter what (I think)
+	local $ENV{PATH} = $GIT_COREDIR;
+	which("git-stash");
+} || msg(FATAL => "cannot locate `git-stash` in git-core/");
+
+# can't run core scripts without the core dir being in the $PATH
+# (this has to do with the common-use `git-sh-setup` script)
+$ENV{PATH} = join(':', $GIT_COREDIR, $ENV{PATH});
+
+# now make sure we're in the top-level dir of an actual repo
+my $REPO_ROOT = eval { bash \string => $GIT => 'rev-parse', '--show-toplevel', '2>/dev/null' };
+if ($REPO_ROOT)
+{
+	chdir $REPO_ROOT;
+}
+else
+{
+	# couldn't get a root dir; most likely we're just not in a git repo at all
+	# but let's let git explain what the problem is
+	msg(INFO => "git says:");
+	print STDERR '  ';
+	my $exitval = eval { bash \string => $GIT => 'rev-parse', '--show-toplevel' };
+	$exitval = $1 if not defined $exitval and $@ =~ /unexpectedly returned exit value (\d+)/;
+	exit $exitval;
+}
+
+my $GIT_DIR = eval { bash \string => $GIT => 'rev-parse', '--git-dir', '2>/dev/null' };
+my $STASH_MTIMES = '.git-savetimes-mtime-files';
+if ($GIT_DIR)
+{
+	# dir might be relative
+	$GIT_DIR = "$REPO_ROOT/$GIT_DIR" unless $GIT_DIR =~ m{^/};
+	# this is where we'll temporarily store our corresponding file mtimes
+	$STASH_MTIMES = "$GIT_DIR/$STASH_MTIMES";
+	mkdir $STASH_MTIMES unless -d $STASH_MTIMES;
+}
+else
+{
+	# I don't think this should ever happen
+	msg(FATAL => "can't determine .git/ dir!");
+}
+my $WORKING_FILE = "$STASH_MTIMES/WORKING";
+
+if ($DEBUG)
+{
+	say "=> git is $GIT";
+	say "=> git's scripts are in $GIT_COREDIR";
+	say "=> git-stash is $ORIG_GIT_STASH";
+	say "=> repo's root dir is $REPO_ROOT";
+	say "=> repo's .git dir is $GIT_DIR";
+	say "=> will put mtime file in $STASH_MTIMES";
+	say "=> mode is $mode";
+}
+
+
+# determine what to do based on mode
+if ($mode eq 'save')
+{
+	if ($OPT->{auto})
+	{
+		$OPT->{'if-exists'} = 1;
+		expunge_times($label);
+	}
+	create_working();
+	preserve_working($label);
+}
+elsif ($mode eq 'restore')
+{
+	if ($OPT->{auto})
+	{
+		$OPT->{'if-exists'} = 1;					# clean exit if no mod files
+		build_times();								# this will exit if there are no modified files
+		$OPT->{'if-exists'} = 0;					# but messy exit if no restore times
+	}
+	restore_times($label);
+}
+elsif ($mode eq 'rm')
+{
+	expunge_times($label);
+}
+elsif ($mode eq 'run-stash')
+{
+	run_wrapped(@ARGV);
+}
+else
+{
+	# this shouldn't be possible
+	die("logic error: unknown command [$mode]");
+}
+
+
+sub msg
+{
+	my ($level, $msg) = @_;
+
+	$msg = "$ME: $msg\n";
+	if ($level eq 'FATAL')
+	{
+		die($msg);
+	}
+	elsif ($level eq 'USAGE')
+	{
+		$msg =~ s/$/ (try $ME --help)/;
+		warn($msg);
+		exit 2;
+	}
+	elsif ($level eq 'WARN')
+	{
+		warn($msg);
+	}
+	elsif ($level eq 'INFO')
+	{
+		say STDERR $msg;
+	}
+	else
+	{
+		die("unrecognized msg level: $level");
+	}
+}
+
+
+sub build_times
+{
+	my @files;
+	my $recursed = File::Set->new;
+	$recursed->prefix($REPO_ROOT);
+	foreach (bash \lines => $GIT => status => '--porcelain')
+	{
+		next if /^\?\?/ and not $OPT->{untracked};
+		s/^...//;				# remove status (we don't care)
+		s/ -> .*$//;			# don't care what a symlink points to either
+		# dirs we handle below; files we just take care of right here
+		-d $_ ? $recursed->add($_) : push @files, join("\t", lstat($_)->mtime, $_);
+	}
+
+	# recursively get all files under untracked directories
+	$recursed->list(undef, sub
+	{
+		my (undef, undef, $file, $type, $stat) = @_;
+		push @files, join("\t", $stat->{MTime}, $file);
+	});
+
+	unless (@files)
+	{
+		exit if $OPT->{'if-exists'};
+		msg(FATAL => "nothing to preserve");
+	}
+
+	if ($DEBUG)
+	{
+		say "  $_" foreach @files;
+	}
+
+	return @files;
+}
+
+sub restore_times
+{
+	my $label = shift;
+	my $timefile = defined $label ? "$STASH_MTIMES/$label.files" : "$WORKING_FILE.unused";
+	open my $mtime_file, '<', $timefile;
+	while ( <$mtime_file> )
+	{
+		chomp;
+		my ($time, $file) = split("\t");
+		msg(WARN => "can't get filename from line $.!") unless defined $file;
+		no warnings 'uninitialized';
+		lutimes undef, $time, $file or msg(WARN => "could not restore time for $file [$!]");
+	}
+	close $mtime_file;
+	msg(INFO => "restored times from " . ($label ? $label : "temporarily unused working file"));
+}
+
+sub expunge_times
+{
+	my $label = shift // fatal("must specify file to remove");
+	my $timefile = "$STASH_MTIMES/$label.files";
+	unless (-e $timefile)
+	{
+		return if $OPT->{'if-exists'};				# don't exit; `--save --auto` might have called us
+		msg(FATAL => "no such times to remove [$label]");
+	}
+	rotate_working($timefile);
+}
+
+
+sub create_working
+{
+	my @lines = build_times();						# this will exit if there are no times to preserve
+	rotate_working() if -e $WORKING_FILE;
+	open my $mtime_file, '>', "$WORKING_FILE";
+	say $mtime_file "$_" foreach @lines;
+	close $mtime_file;
+	msg(INFO => "created working file: $WORKING_FILE") if $DEBUG;
+}
+
+sub rotate_working
+{
+	my $base_file = shift // $WORKING_FILE;
+	# this warning was firing too often; possibly make it optional somehow?
+	#msg(WARN => "old working files exist; you may want to clear them out");
+	my %to_rotate = map { m{^$base_file.(\d+)$} ? ($_ => $1) : () } bsd_glob("$base_file.*");
+	$to_rotate{$base_file} = 0;										# rotate the base file as well
+	foreach ( sort { $to_rotate{$b} <=> $to_rotate{$a} } keys %to_rotate )
+	{
+		if ($to_rotate{$_} >= 9)					# 10 max versions (base + 1 - 9)
+		{
+			unlink $_;
+		}
+		else
+		{
+			my $newname = "$base_file." . ($to_rotate{$_} + 1);
+			msg(FATAL => "failure to rotate old working files [$_ => $newname]") if -e $newname;
+			rename $_, $newname;
+		}
+	}
+}
+
+sub preserve_working
+{
+	my $label = shift;
+	my $newname = defined $label ? "$STASH_MTIMES/$label.files" : "$WORKING_FILE.unused";
+	rotate_working($newname) if -e $newname;
+	rename $WORKING_FILE, $newname;
+	msg(INFO => "file attributes saved " . ($label ? "to $label" : "temporarily (not associated with a stash) [$newname]"));
+}
+
+sub associate_working
+{
+	my $sha1 = shift;
+	rename $WORKING_FILE, "$STASH_MTIMES/$sha1";
+}
+
+sub expunge_working
+{
+	unlink $WORKING_FILE;
+}
+
+
+sub stash_list ()
+{
+	return bash \lines => $ORIG_GIT_STASH, list => '--pretty=%H';
+}
+
+sub run_wrapped
+{
+	# these are the various `git stash` subcommands and what we should do foreach one:
+	my %CREATE_COMMANDS  = map { $_ => 1 } qw< push save [default] >;
+	my %RESTORE_COMMANDS = map { $_ => 1 } qw< pop apply branch    >;
+	my %REMOVE_COMMANDS  = map { $_ => 1 } qw< pop branch drop     >;
+	my %NOTHING_COMMANDS = map { $_ => 1 } qw< list show           >;
+	my %SPECIAL_COMMANDS = map { $_ => 1 } qw< clear create store  >;
+	my %ALL_COMMANDS = ( %CREATE_COMMANDS, %RESTORE_COMMANDS, %REMOVE_COMMANDS, %NOTHING_COMMANDS, %SPECIAL_COMMANDS, );
+
+	my $subcommand   = first { not /^-/ } @ARGV;
+	   $subcommand //= '[default]';
+	msg(FATAL => "don't know how to safely handle subcommand [$subcommand]") unless $ALL_COMMANDS{$subcommand};
+
+	# check the topmost stash currently (to compare w/ post-stashing)
+	my @pre_stash_list = stash_list;
+	my $pre_stash_top  = $pre_stash_list[0] // '';
+
+	if ($DEBUG)
+	{
+		say "=> git-stash subcommand is $subcommand";
+		say "=> topmost stash entry is $pre_stash_top";
+	}
+
+	msg(FATAL => "--stash not yet implemented (sorry)");
+
+	my $exitval = bash $ORIG_GIT_STASH => @_;
+
+	# WARNING: THIS IS NOT PERFECT!!
+	# It is possible that some other process created (or removed) a stash in this
+	# repo at the same time this script was running, and now we will be very
+	# confused about which stashes are which.  However, for many developers, who
+	# are using their personal repo which no one else ever uses, this kind of weird
+	# race condition will never happen in practice.  Still, if you share a working
+	# copy of a repo with other devs, or you have some sort of weird automated
+	# process that makes stashes in the background, then ...
+	# **DO NOT USE THIS SCRIPT!**
+
+	my @post_stash_list = stash_list;
+	my %pre_list  = map { $_ => 1 } @pre_stash_list;
+	my %post_list = map { $_ => 1 } @post_stash_list;
+	my @new_stashes     = grep { not $pre_list{$_}  } @post_stash_list;
+	my @removed_stashes = grep { not $post_list{$_} } @pre_stash_list;
+
+	if ($NOTHING_COMMANDS{$subcommand})
+	{
+		# nothing do to but clean up the working file
+		expunge_working();
+	}
+
+	if ($CREATE_COMMANDS{$subcommand})
+	{
+		# theoretically, a new stash was created (hopefully just the one)
+		# if no stash was created, there was probably just an error (no biggie)
+		# if multiple stashes were created, that's worth whinging about
+		if (@new_stashes == 0)
+		{
+			preserve_working();
+		}
+		elsif (@new_stashes == 1)
+		{
+			associate_working($new_stashes[0]);
+		}
+		else
+		{
+			msg(INFO => "multiple candidates for new stash: " . join(', ', @new_stashes));
+			preserve_working();
+		}
+	}
+
+	if ($RESTORE_COMMANDS{$subcommand})
+	{
+	}
+
+	garbage_collect();
+	exit $exitval;
+}
+
+sub garbage_collect
+{
+	foreach ( grep { /^[[:xdigit:]]+$/ } bsd_glob("$STASH_MTIMES/*") )
+	{
+		unless ( bash $GIT => 'cat-file' => -e => $_ )
+		{
+			# if `git cat-file -e` doesn't recognize the SHA1, then git has
+			# already garbage-collected it, so we may as well do the same
+			unlink $_;
+		}
+	}
+}

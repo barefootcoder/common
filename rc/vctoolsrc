@@ -13,8 +13,8 @@ complete vcd 'p/1/`vc info project:all`/'
 
 if ( $?VCTOOLS_SHELL ) then
 	alias st 'vc stat-plus'
-	alias sync vc sync
-	alias vpush vc push
+	alias sync vc my-sync
+	alias vpush vc my-push
 	alias stg vc stage
 	alias istg git add -i
 	alias stg-amend 'vc amend-local'

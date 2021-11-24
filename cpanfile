@@ -169,10 +169,12 @@ suggests 'MooseX::App::Cmd', '== 0.31';
 # required for VCtools
 feature vctools => sub
 {
+	requires 'File::Set';
 	requires 'Test::Trap';
 	requires 'Tie::IxHash';
 	requires 'Date::Parse';
 	requires 'Perl6::Form';
+	requires 'File::lchown';
 	requires 'Test::Command';
 	requires 'Package::Stash';
 	requires 'Mail::Sendmail';
