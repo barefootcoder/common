@@ -129,7 +129,7 @@ sub import
 	myperl->import_list_into($calling_package,
 
 		CLASS							=>	1.00		=>
-		TryCatch						=>	1.003001	=>
+		'Syntax::Keyword::Try'			=>	0.26		=>
 		'Date::Easy'					=>	0.03		=>
 		'Path::Class::Tiny'				=>
 		'Perl6::Gather'					=>	0.42		=>
@@ -279,11 +279,11 @@ is pretty much the same thing as:
 	use experimental 'smartmatch';
 
 	use CLASS;
-	use TryCatch;
 	use Date::Easy;
 	use Perl6::Gather;
 	use Path::Class::Tiny;
 	use Method::Signatures;
+	use Syntax::Keyword::Try;
 
 	use Const::Fast;
 	use Scalar::Util qw< blessed >;
@@ -398,7 +398,7 @@ into a package's namespace.  Results in lots of messages to C<STDERR> that look 
 	:: importing List::Util into main [args: first max min reduce shuffle sum] ::
 	:: importing List::MoreUtils into main [args: apply zip uniq] ::
 	:: importing CLASS into main ::
-	:: importing TryCatch into main ::
+	:: importing Syntax::Keyword::Try into main ::
 	:: importing Date::Easy into main ::
 	:: importing Path::Class::Tiny into main ::
 	:: importing Perl6::Gather into main ::

@@ -41,7 +41,9 @@ our %ALL_SNIPPETS =
 	q{ const my $x => 'fred' 		}	=>	undef,									# Const::Fast
 	q{ dir('packages', 'rent') 		}	=>	undef,									# Path::Class::Tiny
 	q{ class Foo {} 				}	=>	undef,									# MooseX::Declare
-	q{ try {die} catch {};			}	=>	undef,									# TryCatch
+	q{ try {die} catch {};			}	=>	undef,									# Syntax::Keyword::Try (or TryCatch)
+	q{ try {die} catch ($e=~//) {};	}	=>	undef,									# Syntax::Keyword::Try (or TryCatch)
+	q{ try {} finally {1};			}	=>	undef,									# Syntax::Keyword::Try (only)
 	q{ my $p = slurp '/etc/passwd'	}	=>	undef,									# Perl6::Slurp
 	q{ debuggit(2 => 'test')		}	=>	undef,									# Debuggit
 	q{ my $s = form("{<<}", "xx")	}	=>	undef,									# Perl6::Form

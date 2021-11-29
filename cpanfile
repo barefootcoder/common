@@ -43,7 +43,6 @@ feature myperl => sub
 	requires 'thanks';
 	requires 'version';
 	requires 'Debuggit';
-	requires 'TryCatch';
 	requires 'Template';
 	requires 'Date::Easy';
 	requires 'Test::Trap';
@@ -61,6 +60,7 @@ feature myperl => sub
 	requires 'Path::Class::Tiny';
 	requires 'MooseX::Has::Sugar';
 	requires 'Method::Signatures';
+	requires 'Syntax::Keyword::Try';
 	requires 'Any::Moose', '== 0.26';				# newer version breaks Method::Signatures
 	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';
