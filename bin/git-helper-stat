@@ -3,8 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-const my $CONST => 'Some Constant';
-
 
 opts <<'-';
 	-

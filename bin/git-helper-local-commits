@@ -1,0 +1,49 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-D] [<branch>]
+	-D : debug
+	<branch> : the branch to show local commits for (default: current branch)
+-
+
+
+# This method for finding unpushed commits based on:
+# http://stackoverflow.com/questions/2016901/viewing-unpushed-git-commits
+#
+# Note that the main answers work properly with branches that have no upstream.  If the branch _has_
+# an upstream, the answer https://stackoverflow.com/a/8182309/1383177 is both simpler and works in
+# more cases.  The most likely one is if your branch contains commits that haven't been pushed to
+# _its_ upstream, but _have_ been pushed to another remote branch.  Because of this, we prefer the
+# upstream solution where possible.
+#
+# Unfortunately, limiting the more general case to only the current branch turned out to be
+# non-trivial. :-/  You can give `--branches` an arg, but it either has to contain a wildcard, or it
+# gets "/*" appended to it automatically, which makes it match nothing.  So we *have* to add the "*"
+# at the end, at which point it matches.  Unfortunately, it would also match any other branch name
+# that was the same as the current branch name, only longer.  For instance, if you were on branch
+# feature/foo, this would match feature/foo, but also feature/foo-bar.  Which we don't want.  So we
+# apply a bit of Perl magic at the end to make sure we only get the branch we're looking for.  Note
+# that "%d" produces either "(feature/foo)" *or* "(HEAD -> feature/foo)"--or possibly even
+# "(feature/foo, feature/bar)"--so that's why the regex is a bit more complex than you might imagine
+# at first.
+
+my $branch  = shift // sh(git => branch => '--show-current');
+my $not_upstream = sh(git => log => '--pretty=%h', '@{u}..', '2>/dev/null', '||:');
+if ($not_upstream)
+{
+	say $not_upstream;
+}
+else
+{
+	my $found = 0;
+	foreach (sh(git => log => "--branches=$branch*", '--not', '--remotes', '--pretty=%h %d'))
+	{
+		my ($sha1, $rest) = /^(\w+)(?:\h+(.*))$/ or die("can't understand line: $_");
+		$found = m{\((.*? )?\Q$branch\E(,.*?)?\)} if $rest;
+		say $sha1 if $found;
+	}
+}
