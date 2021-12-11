@@ -1,29 +1,79 @@
-/* https://forum.vivaldi.net/topic/15834 */
-/* ... later ... */
-/* https://forum.vivaldi.net/topic/42105 */
+/* PRE 4.x:                                 */
+/*    https://forum.vivaldi.net/topic/15834 */
+/*    ... later ...                         */
+/*    https://forum.vivaldi.net/topic/42105 */
+/* 4.x AND BEYOND:                          */
+/*    https://forum.vivaldi.net/topic/62447 */
 
-#tabs-tabbar-container.bottom {
-    order: -1;
-    border-top: none;
-    padding-bottom: 0px !important;
-}
 
-/* bookmarks bar above tabs */
-.bookmark-bar {
-    order: -2;
-}
+/* ======================================== */
+/* FOR THIS CODE TO WORK, YOU *MUST* SET    */
+/* TAB POSITION TO _TOP_.                   */
+/* ======================================== */
 
-.toolbar.UrlBar {
-    order: -3;
-}
 
-/* newly required for 3.6 */
-.tabs-bottom .tab.active:not(.marked):not(.tab-mini):after {
-  transform: unset;
-}
+/* ======================================== */
+/* MAIN CODE                                */
+/* courtesy @dude99 (6/12/21)               */
+/* from thread #3                           */
+/* ======================================== */
+
+/* top addressbar above top tabbar  */
+#browser.tabs-top.address-top #header {padding-top:37px;}
+#browser.tabs-top.address-top.maximized:not(.tabs-at-edge) #titlebar {height:41px;}
+#browser.tabs-top.address-top .vivaldi {height:34px; top: unset; bottom:0;}
+
+#browser.tabs-top.address-top #main {overflow: visible;}
+#browser.tabs-top.address-top .toolbar-mainbar:after {display:none;}
+#browser.tabs-top.address-top .UrlBar {position: fixed; top:0px; left: 34px; right: 100px;}
+#browser.tabs-top.address-top.maximized:not(.tabs-at-edge) .UrlBar {top:7px;}
+#browser.tabs-top.address-top .UrlBar, #browser.tabs-top.address-top .UrlBar > div:not(.UrlBar-AddressField):not(.UrlBar-SearchField) {background-color: transparent;}
+
+#browser.tabs-top.address-top #tabs-tabbar-container > div {padding-left: 2px;}
+
+/* Unify TabBar and AddressBar Color Palette */
+/* ENABLE ONLY ONE SET OF THESE! Disable the other set by adding "/" at beginning of line. */
+/*    ON: enable these lines: */
+#browser.tabs-top.address-top #titlebar {height:34px;}
+.color-behind-tabs-off#browser.tabs-top.address-top .UrlBar > div:not(.UrlBar-AddressField):not(.UrlBar-SearchField) {color: var(--colorImageFg, var(--colorFg));}
+.color-behind-tabs-on#browser.tabs-top.address-top .UrlBar > div:not(.UrlBar-AddressField):not(.UrlBar-SearchField) {color: var(--colorImageFg, var(--colorAccentFg));}
+/*    OFF: enable these lines: */
+/ #browser.tabs-top.address-top #titlebar {height:34px; background-color: var(--colorBg); color: var(--colorFg);}
+/ #browser.tabs-top.address-top .color-behind-tabs-off #titlebar {background-color: var(--colorAccentBg); color: var(--colorAccentFg);}
+/* end Unify Palette */
+
+/* bookmark bar enabled */
+#browser.tabs-top.address-top.bookmark-bar-top #header {padding-top:65px;}
+#browser.tabs-top.address-top.bookmark-bar-top .bookmark-bar {position: fixed; top:34px; left:0; right:0;}
+#browser.tabs-top.address-top.bookmark-bar-top.maximized:not(.tabs-at-edge) .bookmark-bar {top:41px;}
+/* horizontal menu enabled */
+#browser.tabs-top.address-top.horizontal-menu #header {padding-top:38px !important;}
+#browser.tabs-top.address-top.horizontal-menu .topmenu {transform: translateY(-38px); margin-bottom:0; color: var(--colorFg);}  /* remove color for unify tabbar & addressbar color palette */
+#browser.tabs-top.address-top.horizontal-menu #titlebar {height: 58px !important; z-index:-1;} /* set 0 height for unify tabbar & addressbar color palette */
+#browser.tabs-top.address-top.horizontal-menu .UrlBar {top: 24px !important; left: 0; right: 0;}
+#browser.tabs-top.address-top.horizontal-menu #tabs-tabbar-container {padding-top: 0;}
+/* bookmark bar & horizontal menu enabled */
+#browser.tabs-top.address-top.horizontal-menu.bookmark-bar-top #header {padding-top: 65px !important;}
+#browser.tabs-top.address-top.horizontal-menu.bookmark-bar-top .topmenu {transform: translateY(-65px);}
+#browser.tabs-top.address-top.horizontal-menu.bookmark-bar-top .bookmark-bar {top: 58px !important;}
+
+/* option 1: classic top section window drag zone */
+#browser.tabs-top.address-top.normal #titlebar {height:46px;}
+#browser.tabs-top.address-top.normal .UrlBar {top:12px;}  /* 7px for Mac */
+#browser.tabs-top.address-top.normal .bookmark-bar {top:46px;}
+
+/* option 2: compact header, drag zone are all around addressbar */
+/ #browser.tabs-top.address-top.normal #tabs-tabbar-container {padding-top: 0 !important;}
+
+
+/* ======================================== */
+/* COSMETIC TWEAKS                          */
+/* courtesy @nomadic (9/20/20)              */
+/* from thread #2                           */
+/* ======================================== */
 
 /* corner rounding */
-.tabs-bottom .tab-position .tab {
+.tabs-top .tab-position .tab {
     border-top-left-radius: var(--radiusHalf);
     border-top-right-radius: var(--radiusHalf);
     border-bottom-left-radius: unset;
@@ -31,19 +81,20 @@
 }
 
 /* Fix Fillets */
-.tabs-bottom .tab.active:not(.marked):not(.tab-mini):before {
+.tabs-top .tab.active:not(.marked):not(.tab-mini):before {
     top: unset;
     bottom: 0;
     -webkit-mask-image: radial-gradient(circle at 0 0, rgba(0, 0, 0, 0) 70%, #000 73%);
 }
-.tabs-bottom .tab.active:not(.marked):not(.tab-mini):after {
+.tabs-top .tab.active:not(.marked):not(.tab-mini):after {
     top: unset;
     bottom: 0;
+    transform: unset;
     -webkit-mask-image: radial-gradient(circle at 100% 0, rgba(0, 0, 0, 0) 70%, #000 73%);
 }
 
 /* tab group indicators*/
-.tabs-bottom .tab-strip .tab-group-indicator {
+.tabs-top .tab-strip .tab-group-indicator {
     bottom: 28px !important;
 }
 /* Remove line between address bar and bookmark bar */
