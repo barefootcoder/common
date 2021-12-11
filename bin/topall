@@ -1,10 +1,16 @@
 #! /bin/bash
 
-top
-sudo iotop
-sudo iftop -p
-glances
-watch dropbox status
-watch sensors
-sudo powertop
+function exists
+{
+	type -p $1 >/dev/null
+}
+
+                        top
+                   sudo iotop
+exists iftop    && sudo iftop -p
+exists nethogs  && sudo nethogs
+                        glances
+                  watch dropbox status
+                  watch sensors
+exists powertop && sudo powertop
 exec "$0"
