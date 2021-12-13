@@ -68,6 +68,7 @@ which ()
 export -f which
 
 export EDITOR=vim
+export PAGER="less -RaF -x4 -j2"
 
 export PS1="\[\e[31;1m\]\h \[\e[34;1m\]\w # \[\e[0m\]"
 
