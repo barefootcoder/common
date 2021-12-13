@@ -64,6 +64,8 @@ if ( $OPT->{browsers} )
 							'/opt/vivaldi/vivaldi-bin',
 							'/opt/vivaldi/vivaldi-bin --process-per-site',
 							'/opt/vivaldi/vivaldi-bin --enable-low-end-device-mode --process-per-site',
+							'/opt/vivaldi/vivaldi-bin --enable-crashpad',
+							'/opt/vivaldi/vivaldi-bin --process-per-site --enable-crashpad',
 						],
 	);
 	BROWSER: foreach (keys %BROWSERS)
