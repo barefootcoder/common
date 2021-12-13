@@ -32,6 +32,10 @@ DefaultSourcePath=git@github.com:%user/%project.git
 #	ProjectDir = ~/Dropbox/machine/braavos/common
 #</Project>
 
+<Project zadash-common>
+	ProjectDir = ~/Dropbox/machine/zadash/common
+</Project>
+
 
 
 <<include $CEROOT/etc/ceflow/CE.conf>>
