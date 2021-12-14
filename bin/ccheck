@@ -15,25 +15,24 @@ function syntax-check
 		echo "checking bash syntax ..."
 		bash -n $1
 	else
-		perl -c$taint $1
+		[[ $USER == 'vagrant' ]] && launch="launch"
+		$launch perl -c$taint $1
 	fi
 	exit 0
 }
 
-proj=rent
-if [[ $(vc info project) == "rent" ]]
+proj=$(vc info project)
+if [[ $proj == "rent" ]]
 then
 	# get the name of the sandbox machine from the Unison pref file
 	readonly sandbox=$(perl -lne 'print $1 if m{^root\s*=\s*ssh://(?:\w+@)?([\w.-]+)//}' ~/.unison/sandbox.prf)
 
 	#unison -ui text -batch sandbox
 	file="$(realpath "$1")"
-	#file=${file/$proj/rent.com}
 	echo
 	ssh $sandbox perl -c$taint "$file"
-elif [[ $(vc info project) == "CE" ]]
+elif [[ $proj == "CE" ]]
 then
-	#eval `~/bin/addpath -eb PERL5LIB $CEROOT/extlib/lib/perl5 $CEROOT/extlib/lib/perl5/x86_64-linux`
 	syntax-check $1
 else
 	if realpath "$1" | grep -q blog
