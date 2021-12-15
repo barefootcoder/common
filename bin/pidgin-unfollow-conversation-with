@@ -1,0 +1,17 @@
+#! /bin/bash
+source ~/bin/bash_funcs
+
+[[ $1 ]] || die "must supply which conversation to unfollow"
+
+echo -n "Press Ctrl-C to stop unfollowing "
+while true
+do
+	win=$(wmctrl -l | grep '\*.*'$1)
+	if [[ $win ]]
+	then
+		#cur=$(xdotool getwindowfocus)
+		xdotool windowactivate --sync ${win%% *} windowminimize ${win%% *} #windowactivate $cur
+	fi
+	echo -n "."
+	sleep 5
+done
