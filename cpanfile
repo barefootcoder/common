@@ -66,7 +66,7 @@ feature myperl => sub
 	requires 'MooseX::ClassAttribute';
 	requires 'Data::Printer', '== 0.40';
 	requires 'MooseX::StrictConstructor';
-	requires 'Devel::Declare', '== 0.006022';		# newer version breaks Method::Signatures
+	requires 'Devel::Declare', '== 0.006019';		# newer version breaks Method::Signatures
 };
 feature 'myperl-google' => sub
 {
