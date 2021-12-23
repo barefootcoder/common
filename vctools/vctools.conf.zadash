@@ -23,6 +23,10 @@ DefaultSourcePath=git@github.com:%user/%project.git
 	ProjectDir = ~/Dropbox/machine/caemlyn/common
 </Project>
 
+<Project orcpub>
+	ProjectDir = ~/rpg/campaigns/OrcPub
+</Project>
+
 
 
 <<include ~/.vctools/custom.conf>>
