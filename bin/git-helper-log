@@ -224,7 +224,8 @@ then
 fi
 
 
-cmd="$cmd $fmtarg $args $*"
+[[ $* ]] && printf -v files "%q " "$@"
+cmd="$cmd $fmtarg $args $files"
 if [[ -n $post ]]
 then
 	cmd="$cmd | $post"

@@ -228,6 +228,8 @@ sub build_times
 		next if /^\?\?/ and not $OPT->{untracked};
 		s/^...//;				# remove status (we don't care)
 		s/ -> .*$//;			# don't care what a symlink points to either
+		s/^"//; s/"$//;			# handle quoted files (quoting would be redundant for us)
+		s/\\"/"/g;				# filenames containing double quotes would have been quoted; unescape the internal quotes
 		# dirs we handle below; files we just take care of right here
 		-d $_ ? $recursed->add($_) : push @files, join("\t", lstat($_)->mtime, $_);
 	}
