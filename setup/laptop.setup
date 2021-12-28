@@ -52,6 +52,7 @@ packages to install (apt-get install, or via GUI):
 	g++
 	iotop
 	lzop
+	fd-find
 	google-chrome-stable google-talkplugin
 	vivaldi-stable
 	mate-sensors-applet
@@ -81,6 +82,9 @@ install music packages:
 	sox libsox-fmt-mp3
 
 as root:
+	# make sure these are necessary!  try `type fd` as root
+	dpkg-divert --local --divert /usr/bin/fd --rename --add /usr/bin/fd-find
+	dpkg-divert --local --divert /usr/share/man/man1/fd.1p.gz --rename --add /usr/share/man/man1/fd-find.1p.gz
 		| # these appear to be no longer necessary
 		| dpkg-divert --local --divert /usr/bin/ack --rename --add /usr/bin/ack-grep
 		| dpkg-divert --local --divert /usr/share/man/man1/ack.1p.gz --rename --add /usr/share/man/man1/ack-grep.1p.gz
