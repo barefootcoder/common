@@ -1,31 +1,53 @@
-#! /bin/bash
-. ~/bin/bash_funcs
+#! /usr/bin/env perl
 
-host=$1
-shift
+use myperl::Script;
+use autodie ':all';
 
-ctl_file=~/Dropbox/control.$host
-out_file=~/Dropbox/output.$host
-[[ -e $out_file ]] && die "output file already exists"
 
-function is_done
+opts <<'.';
+	[-l] | [-n] [-V] <machine> <command> [<arg> ...]
+	-l : list machines I know about
+	-n : don't run the command; just say what you would run
+	-V : run on the (dev) Vagrant sandbox on the remote machine
+	<machine> can be a unique abbreviation of a machine name
+	recognizes any machine which has a dir in ~/common/local
+	command is run via `remote-exe` to allow aliases, etc
+.
+$OPT{V} = 1 if $ME =~ /^v/;
+
+
+my @MACHINES = map { basename($_) } grep { -d } glob("~/common/local/*");
+if ( $OPT{l} )
 {
-	if [[ -e $out_file ]]
-	then
-		[[ $(tail -n1 $out_file) == '=== END ===' ]]
-	else
-		false
-	fi
+	say "recognized machines are: ", join(', ', @MACHINES);
+	exit;
+}
+my $machine = choose(shift);
+say "running on: $machine";
+
+if ( `dropboxd status` eq '' )
+{
+	die "can't communicate: dropbox is not running";
 }
 
-echo "$*" >$ctl_file
-echo -n "waiting ." >&2
-while ! is_done
-do
-	sleep 5
-	echo -n "." >&2
-done
-echo "" >&2
-${PAGER:-less -F} $out_file
-/bin/rm -f $out_file
-[[ -e $ctl_file ]] && /bin/rm -f $ctl_file
+my $command = "@ARGV" =~ s/'/'\\''/gr; $command =~ s/~/\\~/g if $OPT{V};
+my @cmd = ( 'remote-run-via-dropbox', $machine, $OPT{V} ? '~/local/bin/vagrant-exe' : '~/bin/remote-exe', "'$command'" );
+if ( $OPT{n} )
+{
+	say "single arg to remote-exe; no shell expansion";
+	say "@cmd";
+}
+else
+{
+	exec @cmd;
+}
+
+
+sub choose
+{
+	my $choice = join('.*', split(//, lc shift));
+	my @potentials = grep { /$choice/ } @MACHINES;
+	die("cannot resolve $choice") unless @potentials;
+	die("too many possibilities for $choice: @potentials") if @potentials > 1;
+	return $potentials[0];
+}
