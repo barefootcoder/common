@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [[ -t 1 ]]
+then
+	# can't `exec` here because of the pipeline
+	$0 "$@" |& ${PAGER:-less -a}
+	exit $?
+fi
+
+
+function all-commits
+{
+	# oblig SO ref: https://stackoverflow.com/questions/7348698
+	# note that
+	#		sort | uniq | sort -k2
+	# is the same as
+	#		sort -u | sort -k2
+	# which is *not* the same as
+	#		sort -k2 -u
+	# because (apparently) uniqueness is determined based on the key
+	{
+		git rev-list --objects --all
+		git rev-list --objects -g --no-walk --all
+		git rev-list --objects --no-walk $(git fsck --unreachable | grep '^unreachable commit' | cut -d' ' -f3)
+	} | sort -u
+}
+
+if [[ $1 ]]
+then
+	fmt='%C(auto)%h %ad %s'
+	all-commits																	|
+		cut -d' ' -f1															|
+		each -lg "^$1"'$' 'git show --name-only {} 2>/dev/null'	|&
+		xargs -r git show -s --pretty="$fmt"
+else
+	all-commits | sort -k2
+fi
