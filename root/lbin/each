@@ -15,11 +15,13 @@ sub run_command();
 my $format = '%f:%l';
 
 my $opt = {};
-getopts("qlF:vcCPDh", $opt);
+getopts("qlF:vcCPDg:h", $opt);
 usage() if $opt->{h};
 
 $format = '%l' if $opt->{q};
 $format = $opt->{F} if $opt->{F};
+
+my $regex; $regex = qr{$opt->{g}} if $opt->{g};
 
 
 my $orig_dir = getcwd();
@@ -39,7 +41,7 @@ sub usage
 {
 	my $me = basename($0);
 	print STDERR <<END;
-usage: $me [-q|-l|-v|-c|-F FORMAT] [-CPDh] 'command to run on {}' [files ...]
+usage: $me [-q|-l|-v|-c|-F <format>] [-CPDh] [-g <regex>] 'command to run on {}' [files ...]
     command is run on every provided filename
     in command, {} is replaced by "filename" (including double quotes)
     if no files are given, STDIN is treated as a list of filenames
@@ -47,7 +49,8 @@ usage: $me [-q|-l|-v|-c|-F FORMAT] [-CPDh] 'command to run on {}' [files ...]
     -l : print filenames which have output, but not output (not same as -F %f)
     -v : print only filenames which have *no* output
     -c : print count of output lines for each filename
-    -F : print filename/output according to supplied FORMAT (default: $format)
+    -g : only print output if it contains (Perl-compatible) <regex>
+    -F : print filename/output according to supplied <format> (default: $format)
     -C : for each filename, chdir to `dirname filename` before running command
     -P : treat command as Perl code, not a shell command
             in this case, evaluation of code is output
@@ -114,6 +117,7 @@ sub run_command ()
 		open(PIPE, "$run_file |") or die("can't open pipe");
 		while ( <PIPE> )
 		{
+			next if $regex and not /$regex/;
 			++$count;
 			last if $opt->{v};
 
@@ -152,6 +156,6 @@ sub print_output
 
 	xdotool search -name "Kid3" | each 'xwininfo -id {} | fgrep "Map State"'
 
-	find /usr/local/sbin/ -xtype l | each -l 'ls -l {} | grep /root/common' | each 'rm {}'
+	find /usr/local/sbin/ -xtype l | each -l 'ls -l {} | grep /root/common' | each 'rm -i {}'
 
 =cut
