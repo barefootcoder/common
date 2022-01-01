@@ -124,8 +124,7 @@ sub is_visible (;$)
 		last if defined $desktop;
 		usleep 100_000;			# .1 of a second
 	}
-	die("couldn't find desktop for $w") unless defined $desktop;
-	return $desktop != -1;
+	return defined $desktop ? $desktop != -1 : undef;
 }
 
 sub X (@)
@@ -151,11 +150,6 @@ sub X (@)
 	my $cmd = "xdotool @args $redirect";
 	info("will run: $cmd") if @args and $OPT->{debug};
 	bash $cmd;
-}
-
-sub cur_desktop_num
-{
-	bash \words => 'xdotool get_desktop';
 }
 
 
@@ -189,10 +183,6 @@ sub identify_browser_window (;$)
 # MAIN #
 ########
 
-
-# remember current desktop so we can go back there when we're done
-my $orig_desktop = cur_desktop_num();
-info("currently on desktop $orig_desktop");
 
 if ( $OPT->{browsers} )
 {
@@ -252,14 +242,10 @@ else
 	bash "$command >/dev/null 2>&1 &" unless get_pid;
 	my $count = 0;
 	print "[$tag] looking for process and window ";
-	while (1)
+	until (get_pid and X)
 	{
-		until (get_pid and X)
-		{
-			print "." if ++$count % 100 == 0;
-			usleep 100;
-		}
-		last if X windowactivate => '--sync' => '%W';
+		print "." if ++$count % 100 == 0;
+		usleep 100;
 	}
 	print '. found ';
 	X windowmove => '%W' => $OPT->{xoff}, $OPT->{yoff}    if $OPT->{xoff};
@@ -267,7 +253,3 @@ else
 	X set_desktop_for_window => '%W' => $OPT->{desktop}   if $OPT->{desktop};
 	say '. restored';
 }
-
-# return to original desktop
-info("returning to desktop $orig_desktop");
-bash "xdotool set_desktop $orig_desktop";

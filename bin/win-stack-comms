@@ -72,7 +72,7 @@ then
 	if [[ ! $skip_tbird ]]
 	then
 		info restoring Thunderbird
-		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird &
+		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird >/dev/null &
 	fi
 
 	PidginWindow="Buddy List"
