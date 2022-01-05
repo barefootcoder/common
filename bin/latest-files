@@ -3,7 +3,7 @@
 if [[ -t 1 ]]
 then
 	$0 "$@" | ${PAGER:-less -aF}
-	exit
+	exit $?
 fi
 
 days=1
