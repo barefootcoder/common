@@ -33,6 +33,7 @@ my %DESCRIPTIONS =
 							qr/Southern Cal Gas/i,
 							qr/So Cal Gas Co/i,
 							qr/SOUTHERN CALIFOR Online Payment/i,
+							qr/ACH Withdrawal MOSAIC/i,
 						],
 	Phone			=>	[
 							qr/Verizon/i,
@@ -70,6 +71,7 @@ my %DESCRIPTIONS =
 							qr/carlos ortega/i,
 							qr/jessie flores/i,
 							qr/fidelity nationa/i,
+							qr/CloudPaper/i,
 						],
 	Cars			=>	[
 							qr/Carmax Auto Fin./i,
@@ -93,11 +95,12 @@ my %DESCRIPTIONS =
 							qr/StaterBros/i,
 							qr/Ralphs/i,
 							qr/Albertsons/i,
+							qr/Vons/i,
 							qr/Costco Whse/i,
-							qr/Costco\.com/i,
-							qr/Costco by Instacart/i,
+							qr/Costco[. ]com/i,
+							qr/Costco by Insta(cart)?/i,
 							qr/Imperfect Foods/i,
-							qr/Pure Indian Foods/i,
+							qr/Pure Indian (Foods)?/i,
 							qr/Bennets_Honey_Farm/i,
 						],
 	Health			=>	[
@@ -132,7 +135,8 @@ my %DESCRIPTIONS =
 						],
 	School			=>	[
 							qr/CuriosityStream/i,
-							qr/discovery cube/i,
+							qr/Discovery Cube/i,
+							qr/Discovery Scien(ce)?/i,
 							qr/UNDERWOOD FAMI/i,
 							qr/Santa Barbara Zoo/i,
 							qr/DojoBoom/i,
@@ -152,6 +156,7 @@ my %DESCRIPTIONS =
 							qr/Six Flags/i,
 							qr/Chuck E Cheese/i,
 							qr/^D&B /i,
+							qr/DnD Adventure C(lub)?/i,
 							qr/Great Wolf Lodge/i,
 							qr/GG Delivers/i,
 							qr/Sunday Scaries/i,
@@ -328,6 +333,8 @@ my %WHAT_LOOKUP =
 	'THE AQUARIUM CO',					=>	'Aquarium Connect',
 	'GOOGLE *GOOGLE',					=>	'Google Fi',
 	'OTT* DROPOUT',						=>	'DropoutTV',
+	'Costco com'						=>	'Costco.com',
+	'ACH Withdrawal MOSAIC'				=>	'Mosaic (solar)',
 );
 
 
