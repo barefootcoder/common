@@ -199,7 +199,7 @@ then
 		if [[ -d $file || $file == *.V || $file == *.V.bak ]]
 		then
 			# should be handled by `vim-session`
-			continue
+			return
 		fi
 
 		if [[ $pattern ]]
