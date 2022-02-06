@@ -4,3 +4,7 @@ useradd -u 1077 -g 100 -Gusers,wheel -m -s /bin/tcsh -c 'Buddy Burden' buddy
 useradd -u 1077 -g 100 -Gusers,admin -m -s /bin/tcsh -c 'Buddy Burden' buddy
 # Ubuntu
 useradd -u 1077 -g 100 -Gusers,admin -m -s /usr/bin/tcsh -c 'Buddy Burden' buddy
+
+
+# make admin user for NAS
+useradd -u 1024 -r -c 'NAS Admin' admin
