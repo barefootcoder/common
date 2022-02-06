@@ -147,6 +147,7 @@ alias mf "cat /proc/meminfo | awk '$mfawk'"
 alias du. 'du -chs "`ls -1 | grep /`"'
 alias dus "du -sh * | sortk | tail"
 alias dux "du -xchH --max-depth=1 \!* | grep -v '^0	' | sortk"
+alias diffdir "diff --brief -r --no-dereference \!* |& $PAGER"
 alias topswap "swap-used | sort -k3 -n | tail"
 alias cal ~/bin/cal
 	# yes, those 3 *'s in a row are correct (even tho i have no idea why)
