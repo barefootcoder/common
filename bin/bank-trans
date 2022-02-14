@@ -53,6 +53,7 @@ my %DESCRIPTIONS =
 							qr/HBOMax/i,
 							qr/Hulu/i,
 							qr/CBS All Access/i,
+							qr/Paramount+/i,
 							qr/Philo/i,
 							qr/Disney ?Plus/i,
 							qr/Sling.com/i,
@@ -68,6 +69,7 @@ my %DESCRIPTIONS =
 						],
 	House			=>	[
 							qr/BRETT MORGAN/i,
+							qr/Q's Quality Pool/i,
 							qr/carlos ortega/i,
 							qr/jessie flores/i,
 							qr/fidelity nationa/i,
@@ -199,6 +201,7 @@ my %DESCRIPTIONS =
 							qr/The Dugout/i,
 							qr/Szechuwan Garden/i,
 							qr/Guido['`]s Pizza/i,
+							qr/East Coast Pizza/i,
 							qr/Red's BBQ/i,
 							qr/Michael Ds/i,
 							qr/\bBeto.?s\b/i,
