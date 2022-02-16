@@ -3,6 +3,12 @@
 use myperl::Script;
 use autodie qw< :all >;
 
+BEGIN
+{
+	eval "require $_" or exec(launch => 'perl -*PROJ:CE', $0, @ARGV)
+		foreach qw< File::Next Regexp::Common Text::Tabs List::MoreUtils Text::Balanced >;
+}
+
 use File::Next;
 use Regexp::Common;
 use Text::Tabs; $tabstop = 4;
