@@ -425,6 +425,7 @@ func diacritic_fixup ($string is alias)
 		naivete			=>	{ 3 => 'uml',   },
 		'a la'			=>	{ 1 => 'grave', },
 		facade			=>	{ 3 => 'cedil', plural => 1, },
+		soupcon			=>	{ 5 => 'cedil', },
 		uber			=>	{ 1 => 'uml',   },
 		jalapeno		=>	{ 7 => 'tilde', plural => 1, },
 		platanos		=>	{ 3 => 'acute', },
