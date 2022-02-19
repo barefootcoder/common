@@ -42,6 +42,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vgt 'vgrep -Te \!*'
 	alias vf  'vgrep -e . -l | grep -P \!* | $PAGER'
 	alias vlog git-helper-log
+	alias vp1  'bash -c '\''arg=\!* ; '$VCtoolsDir'/bin/vc push-some ${arg:-1}'\'
 	alias vbranch git-helper-branch
 	alias blameline 'perl -lne '\''($f,$l)=split(":"); print "$f:",`git blame -L$l,$l $f` =~ s/\).*/)/r'\'
 	alias tfix 'checktabs -n ; sleep 1 ; vcpatchws -f `checktabs -nb`'
