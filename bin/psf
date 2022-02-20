@@ -1,12 +1,15 @@
 #! /bin/bash
 
 me=${0##*/}
-while getopts ":p:g:dh" opt
+monitor=false
+while getopts ":p:g:Mdh" opt
 do
 	case $opt in
 		p)	pid=$OPTARG
 			;;
 		g)	grep=$OPTARG
+			;;
+		M)	monitor=true
 			;;
 		d)	debug=1
 			;;
@@ -55,6 +58,7 @@ ps -p $(get_childpids $$)
 fi
 
 ps_out="-o pid -o ppid -o user -o stat=S -o stime -o cputime -o tty -o command"
+$monitor && ps_out="-o pid -o ppid -o pgid -o command"
 if [[ -z $pid ]]
 then
 	tty=$1
@@ -65,7 +69,7 @@ then
 
 	if [[ -n $tty ]]
 	then
-		echo TTY is $tty
+		$monitor || echo TTY is $tty
 	fi
 
 	exec /bin/ps ft$tty $ps_out
