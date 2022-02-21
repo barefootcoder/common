@@ -115,6 +115,8 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 
 	# save URLs so they don't get messed with later
 	s{(?<![\\^])\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;					# ]] <-- to keep % from freaking out
+	# ditto for pure HTML sections
+	s[\{html\}\n(.*?)\n\{/html\}][block_save($1)]seg;
 
 	s{\A/(\w*)/(.*)\n}{change_type($1, $2)}eg;										# change blog type
 	unless (bbstyle)
@@ -186,6 +188,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
 	s[\{img(\d+x\d+)? (.*?)\}][image($2, $1)]eg;									# embedded images
+	s[\{spc(\d+)\}][blank_space($1)]eg;												# vertical space
 	s[{mix (.*?) ($roman_numeral)(\n\s*(.*?)\s*)?}][mix_block($1, $2, $4)]seg;		# mix volume
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
@@ -335,6 +338,7 @@ sub url_block
 	$alt_text //= $url;													# no alt text
 	$url =~ s/&[lr]squo;/'/g;											# fixup single quotes
 	$url =~ s/&[lr]dquo;/"/g;											# fixup double quotes
+	$alt_text =~ s[\{img(\d+x\d+)? (.*?)\}][image($2, $1, 1)]e;			# alt text can be an image
 
 	if ($url =~ /^(\w+):\S+$/)											# external link
 	{
@@ -490,12 +494,17 @@ func closing_of ($opening)
 }
 
 
-func image ($source, $size)
+func image ($source, $size, $from_link?)
 {
 	my %props = ( src => $source );
 	@props{qw< width height >} = split('x', $size) if $size;
 	my $img = '<img ' . join(' ', map { qq{$_="$props{$_}"} } keys %props) . '>';
-	return $size ? url_block($source, $img) : $img;
+	return $size && !$from_link ? url_block($source, $img) : $img;
+}
+
+func blank_space ($size)
+{
+	return "<div style='margin-top:${size}px'></div>";
 }
 
 
