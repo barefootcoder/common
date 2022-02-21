@@ -28,7 +28,7 @@ sub USAGE
 	say <<".";
 
 usage: $ME [--debug] --save    [--if-exists|--auto] [--untracked] [<label>]
-usage: $ME [--debug] --restore [--if-exists|--auto]               [<label>]
+usage: $ME [--debug] --restore [--if-exists|--auto] [-v<N>]       [<label>]
 usage: $ME [--debug] --rm      [--if-exists]                      [<label>]
    or: $ME [--debug] --stash   <git-stash-arg> ...
 
@@ -39,6 +39,7 @@ usage: $ME [--debug] --rm      [--if-exists]                      [<label>]
           --if-exists : don't whinge if there's nothing to do
           --untracked : with `save', preserve times for untracked files as well
                --auto : make optimal choices for scripted solutions (see below)
+                   -v : restore older version <N> of <label>
               --debug : print copious amount of debug info
 
        WARNING! `--stash' not yet implemented!
@@ -79,7 +80,7 @@ OPTIONS:
 	# note: posix_default == no_auto_abbrev + no_getopt_compat + no_permute
 	Getopt::Long::Configure(qw< posix_default no_ignore_case bundling_values >);
 	GetOptions($OPT,
-		qw< untracked|u! auto! if-exists! debug|D! >,
+		qw< untracked|u! auto! if-exists! v=i debug|D! >,
 		save			=> \&set_mode,
 		restore			=> \&set_mode,
 		rm				=> \&set_mode,
@@ -91,6 +92,7 @@ OPTIONS:
 $DEBUG ||= $OPT->{debug};
 
 msg(USAGE => "must specify command") unless $mode;
+msg(USAGE => "-v must be an integer between 1 and 9") if defined $OPT->{v} and $OPT->{v} !~ /^[1-9]$/;
 my $label = shift // $DEFAULT_LABEL;
 
 
@@ -259,6 +261,7 @@ sub restore_times
 {
 	my $label = shift;
 	my $timefile = defined $label ? "$STASH_MTIMES/$label.files" : "$WORKING_FILE.unused";
+	$timefile .= ".$OPT->{v}", $label .= "($OPT->{v})" if $OPT->{v};
 	open my $mtime_file, '<', $timefile;
 	while ( <$mtime_file> )
 	{
