@@ -1,0 +1,5 @@
+#! /bin/bash
+
+echo "Click on the window to get the PID of:" >&2
+# https://unix.stackexchange.com/a/19165/456858
+xprop _NET_WM_PID | cut -d' ' -f3
