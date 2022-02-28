@@ -131,17 +131,9 @@ as buddy:
 	# it may be necessary to `crontab -e` and comment out all cronjobs here
 	<follow GUI instructions>
 	<do Selective Sync> (right click Dropbox in tray, Preferences, Sync, Selective Sync)
-		turn off Christy/ and Archive/ at least
 		for minimum startup time, turn off:
-			Archive/
-			backup/
 			Camera Uploads/
-			Christy/
-			machine/		(or all but current machine if restoring)
-			MST3K/
-			music/
 			rpg/
-			work/
 
 	curl -L https://bit.ly/glances | /bin/bash
 		(voluminous output)
@@ -243,23 +235,12 @@ as buddy:
 
 	FOR A FRESH MACHINE
 	-------------------
-		mkdir -p ~/Dropbox/machine/$LOCALHOSTNAME
-		mv ~/common ~/Dropbox/machine/$LOCALHOSTNAME
-		ln -s ~/Dropbox/machine/$LOCALHOSTNAME/common ~
 		vi ~/common/.git/config
 			git://github.com/barefootcoder/common.git => git@github.com:barefootcoder/common.git
 	FOR A RESTORED MACHINE
 	----------------------
-		cp -pr ~/Dropbox/machine/$LOCALHOSTNAME-old ~/Dropbox/machine/$LOCALHOSTNAME
-		ln -s ~/Dropbox/machine/$LOCALHOSTNAME/common ~
 		# `unget` everything in common/ that is marked "typechange"
 		mv ~/.config ~/.config-fresh
-		cp -pr ~/Dropbox/machine/$LOCALHOSTNAME/config ~/.config
-		# make sure Thunderbird is not running
-		ln -s ~/Dropbox/machine/$LOCALHOSTNAME/thunderbird ~/.thunderbird
-		# make sure Firefox is not running
-		mv ~/.mozilla ~/.mozilla-fresh
-		cp -pr ~/Dropbox/machine/$LOCALHOSTNAME-old/mozilla ~/.mozilla
 
 	<open GitHub in browser>
 		barefootcoder
@@ -530,12 +511,6 @@ in X-Windows:
 				xmarks (turn off stars via right click)
 			turn off bookmark bar
 		Manage Search Engines
-			IGNORE THE BELOW
-			just copy ~/.mozilla/firefox/*.default/searchplugins/ from old laptop
-				or use possibly older copy in ~/Dropbox/ff/searchplugins/
-			make sure FF is off during copy
-				and backup old
-			--------------------------------------------
 			remove cruft
 			Get more search engines
 				Dictionary.com

@@ -56,10 +56,10 @@ case $mode in
 			;;
 esac
 
-playlist=/home/buddy/Dropbox/music/tracklists/misc/5minutes.m3u
+playlist=/export/music/tracklists/misc/5minutes.m3u
 if [[ $mode == "sleep" ]]
 then
-	playlist=/home/buddy/Dropbox/music/tracklists/Merrick/'Numeric Driftwood.m3u'
+	playlist=/export/music/tracklists/Merrick/'Numeric Driftwood.m3u'
 fi
 
 ~/bin/decibel-volume set $volume

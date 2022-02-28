@@ -3,7 +3,7 @@
 
 # main build
 module=$1
-cd ~/Dropbox/proj
+cd ~/proj
 dzil new $1 || die "dzil couldn't make the dir"
 
 # change dirname to match reponame

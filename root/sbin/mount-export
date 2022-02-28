@@ -1,0 +1,37 @@
+#! /bin/bash -e
+
+readonly ME=${0##*/}
+function die
+{
+	echo "$ME: $1" >&2
+	exit 1
+}
+
+[[ $1 ]] || die "must supply mount name"
+[[ $(id -u) -eq 0 ]] || die "must run as root"
+
+share=$1
+mountpoint=/export/$share
+
+if [[ $(mount | grep $mountpoint) ]]
+then
+	die "already mounted"
+fi
+
+if [[ ! -d $mountpoint ]]
+then
+	mkdir $mountpoint
+fi
+
+nas_user=admin
+if [[ $(stat -c %U $mountpoint) != $user ]]
+then
+	chown $nas_user:users $mountpoint
+fi
+
+if [[ $(stat -c %a $mountpoint) != 775 ]]
+then
+	chmod 0775 $mountpoint
+fi
+
+mount -t nfs -o hard,timeo=100,proto=tcp,mountproto=tcp taaveren:/volume1/$share $mountpoint

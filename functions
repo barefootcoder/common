@@ -2,13 +2,14 @@
 # used by the psync system
 # 	including: `psync` (both personal and root versions), `makeln`, and `build-music`
 
-mydir=~/common
-
 
 # simple fatal error
 function die
 {
-	echo "$0: $*" >&2
+	for msg
+	do
+		echo "$0: $msg" >&2
+	done
 	exit 1
 }
 
@@ -28,7 +29,15 @@ function find_dir
 	done
 
 	# if we get here, we couldn't find anything at all
-	die "can't find any of these directories: $@"
+	die "can't find any of these directories: $*"
+}
+
+# find a valid directory in external storage
+# checks in all the possible places it might be stuck into
+# and does in the preferred order
+function storage_dir
+{
+	find_dir /var/sync/resilio/$1 /export/$1
 }
 
 
@@ -46,9 +55,6 @@ function make_link
 	then
 		# don't bother if it's already pointing at the right place
 		:
-	elif [[ $(realpath "$2") == ~/Dropbox/* ]]
-	then
-		die "won't make symlinks inside Dropbox folder [$2]"
 	elif [[ -e $2 || -L $2 ]]
 	then
 		# there's _something_ there, but not the right something
@@ -63,6 +69,16 @@ function make_link
 		fi
 	else
 		ln -s "$1" "$2"
+	fi
+}
+
+# freak out if a dir is *not* a symlink
+function verify_dirlink
+{
+	if [[ -d $1 && ! -L $1 ]]
+	then
+		die "your $1 directory is a real directory instead of a symlink"								\
+			"please fix that and rerun"
 	fi
 }
 
@@ -111,8 +127,7 @@ function make_copy
 function resolve_host
 {
 	host="$1"
-	( ping -n 1 $host || ping -c 1 $host ) 2>/dev/null																	\
-			| perl -lne 'print $1 if /[([](\d+\.\d+\.\d+\.\d+)[)\]].*bytes of data/'
+	nslookup -timeout=2 $host 2>/dev/null | perl -lne '/^Address: (.*)/ and print $1 if /answer:/..1'
 }
 
 

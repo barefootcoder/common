@@ -13,7 +13,7 @@ use List::MoreUtils qw< after >;
 use List::Util qw< first pairs pairmap >;
 use Text::Tabs; $tabstop = 4;
 
-use lib "$ENV{'HOME'}/Dropbox/personal";
+use lib "$ENV{'HOME'}/docs";
 use blog::common;
 use blog::mixes;
 

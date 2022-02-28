@@ -6,6 +6,12 @@ source ./functions
 # sorry.  Note that this utilizes the same method that rc/tcshrc does.
 : ${LOCALHOSTNAME:=`$mydir/root/lbin/localhostname`}
 
+mydir=~/common
+if [[ ! $mydir -ef $PWD ]]
+then
+	die "sorry; must run from $mydir"
+fi
+
 
 ###########################
 # MAIN
@@ -14,15 +20,11 @@ source ./functions
 
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: starting main"
 
-if [[ $PWD != $mydir ]]
-then
-	echo "sorry; must run from ~/common" >&2
-	exit 1
-fi
-
 # make sure we have the dirs we need (useful for a brand-spanking-new homedir)
-[[ -d ~/.ssh ]] || mkdir ~/.ssh
-[[ -d ~/.unison ]] || mkdir ~/.unison
+[[ -d /export/proj ]] || die "make sure you mount /export/proj before running me"
+[[ -d ~/.ssh ]]       || mkdir ~/.ssh
+[[ -d ~/.unison ]]    || mkdir ~/.unison
+make_link $(storage_dir proj/common) ~/common
 
 # do rc's first; they're moderately straightforward except for having to add
 # . in front of the name ... these all go in ~
@@ -127,28 +129,19 @@ fi
 # this makes it easy to add new commands
 # if there's already a directory there, though, we dare not just delete it
 dir=~/bin
-if [[ -d $dir && ! -L $dir ]]
-then
-	echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-	echo "$0: please fix that and rerun" >&2
-	exit 1
-fi
+verify_dirlink $dir
 make_link $mydir/bin $dir
 
 # ditto for .cddb, only not as tragic if the dir already exists
 # also not as tragic if we can't find it, since it isn't here in $mydir any more
-if [[ $1 != refresh && -d ~/Dropbox ]]
+if [[ $1 != refresh ]]
 then
 	dir=~/.cddb
 	if [[ -d $dir ]]
 	then
-		if [[ ! -L $dir ]]
-		then
-			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-			echo "$0: please fix that before you rerun" >&2
-		fi
+		verify_dirlink $dir
 	else
-		srcdir=$(find_dir ~/Dropbox/music/cddb $mydir/cddb)
+		srcdir=$(find_dir /export/music/cddb $mydir/cddb)
 		if [[ -d $srcdir ]]
 		then
 			make_link $srcdir $dir
@@ -156,67 +149,47 @@ then
 	fi
 fi
 
-# dirs to symlink in from Dropbox
-if [[ $1 != refresh && -d ~/Dropbox ]]
+# dirs to symlink in from external storage
+if [[ $1 != refresh ]]
 then
-	for src_dir in ~/Dropbox/proj ~/Dropbox/rpg ~/Dropbox/work/timer
+	for dir in rpg proj work/timer
 	do
-		dest_dir=~/${src_dir##*/}
-		if [[ -d $dir && ! -L $dir ]]
+		src_dir=$(storage_dir $dir)
+		if [[ ! $src_dir ]]
 		then
-			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-			echo "$0: please fix that and rerun" >&2
-			exit 1
+			die "can't find any external storage candidate for: $dir"
+		elif [[ -d $src_dir ]]
+		then
+			dest_dir=~/${src_dir##*/}
+			verify_dirlink $dest_dir
+			make_link $src_dir $dest_dir
 		fi
-		make_link $src_dir $dest_dir
 	done
 	# this one gets renamed when linked
-	make_link ~/Dropbox/personal ~/docs
+	make_link $(storage_dir personal) ~/docs
 fi
 
-# dirs to symlink in from Dropbox as dot-dirs
-if [[ $1 != refresh && -d ~/Dropbox ]]
+# dirs to symlink in from /export/proj as dot-dirs
+if [[ $1 != refresh && -d /export/proj ]]
 then
-	for dir in purple cpan-testers
+	for dir in cpan-testers
 	do
-		dbdir=~/.$dir
-		if [[ -d $dbdir && ! -L $dbdir ]]
-		then
-			echo "$0: your $dbdir directory is a real directory instead of a symlink" >&2
-			echo "$0: please fix that and rerun" >&2
-			exit 1
-		fi
-		make_link ~/Dropbox/$dir $dbdir
+		srcdir=/export/proj/$dir
+		destdir=~/.$dir
+		verify_dirlink $destdir
+		make_link $srcdir $destdir
 	done
 fi
 
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: symlinked dirs"
 
-# Dropbox "local" dirs
-if [[ $1 != refresh && -d ~/Dropbox ]]
-then
-	local_dbdir=~/Dropbox/machine/$LOCALHOSTNAME
-	[[ -d $local_dbdir ]] || mkdir -p $local_dbdir
-	# Dropbox dir is just a copy of local dir
-	# (copying handled by crontab, set up below)
-	for dir in firefox mozilla config thunderbird
-	do
-		[[ -d $local_dbdir/$dir ]] || mkdir -p $local_dbdir/$dir
-	done
-fi
-
-# stuff to symlink in from ~/Dropbox/personal
-if [[ $1 != refresh && -d ~/Dropbox ]]
+# stuff to symlink in from /export/personal
+if [[ $1 != refresh ]]
 then
 	for dir in ~/vimS ~/.local/share/tomboy
 	do
-		if [[ -d $dir && ! -L $dir ]]
-		then
-			echo "$0: your $dir directory is a real directory instead of a symlink" >&2
-			echo "$0: please fix that and rerun" >&2
-			exit 1
-		fi
-		srcdir=~/Dropbox/personal/$(basename $dir)
+		verify_dirlink $dir
+		srcdir=$( storage_dir personal/$(basename $dir) )
 		make_link $srcdir $dir
 	done
 fi
@@ -372,5 +345,3 @@ fi
 ###########################
 # Subscripts
 ###########################
-
-[[ -d /export ]] && ./build-music					# don't try to build if there's /export (e.g. a sandbox)

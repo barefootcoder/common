@@ -1,0 +1,117 @@
+#! /bin/bash -e
+. ~/bin/bash_funcs
+
+function step
+{
+	if [[ $1 == "rsync-it" ]]
+	then
+		rsync-it echo
+	elif [[ $1 == "echo" ]]
+	then
+		echo ''
+	else
+		echo "step: $(printf '%q ' "$@")"
+	fi
+	if [[ $1 == "echo" ]]
+	then
+		yn="Y"
+	else
+		echo -n "Do this step? [Y/n] "
+		read yn
+	fi
+	if [[ $yn == [nN]* ]]
+	then
+		:
+	else
+		if [[ $1 == "rsync"* ]]
+		then
+			"$@" ||:
+		else
+			"$@"
+		fi
+		echo "Press <ENTER> to continue ..."
+		read enter
+	fi
+}
+
+tag=
+function rsync-it
+{
+	if [[ $1 == "echo" ]]
+	then
+		echo "step: rsync -avr $source $dest 2>&1 | tee /var/tmp/nas-$share$tag-rsync.log"
+	else
+		rsync -avr $source $dest 2>&1 | tee /var/tmp/nas-$share$tag-rsync.log
+		case $tag in
+			"")		tag=-upd
+					;;
+			upd-)	tag=upd2
+					;;
+			upd*)	counter=${tag#tag}
+					counter=$(( $counter + 1 ))
+					tag=upd${counter}-
+					;;
+		esac
+	fi
+}
+
+function diffdir
+{
+	diff --brief -r --no-dereference "$@" ||: |& $PAGER
+}
+
+
+continue=false
+[[ $1 == "--continue" ]] && continue=true && shift
+source=$1
+dest=$2
+
+if ! $continue
+then
+	[[   -d $source && $source == ~/Dropbox/* ]] || die "usage: $ME <src> <dest>"
+	[[ ! -d $dest   && $dest   == /export/*   ]] || die "usage: $ME <src> <dest>"
+fi
+share=$(basename $dest)
+
+new_share=false
+[[ $(dirname $dest) == /export ]] && new_share=true
+
+if $new_share
+then
+	# step 1: make the NAS dir
+	step echo "Create the directory $share on Synology and add NFS permissions."
+
+	# step 2: mount it
+	step sudo mount-export $share
+fi
+
+# step 3: prepare the Dropbox files
+step sudo chown -R admin:users $source
+step find $source -type d -perm 700 -exec sudo chmod 755 '{}' \;
+step find $source -perm 600 -exec sudo chmod 644 '{}' \;
+
+while true
+do
+	# step 4: copy the files
+	step rsync-it
+
+	# step 5: check for errors
+	step rsync -avr -n $source $dest
+
+	echo ''
+	echo -n "Are we good? [y/N] "
+	read yn
+	[[ $yn == [yY]* ]] && break
+done
+
+# step 6: verify copy
+step diffdir $source $dest
+
+# step 7: remove the dest
+step sudo rm -rf $source
+
+if $new_share
+then
+	# step 8: do the sync
+	step echo "Now add a sync task for $share and you're all done."
+fi

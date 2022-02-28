@@ -74,7 +74,6 @@ mkdir $dir/run
 mkdir $dir/sysconfig
 echo "DROPBOX_USERS=buddy" >$dir/sysconfig/dropbox
 
-ln -s Dropbox/common common
 rm $tarfile
 
 

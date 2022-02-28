@@ -17,7 +17,7 @@ then
 		die "your ~/proj is a file, not a dir--you're weird"
 	fi
 else
-	ln -s ~/Dropbox/proj ~/proj
+	ln -s /export/proj ~/proj
 fi
 
 vctools_dir=$proj_dir/VCtools

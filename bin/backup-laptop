@@ -4,7 +4,6 @@ set -o pipefail
 source ~/common/functions
 
 [[ -d /export/backup ]] || die "base backup dir doesn't exist!"
-[[ $(realpath /export/backup) == */Dropbox/* ]] || die "base backup dir isn't on Dropbox!"
 tag=$1
 [[ $tag ]] || die "must supply backup tag"
 [[ $LOCALHOSTNAME ]] || die "local hostname not set"
