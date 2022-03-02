@@ -28,8 +28,12 @@ die("no mappings in sessionfile? (highly suspicious)") unless @session_mappings;
 
 @session_mappings = grep { ignore_old_mappings } diff_mappings @baseline_mappings, @session_mappings;
 
+my $templatefile  = shift // $sessionfile;
+   $templatefile .= ".V" unless $templatefile =~ /\.V$/;
+fatal("will not overwrite existing file [$templatefile]") if -e $templatefile;
+
 local *OUT;
-open OUT, ">$sessionfile.V";
+open OUT, ">$templatefile";
 say OUT foreach
 		map { sprintf('%s%4d %s', @$_)                                          }
 		map { $_->[1] eq $curfile ? [ '%' => @$_ ] : [ ' ' => @$_ ]             }

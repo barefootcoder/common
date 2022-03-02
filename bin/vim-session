@@ -292,18 +292,18 @@ class SessionTemplate
 ########
 
 opts <<'-';
-	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [<templ>] | [-N <dir>] [-n] [-D] <templ> [<file> ...] }
+	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [-N <dir>] [<templ>] | [-N <dir>] [-n] [-D] <templ> [<file> ...] }
 	-l : list all possible session files
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
 	-v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines
 	-e : edit template (instead of starting session); with -l, edit all; with -g|-G, edit all matching
-	-C : create a template from a vim session file (default name: add .V to session filename)
-	-N : create a new template in <dir>; session dir is $PWD; file list is the given files, if any
+	-C : create a template from a vim <session> file (default name: add .V to session filename)
+	-N : create a new template in <dir>; without -C, session dir is $PWD and file list is the given files, if any
 	-n : do not autosave the session (default: autosave any changes back to the template)
 	-D : debug mode (print lots of behind-the-scenes info)
 	<pattern> : Perl-style regex
-	<session> : actual vim session file (or partial name)
+	<session> : actual vim session file
 	<templ>   : session template file (usually ends in `.V`)
 	<dir>     : directory where session template file will be created
 	<file>    : file(s) to edit (only used with `-N`)
@@ -320,6 +320,7 @@ const my $DOT_V => qr/\.V$/;
 # handle modes which don't require a session template
 do_list() if $OPT{l};
 do_grep() if $pattern;
+convert_sessionfile($OPT{C}, shift) if $OPT{C};
 
 
 # next, search for a session template
@@ -438,6 +439,15 @@ sub handle_old_sessionfile
 			exec 'vimS', @opts, $file;
 		}
 	}
+}
+
+sub convert_sessionfile
+{
+	my ($old, $new) = @_;
+	-r $old or fatal "vim session file $old does not exist";
+	$old = path($old);
+	chdir $OPT{N} // $old->parent;
+	exec 'vim-session-convert', $old, $new // $old->basename;
 }
 
 
