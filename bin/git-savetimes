@@ -228,6 +228,8 @@ sub build_times
 	foreach (bash \lines => $GIT => status => '--porcelain')
 	{
 		next if /^\?\?/ and not $OPT->{untracked};
+		# if it's _marked_ deleted, and it's actually gone, there's no need to try to save its time
+		next if ( /^D/ or /^.D/ ) and not -e $_;
 		s/^...//;				# remove status (we don't care)
 		s/ -> .*$//;			# don't care what a symlink points to either
 		s/^"//; s/"$//;			# handle quoted files (quoting would be redundant for us)
