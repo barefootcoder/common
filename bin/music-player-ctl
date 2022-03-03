@@ -8,8 +8,6 @@ use Sys::RunAlone;
 use Time::HiRes qw< usleep >;
 use List::AllUtils qw< firstidx >;
 
-const my $CONST => 'Some Constant';
-
 
 sub VolumeFile();
 sub CurrentVolume();
