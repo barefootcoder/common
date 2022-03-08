@@ -37,7 +37,7 @@ function find_dir
 # and does in the preferred order
 function storage_dir
 {
-	find_dir /var/sync/resilio/$1 /export/$1
+	find_dir /var/sync/synology/$1 /var/sync/resilio/$1 /export/$1
 }
 
 
@@ -60,7 +60,7 @@ function make_link
 		# there's _something_ there, but not the right something
 		# better make sure it's okay to replace it
 		/bin/ls -l "$2"
-		echo -n "$2 exists; overwrite? " >&2
+		echo -n "$2 exists; overwrite [new src: $1]? " >&2
 		read yn
 		if [[ $yn == [yY]* ]]
 		then
