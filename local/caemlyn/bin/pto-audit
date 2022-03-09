@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+
+opts <<'-';
+	[-D] <year>
+	-D : debug mode (implies -v)
+	<year>    : year to audit
+-
+
+my $year = shift or usage_error("must supply year");
+
+
+my @ptos;
+FILE:
+foreach ($timerfile->slurp(chomp=>1))
+{
+	++$.;
+	next if /^$/;
+	my ($name, $thing) = split("\t");
+	next unless $name =~ /^pto:?$/;
+
+	foreach (split(/,\s*/, $thing))
+	{
+		if ($name =~ /:/)
+		{
+			my $pto = shift @ptos or die("more descriptions than PTOs! [$.]");
+			say "$pto  : $_";
+		}
+		else
+		{
+			my ($from, $to) = map { datetime($_) } /^(\d+)-(\d+)$/ or die("unexpected chunk: $_");
+			last FILE if $from->year < $year;
+			push @ptos, $from->as("/mdY") . " (" . ($to - $from) / 60 / 60 . " hrs)";
+		}
+	}
+	if ($name =~ /:/ and @ptos)
+	{
+		say "$_  : $thing" foreach @ptos;
+		undef @ptos;
+	}
+}
