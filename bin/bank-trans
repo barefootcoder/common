@@ -33,7 +33,7 @@ my %DESCRIPTIONS =
 							qr/Southern Cal Gas/i,
 							qr/So Cal Gas Co/i,
 							qr/SOUTHERN CALIFOR Online Payment/i,
-							qr/ACH Withdrawal MOSAIC/i,
+							qr/Mosaic/i,
 						],
 	Phone			=>	[
 							qr/Verizon/i,
@@ -104,6 +104,7 @@ my %DESCRIPTIONS =
 							qr/Imperfect Foods/i,
 							qr/Pure Indian (Foods)?/i,
 							qr/Bennets_Honey_Farm/i,
+							qr/Cloud Paper/i,
 						],
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
@@ -216,6 +217,7 @@ my %DESCRIPTIONS =
 							qr/Bollywood Indian/i,
 							qr/Fire Island Grill/i,
 							qr/Red Robin/i,
+							qr/Red'?s Barbecue/i,
 							qr/Eggs N Things/i,
 							qr/Hook Burger/i,
 							qr/Panera/i,
