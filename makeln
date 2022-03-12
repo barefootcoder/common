@@ -152,7 +152,7 @@ fi
 # dirs to symlink in from external storage
 if [[ $1 != refresh ]]
 then
-	for dir in rpg proj work/timer
+	for dir in rpg proj
 	do
 		src_dir=$(storage_dir $dir)
 		if [[ ! $src_dir ]]
@@ -167,6 +167,24 @@ then
 	done
 	# this one gets renamed when linked
 	make_link $(storage_dir personal) ~/docs
+	# these only get done for work machines
+	if [[ -d ~/.vagrant.d/boxes/ce-dev-sandbox ]]
+	then
+		declare -A worklinks=( [work/ce]=~/work [work/timer]=~/timer [work/ce/vimS]=~/local/data/vimS )
+		for from in "${!worklinks[@]}"
+		do
+			src_dir=$(storage_dir $from)
+			if [[ ! $src_dir ]]
+			then
+				die "can't find any external storage candidate for: $dir"
+			elif [[ -d $src_dir ]]
+			then
+				dest_dir=${worklinks[$from]}
+				verify_dirlink $dest_dir
+				make_link $src_dir $dest_dir
+			fi
+		done
+	fi
 fi
 
 # dirs to symlink in from /export/proj as dot-dirs
