@@ -14,8 +14,10 @@ given (shift)
 	$artist     = $1 when /^ .?   \t (.*?) \s-\s  .*?                     (\s+ [[{] .*)? \s* $/x;
 	$soundtrack = $1 when /^ .... \s  .*?  \s-\s  .*?  \s+ \[ (.{3,}?) \] (\s+ [[{] .*)? \s* $/x;
 	$artist     = $1 when /^ .... \s  .*?  \s-\s (.*?)                    (\s+ [[{] .*)? \s* $/x;
+	$artist     = $1 when /^ \w       .*?  \s-\s (.*?)                    (\s+ [[{] .*)? \t+  /x;
 }
 $artist =~ s/^the\s+//i if $artist;
+$soundtrack //= '';
 
 my $group_title = '';
 say "searching for: ", $artist // "$soundtrack [soundtrack]";
