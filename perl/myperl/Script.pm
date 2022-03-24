@@ -68,7 +68,18 @@ sub opts ($)
 
 		if ( $block_pos == -1 )						# first line is usage line
 		{
-			$_ = "$prefix: $ME -h | $_";
+			my $uline = $_;
+			$_ = "$prefix: $ME -h | $uline";
+			if ( $uline =~ /^\{/ and $uline =~ /\}\s*$/ and length > 100 )
+			{
+				my $leader = ' ' x $prefix_len;
+				my $count = 0;
+				push @help,
+					map { ($count++ ? $leader : "$prefix: ") . "$ME $_"				}
+					    ( split(' \| ', $uline =~ s/^\{\s*//r =~ s/\s*\}\s*$//r)	)
+				;
+				$_ = "$leader$ME -h";
+			}
 		}
 		elsif ( $block_pos == 0 )					# option line
 		{
@@ -207,6 +218,13 @@ however much) you like.
 
 The first line is the usage line (unless it starts with C<->, so don't do that).  The usage line is
 used to build the help message and nothing else.
+
+If you need to begin your usage line with a non-optional switch (meaning the
+line would start with a C<->), you can wrap the entire thing in curly braces,
+which is a common way to group alternations in command-line descriptions.  As
+an aesthetic helper, a line which begins and ends with curly braces (ignoring
+whitespace) I<and> is too long to fit within 100 characters is turned into
+multiple usage lines.
 
 After any usage lines, all lines that start with C<-> describe options, I<< until the first line
 that B<doesn't> start with C<-> >>.  Any lines starting with a dash after the first non-dash line

@@ -94,6 +94,27 @@ OUT
 -
 END
 
+perl_output_is( "proper help message w/ long set of alternatives", <<OUT, <<'END', qw< -h > );
+usage: <one-liner> <thingy>
+       <one-liner> -C <thingy>
+       <one-liner> -M <thingy> [...]
+       <one-liner> <some-other-crazy-option>
+       <one-liner> <an-even-longer-option>
+       <one-liner> -h
+           -C : create a <thingy>
+           -M : whole lotta <thingy>s
+           -h : this help message
+       <thingy> : a thing
+OUT
+	use myperl::Script;
+	opts <<"-";
+		{ <thingy> | -C <thingy> | -M <thingy> [...] | <some-other-crazy-option> | <an-even-longer-option> }
+		-C : create a <thingy>
+		-M : whole lotta <thingy>s
+		<thingy> : a thing
+-
+END
+
 perl_error_is( "proper exit message w/ bad option", <<OUT, <<'END', qw< -b > );
 <one-liner>: Unknown option: b (<one-liner> -h for help)
 OUT
