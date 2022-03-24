@@ -292,7 +292,7 @@ class SessionTemplate
 ########
 
 opts <<'-';
-	{ -l[v] | -[v]{g|G} <pattern> | -e <templ> | -C <session> [-N <dir>] [<templ>] | [-N <dir>] [-n] [-D] <templ> [<file> ...] }
+	{ -l[v] | [-v] -{g|G} <pattern> | [-l|-{g|G} <pattern>] -e <templ> | -C <session> [-N <dir>] [<templ>] | [-N <dir>] <templ> [<file> ...] | [-n] [-D] <templ> }
 	-l : list all possible session files
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
