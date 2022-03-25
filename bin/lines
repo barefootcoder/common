@@ -1,6 +1,38 @@
-#! /bin/bash
+#! /usr/bin/env perl
 
-lineno=$1
-shift
+use myperl::Pxb;
+use autodie ':all';
 
-sed -n "$lineno"p "$@"
+
+opts <<'-';
+	<spec> [<file>]
+	<spec> : which line(s) to print
+	spec is a comma-separated list of elements
+	each element is either a positive integer,
+	or a range of positive integers (separated by `-')
+	if no <file> specified, reads from STDIN
+-
+
+my $spec = shift or usage_error("must supply spec");
+my %lines;
+foreach (split(",", $spec))
+{
+	if ( /^\d+$/ )
+	{
+		$lines{$_} = 1;
+	}
+	elsif ( /^(\d+)-(\d+)$/ )
+	{
+		$lines{$_} = 1 foreach $1..$2;
+	}
+	else
+	{
+		usage_error("unknown line spec: $_");
+	}
+}
+
+
+while ( <> )
+{
+	print if $lines{$.};
+}
