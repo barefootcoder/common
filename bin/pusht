@@ -125,7 +125,7 @@ then
 	then
 		gen_pdf
 	elif [[ $fullpath == */C3V/* || $fullpath == */exercises/* || $(basename "$1") == github.reply ||				\
-			$fullpath == */custom/* || $fullpath == */GMBinder*/* ]]
+			$fullpath == */custom/* || $1 == *.source ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
