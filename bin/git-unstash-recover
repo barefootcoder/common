@@ -1,0 +1,100 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-avD] [-n <num>] <stashid>
+	-a : do a thing (default: don't do that thing)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	-n : do a thing <num> times
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $stashid = shift;
+my $stash_name = sh(git => log => -1 => '--format=%s', $stashid);
+fatal("Can't locate stash: $stashid") unless $stashid =~ /^stash/ and $stash_name;
+
+
+my %status = map { /^(.). (.*)( -> .*)?$/ ? ($2,$1) : badparse() } sh(git => status => -u => '--porcelain=v1');
+my @mod_files       = sh(git => show => '--format=', '--name-only', -r => $stashid                      );
+my @untracked_files = sh(git => show => '--format=', '--name-only', -r => $stashid . '^3', '2>/dev/null');
+
+if (my @files_in_the_way = grep { exists $status{$_} } @untracked_files)
+{
+	say "These files are blocking restoration of your untracked files:";
+	say "[$status{$_}] $_" foreach @files_in_the_way;
+	fatal("Cannot continue until this is corrected.");
+}
+
+if (my @files_not_unstashed = grep { not exists $status{$_} } @mod_files)
+{
+	say "These files have not been unstashed yet; are you sure you gave the right stash ID?";
+	say "[$status{$_}] $_" foreach @files_not_unstashed;
+	fatal("Too nervous about mistakes to continue.");
+}
+
+# look for files with conflicts
+foreach (grep { $status{$_} eq 'U' } @mod_files)
+{
+	if (has_unresolved_conflicts($_))
+	{
+		fatal("Looks like `$_' has active conflicts; please resolve those first.");
+	}
+	sh(git => 'rerere');
+	sh(git => add => path($_));
+}
+
+# now re-unstash just to be safe, and, if that works, unstash the untracked files, if any
+sh(git => stash => pop => $stashid);
+if (@untracked_files)
+{
+	# oblig SO ref: https://stackoverflow.com/a/70237953/1383177
+	my $sha1 = sh(git => 'write-tree');
+	sh(git => 'read-tree' => -u => '--prefix=', $stashid . '^3');
+	sh(git => 'read-tree' => $sha1);
+}
+
+# cleanup: unstage everything, restore the timestamps, then advise the user how to drop the stash
+# (we don't want to do the latter ourselves: too dangerous)
+sh(git => reset => HEAD => map { path($_) } grep { $status{$_} =~ /\w/ } keys %status);
+savetimes_restore($stash_name);
+say "If everything looks good, you may need to drop the stash: $stash_name";
+
+
+sub badparse
+{
+	fatal("Cannot parse line from `git status`: $_");
+}
+
+sub has_unresolved_conflicts
+{
+	!!grep { /^[<>]{6,}/ } path($_)->slurp;
+}
+
+sub savetimes_restore
+{
+	my ($stash) = @_;
+
+	my $name;
+	   $name = 'stg-amend' if $stash =~ /changes for stg-amend$/;
+	   $name = $stash      if $stash !~ /\s/;
+	if ($name)
+	{
+		sh('git-savetimes' => '--restore', '--auto' => $name);
+	}
+	else
+	{
+		warn("Warning: cannot restore savetimes for: $stash")
+	}
+}
