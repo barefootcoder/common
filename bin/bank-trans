@@ -41,6 +41,7 @@ my %DESCRIPTIONS =
 							qr/asurion wireless/i,
 							qr/Google Fi/i,
 							qr/GOOGLE \*GOOGLE/i,
+							qr/GOOGLE \*FI\b/i,
 						],
 	'TV/Internet'	=>	[
 							qr/DirecTv\b/i,
@@ -49,6 +50,7 @@ my %DESCRIPTIONS =
 							qr/Spectrum/i,
 							qr/Netflix/i,
 							qr/(amazon|amzn) digit(al)?/i,
+							qr/Amazon Prime/i,
 							qr/Prime Video/i,
 							qr/HBOMax/i,
 							qr/Hulu/i,
@@ -249,7 +251,7 @@ my %DESCRIPTIONS =
 							qr/Urban Plate/i,
 							qr/Hopdoddy/i,
 							qr/Smoke & Vape/i,
-							qr/Dropbox/i,
+							qr/BackBlaze/i,
 							qr/Miniature Market?/i,
 							qr/TrollAndToad/i,
 							qr/ONEBOOKSHELF.COM?/i,
@@ -258,6 +260,7 @@ my %DESCRIPTIONS =
 							qr/GameStop/i,
 							qr/Kopy King/i,
 							qr/MP3VA.com/i,
+							qr/BandCamp/i,
 							qr/OFFICE DE\b/i,
 							qr/parking.*playa vista/i,
 							qr/GOOGLE \*INNERSLOTH/i,
@@ -337,6 +340,7 @@ my %WHAT_LOOKUP =
 	'GOOGLE *INNERSLOTH',				=>	'Android Game',
 	'THE AQUARIUM CO',					=>	'Aquarium Connect',
 	'GOOGLE *GOOGLE',					=>	'Google Fi',
+	'GOOGLE *FI',						=>	'Google Fi',
 	'OTT* DROPOUT',						=>	'DropoutTV',
 	'Costco com'						=>	'Costco.com',
 	'ACH Withdrawal MOSAIC'				=>	'Mosaic (solar)',
@@ -431,7 +435,7 @@ foreach (@transactions)
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
 		}
-		when ( /AMAZON/i or /AMZN/i or /Prime Video/i or /Audible/i )
+		when ( /Amazon/i or /Prime Video/i or /Audible/i )
 		{
 			$source = 'Amazon';
 			if ($category eq 'TV/Internet')
@@ -439,7 +443,8 @@ foreach (@transactions)
 				given (abs($amount))
 				{
 					$what = 'Video rental:'	when $_ < 6;
-					$what = 'Disney+' 		when $_ < 9;
+					$what = 'Disney+' 		when $_ < 8;
+					$what = 'AMC+' 			when $_ < 9;
 					#$what = 'Starz' 		when $_ < 9;
 					#$what = 'Showtime' 	when $_ < 11;
 					$what = 'HBO'			when $_ < 15;
@@ -531,9 +536,10 @@ foreach (@transactions)
 						Nintendo				=>	'Perrin',
 						'Smoke & Vape'			=>	'Buddy',
 						'MP3VA.com'				=>	'Buddy',
-						Dropbox					=>	'Buddy',
+						BackBlaze				=>	'Buddy',
 						'DriveThruRPG []'		=>	'Buddy',
 						'MCDM Prod'				=>	'Buddy',
+						BandCamp				=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
