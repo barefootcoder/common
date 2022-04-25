@@ -1,0 +1,94 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my @MACHINES => qw< caemlyn zadash >;
+our %OTHER_MACHINE = (@MACHINES, reverse @MACHINES);
+
+
+opts <<'-';
+	[-D] <dir>
+	-D : debug mode (implies -v)
+	<dir>  : directory to compare or sync
+-
+
+@ARGV or usage_error("must supply directory");
+my $dir = path(shift);
+
+my $from = $ENV{LOCALHOSTNAME} // sh('hostname');
+my $to   = $OTHER_MACHINE{$from} // fatal("can't determine hostnames from $from");
+
+
+my @identical;
+
+my @sync = qw< rsync -avz -u >;
+sync_from_to($to   => "$to:$dir/", $from => "$dir/");
+sync_from_to($from => "$dir/",     $to   => "$to:$dir/");
+
+sub sync_from_to
+{
+	my ($from_mach, $from_path, $to_mach, $to_path) = @_;
+	my @files;
+	foreach (sh(@sync => -n => $from_path, $to_path))
+	{
+		next if /^(sending|receiving) .* list$/;
+		last unless $_;
+		next if -d $_;
+		push @files, $_;
+	}
+	if (@files)
+	{
+		say "$from_mach => $to_mach: found ", scalar @files, " files to be sync'ed";
+		if (confirm "compare individual files?")
+		{
+			foreach (@files)
+			{
+				my $file = path($_);
+				my $path = $dir->child($file);
+				say "file $file is newer on $from_mach";
+				printf("%8s: %s\n", ll_file($to_mach,   $path));
+				printf("%8s: %s\n", ll_file($from_mach, $path));
+				if (confirm "compare?")
+				{
+					if (sh(md5sum => $path) eq sh(ssh => $to, md5sum => $path))
+					{
+						say "files are identical";
+						push @identical, $file;
+					}
+					else
+					{
+						sh(ssh => $to, cat => $path, '|', diff => '-', $path);
+					}
+				}
+			}
+		}
+		else
+		{
+			say "  to be sync'ed:";
+			say foreach @files;
+		}
+		if (confirm "perform update for real?")
+		{
+			sh(@sync => $from_path, $to_path);
+		}
+		elsif (@identical and confirm "sync identical files to older dates?")
+		{
+			sh(rsync => -avz => -n => $to_path, $from_path, (map {; '--include' => $_ } @identical), '--exclude' => '*');
+		}
+	}
+	else
+	{
+		say "$from_mach => $to_mach: contents appear to be sync'ed";
+	}
+}
+
+sub ll_file
+{
+	my ($on, $path) = @_;
+	my @cmd = (ls => -l => $path);
+	unshift @cmd, (ssh => $to) unless $on eq $from;
+	return $on, scalar sh(@cmd);
+}
