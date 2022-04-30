@@ -8,6 +8,7 @@ use Time::HiRes qw< usleep >;
 use List::AllUtils qw< pairmap >;
 
 
+my @ORIG_ARGS = @ARGV;
 opts <<'-';
 	[-f] [-n] <name>
 	-f : force overwrite of existing file (without asking first)
@@ -16,7 +17,7 @@ opts <<'-';
 	<name>  : name of window in `screen` to save
 -
 
-my $name = shift or usage_error("must supply at name of screen buf to save");
+my $name = shift or usage_error("must supply name of screen buf to save");
 # this is just a hacky way to verify the window exists: from that window, query
 # the window title, and you should get back the same name
 sh(screen => -p => $name, -Q => 'title') eq $name or usage_error("cannot locate window $name");
@@ -49,4 +50,13 @@ for ( my ($size, $last_size, $count) = (0,0,0); $size = -s $file, $count < 3; us
 }
 # oblig SO ref: https://stackoverflow.com/questions/1935081
 sh(sed => -i => '/./,$!d', $file);										# ditch those pesky blank lines at the top
+
+# for some reason, this very often results in a zero-length file, in which case
+# we need to just do it all over again <sigh>
+if (-s $file == 0)
+{
+	unlink $file;
+	exec $0, @ORIG_ARGS;
+}
+
 say STDERR "done";
