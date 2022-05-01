@@ -141,6 +141,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
 		s{(\W)'em\b}{$1&rsquo;em}g;													# ditto
+		s{(\W)'nother\b}{$1&rsquo;nother}g;											# double ditto
 		s{\b'n'\b}{&rsquo;n&rsquo;}g;												# two apostrophes, even
 		s{'$back_boundary}{&rsquo;}g;												# close single quote
 		s{$front_boundary'}{$1&lsquo;}g;											# open single quote
