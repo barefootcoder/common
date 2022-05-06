@@ -13,6 +13,9 @@ opts <<'-';
 	<testwin> : window to designate as the new testwin
 -
 
+# oblig SO ref: https://unix.stackexchange.com/questions/689882
+my @run_on_all_sessions = (qw< screen -X at >, "$ENV{USER}*");
+
 if ( @ARGV or $OPT{S} )
 {
 	my $testwin = $OPT{S} ? sh screen => -Q => 'title' : shift;
@@ -22,9 +25,9 @@ if ( @ARGV or $OPT{S} )
 elsif (-r $tw_tmpfile)
 {
 	my $testwin = $tw_tmpfile->slurp;
-	exec screen => -X => select => $testwin;
+	exec @run_on_all_sessions, select => $testwin;
 }
 else
 {
-	exec screen => -X => echo => "test window not yet set!";
+	exec @run_on_all_sessions, echo => "test window not yet set!";
 }
