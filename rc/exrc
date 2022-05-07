@@ -58,7 +58,7 @@ map <Esc>z<Esc>z !!expand -t4<CR>
 map <Esc>z} !}expand -t4<CR>}
 
 " search for the word under the cursor
-nmap <C-_> *|																				" Ctrl-/
+nmap <C-_> :set lisp<CR>*:set nolisp<CR>|													" Ctrl-/
 " search for the word under the cursor, but restrict to last visual region
 nmap <Esc><C-_> /\%V\<<C-R><C-W>\><CR>|														" Ctrl-Alt-/
 " start search from top of file
