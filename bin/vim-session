@@ -488,18 +488,19 @@ sub do_grep
 	my $found = 0;
 	foreach my $file ( grep { -f } map { $_->children($DOT_V) } grep { -d } @search_paths )
 	{
-		my @matches = grep /$pattern/, grep { $OPT{G} ? 1 : scalar 1../^=/ } $file->slurp;
-		#my @matches = grep { $OPT{G} ? 1 : scalar 1../^=/ } $file->slurp;
-		if (@matches)
+		local $. = 0;
+		my %matches = map { ++$.; /$pattern/ ? ($. => $_) : () } grep { $OPT{G} ? 1 : scalar 1../^=/ } $file->slurp;
+		if (keys %matches)
 		{
+			my @lines = sort { $a <=> $b } keys %matches;
 			$found = 1;
 			if ( $OPT{v} )
 			{
-				print foreach map { join(':', $file->basename, $_) } @matches;
+				print foreach map { join(':', $file->basename, $_, $matches{$_}) } @lines;
 			}
 			else
 			{
-				say $file->basename($DOT_V);
+				say $file->basename($DOT_V), $OPT{g} ? ' [' . join(',', map { "#$_" } @lines) . ']' : '';
 			}
 		}
 	}
