@@ -23,5 +23,9 @@ DefaultSourcePath=git@github.com:%user/%project.git
 	ProjectDir = ~/rpg/campaigns/OrcPub
 </Project>
 
+#<Project old-common>
+#	ProjectDir = /export/backup/machine/zadash/common
+#</Project>
+
 
 <<include ~/.vctools/custom.conf>>
