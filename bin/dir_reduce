@@ -2,6 +2,7 @@
 
 use myperl::Pxb;
 use autodie ':all';
+use charnames ':full';
 
 
 const our $DEFAULT_FILE_LIMIT => 5;
