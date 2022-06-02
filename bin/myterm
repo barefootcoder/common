@@ -67,6 +67,7 @@ function locate_img
 {
 	image=$1
 	shift
+	patterns="$image"
 	for dir
 	do
 		patterns="$patterns $dir/$image.*"
