@@ -15,7 +15,7 @@ screen -t launch
 screen -t copy
 screen -t notes
 	number 9
-	stuff "vi ~/docs/notes\015"
+	stuff "vims notes\015"
 screen -t common
 	source .screenrc.vctools
 	stuff "vcd common\015"
