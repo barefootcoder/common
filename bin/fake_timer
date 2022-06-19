@@ -196,7 +196,7 @@ while ( <> )
 				if (my $ticket = extract_ticket(@stuff))
 				{
 					$sub = sprintf("%-20s  [%s]", $name, $ticket);
-					$totals{$sub} = delete $totals{$name} if exists $totals{$name} and not exists $totals{$sub};
+					$totals{$sub} += delete $totals{$name} if exists $totals{$name};
 				}
 				next;
 			}
