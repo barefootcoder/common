@@ -42,25 +42,9 @@ then
 	cescp ~/common/rc/screenrc.$screen $host:.screenrc.$screen
 fi
 
+# this gets us whatever helper scripts we have created
 cessh $host mkdir -p bin/
-# have to make sure we can reset the ssh tunnel
-# (this is most important on quin's, but still useful everywhere)
-cat <<'END' | cessh $host cat ">bin/ssh-sock-reset"
-# this needs to be `source`d to be effective
-
-if [[ ! -s $SSH_AUTH_SOCK ]]
-then
-    # try to figure out what the new socket is
-    socket=$(/bin/ls -t1 /run/user/$(id -u)/keyring*/ssh /tmp/ssh-*/agent.* 2>/dev/null | head -n1)
-    if [[ $socket && -S $socket ]]
-    then
-        export SSH_AUTH_SOCK=$socket
-    else
-        echo "$(basename $BASH_SOURCE): can't locate ssh socket" >&2
-        return 1
-    fi
-fi
-END
+cescp $CHEOPSROOT/launch-ec2/control-instance/bin/* $host:bin/
 
 # set up for pjawk, but only on dirk
 if [[ $screen == "logs" ]]
