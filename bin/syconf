@@ -1,0 +1,6 @@
+#! /bin/bash
+
+cd ~/Dropbox
+find . -name .dropbox.cache -prune -o -iname "*(*conflict*)*" -print0 | xargs -0 ls -ltr
+cd /var/sync/synology
+find . -iname "*(*conflict*)*" -print0 | xargs -0 ls -ltr

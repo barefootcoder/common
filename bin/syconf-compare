@@ -9,7 +9,12 @@ then
 fi
 
 swapfile="$1"
-origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print join("/", $1//".", $2)' "$swapfile")"
+if [[ ${2:-} ]]
+then
+	origfile=$2
+else
+	origfile="$(perl -e 'shift =~ m|^(.*/)?\.(.*?) \(.*conflict.*\)\.sw.$| and print join("/", $1//".", $2)' "$swapfile")"
+fi
 if [[ -z $origfile ]]
 then
 	die "$me: $swapfile does not appear to be a valid vim swapfile"
