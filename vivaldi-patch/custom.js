@@ -1,112 +1,190 @@
 /* https://forum.vivaldi.net/topic/35443/backup-search-engines */
+/* To use, either look in the configuration "Search" section, */
+/* or goto: vivaldi://settings/search */
 
-/* Backup Search Engines */
+// Backup Search Engines
+// version 2022.4.0
+// https://forum.vivaldi.net/post/277594
+// Adds functionality to backup and restore search engines in
+// vivaldi://settings/search.
 
-function _msgSearch(pnt) {
-    clearTimeout(_msgTimeout);
-    if (pnt === 'backup') {
-        _infoSearch.innerText = 'Search engines backup copied to clipboard.';
+(function backupSearchEngines() {
+  function msg(print) {
+    clearTimeout(msgTimeout);
+    if (print === "backup") {
+      info.innerText = "Backup copied to clipboard";
+    } else if (print === "restore") {
+      info.innerText = "Search engines restored";
+    } else {
+      info.innerText = "Code error, aborted";
     }
-    else if (pnt === 'restore') {
-        _infoSearch.innerText = 'Search engines restored.';
-    }
-    else {
-        _infoSearch.innerText = 'Search engines code error.'
-    }
-    _msgTimeout = setTimeout(function() {
-        _infoSearch.innerText = '';
-    }, 5000);
-};
+    msgTimeout = setTimeout(() => (info.innerText = ""), 5000);
+  }
 
+  function bringingItAllBackHome(remains, defaultsArray) {
+    vivaldi.searchEngines.getTemplateUrls((engines) => {
+      const getKeys = engines.templateUrls.map((e) => e.keyword);
+      for (let i = 0; i < defaultsArray.length; i++) {
+        const index = getKeys.lastIndexOf(defaultsArray[i][0]);
+        const id = engines.templateUrls[index].id.toString();
+        const ds = defaultsArray[i][1];
+        vivaldi.searchEngines.setDefault(ds, id);
+      }
+      remains.forEach((remove) => {
+        vivaldi.searchEngines.removeTemplateUrl(remove);
+      });
+      msg("restore");
+    });
+  }
 
-function _restoreSearch() {
-    event.preventDefault();
-    event.stopPropagation();
-    if (_eventSearch === 'paste') {
-        var clipboardData = event.clipboardData || window.clipboardData;
-        var engineCode = clipboardData.getData('text');
-    }
-    else {
-        var engineCode = event.dataTransfer.getData('text');
+  function exec(collection) {
+    vivaldi.searchEngines.getTemplateUrls((engines) => {
+      const oldDefaults = [
+        engines.defaultImage,
+        engines.defaultPrivate,
+        engines.defaultSearch,
+      ];
+      const newDefaults = [
+        collection.defaultImage,
+        collection.defaultPrivate,
+        collection.defaultSearch,
+        collection.defaultSearchField,
+        collection.defaultSearchFieldPrivate,
+        collection.defaultSpeeddials,
+        collection.defaultSpeeddialsPrivate,
+      ];
+      engines.templateUrls.forEach((engine) => {
+        if (oldDefaults.indexOf(engine.id) === -1) {
+          vivaldi.searchEngines.removeTemplateUrl(engine.id);
+        }
+      });
+      console.info("restoring search engines...");
+      const defaultsArray = [];
+      collection.templateUrls.forEach((collect) => {
+        vivaldi.searchEngines.addTemplateUrl(collect, () => {
+          console.info(` \u2022 ${collect.name}`);
+          if (newDefaults.indexOf(collect.id) > -1) {
+            const indeces = newDefaults
+              .map((e, i) => (e === collect.id ? i : ""))
+              .filter(String);
+            indeces.forEach((index) => {
+              let ds;
+              if (index === 0) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_IMAGE;
+              } else if (index === 1) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_PRIVATE;
+              } else if (index === 2) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_SEARCH;
+              } else if (index === 3) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_SEARCH_FIELD;
+              } else if (index === 4) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_SEARCH_FIELD_PRIVATE;
+              } else if (index === 5) {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_SPEEDDIALS;
+              } else {
+                ds = vivaldi.searchEngines.DefaultType.DEFAULT_SPEEDDIALS_PRIVATE;
+              }
+              const tunnel = [collect.keyword, ds];
+              defaultsArray.push(tunnel);
+            });
+          }
+        });
+      });
+      const remains = [...new Set(oldDefaults)];
+      bringingItAllBackHome(remains, defaultsArray);
+    });
+  }
+
+  function restore(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    let backupCode;
+    let collection;
+    if (e.type === "paste") {
+      const clipboardData = e.clipboardData;
+      backupCode = clipboardData.getData("text");
+    } else {
+      backupCode = e.dataTransfer.getData("text");
     }
     try {
-        var engines = JSON.parse(engineCode);
+      collection = JSON.parse(backupCode);
+    } catch (err) {
+      msg("error");
+      return;
     }
-    catch(err) {
-        _msgSearch('error');
-        return;
+    if (
+      "defaultImage" in collection &&
+      "defaultPrivate" in collection &&
+      "defaultSearch" in collection
+    ) {
+      exec(collection);
+    } else {
+      msg("error");
     }
-    if ('engines' in engines && 'default' in engines && 'defaultPrivate' in engines) {
-        chrome.storage.local.set({'SEARCH_ENGINE_COLLECTION': engines}, function() {
-            document.querySelector('.setting-search-engine .detail-toolbar input.primary').click();
-            _msgSearch('restore');
-        });
-    }
-    else {
-        _msgSearch('error');
-    }
-};
+  }
 
-function _backupSearch() {
-    chrome.storage.local.get({'SEARCH_ENGINE_COLLECTION': ''}, function(back) {
-        const engines = back.SEARCH_ENGINE_COLLECTION;
-        const engineCode = JSON.stringify(engines);
-        navigator.clipboard.writeText(engineCode);
-        _msgSearch('backup');
+  function backup() {
+    vivaldi.searchEngines.getTemplateUrls((engines) => {
+      const backupCode = JSON.stringify(engines, null, 2);
+      navigator.clipboard.writeText(backupCode);
+      msg("backup");
     });
-};
+  }
 
-function searchEngines() {
-    const search = document.querySelector('.setting-search-engine');
-    const check = document.getElementById('backupSearch');
-    if (search && !check) {
-        const styleCheck = document.getElementById('searchEngines');
-        if (!styleCheck) {
-            const style = document.createElement('style');
-            style.type = 'text/css';
-            style.id = 'searchEngines';
-            style.innerHTML = '#backupSearch, #restoreSearch {margin-left: 6px;}#restoreSearch{width: 130px;margin-top: 6px;}#restoreSearch::-webkit-input-placeholder {opacity: 1;color: var(--colorHighlightBg);text-align: center;}';
-            document.getElementsByTagName('head')[0].appendChild(style);
-        }
-        const place = document.querySelector('.setting-section .setting-group.unlimited .setting-single');
-        const backupBtn = document.createElement('input');
-        backupBtn.setAttribute('type', 'button');
-        backupBtn.setAttribute('value', 'Backup');
-        backupBtn.id = 'backupSearch';
-        place.insertBefore(backupBtn, place.lastChild);
-        const restoreInput = document.createElement('input');
-        restoreInput.setAttribute('type', 'text');
-        restoreInput.setAttribute('placeholder', 'Restore Backup');
-        restoreInput.id = 'restoreSearch';
-        place.insertBefore(restoreInput, place.lastChild);
-        _infoSearch = document.createElement('span');
-        _infoSearch.id = 'msgConfirm';
-        place.insertBefore(_infoSearch, place.lastChild);
-        document.getElementById('backupSearch').addEventListener('click', _backupSearch);
-        const restoreSearch = document.getElementById('restoreSearch');
-        restoreSearch.addEventListener('paste', function() {
-            _eventSearch = 'paste';
-            _restoreSearch(event);
-        });
-        restoreSearch.addEventListener('drop', function() {
-            _eventSearch = 'drop';
-            _restoreSearch(event);
-        });
-        _msgTimeout = {};
+  function ui() {
+    const check = document.getElementById("vm-bse-backup");
+    if (!check) {
+      const place = document.querySelector(
+        ".setting-section > div > .setting-group.unlimited > .setting-single"
+      );
+      const btn = document.createElement("input");
+      btn.setAttribute("type", "button");
+      btn.setAttribute("value", "Backup");
+      btn.classList.add("vm-bse-backup");
+      place.insertBefore(btn, place.lastChild);
+      btn.addEventListener("click", backup);
+      const input = document.createElement("input");
+      input.setAttribute("type", "text");
+      input.setAttribute("placeholder", "Restore Backup");
+      input.classList.add("vm-bse-restore");
+      place.insertBefore(input, place.lastChild);
+      input.addEventListener("paste", restore);
+      input.addEventListener("drop", restore);
+      info = document.createElement("span");
+      info.classList.add("vm-bse-msg");
+      place.insertBefore(info, place.lastChild);
     }
-};
-// Loop waiting for the browser to load the UI. You can call all functions from just one instance.
+  }
 
-setTimeout(function wait() {
-    const browser = document.getElementById('browser');
-    if (browser) {
-        document.body.addEventListener('click', function() {
-            setTimeout(searchEngines, 50);
-        });
+  const css = `
+    .vm-bse-restore {
+      width: 130px;
+      margin-left: 6px;
+      margin-top: 6px;
     }
-    else {
-        setTimeout(wait, 300);
+    .vm-bse-restore::-webkit-input-placeholder {
+      opacity: 1;
+      color: var(--colorHighlightBg);
+      text-align: center;
     }
-}, 300);
+    .vm-bse-msg {
+      margin-left: 12px;
+    }
+  `;
 
-/* ==================================================================================================== */
+  let msgTimeout;
+  const settingsUrl =
+    "chrome-extension://mpognobbkildjkofajifpdfhcoklimli/components/settings/settings.html?path=";
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url === `${settingsUrl}search`) {
+      setTimeout(ui, 100);
+      const check = document.getElementById("vm-bse-css");
+      if (!check) {
+        const style = document.createElement("style");
+        style.id = "vm-bse-css";
+        style.innerHTML = css;
+        document.getElementsByTagName("head")[0].appendChild(style);
+      }
+    }
+  });
+})();
