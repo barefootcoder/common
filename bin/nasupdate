@@ -1,0 +1,36 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-RD] <dir>
+	-R : reverse sync (local => NAS)
+	-D : debug mode
+	<dir> : directory to (potentially) sync
+	        (must start with share name)
+-
+
+my $dir = shift or usage_error("must supply directory to sync");
+
+
+my $src = "taaveren:/volume1/$dir";
+my $dest = dir( '/var/sync/synology', $dir );
+-d $dest or fatal("can't locate: $dest");
+
+if ($OPT{R})
+{
+	exit unless confirm("THIS IS VERY DANGEROUS!! ARE YOU SURE YOU WANT TO DO THIS?");
+	($dest, $src) = ($src, $dest);
+}
+
+my @cmd = (qw< rsync -az --no-o --no-g --no-p -e >, 'ssh -p 2322 -l egwene', qw< -u >);
+my @view = (@cmd => -v => -n => "$src/", "$dest/", '|', split(' ', $ENV{PAGER}));
+sh @view;
+
+if (confirm("do it for real?"))
+{
+	my @do = (@cmd => '--progress' => "$src/", "$dest/");
+	sh @do;
+}
