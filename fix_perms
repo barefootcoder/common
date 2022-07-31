@@ -1,3 +1,5 @@
+# run me thus: `bash fix_perms`
+
 [[ -r makeln ]] || ( echo "must be in common dir!" && exit 2 )
 source functions
 set_admin
@@ -8,11 +10,33 @@ chmod +x repl-bottom
 chmod +x repl-top
 chmod +x new_dropbox
 chmod +x bin/*
+chmod -x bin/tcshrc-DEBUG		# exception
 
-cd root
-chmod +x psync
-chmod +x makeln
-chmod +x lbin/*
-chmod +x sbin/*
-find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp $ADMIN
-find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w
+(
+	cd root
+	chmod +x psync
+	chmod +x makeln
+	chmod +x lbin/*
+	chmod +x sbin/*
+	find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp $ADMIN
+	find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w
+)
+
+# report any remaining issues
+(
+	echo "potential remaining problem files:"
+	git diff --summary
+) | $PAGER
+if confirm "should I try to fix all those?"
+then
+	git diff --summary | perl -lne '
+		# mode change 100755 => 100644 local/absalom/bin/backup
+		if ( /mode change (\d+) => (\d+) (.*)/ )
+		{
+			my ($old, $new, $file) = ($1,$2,$3);
+			$old =~ s/^\d\d//;
+			print "chmod $old $file";
+			chmod(oct($old), $file) == 1 or die("cannot change mode: $old => $file");
+		}
+	'
+fi

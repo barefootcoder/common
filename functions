@@ -13,6 +13,15 @@ function die
 	exit 1
 }
 
+# get a yes/no response from a user
+function confirm
+{
+	echo -ne "$1 [y/N] " >&2
+	read answer
+	[[ $answer == [yY]* ]]
+}
+
+
 # find a valid directory from a list of choices
 # args will be a list of potential directories
 # returns the first one that actually exists
