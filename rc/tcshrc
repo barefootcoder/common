@@ -187,6 +187,7 @@ alias ferry "vi ~/Dropbox/ferry"
 alias updreq "perl -e 'print time' > \!^/update-request"
 alias xff "xrestore -browsers"
 alias daystart 'echo "\nDAYSTART\n`date`\n"'
+alias reset-term 'echo -n "\e]0;`echo $LOCALHOSTNAME | perl -lne print\ ucfirst`\007"'
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
@@ -266,7 +267,7 @@ complete svn 'p/1/(add checkout cleanup commit remove diff help log mkdir propde
 complete psync 'C?[^-]*?`friendly-hosts`?'
 complete runon 'p/1/`friendly-hosts`/'
 complete steal-common 'p/1/`friendly-hosts`/'
-complete vims 'p/4-/f/' 'C?[^-]*?`vim-session -l`?'
+complete vims 'n/-N/d/' 'p/4-/f/' 'C?[^-]*?`vim-session -l`?'
 complete gaming 'p/1/`gaming -C`/'
 complete dz 'C?[^-]*?`dz commands`?' 'c?--?(help pretend)?'
 

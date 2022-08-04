@@ -67,9 +67,8 @@ screen -t mtest
 	stuff "source etc/musicsh\015"
 screen -t blog
 	stuff "cd docs/blog\015"
-screen -t rpg
-	stuff "cd rpg\015"
-	stuff "ls\015"
+screen -t nas
+	stuff "ssh taaveren\015"
 screen -t vbuild
 	stuff "vcd cheops\015"
 	stuff "vagrant/bin/new-sandbox --help\015"
