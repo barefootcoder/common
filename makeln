@@ -4,15 +4,15 @@ source ./functions
 
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: starting pre-main checks"
 
-# Probably $LOCALHOSTNAME is already set, but it's pretty tragic if it's not.  Better safe than
-# sorry.  Note that this utilizes the same method that rc/tcshrc does.
-: ${LOCALHOSTNAME:=`$mydir/root/lbin/localhostname`}
-
 mydir=~/common
 if [[ ! $mydir -ef $PWD ]]
 then
 	die "sorry; must run from $mydir"
 fi
+
+# Probably $LOCALHOSTNAME is already set, but it's pretty tragic if it's not.  Better safe than
+# sorry.  Note that this utilizes the same method that rc/tcshrc does.
+: ${LOCALHOSTNAME:=`$mydir/root/lbin/localhostname`}
 
 # Determine what type of machine we're on:
 # "personal" : we have free reign to do whatever we want
@@ -23,6 +23,7 @@ fi
 [[ $(id -un) == "vagrant" ]]                                              && MACHINE_TYPE="vagrant"
 echo 'bashlib-demand aws-primitive ; is-ec2' | launch SNIPPET 2>/dev/null && MACHINE_TYPE="ec2"
 [[ "in all other cases ..." && ! $MACHINE_TYPE ]]                         && MACHINE_TYPE="personal"
+[[ $1 == refresh ]] && echo "$0: full refresh for $MACHINE_TYPE machine"
 
 
 ###########################
@@ -33,10 +34,15 @@ echo 'bashlib-demand aws-primitive ; is-ec2' | launch SNIPPET 2>/dev/null && MAC
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: starting main"
 
 # make sure we have the dirs we need (useful for a brand-spanking-new homedir)
-proj_dir=$(storage_dir proj/common)
-[[ -d $proj_dir ]] || die "make sure you mount or sync proj/ before running me"
-[[ -d ~/.ssh ]]    || mkdir ~/.ssh
-make_link $proj_dir ~/common
+[[ -d ~/.ssh ]] || mkdir ~/.ssh
+
+# ~/proj can be a bit trickier
+if [[ $MACHINE_TYPE == "personal" || $MACHINE_TYPE == "work" ]]
+then
+	proj_dir=$(storage_dir proj/common)
+	[[ -d $proj_dir ]] || die "make sure you mount or sync proj/ before running me"
+	make_link $proj_dir ~/common
+fi
 
 # do rc's first; they're moderately straightforward except for having to add
 # . in front of the name ... these all go in ~
