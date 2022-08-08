@@ -34,6 +34,7 @@ my %DESCRIPTIONS =
 							qr/So Cal Gas Co/i,
 							qr/SOUTHERN CALIFOR Online Payment/i,
 							qr/Mosaic/i,
+							qr/Aloe Solar/i,
 						],
 	Phone			=>	[
 							qr/Verizon/i,
@@ -107,6 +108,7 @@ my %DESCRIPTIONS =
 							qr/Pure Indian (Foods)?/i,
 							qr/Bennets_Honey_Farm/i,
 							qr/Cloud Paper/i,
+							qr/EARTHBREEZE.COM/,
 						],
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
@@ -188,6 +190,7 @@ my %DESCRIPTIONS =
 							qr/Domino'?s/i,
 							qr/Pizza Hut/i,
 							qr/Toppers/i,
+							qr/Fattes Pizza/i,
 							qr/Burger Express/i,
 							qr/Ameci/i,
 							qr/Presto Pasta/i,
@@ -314,6 +317,7 @@ my %WHAT_LOOKUP =
 	'Sprouts Farmers'					=>	'Sprouts',
 	'Baskin'							=>	'Baskin Robbins',
 	'SMART MANAGEMENT & CO'				=>	'Arbys',
+	'EARTHBREEZECOM'					=>	'Earthbreeze [laundry soap sheets]',
 	'acsc-huon'							=>	'AAA Car Insurance',
 	'CITI AUTOPAY'						=>	'Costco CC',
 	'AMZ[ _-]STORECARD'					=>	'Amazon Credit Card',
