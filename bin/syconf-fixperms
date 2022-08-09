@@ -1,0 +1,21 @@
+#! /bin/bash
+source ~/common/functions
+
+(
+	echo "potential problem files:"
+	git diff --summary
+) | $PAGER
+
+if confirm "should I try to fix all those?"
+then
+	git diff --summary | perl -lne '
+		# mode change 100755 => 100644 local/absalom/bin/backup
+		if ( /mode change (\d+) => (\d+) (.*)/ )
+		{
+			my ($old, $new, $file) = ($1,$2,$3);
+			$old =~ s/^\d\d//;
+			print "chmod $old $file";
+			chmod(oct($old), $file) == 1 or die("cannot change mode: $old => $file");
+		}
+	'
+fi

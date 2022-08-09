@@ -5,7 +5,6 @@ source functions
 set_admin
 
 chmod +x makeln
-chmod +x refresh
 chmod +x repl-bottom
 chmod +x repl-top
 chmod +x new_dropbox
@@ -22,21 +21,5 @@ chmod -x bin/tcshrc-DEBUG		# exception
 	find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w
 )
 
-# report any remaining issues
-(
-	echo "potential remaining problem files:"
-	git diff --summary
-) | $PAGER
-if confirm "should I try to fix all those?"
-then
-	git diff --summary | perl -lne '
-		# mode change 100755 => 100644 local/absalom/bin/backup
-		if ( /mode change (\d+) => (\d+) (.*)/ )
-		{
-			my ($old, $new, $file) = ($1,$2,$3);
-			$old =~ s/^\d\d//;
-			print "chmod $old $file";
-			chmod(oct($old), $file) == 1 or die("cannot change mode: $old => $file");
-		}
-	'
-fi
+# report/fix any remaining issues
+bin/syconf-fixperms
