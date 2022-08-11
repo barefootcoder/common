@@ -22,17 +22,18 @@ do
 			;;
 		O)	output_label=$OPTARG
 			;;
-		h)	echo "usage: somecmd | $ME [-sibch] [-I label] [-O label] 'command [args]'" >&2
+		h)	echo "usage: $ME [-sibch] [-I label] [-O label] '<command1> [arg ...]' '<command2> [arg ...]'" >&2
+			echo "       <command1> [arg ...] | $ME [-sibch] [-I label] [-O label] '<command2> [arg ...]'" >&2
 			echo "    -s : sort both streams before diff'ing" >&2
 			echo "    -i : ignore case (i.e. diff -i)" >&2
 			echo "    -b : ignore whitespace (i.e. diff -wB)" >&2
 			echo "    -c : context diff (i.e. diff -u)" >&2
-			echo "    -I : use this for input label (default: 'STDIN')" >&2
+			echo "    -I : use this for input label (default: full command line or 'cat')" >&2
 			echo "    -O : use this for output label (default: full command line)" >&2
 			echo "    -h : this help message" >&2
-			echo "  diffs STDIN (somecmd) against cmd arg ('command [args]')" >&2
+			echo "  diffs output of <command1> against output of <command2>" >&2
 			echo "  STDIN is < (or -), cmd arg is > (or +) in diff output" >&2
-			echo "  cmd arg may include redirections ( < or | )" >&2
+			echo "  commands may include redirections ( < or | )" >&2
 			exit
 			;;
 		:)	echo "$ME: $OPTARG requires an argument ($ME -h for help)" >&2
@@ -45,17 +46,33 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-cmd="$1"
+if [[ $# == 1 ]]
+then
+	cmd1="cat"
+	cmd2="$1"
+elif [[ $# == 2 ]]
+then
+	cmd1="$1"
+	cmd2="$2"
+	: ${input_label:=$stdin}
+else
+	echo "$ME: too many args ($ME -h for help)" >&2
+	exit 2
+fi
 
 [[ -n $diffopts ]] && diffopts="-$diffopts"
-[[ $sort ]] && cmd="$cmd | sort"
+if [[ $sort ]]
+then
+	cmd1="$cmd1 | sort"
+	cmd2="$cmd2 | sort"
+fi
 
 
-: ${input_label:=$stdin}
-: ${output_label:=$cmd}
+: ${input_label:="$cmd1"}
+: ${output_label:="$cmd2"}
 if [[ ! $context ]]
 then
 	echo "< $input_label"
 	echo "> $output_label"
 fi
-diff $diffopts --label "$input_label" --label "$output_label" <(eval $get) <(eval "$cmd")
+diff $diffopts --label "$input_label" --label "$output_label" <(eval "$cmd1") <(eval "$cmd2")
