@@ -11,7 +11,7 @@ $| = 1;
 
 my $me = sh(git => config => 'user.email'); chomp $me;
 opts <<"-";
-	[-ilURm] [-d <date> ] { -e <pattern> | <pattern> } [-v] [-D]
+	[-ilURm] [-d <date> ] [-v] [-D] { -e <pattern> | <pattern> }
 	-i : case-insensitive matching
 	-l : only print the SHA1s of matching commits
 	-U : grep only unreachable commits (default: grep all)
@@ -67,7 +67,7 @@ my $tmpfile = Path::Tiny->tempfile;
 $tmpfile->spew( map { "$_\n" } @commits );
 @commits = ();
 const my $SEP => '<<|>>';
-foreach ( sh("xargs git show -s --format='%h$SEP%at$SEP%ae$SEP%an' <$tmpfile") )
+foreach ( sh("xargs git show -s --no-renames --format='%h$SEP%at$SEP%ae$SEP%an' <$tmpfile") )
 {
 	my $commit = {};
 	@$commit{qw< sha1 date author_email author_name >} = split(quotemeta($SEP));
