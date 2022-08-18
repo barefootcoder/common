@@ -1,15 +1,18 @@
 #! /bin/bash
-
-. ~/bin/bash_funcs
+source ~/bin/bash_funcs
 
 hostname="$(hostname):"
-while getopts ":sh" opt
+localname=false
+while getopts ":slh" opt
 do
 	case $opt in
 		s)	hostname=
 			;;
-		h)  echo "usage: $me -h | [-s] [file]" >&2
+		l)	localname=true
+			;;
+		h)  echo "usage: $me -h | [-s | -l] file [...]" >&2
 			echo "    -s : short version (don't include hostname)" >&2
+			echo "    -l : local version (don't \`realpath\` it)" >&2
 			echo "    -h : this help message" >&2
 			echo "    file : file to return full, absolute path of (defalt: .)" >&2
 			exit
@@ -29,5 +32,11 @@ fi
 
 for file in "$@"
 do
-	echo "$hostname$(realpath "$file")"
+	if $localname
+	then
+		[[ $file == /* ]] || file="$PWD/$file"
+		echo "$file"
+	else
+		echo "$hostname$(realpath "$file")"
+	fi
 done
