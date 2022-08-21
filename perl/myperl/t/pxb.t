@@ -68,6 +68,12 @@ eq_or_diff $list, [qw< one two three >], "sh in list context returns as lines";
 my $string = sh(echo => -e => q|"one\ntwo\nthree"|);
 is $string, "one\ntwo\nthree", "sh in scalar context returns as a string";
 
+$list = [ sh(echo => -e => q|"one two\nthree"|) ];
+eq_or_diff $list, [ 'one two', 'three' ], "sh resolves list to mean lines";
+
+$list = [ shw(echo => -e => q|"one two\nthree"|) ];
+eq_or_diff $list, [qw< one two three >], "can use shw to resolve to mean words";
+
 
 # verify debugging works
 my @lines = ('+ echo bmoogle', '+ pwd', '+ test a == b');

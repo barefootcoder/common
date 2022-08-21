@@ -12,7 +12,7 @@ our @EXPORT =
 (
 	@PerlX::bash::EXPORT_OK,
 	@Path::Class::Tiny::EXPORT, 'dir',
-	qw< sh @ps $timerfile >,
+	qw< sh shw @ps $timerfile >,
 );
 
 
@@ -86,13 +86,24 @@ sub import
 }
 
 
-sub sh
+sub _sh
 {
-	unshift @_, wantarray ? \'lines' : \'string' if defined wantarray;
 	unshift @_, -x => if $myperl::Script::OPT{D};
 	# Yes, the Carp POD says don't do this.  Alternative suggestions welcomed.
 	local $Carp::CarpLevel = $Carp::CarpLevel + 2;
 	PerlX::bash::bash @_;
+}
+
+sub sh
+{
+	unshift @_, wantarray ? \'lines' : \'string' if defined wantarray;
+	goto &_sh;
+}
+
+sub shw
+{
+	unshift @_, \'words';
+	goto &_sh;
 }
 
 
