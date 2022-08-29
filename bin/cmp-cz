@@ -1,0 +1,46 @@
+#! /bin/bash
+source ~/common/functions
+
+file=$1
+[[ $file ]] || die "must supply file to cmp"
+
+cd /var/tmp/common-bak
+cdir=caemlyn-$(date +%Y%m%d)
+zdir=zadash-$(date +%Y%m%d)
+[[ -d $cdir ]] || die "no caemlyn common-bak for today"
+[[ -d $zdir ]] || die "no zadash common-bak for today"
+if [[ -f $cdir/$file ]]
+then
+	if [[ -f $zdir/$file ]]
+	then
+		: # they both exist; yay
+	else
+		die "file missing: $zdir/$file"
+	fi
+else
+	if [[ -f $zdir/$file ]]
+	then
+		die "file missing: $cdir/$file"
+	else
+		die "$file doesn't exist in either caemlyn or zadash copies"
+	fi
+fi
+# now we know they both exist
+
+csum=$(md5sum <$cdir/$file) ; csum=${csum%  -}
+zsum=$(md5sum <$zdir/$file) ; zsum=${zsum%  -}
+
+cls=$(ls -lhF $cdir/$file) ; cls=${cls/caemlyn*/caemlyn}
+zls=$(ls -lhF $zdir/$file) ; zls=${zls/zadash*/zadash }
+
+function colordiff
+{
+	# oblig SO ref: https://unix.stackexchange.com/a/314383/456858
+	diff -U1 "$1" "$2" | sed 's/^-/\x1b[1;31m-/;s/^+/\x1b[1;32m+/;s/^@/\x1b[1;34m@/;s/$/\x1b[0m/' | diff-highlight
+}
+
+colordiff <(echo "$cls $csum") <(echo "$zls $zsum") | tail -n2 | sed 's/m./m/'
+if [[ $csum != $zsum ]] && confirm "show full diff?"
+then
+	colordiff $cdir/$file $zdir/$file | $PAGER
+fi
