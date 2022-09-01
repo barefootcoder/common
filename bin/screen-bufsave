@@ -10,12 +10,24 @@ use List::AllUtils qw< pairmap >;
 
 my @ORIG_ARGS = @ARGV;
 opts <<'-';
-	[-f] [-n] <name>
+	[-f] [-q] [-n] { -A | <name> }
 	-f : force overwrite of existing file (without asking first)
+	-q : be quieter than usual
 	-n : don't actually do it (do a dry-run)
+	-A : save all windows (except for useless ones)
 	-D : debug mode
 	<name>  : name of window in `screen` to save
 -
+
+if ($OPT{A})
+{
+	my %EXCEPTIONS = map { $_ => 1 } qw< bc >;
+	sh(screen => -X => msgwait => 0) if $OPT{q};
+	my @windows = grep { not $EXCEPTIONS{$_} } sh('screen-windowlist');
+	sh($0 => $OPT{q} ? "-fq" : "-f", $_) foreach @windows;
+	sh(screen => -X => msgwait => 3) if $OPT{q};
+	exit;
+}
 
 my $name = shift or usage_error("must supply name of screen buf to save");
 # this is just a hacky way to verify the window exists: from that window, query
@@ -39,7 +51,7 @@ say "would save scrollback buffer of $name to $file" and exit if $OPT{n};
 # (`hardcopy -h`) to our filefile
 sh(screen => -p => $name, -X => hardcopy => -h => $file);
 # make sure file both exists and is done being written to
-for ( my ($size, $last_size, $count) = (0,0,0); $size = -s $file, $count < 3; usleep 50 )
+for ( my ($size, $last_size, $count) = (0,0,0); $size = -s $file, $count < 3; usleep 100 )
 {
 	say STDERR "size $size / last size $last_size / count $count" if $OPT{D};
 	if ( $size )
@@ -59,4 +71,4 @@ if (-s $file == 0)
 	exec $0, @ORIG_ARGS;
 }
 
-say STDERR "done";
+say STDERR "done" unless $OPT{q};

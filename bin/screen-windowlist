@@ -1,0 +1,24 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-v] <name>
+	-v : verbose (show window numbers as well as names)
+	-D : debug mode
+-
+
+my %windows;
+sh(screen => -X => msgwait => 0);
+foreach (0..50)
+{
+	my $name = sh(screen => -p => $_, -Q => 'title');
+	$windows{$_} = $name unless $name =~ /could not find/i;
+}
+sh(screen => -X => msgwait => 3);
+foreach (sort { $a <=> $b } keys %windows)
+{
+	say $OPT{v} ? sprintf("%2d : $windows{$_}", $_) : $windows{$_};
+}
