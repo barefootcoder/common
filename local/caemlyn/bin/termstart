@@ -29,7 +29,8 @@ xrestore -desktop Music -geometry 1200x798+715+285 kid3
 
 myterm -s Caemlyn sunset-capital 125x50+7+30 $cmd
 myterm -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
-myterm -s -S Quin cityofgold 125x50-24+99 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
+myterm -s -S Quin cityofgold 125x50-24+72 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
+myterm -s -S Zadash night-in-zadash 125x50+478-34 ssh zadash
 
 # temporary hack while home laptop is out of commission
 xrestore -v -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidden"
