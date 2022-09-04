@@ -3,23 +3,78 @@
 use myperl::Pxb;
 use autodie ':all';
 
+use Fcntl				qw< :mode >;
 use Date::Easy;
+use Perl6::Form;
+use Lingua::EN::Inflect	qw< PL    >;
 
+const my $NAS      => 'taaveren';
 const my @MACHINES => qw< caemlyn zadash >;
 our %OTHER_MACHINE = (@MACHINES, reverse @MACHINES);
+const my $SYNCDIR  => dir('/', var => sync => synology => );
 
 
 opts <<'-';
-	[-D] <dir>
+	[-D] { [-G] <dir> | -q <file> }
+	-q : query one particular <file>
+	-G : skip (report but don't ask to cmp) .git/ files
 	-D : debug mode (implies -v)
-	<dir>  : directory to compare or sync
+	<dir>  : directory to compare or sync (2-way)
+	<file> : file to compare (3-way)
 -
-
-@ARGV or usage_error("must supply directory");
-my $dir = path(shift);
 
 my $from = $ENV{LOCALHOSTNAME} // sh('hostname');
 my $to   = $OTHER_MACHINE{$from} // fatal("can't determine hostnames from $from");
+
+if ($OPT{q})
+{
+	my $file = path($OPT{q});
+	$file = $file->realpath;
+	$SYNCDIR->subsumes($file) or die("I don't think $file is contained on the NAS");
+	my %info;
+	my @flds = qw< date mode chksum >;
+	foreach ($NAS, @MACHINES)
+	{
+		@{$info{$_}}{@flds} = get_file_info($_, $file);
+		print form '{<<<<<<} : {>>>>>>>>} {>>>} {<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<}', $_, @{$info{$_}}{@flds} if $OPT{D};
+	}
+	foreach my $item (qw< chksum date mode >)
+	{
+		my $thing = { date => 'timestamp', mode => 'permissions', chksum => 'contents' }->{$item};
+		my $things = $thing =~ /s$/ ? $thing : PL($thing);
+		my %data;
+		foreach (keys %info)
+		{
+			my $datum = $info{$_}->{$item};
+			defined $datum or say "There is no $item field for $_!!!!";
+			push @{$data{$datum}}, $_;
+		}
+		given (scalar keys %data)
+		{
+			say "all $things are identical" when 1;
+			say "all $things are completely different!" when 3;
+			when (2)
+			{
+				my ($common, $outlier) = sort { scalar @{$data{$b}} <=> scalar @{$data{$a}} } keys %data;
+				my $diff = '';
+				given ($item)
+				{
+					$diff = "(" . file_date($outlier)  . " vs " . file_date($common)  . ")" when 'date';
+					$diff = "(" . file_perms($outlier) . " vs " . file_perms($common) . ")" when 'mode';
+				}
+				print form "{<<<<<<<<<} on {<<<<<<} different from {<<<<<<<<<<<<<<<<<<<}  $diff",
+						$thing, $data{$outlier}->[0], join(' and ', @{$data{$common}});
+			}
+			# otherwise:
+			say "WTF?!?!?";
+		}
+	}
+	exit;
+}
+
+@ARGV or usage_error("must supply directory");
+my $dir = path(shift);
+-d $dir or usage_error("$dir is not a directory");
 
 
 my @identical;
@@ -36,7 +91,7 @@ sub sync_from_to
 	{
 		next if /^(sending|receiving) .* list$/;
 		last unless $_;
-		next if -d $_;
+		next if -d "$dir/$_";
 		push @files, $_;
 	}
 	if (@files)
@@ -51,6 +106,7 @@ sub sync_from_to
 				say "file $file is newer on $from_mach";
 				printf("%8s: %s\n", ll_file($to_mach,   $path));
 				printf("%8s: %s\n", ll_file($from_mach, $path));
+				next if $OPT{G} and $file =~ m{^\.git/};
 				if (confirm "compare?")
 				{
 					if (sh(md5sum => $path) eq sh(ssh => $to, md5sum => $path))
@@ -88,7 +144,26 @@ sub sync_from_to
 sub ll_file
 {
 	my ($on, $path) = @_;
-	my @cmd = (ls => -l => $path);
+	my @cmd = (ls => -ld => $path);
 	unshift @cmd, (ssh => $to) unless $on eq $from;
 	return $on, scalar sh(@cmd);
+}
+
+sub get_file_info
+{
+	my ($host, $file) = @_;
+	$file =~ s{$SYNCDIR}{/volume1} if $host eq $NAS;
+	my @cmd = (stat => -c => "%Y", $file, ';', stat => -c => "%f", $file, ';', md5sum => $file);
+	@cmd = (ssh => $host, map { "'$_'" } @cmd) unless $host eq $from;
+	#unshift @cmd, (ssh => $host) unless $host eq $from;
+	my ($date, $mode, $checksum) = shw(@cmd);
+}
+
+sub file_date
+{
+	datetime(shift)->strftime("%F %T");
+}
+sub file_perms
+{
+	sprintf "%04o", S_IMODE(hex(shift));
 }
