@@ -1,3 +1,4 @@
+source ~/bin/tcshrc-DEBUG "starting tcshrc"
 if ( $?tcsh_reset ) then
 	# make sure fortune index gets updated, symlinks are updated, etc
 	cd ~/common
@@ -309,14 +310,6 @@ if ( -e ~/.tcshrc.local ) then
 endif
 source ~/bin/tcshrc-DEBUG "back from .tcshrc.local"
 
-if ( -e /usr/local/etc/VCtools/vctools.cshrc ) then
-	# debugging
-	#alias vctools-config ~/proj/VCtools/vctools-config
-	#source ~/proj/VCtools/etc/vctools.cshrc
-
-	# production
-	#source /usr/local/etc/VCtools/vctools.cshrc
-endif
 source ~/.vctoolsrc
 	set pbtest_path=~/proj/Pb.testing/bin:$PATH
 	set pbtest_lib=$HOME/proj/Pb.testing/lib:$HOME/proj/perlx-bash/lib:$PERL5LIB

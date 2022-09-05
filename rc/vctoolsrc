@@ -8,7 +8,8 @@ endif
 source $complete_file
 unset complete_file
 
-alias vcd 'cd `vc info -P "\!*" project:root` ; setenv VCTOOLS_SHELL vc ; resrc'
+	alias _vcd-proj 'cd `vc info -P "\!*" project:root` && setenv VCTOOLS_SHELL vc && source ~/.tcshrc'
+alias vcd 'test -z "\!*" && cd `git rev-parse --show-cdup` || _vcd-proj "\!*"'
 complete vcd 'p/1/`vc info project:all`/'
 
 if ( $?VCTOOLS_SHELL ) then
