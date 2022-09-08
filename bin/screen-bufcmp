@@ -1,0 +1,122 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+$| = 1;
+
+const my $SCREENBUF_DIR => path("~/local/data/screen-buflog");
+
+
+opts <<'-';
+	[-qD] { -f | -H <base> | -A | <oldfile> <newfile> }
+	-q : quieter than usual
+	-f : find all bases
+	-H : analyze complete history of <base> buf files
+	-A : analyze complete history of all bases
+	-D : debug mode (implies -v)
+	<base>    : base name of buf file (w/o date dir and .buf ext)
+	<oldfile> : older (smaller) file to compare
+	<newfile> : newer (larger) file to compare
+-
+
+if ($OPT{f})
+{
+	say foreach sort { $a cmp $b } uniq map { s/\.buf$//r } map { $_->basename } glob($SCREENBUF_DIR->child("*/*.buf"));
+}
+elsif ($OPT{A})
+{
+	my @du = (du => -sB => '1k', $SCREENBUF_DIR);
+	my ($usage_before) = sh(@du) =~ /(\d+)/;
+	my ($l, @to_rm);
+	foreach (sh($0 => -f =>))
+	{
+		say "checking base: $_" unless $OPT{q};
+		foreach (sh($0 => -H => $_))
+		{
+			push @to_rm, s/^ +//r if $l = /^recommend removing/.../^[^ ]/ and $l > 1 and $l !~ /E0/;
+			say "# value of line check is: $l" if $OPT{D};
+		}
+	}
+	if (@to_rm)
+	{
+		say "recommend removing:"; say "  $_" foreach @to_rm;
+		my $saved = sum map { -s $_ } @to_rm;
+		say "would save: ~", int($saved / 1024) + 1, "kb";
+		if (confirm "remove all recommended files?")
+		{
+			unlink @to_rm;
+		}
+	}
+	else
+	{
+		say "couldn't find any candidates for removal :-("
+	}
+}
+elsif ($OPT{H})
+{
+	my $fpat = $SCREENBUF_DIR->child("*/$OPT{H}.buf");					say "# looking for: $fpat" if $OPT{D};
+	my @bufs = glob($fpat);
+	@bufs or usage_error("cannot find any `$OPT{H}.buf' files in $SCREENBUF_DIR");
+
+	my $most_complete;
+	my (@to_remove, @to_keep);
+	foreach (reverse @bufs)
+	{
+		if ($most_complete)
+		{
+			my $out = sh($0 => $_, $most_complete, '2>&1');
+			if ($out eq "recommend delete $_")
+			{
+				unshift @to_remove, $_;
+			}
+			elsif ($out =~ m{Files .*? and .*? differ\nmust keep both})
+			{
+				unshift @to_keep, $most_complete;
+				$most_complete = $_;
+			}
+			else
+			{
+				fatal("cannot parse output: $out");
+			}
+		}
+		else
+		{
+			$most_complete = $_;
+		}
+	}
+	unshift @to_keep, $most_complete;				# don't forget the last one ...
+	say "recommend removing:"; say "  $_" foreach @to_remove;
+	say "leaving:";            say "  $_" foreach @to_keep;
+}
+else
+{
+	my ($before, $after) = @ARGV;
+	-r $before and -r $after or usage_error("must supply two files to compare");
+
+	# sed command to ditch blank lines at both top and bottom
+	my $trim_blank_lines = '/./,$!d; :a; /^$/{ $d; N; ba; }';
+
+	my $trimmed_before = tempfile;
+	sh(sed => $trim_blank_lines, $before, '>', $trimmed_before);
+	my $num_lines = sh(wc => -l => '<', $trimmed_before);
+	my $last_line_len = length(sh(tail => -n1 => $trimmed_before));
+
+	my $trimmed_after  = tempfile;
+	# perl command to grab the first X lines and truncate the last one
+	my $head_and_trunc = 'print substr($_, 0, ' . $last_line_len . ') and exit if $. == ' . $num_lines;
+	sh(sed => $trim_blank_lines, $after, '|', $^X => -lpe => $head_and_trunc, '>', $trimmed_after);
+	if ($OPT{D})
+	{
+		sh(wc => -l => $trimmed_before, $trimmed_after);
+		sh(diff => $trimmed_before, $trimmed_after);
+	}
+	if (bash(diff => -q => $trimmed_before, $trimmed_after))
+	{
+		say "recommend delete $before";
+	}
+	else
+	{
+		say "must keep both";
+	}
+}
