@@ -50,7 +50,6 @@ my %DESCRIPTIONS =
 							qr/Time Warner/i,
 							qr/Spectrum/i,
 							qr/Netflix/i,
-							qr/(amazon|amzn) digit(al)?/i,
 							qr/Amazon Prime/i,
 							qr/Prime Video/i,
 							qr/HBOMax/i,
@@ -171,6 +170,7 @@ my %DESCRIPTIONS =
 	Books			=>	[
 							qr/Audible/i,
 							qr/Kindle/i,
+							qr/(amazon|amzn) digit(al)?/i,
 						],
 	'Eating Out'	=>	[
 							qr/McDonald'?s/i,
@@ -439,7 +439,7 @@ foreach (@transactions)
 			$source = 'PayPal';
 			$what = '<<PAYPAL>>' if $what eq $descr;
 		}
-		when ( /Amazon/i or /Prime Video/i or /Audible/i )
+		when ( /Amazon/i or /Amzn\b/i or /Prime Video/i or /Audible/i )
 		{
 			$source = 'Amazon';
 			if ($category eq 'TV/Internet')
