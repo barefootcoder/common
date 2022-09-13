@@ -33,14 +33,8 @@ zsum=$(md5sum <$zdir/$file) ; zsum=${zsum%  -}
 cls=$(ls -lhF $cdir/$file) ; cls=${cls/caemlyn*/caemlyn}
 zls=$(ls -lhF $zdir/$file) ; zls=${zls/zadash*/zadash }
 
-function colordiff
-{
-	# oblig SO ref: https://unix.stackexchange.com/a/314383/456858
-	diff -U1 "$1" "$2" | sed 's/^-/\x1b[1;31m-/;s/^+/\x1b[1;32m+/;s/^@/\x1b[1;34m@/;s/$/\x1b[0m/' | diff-highlight
-}
-
 colordiff <(echo "$cls $csum") <(echo "$zls $zsum") | tail -n2 | sed 's/m./m/'
 if [[ $csum != $zsum ]] && confirm "show full diff?"
 then
-	colordiff $cdir/$file $zdir/$file | $PAGER
+	colordiff $cdir/$file $zdir/$file
 fi

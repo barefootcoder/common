@@ -1,0 +1,5 @@
+#! /bin/bash
+
+# oblig SO ref: https://unix.stackexchange.com/a/314383/456858
+# (modified slightly to taste)
+diff -U1 "$@" | sed 's/^-/\x1b[31m-/;s/^+/\x1b[32m+/;s/^@/\x1b[36m@/;s/$/\x1b[0m/' | diff-highlight | $PAGER
