@@ -38,6 +38,7 @@ if ($OPT{q})
 		@{$info{$_}}{@flds} = get_file_info($_, $file);
 		print form '{<<<<<<} : {>>>>>>>>} {>>>} {<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<}', $_, @{$info{$_}}{@flds} if $OPT{D};
 	}
+	my @diff_hosts;
 	foreach my $item (qw< chksum date mode >)
 	{
 		my $thing = { date => 'timestamp', mode => 'permissions', chksum => 'contents' }->{$item};
@@ -64,10 +65,27 @@ if ($OPT{q})
 				}
 				print form "{<<<<<<<<<} on {<<<<<<} different from {<<<<<<<<<<<<<<<<<<<}  $diff",
 						$thing, $data{$outlier}->[0], join(' and ', @{$data{$common}});
+				if ($item eq 'chksum')
+				{
+					my @hosts = sort { scalar @$a <=> scalar @$b } values %data;
+					my $outlier = $hosts[0]->[0];
+					# If the outlier is the current host, then the common hosts are the other and
+					# the NAS, so just compare current to other.  If the outlier is NOT the current
+					# host, then current is one of the two commons, so compare current to outlier.
+					@diff_hosts = $outlier eq $from ? ($from, $to) : ($from, $outlier);
+				}
 			}
 			# otherwise:
 			say "WTF?!?!?";
 		}
+	}
+	if (@diff_hosts and confirm("Show full diff of the two files?"))
+	{
+		my %hosts_and_dates   = map  { $_ => $info{$_}->{date}                            } @diff_hosts;
+		my %cat_file_for_host = map  { $_ => ($_ eq $from ? '' : "ssh $_ ") . "cat $file" } @diff_hosts;
+		my ($left, $right)    = sort { $hosts_and_dates{$a} <=> $hosts_and_dates{$b}      } @diff_hosts;
+		my @labels = map {; '--label' => sprintf('%-10s  %s', $_, datetime($hosts_and_dates{$_})) } ($left, $right);
+		sh(colordiff => @labels => "<($cat_file_for_host{$left})", "<($cat_file_for_host{$right})");
 	}
 	exit;
 }
@@ -104,9 +122,9 @@ sub sync_from_to
 				my $file = path($_);
 				my $path = $dir->child($file);
 				say "file $file is newer on $from_mach";
+				next if $OPT{G} and $file =~ m{^\.git/};
 				printf("%8s: %s\n", ll_file($to_mach,   $path));
 				printf("%8s: %s\n", ll_file($from_mach, $path));
-				next if $OPT{G} and $file =~ m{^\.git/};
 				if (confirm "compare?")
 				{
 					if (sh(md5sum => $path) eq sh(ssh => $to, md5sum => $path))
