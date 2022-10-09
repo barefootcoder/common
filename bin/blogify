@@ -70,9 +70,10 @@ my %blog =
 					},
 );
 $blog{'html'} = { %{$blog{'blogspot'}} };
-$blog{'html'}->{'para'} = sub { s{^(.+?)\n(\n+)}{ "<p>$1</p>\n" . "<br/>" x (length($2) - 1) . "\n" }emg };
 $blog{'article'} = { %{$blog{'bbcode'}} };
 $blog{'article'}->{$_} = $blog{'html'}->{$_} foreach grep { $blog{'html'}->{$_} =~ /^\&/ } keys $blog{'html'};
+$blog{'html'}->{'para'} = $blog{'perl'}->{'para'} =
+	sub { s{^(.+?)\n(\n+)}{ "<p>$1</p>\n" . "<br/>" x (length($2) - 1) . "\n" }emg };
 
 
 my $LIST_REGEX    = qr/( (?: ^ \h* ([#*]) \h+ .+? \n )+ )/xm;			# $1 => whole list, #2 => listchar ('*' or '#')
@@ -194,7 +195,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
 	s{\b(\d+)c\b}{$1&cent;}g;														# cents sign
 	s{(\d) 1/2}{$1&frac12;}g;														# number + one half
-	s{\bTM\b}{&trade;}g;															# trademark
+	s{(?<! )\bTM\b}{&trade;}g;														# trademark
 	s{\^\^\[(.*?)]}{footnote(full => $1)}seg;										# footnote
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
