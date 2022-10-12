@@ -90,6 +90,7 @@ my %DESCRIPTIONS =
 						],
 	Groceries		=>	[
 							qr/Trader Joe's/i,
+							qr/HelloFresh/i,
 							qr/HLLFRSH/i,
 							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
