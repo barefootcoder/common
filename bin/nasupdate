@@ -25,7 +25,8 @@ if ($OPT{R})
 	($dest, $src) = ($src, $dest);
 }
 
-my @cmd = (qw< rsync -az --no-o --no-g --no-p -e >, 'ssh -p 2322 -l egwene', qw< -u >);
+my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle');
+my @cmd = (qw< rsync -az --no-o --no-g --no-p -e >, 'ssh -p 2322 -l egwene', qw< -u >, @excludes);
 my @view = (@cmd => -v => -n => "$src/", "$dest/", '|', split(' ', $ENV{PAGER}));
 sh @view;
 
