@@ -40,6 +40,9 @@ const my $TL_POS_FILE   => $MUSIC_HOME->child(etc => "tracklist.pos");
 # *code should never use it.*
 const my @POSFILE_FIELDS => qw< playlist list_pos track seconds >;
 
+# oblig SO ref: https://stackoverflow.com/a/26782437/1383177
+$ENV{QT_SELECT} = 'qt5';
+
 my %COMMAND_MODES =
 (
 	vol		=>	'change_volume',

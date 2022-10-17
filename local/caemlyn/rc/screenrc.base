@@ -1,7 +1,7 @@
 bind ^y source .screenrc.sandbox
 bind ^_ source .screenrc.search
 bind ^v source .screenrc.vctools
-bind  T exec screen-testwin-switch -S
+bind  T exec screen-testwin-switch -Sq
 bind ^t exec screen-testwin-switch
 
 screen -t base
@@ -75,3 +75,6 @@ screen -t vbuild
 screen -t cloudfront
 	source .screenrc.sandbox
 	stuff "cd ../ce-cloudfront-event-tracking/\015"
+screen -t monitor
+screen -t zadash
+	stuff "ssh zadash\015"

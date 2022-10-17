@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Splint-Mint-Y
+Type=X-GNOME-Metatheme
+Comment=Mint-Y-Dark-Purple controls, Splint borders
+
+[X-GNOME-Metatheme]
+GtkTheme=Mint-Y-Dark-Purple
+MetacityTheme=Splint
+IconTheme=Mint-Y-Dark-Purple
+GtkColorScheme=link_color:#08c
+CursorTheme=default
+CursorSize=24
