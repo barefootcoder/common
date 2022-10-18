@@ -187,6 +187,7 @@ feature vctools => sub
 # required for various CARP scripts
 feature carp => sub
 {
+	requires 'YAML::XS';
 	requires 'PDF::FDF::Simple';
 };
 
