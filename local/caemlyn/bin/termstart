@@ -43,4 +43,4 @@ do
 	# this could be an infinite loop, if something goes wrong and the `myterm` never launches ...
 	sleep 1
 done
-wmctrl -r $msg_window -b add,above,sticky
+win-display-only $msg_window

@@ -86,6 +86,8 @@ feature xrestore => sub
 {
 	requires 'MCE::Map';
 	requires 'XML::MyXML';
+	requires 'X11::Protocol';						# required by win-display-only
+	requires 'X11::Protocol::WM';					# required by win-display-only
 	requires 'Syntax::Keyword::Try';
 };
 
