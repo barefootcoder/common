@@ -3,6 +3,9 @@
 # 	including: `psync` (both personal and root versions), `makeln`, and `build-music`
 
 
+# variables
+mydir=~/common
+
 # simple fatal error
 function die
 {

@@ -4,7 +4,6 @@ source ./functions
 
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: starting pre-main checks"
 
-mydir=~/common
 if [[ ! $mydir -ef $PWD ]]
 then
 	die "sorry; must run from $mydir"
