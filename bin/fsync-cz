@@ -8,16 +8,20 @@ use Date::Easy;
 use Perl6::Form;
 use Lingua::EN::Inflect	qw< PL    >;
 
-const my $NAS      => 'taaveren';
-const my @MACHINES => qw< caemlyn zadash >;
-our %OTHER_MACHINE = (@MACHINES, reverse @MACHINES);
-const my $SYNCDIR  => dir('/', var => sync => synology => );
+const my $NAS         => 'taaveren';
+const my @MACHINES    => qw< caemlyn zadash >;
+our %OTHER_MACHINE    = (@MACHINES, reverse @MACHINES);
+const my $SYNCDIR     => dir('/', var => sync => synology => );
+const my $ALT_SYNCDIR => dir('/', var => sync => resilio  => );
 
 
 opts <<'-';
-	[-D] { [-G] <dir> | -q <file> }
-	-q : query one particular <file>
+	[-D] { [-G] [-i] [-y] [-q] <dir> | -Q <file> }
+	-y : answer "yes" to comparing files (still asks about full update)
+	-q : quiet (suppress reporting of individual files)
+	-Q : query one particular <file>
 	-G : skip (report but don't ask to cmp) .git/ files
+	-i : ignore (exclude entirely) vim swapfiles
 	-D : debug mode (implies -v)
 	<dir>  : directory to compare or sync (2-way)
 	<file> : file to compare (3-way)
@@ -26,11 +30,11 @@ opts <<'-';
 my $from = $ENV{LOCALHOSTNAME} // sh('hostname');
 my $to   = $OTHER_MACHINE{$from} // fatal("can't determine hostnames from $from");
 
-if ($OPT{q})
+if ($OPT{Q})
 {
-	my $file = path($OPT{q});
+	my $file = path($OPT{Q});
 	$file = $file->realpath;
-	$SYNCDIR->subsumes($file) or die("I don't think $file is contained on the NAS");
+	$SYNCDIR->subsumes($file) or $ALT_SYNCDIR->subsumes($file) or die("I don't think $file is contained on the NAS");
 	my %info;
 	my @flds = qw< date mode chksum >;
 	foreach ($NAS, @MACHINES)
@@ -91,13 +95,14 @@ if ($OPT{q})
 }
 
 @ARGV or usage_error("must supply directory");
-my $dir = path(shift);
+my $dir = path(shift)->realpath;
 -d $dir or usage_error("$dir is not a directory");
 
 
 my @identical;
 
 my @sync = qw< rsync -avz -u >;
+push @sync, '--exclude' => '"*.sw?"' if $OPT{i};
 sync_from_to($to   => "$to:$dir/", $from => "$dir/");
 sync_from_to($from => "$dir/",     $to   => "$to:$dir/");
 
@@ -112,29 +117,39 @@ sub sync_from_to
 		next if -d "$dir/$_";
 		push @files, $_;
 	}
+	say '';
 	if (@files)
 	{
 		say "$from_mach => $to_mach: found ", scalar @files, " files to be sync'ed";
-		if (confirm "compare individual files?")
+		if ($OPT{y} or confirm "compare individual files?")
 		{
-			foreach (@files)
+			my $IN_GITDIR = qr{^\.git/};
+			my %paths = map { $_ => $dir->child($_) } grep { $OPT{G} ? !m{$IN_GITDIR} : 1 } @files;
+			foreach my $file (@files)
 			{
-				my $file = path($_);
-				my $path = $dir->child($file);
+				my $path = $paths{$file};
 				say "file $file is newer on $from_mach";
-				next if $OPT{G} and $file =~ m{^\.git/};
-				printf("%8s: %s\n", ll_file($to_mach,   $path));
-				printf("%8s: %s\n", ll_file($from_mach, $path));
-				if (confirm "compare?")
+				next if $OPT{G} and $file =~ m{$IN_GITDIR};
+				my $from_ls = ll_file($from_mach, $path, %paths);
+				my $to_ls   = ll_file($to_mach,   $path, %paths);
+				if (not $OPT{q})
 				{
-					if (sh(md5sum => $path) eq sh(ssh => $to, md5sum => $path))
+					printf("%8s: %s\n", $to_mach,   $to_ls);
+					printf("%8s: %s\n", $from_mach, $from_ls);
+				}
+				# If the file doesn't exist on one side or the other, one of `$from_ls` or `$to_ls`
+				# will be empty, and there's no point in trying to compare.  So only do this next
+				# part if they're both non-empty.
+				if ($from_ls and $to_ls and ($OPT{y} or confirm "compare?"))
+				{
+					if (chksum_file($from, $path, %paths) eq chksum_file($to, $path, %paths))
 					{
-						say "files are identical";
-						push @identical, $file;
+						say "files are identical" unless $OPT{q};
+						push @identical, path($file);
 					}
 					else
 					{
-						sh(ssh => $to, cat => $path, '|', diff => '-', $path);
+						sh(ssh_command($to => (cat => $path)), '|', diff => '-', $path) unless $OPT{q};
 					}
 				}
 			}
@@ -150,7 +165,15 @@ sub sync_from_to
 		}
 		elsif (@identical and confirm "sync identical files to older dates?")
 		{
-			sh(rsync => -avz => -n => $to_path, $from_path, (map {; '--include' => $_ } @identical), '--exclude' => '*');
+			my @includes = @identical;
+			foreach (@identical)
+			{
+				push @includes, $_ while ($_ = $_->dirname) ne '.';
+			}
+			@includes = sort { length($a) <=> length($b) } uniq @includes;
+			my @args = ( -avz => (map {; '--include' => $_ } @includes), '--exclude' => '"*"', $to_path, $from_path );
+			sh(rsync => -n => @args);
+			sh( rsync => @args ) if confirm "perform time sync for real?";
 		}
 	}
 	else
@@ -159,21 +182,68 @@ sub sync_from_to
 	}
 }
 
+sub ignore_error
+{
+	my ($pattern, @cmd) = @_;
+	# https://www.unix.com/unix-for-beginners-questions-and-answers/284191-how-ignore-no-such-file-directory-output.html
+	# (the space in the redirection works around a limitation in PerlX::bash)
+	return (@cmd, '2> ', ">(grep -Pv '$pattern' >&2)");
+}
+
+sub ssh_command
+{
+	my ($host, @cmd) = @_;
+	# this should help filenames with spaces and/or quotes survive the trip through ssh
+	@cmd = map { /[' ]/ ? q|"'| . s/"/\\"/gr . q|'"| : "'$_'" } map { s/'/'\\''/gr } @cmd;
+	my $pattern = '^agent key .*? returned incorrect signature type\$';
+	@cmd = ignore_error($pattern => (ssh => $host, @cmd));
+	say STDERR join(' ', '+', @cmd) if $OPT{D};
+	return @cmd;
+}
+
 sub ll_file
 {
-	my ($on, $path) = @_;
-	my @cmd = (ls => -ld => $path);
-	unshift @cmd, (ssh => $to) unless $on eq $from;
-	return $on, scalar sh(@cmd);
+	state $LL_CACHE = {};
+	my ($on, $path, %paths) = @_;
+
+	my $listing;
+	my @cmd = ( '/bin/ls' => -ld => );
+	if ($on eq $from)
+	{
+		$listing = sh(@cmd => $path);
+	}
+	else
+	{
+		my $pattern = "^$cmd[0]" . q|: cannot access '.*?': No such file or directory$|;
+		$LL_CACHE->{$on} //= sh ignore_error($pattern => ssh_command( $to => (@cmd => values %paths) ));
+		$listing = ( $LL_CACHE->{$on} =~ m{^ ( .*? \Q$path\E ) $}xm )[0] // '';
+	}
+	return $listing =~ s{$dir/}{}r;
+}
+
+sub chksum_file
+{
+	state $SUM_CACHE = {};
+	my ($on, $path, %paths) = @_;
+
+	if ($on eq $from)
+	{
+		return scalar sh(md5sum => $path);
+	}
+	else
+	{
+		my $pattern = q|^md5sum: .*?: No such file or directory$|;
+		$SUM_CACHE->{$on} //= sh ignore_error($pattern => ssh_command( $to => (md5sum => values %paths) ));
+		return ( $SUM_CACHE->{$on} =~ m{^ ( \w+ \s+ \Q$path\E ) $}xm )[0] // '';
+	}
 }
 
 sub get_file_info
 {
 	my ($host, $file) = @_;
-	$file =~ s{$SYNCDIR}{/volume1} if $host eq $NAS;
+	$file =~ s{$SYNCDIR|$ALT_SYNCDIR}{/volume1} if $host eq $NAS;
 	my @cmd = (stat => -c => "%Y", $file, ';', stat => -c => "%f", $file, ';', md5sum => $file);
-	@cmd = (ssh => $host, map { "'$_'" } @cmd) unless $host eq $from;
-	#unshift @cmd, (ssh => $host) unless $host eq $from;
+	@cmd = ssh_command($host => @cmd) unless $host eq $from;
 	my ($date, $mode, $checksum) = shw(@cmd);
 }
 
