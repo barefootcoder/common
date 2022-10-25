@@ -10,10 +10,18 @@ opts <<'-';
 -
 
 
+my $cur_branch = sh(git => 'rev-parse',    '--abbrev-ref',     'HEAD');
+my $mainline   = sh(git => 'symbolic-ref', 'refs/remotes/origin/HEAD') =~ s{^.*/}{}r;
+
 my $stat    = sh(git => status =>         );
 my $stash   = sh(git => stash  => list => );
 my $commits = sh('git-helper-log -LNs'    );
    $commits = "Unpushed commits:\n$commits" if $commits;
+if ( not $commits and $cur_branch ne $mainline )
+{
+	$commits = sh('git-helper-log -bNs');
+	$commits =~ s/\A\n*/Branch commits:\n/;
+}
 
 say join("\n\n", map { filter_for_length($_) } $stat, $stash, $commits);
 
