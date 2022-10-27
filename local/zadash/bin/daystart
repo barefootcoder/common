@@ -1,0 +1,21 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-D]
+	-D : debug mode (implies -v)
+-
+
+
+sh( xdotool => search => '--name', '^Caemlyn', => windowkill => );
+my @term = split(' ', first { $_ } map { s/\n$//r } grep { / Caemlyn / } path("~/local/bin/termstart")->slurp);
+sh( @term );
+
+my @msg = myperl::Pxb->_get_alias("daystart");
+splice(@msg, 1, 0, '-e') if $msg[0] eq 'echo';							# bash's echo needs the `-e` (tcsh's doesn't)
+sh( @msg );
+
+sh( ssh => caemlyn => 'screen -p launch -X stuff "\\ntermstart ; daystart\\n"' );
