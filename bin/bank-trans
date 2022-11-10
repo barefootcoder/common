@@ -136,7 +136,7 @@ my %DESCRIPTIONS =
 	Pets			=>	[
 							qr/Aquarium Connect./i,
 							qr/THE AQUARIUM CO/i,
-							qr/Theresas Country Feed/i,
+							qr/Theresa'?s/i,
 							qr/Valley Veterinary/i,
 							qr/Chewy\.?com/i,
 						],
