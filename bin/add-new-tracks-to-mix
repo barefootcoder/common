@@ -21,7 +21,7 @@ die("Does not appear to be a mix block! [$separator_line]") unless $separator_li
 
 # Next, make sure there are some new tracks to add.
 # New tracks are indicated by a leading `>`.
-my @new_tracks = grep { /^> / } @lines;
+my @new_tracks = map { s< / >< \\| >gr } grep { /^> / } @lines;
 die("No new tracks to add!") unless @new_tracks;
 
 # Have to set up the evironment properly.
