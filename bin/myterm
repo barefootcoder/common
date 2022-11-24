@@ -10,7 +10,7 @@ do
 	case $opt in
 		s)	scaled=1
 			;;
-		D)	desktop=$(( $OPTARG - 1 ))									# because desktops really start at 0
+		D)	desktop=$OPTARG
 			;;
 		S)	smaller=1
 			;;
@@ -18,20 +18,22 @@ do
 			;;
 		x)	set_echo=1
 			;;
-		h)	echo "usage: $me -h | [-sSf] [-D num] title pixmap geometry [cmd [args]]" >&2
+		h)	echo "usage: $me -h | [-sSf] [-D <name>] <title> <pixmap> <geometry> [<cmd> [<arg> ...]]" >&2
 			echo "    -s : scaled image (default: tiled)" >&2
 			echo "    -S : smaller font (default: based on screen size)" >&2
 			echo "    -f : force (create even if exists)" >&2
-			echo "    -D : start term on this desktop (default: current)" >&2
+			echo "    -D : start term on desktop <name> (default: current)" >&2
 			echo "    -h : this help message" >&2
-			echo "  title      : title for term (will not create if exists unless -f)" >&2
-			echo "  pixmap     : background image for term" >&2
-			echo "  geometry   : window size/placement like WxH+Y+X" >&2
-			echo "                where W is width in columns" >&2
-			echo "                  and H is height in lines" >&2
-			echo "                  and Y is pixels from top of screen" >&2
-			echo "                  and X is pixels from left of screen" >&2
-			echo "  cmd [args] : command to run in new term" >&2
+			echo "  <title>    : title for term (will not create if exists unless -f)" >&2
+			echo "  <pixmap>   : background image for term" >&2
+			echo "  <geometry> : window size/placement like <W>x<H>{+|-}<X>{+|-}<Y>" >&2
+			echo "                where <W> is width in columns" >&2
+			echo "                  and <H> is height in lines" >&2
+			echo "                  and +<X> is pixels from left of screen" >&2
+			echo "                  and +<Y> is pixels from top of screen" >&2
+			echo "                  -<X> and -<Y> count from the opposite side of the screen" >&2
+			echo "  <cmd>      : command to run in new term" >&2
+			echo "  <arg>      : argument(s) for <cmd>" >&2
 			exit
 			;;
 		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
@@ -49,90 +51,106 @@ pixmap=$2
 geometry=$3
 shift 3
 
-# if a term with the given title already exists, don't create it again
-term_pids="$(pgrep $termprog)"
-if [[ -n $term_pids ]]
-then
-	if ps -wwwo cmd -p $term_pids | egrep "\<$title\>" >/dev/null 2>&1
+function get-pid
+{
+	term_pids="$(pgrep $termprog)"
+	if [[ -n $term_pids ]]
 	then
-		if [[ ! $force -eq 1 ]]
+		psline=$(ps -wwwo pid,cmd -p $term_pids | egrep "\<$title\>" 2>&1 | head -n1 ||:)
+		if [[ $psline ]]
 		then
-			echo "$me: term $title already exists; won't make another" >&2
-			exit 1
+			echo "$psline" | awk '{print $1}'
 		fi
 	fi
-fi
-
-function locate_img
-{
-	image=$1
-	shift
-	patterns="$image"
-	for dir
-	do
-		patterns="$patterns $dir/$image.*"
-	done
-
-	for file in $(/bin/ls -1 $patterns 2>/dev/null | head -n1)
-	do
-		:
-	done
-	echo $file
 }
-if [[ $pixmap != "-" ]]
+
+# if a term with the given title already exists, don't create it again
+# just save the PID so we can tweak the desktop and/or position
+pid=$(get-pid)
+if [[ $pid ]]
 then
-	img=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
-	if [[ -z $img ]]
+	if [[ $force -eq 1 ]]
 	then
-		echo "$me: can't find image file for $pixmap" >&2
-		exit 2
+		pid=
+	else
+		[[ $set_echo -eq 1 ]] && echo -e "# found pid: $pid\n# [$title] desktop: $desktop ; geometry: $geometry" >&2
+		echo "$me: term $title already exists; repositioning" >&2
 	fi
-	pixmap=$img
 fi
 
-icondir=/usr/share/icons
-for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
-do
-	iconfile="$icondir/$iconfile"
-	if [[ -r $iconfile ]]
+if [[ ! $pid ]]
+then
+	function locate_img
+	{
+		image=$1
+		shift
+		patterns="$image"
+		for dir
+		do
+			patterns="$patterns $dir/$image.*"
+		done
+
+		for file in $(/bin/ls -1 $patterns 2>/dev/null | head -n1)
+		do
+			:
+		done
+		echo $file
+	}
+	if [[ $pixmap != "-" ]]
 	then
-		break
+		img=$(locate_img $pixmap ~/local/data/term-bg /usr/share/Eterm/pix/scale /usr/share/Eterm/pix/tile)
+		if [[ -z $img ]]
+		then
+			echo "$me: can't find image file for $pixmap" >&2
+			exit 2
+		fi
+		pixmap=$img
 	fi
-done
 
-# figure out geometry/font adjustments
-# get screen size
-scrsize=$(xrandr -q 2>&1 | perl -lne 'if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}')
-# figure proper font size
-case $scrsize in
-	*x768)		fontsize=11.5
-				;;
-	*x1024)		fontsize=13
-				;;
-	*x1200)		fontsize=14
-				;;
-	*x1050)		fontsize=15
-				;;
-	*x1080)		fontsize=16
-				;;
-	VNC)		# we've guessed VNC from the error message
-				fontsize=2.5
-				echo "in VNC"
-				;;
-	*)			echo "can't determine proper font size for this screen ($scrsize)" >&2
-				exit 1
-esac
-[[ $smaller -eq 1 ]] && fontsize=$(( $fontsize - 2 ))
+	icondir=/usr/share/icons
+	for iconfile in Mint-X/apps/16/terminal.png gnome/16x16/apps/gnome-terminal.png
+	do
+		iconfile="$icondir/$iconfile"
+		if [[ -r $iconfile ]]
+		then
+			break
+		fi
+	done
 
-case $termprog in
-	urxvt)
+	# figure out geometry/font adjustments
+	# get screen size
+	proglet='if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}'
+	scrsize=$(xrandr -q 2>&1 | perl -lne "$proglet")
+	# figure proper font size
+	case $scrsize in
+		*x768)		fontsize=11.5
+					;;
+		*x1024)		fontsize=13
+					;;
+		*x1200)		fontsize=14
+					;;
+		*x1050)		fontsize=15
+					;;
+		*x1080)		fontsize=16
+					;;
+		VNC)		# we've guessed VNC from the error message
+					fontsize=2.5
+					echo "in VNC"
+					;;
+		*)			echo "can't determine proper font size for this screen ($scrsize)" >&2
+					exit 1
+	esac
+	[[ $smaller -eq 1 ]] && fontsize=$(( $fontsize - 2 ))
+
+	case $termprog in
+		urxvt)
 					[[ $pixmap == "-" ]] || image="-pixmap $pixmap"
 					[[ -n $iconfile ]] && icon="-icon $iconfile"
 					font_switch=-fn
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
 					args="-title $title -name $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
 					;;
-	Eterm)
+		Eterm)
 					if [[ $pixmap != "-" ]]
 					then
 						if [[ $scaled == 1 ]]
@@ -153,30 +171,37 @@ case $termprog in
 					font=$(( fontsize - 11))
 					args="-n $title $image $icon -f white -c white --geometry=$geometry --buttonbar off --scrollbar off"
 					;;
-	gnome-terminal)
+		gnome-terminal)
 					args="--geometry=$geometry"
 					;;
-	*)
+		*)
 					echo "myterm: don't know how to start term $termprog" >&2
 					;;
-esac
+	esac
 
-function run-term
-{
-	[[ $set_echo -eq 1 ]] && set -x
-	$termprog $font_switch "$font" $args "$@" &
-	# see: http://stackoverflow.com/questions/13195655
-	[[ $set_echo -eq 1 ]] && { set +x; } 2>/dev/null
-}
+	function run-term
+	{
+		[[ $set_echo -eq 1 ]] && set -x
+		$termprog $font_switch "$font" $args "$@" &
+		# see: http://stackoverflow.com/questions/13195655
+		[[ $set_echo -eq 1 ]] && { set +x; } 2>/dev/null
+	}
 
-if [[ $# -ge 1 ]]
-then
-	faux_term=
-	if [[ $1 == *ssh* ]]		# immediately launching to a new server
+	if [[ $# -ge 1 ]]
 	then
-		faux_term="-tn vt100"	# see e.g. https://superuser.com/a/792701
+		faux_term=
+		if [[ $1 == *ssh* ]]		# immediately launching to a new server
+		then
+			faux_term="-tn vt100"	# see e.g. https://superuser.com/a/792701
+		fi
+		run-term $faux_term -e "$@"
+	else
+		run-term
 	fi
-	run-term $faux_term -e "$@"
-else
-	run-term
 fi
+pid=$(get-pid)
+maybe_verbose= ; [[ $set_echo -eq 1 ]] && maybe_verbose=-v
+xr_geometry=$(perl -e 'print shift =~ s/\d+x\d+//r' $geometry)
+[[ $set_echo -eq 1 ]] && set -x
+xrestore $maybe_verbose -pid $pid ${desktop+-desktop $desktop} -geometry $xr_geometry
+[[ $set_echo -eq 1 ]] && { set +x; } 2>/dev/null

@@ -17,20 +17,23 @@ sub USAGE
 {
 	say <<".";
 
-usage: $ME [-v] [-D] [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] [-ps <ps-cmd-line>] "<cmd> [<arg> ...]"
+usage: $ME [-v] [-D] [-geometry [<W>x<H>]{+|-}<X>{+|-}<Y>] [-desktop <desktop>] [-ps <ps-cmd-line>] "<cmd> [<arg> ...]"
+   or: $ME [-v] [-D] [-geometry [<W>x<H>]{+|-}<X>{+|-}<Y>] [-desktop <desktop>] -pid <pid>
    or: $ME [-v] [-D] -browsers
                    -v : be chatty about it
                    -D : show internal details
             -browsers : restore browser windows (FF/Chrome must be running, selected tabs must be sane)
                   <W> : desired width of the window
                   <H> : desired height of the window
-                  <X> : desired X offset of the window
-                  <Y> : desired Y offset of the window
+                  <X> : desired X offset of the window (can be negative)
+                  <Y> : desired Y offset of the window (can be negative)
             <desktop> : desired desktop of the window (by name)
         <ps-cmd-line> : full command line as seen by `ps` (if different from command to run)
+                <pid> : PID of process; restore geometry (and desktop, if given) only
                 <cmd> : command to run if process not already running
                 <arg> : arguments for the command to be run
         if the process is already running, it is not spawned
+		if <pid> is specified, no spawn is attempted
 .
     exit;
 }
@@ -38,6 +41,7 @@ usage: $ME [-v] [-D] [-geometry [<W>x<H>][+<X>+<Y>]] [-desktop <desktop>] [-ps <
 my $OPT = {};
 GetOptions($OPT,
 	'ps=s',
+	'pid=i',
 	'geometry=s',
 	'desktop=s',
 	'browsers',
@@ -80,14 +84,26 @@ if ( $OPT->{browsers} )
 	}
 	die("you must run Firefox or Vivaldi, restore the session(s), and choose appropriate tabs") unless &get_pid;
 }
+elsif ( $OPT->{pid} )
+{
+	$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop [$OPT->{desktop}]") if $OPT->{desktop};
+	$tag            = $OPT->{pid};
+}
 else
 {
 	$command        = "@ARGV" or die("must specify command");
 	$OPT->{ps}    //= $command;
-	$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop") if $OPT->{desktop};
+	$OPT->{desktop} = $DESKTOPS{ $OPT->{desktop} } // die("unknown desktop [$OPT->{desktop}]") if $OPT->{desktop};
 	$tag            = $command =~ s/ .*$//r;
 }
 
+
+sub get_screen_size
+{
+	# this will return `(undef,undef)` if `xrandr` can't figure out your screen size
+	state $size = [ map { /current \s+ (\d+) \s* x \s* (\d+) /x ? ($1,$2) : () } bash \lines => 'xrandr' ];
+	return @$size;
+}
 
 sub info
 {
@@ -104,7 +120,7 @@ sub get_pid ()
 {
 	state $pid;
 
-	$pid //= do
+	$pid //= $OPT->{pid} // do
 	{
 		my $find_pid = "/usr/bin/pgrep -fx '$OPT->{ps}'";
 		my @pids = grep { !is_zombie } bash \lines => $find_pid;
@@ -114,17 +130,29 @@ sub get_pid ()
 	};
 }
 
+sub desktop_for (;$)
+{
+	# `wmctrl` only speaks hex, so convert IDs back to decimal on the way into the hash
+	# field [0] is the ID; field [1] is the desktop num (-1 means sticky)
+	# (can't do `state` here because windows might spring into existence during our execution)
+	my %win_desktops = map { hex($_->[0]) => $_->[1] } map { [ split(' ') ] }  bash \lines => (wmctrl => '-l');
+
+	my $w = @_ ? shift : $_;
+	# if it's not in the hash, it's not a visible window (thus returns undef)
+	return $win_desktops{$w};						# convert ID to hex
+}
+
 sub is_visible (;$)
 {
 	my $w = @_ ? shift : $_;
 	my $desktop;
 	for (1..10)					# give it a few tries
 	{
-		($desktop) = bash \lines => "xdotool get_desktop_for_window $w 2>/dev/null";
+		$desktop = desktop_for $w;
 		last if defined $desktop;
 		usleep 100_000;			# .1 of a second
 	}
-	return defined $desktop ? $desktop != -1 : undef;
+	return defined $desktop;
 }
 
 sub X (@)
@@ -141,15 +169,40 @@ sub X (@)
 		shift @wids;
 	};
 
+	warn("# in X: wid = $wid ; args = @_") if $OPT->{debug};
 	return unless $wid;
-	return 1 unless @_;
+	return $wid unless @_;
 
 	my @args = map { /^%W$/ ? $wid : $_ } @_;
-	info("doing window operation on pid $pid: $args[0]");
+	info("doing window operation on pid $pid: @args");
 	my $redirect = $OPT->{debug} ? '' : ">/dev/null 2>&1 4>&1";
 	my $cmd = "xdotool @args $redirect";
 	info("will run: $cmd") if @args and $OPT->{debug};
 	bash $cmd;
+}
+
+sub handle_negative_offsets
+{
+	# don't do all this work unless at least one of them is negative
+	if ( $OPT->{xoff} =~ /^-/ or $OPT->{yoff} =~ /^-/ )
+	{
+		my ($SCRWIDTH, $SCRHEIGHT) = get_screen_size();
+		my $wid = X;
+
+		# oblig SO ref: https://unix.stackexchange.com/a/156349/456858
+		my ($left, $right, $top, $bottom) =
+				split( /,\s*/, ((bash \string => "xprop _NET_FRAME_EXTENTS -id $wid") =~ /=\s*(.*)$/m        )[0] );
+		my ($inside_width, $inside_height) =
+				split( 'x',    ((bash \string => "xdotool getwindowgeometry $wid")    =~ /Geometry:\s*(.*)$/m)[0] );
+		my $width  = $inside_width  + $left + $right;
+		my $height = $inside_height + $top  + $bottom;
+		warn("# width:  $width = $inside_width + $left + $right")   if $OPT->{debug};
+		warn("# height: $height = $inside_height + $top + $bottom") if $OPT->{debug};
+
+		# have to add the offsets, because they're already negative
+		$OPT->{xoff} = $SCRWIDTH  - $width  + $OPT->{xoff} if $OPT->{xoff} =~ /^-/;
+		$OPT->{yoff} = $SCRHEIGHT - $height + $OPT->{yoff} if $OPT->{yoff} =~ /^-/;
+	}
 }
 
 
@@ -241,15 +294,16 @@ else
 {
 	bash "$command >/dev/null 2>&1 &" unless get_pid;
 	my $count = 0;
-	print "[$tag] looking for process and window ";
+	print $OPT->{pid} ? "$ME: restoring window of pid [" . get_pid . "] " : "$ME: [$tag] looking for process and window ";
 	until (get_pid and X)
 	{
 		print "." if ++$count % 100 == 0;
 		usleep 100;
 	}
+	handle_negative_offsets();						# can't do this until we know the window is there: we need its size
 	print '. found ';
-	X windowmove => '%W' => $OPT->{xoff}, $OPT->{yoff}    if $OPT->{xoff};
-	X windowsize => '%W' => $OPT->{width}, $OPT->{height} if $OPT->{width};
-	X set_desktop_for_window => '%W' => $OPT->{desktop}   if $OPT->{desktop};
+	X windowmove => '%W' => $OPT->{xoff}, $OPT->{yoff}    if defined $OPT->{xoff};
+	X windowsize => '%W' => $OPT->{width}, $OPT->{height} if defined $OPT->{width};
+	X set_desktop_for_window => '%W' => $OPT->{desktop}   if defined $OPT->{desktop};
 	say '. restored';
 }

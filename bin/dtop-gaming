@@ -34,7 +34,7 @@ if (not $GAMING ~~ @workspaces)
 }
 
 my $desktop = firstidx { $_ eq $GAMING } @workspaces;					# index-0 desktop (good for `xdotool`)
-my $myterm_desktop = '-D' . ($desktop + 1);								# because `myterm` expects index-1 desktops
+my @myterm_desktop = ( -D => $GAMING );
 say "# gaming windows will land on desktop $desktop (index 0)" if $OPT{D};
 
 # window for music
@@ -107,5 +107,5 @@ sub put_window_on_gaming
 sub term_window
 {
 	my ($name, $geometry) = @_;
-	sh(myterm => $myterm_desktop, $name, '-', $geometry, '&');
+	sh(myterm => @myterm_desktop, $name, '-', $geometry, '&');
 }
