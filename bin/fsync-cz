@@ -29,6 +29,7 @@ opts <<'-';
 
 my $from = $ENV{LOCALHOSTNAME} // sh('hostname');
 my $to   = $OTHER_MACHINE{$from} // fatal("can't determine hostnames from $from");
+my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle');
 
 if ($OPT{Q})
 {
@@ -102,6 +103,7 @@ my $dir = path(shift)->realpath;
 my @identical;
 
 my @sync = qw< rsync -avz -u >;
+push @sync, @excludes;
 push @sync, '--exclude' => '"*.sw?"' if $OPT{i};
 sync_from_to($to   => "$to:$dir/", $from => "$dir/");
 sync_from_to($from => "$dir/",     $to   => "$to:$dir/");
