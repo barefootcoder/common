@@ -75,6 +75,9 @@ status() {
 	else
 		if [[ -n $dbpid ]] ; then
 			echo $dbpid
+		elif [[ -e ${lockfile} ]]
+		then
+			echo "locked"
 		fi
 	fi
 }
@@ -89,7 +92,7 @@ stop() {
 
 lock() {
 	echo $"Locking out $prog"
-	mkdir $lockdir 2>/dev/null
+	mkdir -p $lockdir
 	touch ${lockfile}
 	RETVAL=0
 }

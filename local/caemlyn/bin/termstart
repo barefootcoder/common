@@ -4,7 +4,7 @@
 ssh-add-if-necessary
 ssh-add -l
 
-if [[ -z $(dropboxd status) ]] && ! dropboxd start
+if [[ $(dropboxd status) != "locked" ]] && ! dropboxd start
 then
 	if yn "Reinstall dropbox?"
 	then
