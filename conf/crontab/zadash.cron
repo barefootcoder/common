@@ -1,1 +1,2 @@
 *     * * * * xdotool search --name URGENT >/dev/null || sudo -H -u buddy -i $HOME/bin/monitor-pidgin-unseen caemlyn >/dev/null 2>&1
+37   14 * * * tcsh -c "$HOME/bin/screen-bufsave -Aq"
