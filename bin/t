@@ -88,6 +88,9 @@ if ($opt->{h})
 my $precommand;															# will be executed just before main command is run
 my $postcommand;														# executes after command, but *only* if successful
 
+# these just should always be set
+$ENV{RELEASE_TESTING} = $ENV{AUTHOR_TESTING} = 1;
+
 # quick hack: shortcut to spawning `dzil test` if:
 # 	a) we can find a "dist.ini"
 # 	b) we're called with no args (that includes switches!)
@@ -97,7 +100,6 @@ my $postcommand;														# executes after command, but *only* if successful
 #	b) we have no args, and only -n and/or -v switches
 # we can't allow switches because there's no reliable way to pass them on to `dzil`
 # (although `rent` specifically handles -v and -n, so those are okay)
-$ENV{RELEASE_TESTING} = 1;
 if (-r 'dist.ini' and can_run_dzil())
 {
 	output_if_debug("found a dist.ini and a Perl-compatible dzil");
@@ -687,7 +689,8 @@ sub print_command_if_debug
 	my ($command, %args) = @_;
 	return unless $opt->{D};
 
-	my @env_vars = $args{'noenv'} ? () : ('BAIL_ON_FAIL', std_perl_env_vars(), $HARNESS, 'TEST_METHOD');
+	my @default_vars = qw< BAIL_ON_FAIL RELEASE_TESTING AUTHOR_TESTING >;
+	my @env_vars = $args{'noenv'} ? () : (@default_vars, std_perl_env_vars(), $HARNESS, 'TEST_METHOD');
 	my @var_debug = map { s/=/="/ and s/$/"/ if /\s/; $_ } map { "$_=$ENV{$_}" } grep { exists $ENV{$_} } @env_vars;
 	output_if_debug("running:", join(' ', @var_debug, $command));
 }
