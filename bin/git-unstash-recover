@@ -30,12 +30,12 @@ if (my @files_in_the_way = grep { exists $status{$_} } @untracked_files)
 if (my @files_not_unstashed = grep { not exists $status{$_} } @mod_files)
 {
 	say "These files have not been unstashed yet; are you sure you gave the right stash ID?";
-	say "[$status{$_}] $_" foreach @files_not_unstashed;
-	fatal("Too nervous about mistakes to continue.");
+	say "  $_" foreach @files_not_unstashed;
+	confirm("Are you *really* sure it's okay to proceed?") or fatal("Too nervous about mistakes to continue.");
 }
 
 # look for files with conflicts
-foreach (grep { $status{$_} eq 'U' } @mod_files)
+foreach (grep { ($status{$_} // '') eq 'U' } @mod_files)
 {
 	if (has_unresolved_conflicts($_))
 	{
