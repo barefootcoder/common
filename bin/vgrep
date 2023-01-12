@@ -8,8 +8,9 @@ use List::AllUtils qw< sum >;
 
 
 opts <<'-';
-	[{ -C | -E | -P | -T }] [-lipD] { -e <regex> | <regex> } [<arg> ...]
+	[{ -C | -S | -E | -P | -T }] [-lipD] { -e <regex> | <regex> } [<arg> ...]
 		-C : only look in Perl code
+		-S : only look in shell code
 		-E : look in all executable code
 		-P : only look in deployed (production) Perl code
 		-T : only look in Perl unit test code
@@ -27,7 +28,7 @@ opts <<'-';
 
 die("can only specify one of: -C, -P, -T") if (sum map { $OPT{$_} // 0 } split(//, 'CPT')) > 1;
 my $CODE_ONLY = $OPT{C} || $OPT{E} || $OPT{P};
-my $PERL_ONLY = $OPT{C} || $OPT{P};
+my $FILE_TYPE = $OPT{C} || $OPT{P} ? 'perl' : $OPT{S} ? 'shell' : '';
 
 my $regex = $OPT{e} // shift;
 $regex = $OPT{i} ? qr/$regex/i : qr/$regex/;
@@ -53,7 +54,7 @@ push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
 my @ignores  = map {; '--ignore-file', $_ } @IGNORE_FILES;
 push @ignores, map {; '--ignore-dir',  $_ } @IGNORE_DIRS;
 $regex =~ s/'/'\\''/g;
-my @cmd = ('ack', @ignores, $PERL_ONLY ? '--perl' : (), '--match', "'$regex'");
+my @cmd = ('ack', @ignores, $FILE_TYPE ? "--type=$FILE_TYPE" : (), '--match', "'$regex'");
 push @cmd, '-l' if $OPT{l} or $OPT{p};
 push @cmd, @TEST_DIRS if $OPT{T};
 push @cmd, @ARGV;
