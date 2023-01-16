@@ -70,7 +70,7 @@ nmap <Esc>n :up<CR>:bnext<CR>																" Alt-N
 " push to testing
 nmap <C-W> :up<CR>:!pusht "%"<CR>
 " compile check
-nmap <C-C> :up<CR>:!ccheck %<CR>
+nmap <C-C> :up<CR>:!ccheck "%"<CR>
 " VC blame + jump to current line
 nmap <Esc>b :exe "!git blame % <Bar> less +" . line(".") . "G"<CR>|							" Alt-B
 " show doco
