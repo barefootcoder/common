@@ -1,0 +1,36 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-cvD] { -e <pattern> | <pattern> } [<buf>]
+	-c : search for commands
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+
+my $regex = $OPT{e} // shift // usage_error('must supply regex');
+$regex = '^(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) .*' . $regex if $OPT{c};
+$regex = qr{$regex};
+my $bufs = shift // ''; $bufs .= '*';
+
+
+my (%seen, @results);
+my @cmd = (ack => -H => '--match' => $regex, "~/local/data/screen-buflog/*/$bufs");
+say STDERR "+ @{[@cmd]}" if $OPT{D};
+foreach (reverse sh @cmd)
+{
+	# extract the filename and the matching line
+	my ($file, $line) = m{^/.*?/screen-buflog/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
+	# skip if we're showing commands and this line is just a previous output of us showing commands
+	next if $OPT{c} and m{^\d{4}-\d\d-\d\d/[\w-]+\.buf:};
+	# save the line, but only if we haven't already seen it
+	unshift @results, "$file:$line" unless $seen{$line}++;
+}
+say foreach @results;
