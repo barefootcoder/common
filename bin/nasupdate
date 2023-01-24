@@ -5,19 +5,38 @@ use autodie ':all';
 
 
 opts <<'-';
-	[-RD] <dir>
+	[-qRD] { <dir> | -d <path> [<dir>] }
 	-R : reverse sync (local => NAS)
+	-d : direct mode (update directly to <path>)
+	-q : quiet mode (don't display files during the _real_ update)
 	-D : debug mode
-	<dir> : directory to (potentially) sync
-	        (must start with share name)
+	<dir>  : directory to (potentially) sync
+	         (must start with share name)
+	<path> : path to sync; must be absolute!
+			 (<dir> can be inferred if <path> starts
+			 with `/export`; otherwise you must specify it)
 -
 
-my $dir = shift or usage_error("must supply directory to sync");
+my ($src, $dest) = do
+{
+	if ($OPT{d})
+	{
+		my $dest = $OPT{d};
+		-d $dest && $dest =~ m|^/| or fatal("must use existing absolute path with -d");
+		my $dir = $dest =~ m{^/export/(.*)$} ? $1 : shift // usage_error("cannot infer share name from $dest");
+		my $src = "taaveren:/volume1/$dir";
+		($src, $dest);
+	}
+	else
+	{
+		my $dir = shift or usage_error("must supply directory to sync");
+		my $src = "taaveren:/volume1/$dir";
+		my $dest = dir( '/var/sync/synology', $dir );
+		-d $dest or fatal("can't locate: $dest");
+		($src, $dest);
+	}
+};
 
-
-my $src = "taaveren:/volume1/$dir";
-my $dest = dir( '/var/sync/synology', $dir );
--d $dest or fatal("can't locate: $dest");
 
 if ($OPT{R})
 {
@@ -32,6 +51,6 @@ sh @view;
 
 if (confirm("do it for real?"))
 {
-	my @do = (@cmd => '--progress' => "$src/", "$dest/");
+	my @do = (@cmd, $OPT{q} ? () : '--progress', "$src/", "$dest/");
 	sh @do;
 }
