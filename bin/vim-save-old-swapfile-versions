@@ -9,7 +9,7 @@ dir="$2"
 
 base="$(basename "$file")"
 
-list="$(/bin/ls -1 $(dirname "$file")/.$(basename "$file").sw?)"
+list="$( /bin/ls -a1 $(dirname "$file") | grep -P "\.$(basename "$file")([ _].*[cC]onflict.*)?.sw?" )"
 count=$(echo "$list" | wc -l)
 echo "saving $count swap files ..."
 
