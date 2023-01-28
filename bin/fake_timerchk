@@ -28,8 +28,11 @@ while ( <> )
 			my $lunch = $lunch[$week];
 			if (ref $lunch)												# we couldn't find a lunch timer for this week
 			{
-				my ($avail_from, $avail_to, @other) = pairgrep { $b->hour >= 12 } monday_chunks(split(',', $chunks));
-				warn("no Monday time in week $week") unless $avail_from;
+				my ($avail_from, $avail_to, @other) =
+						pairgrep { $a->hour >= 12 || $b->hour >= 12   }
+						         ( monday_chunks(split(',', $chunks)) )
+				;
+				warn("no Monday time in week $week") and next unless $avail_from;
 
 				my $mark = $avail_from;
 				my @gaps =
@@ -80,6 +83,7 @@ while ( <> )
 				$lunch[$week] //= [];
 				push $lunch[$week], $chunks if ref $lunch[$week];
 			}
+			verify_chunks($name => $chunks);
 		}
 	}
 }
@@ -110,4 +114,17 @@ sub gaps
 				$mark = $b;
 			} @_;
 	return @gaps;
+}
+
+
+sub verify_chunks
+{
+	my ($name, $chunks) = @_;
+	my @chunks = split(',', $chunks);
+
+	for (@chunks)
+	{
+		my ($div, $start, $end) = m{(\d/)?(\d+)-(\d*)};
+		say STDERR "negative chunk in week $week [timer: $name :: $_]" if $end and $start > $end;
+	}
 }
