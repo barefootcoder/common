@@ -1,0 +1,27 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-D] [<dir>]
+	-D : debug mode (implies -v)
+-
+
+my $dir = shift // '.';
+$dir = path($dir);
+
+
+my $acl = sh(getfacl => '--absolute-names', $dir);
+unless ( $acl =~ /^user:rslsync:rwx$/m )
+{
+	fatal("must set ACL properly on current dir");
+}
+
+sh(sudo => chown => -R => 'buddy:buddy', $dir);
+sh(cpperm => -ry => $dir, $dir);

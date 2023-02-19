@@ -1,0 +1,93 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-yvD] <ref> <dest> [...] | -r [-yvD] <ref> <dir>
+	-r : recursive mode (copies ACLs only)
+	-y : assume "yes" to confirmations
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<file> : reference file or dir (perms come from here)
+	<dest> : owner, group, mode, and ACLs copied to here
+	<dir>  : ACLs copied to all dirs and files in this dir
+-
+$OPT{v} = 1 if $OPT{D};
+
+my $ref = shift;
+-e $ref or usage_error("ref file does not exist");
+$ref = path($ref);
+my ($dest, @dest);
+if ($OPT{r})
+{
+	$dest = shift;
+	-d $dest or usage_error("with -r, dest must be an existing directory");
+	usage_error("with -r, can only accept one dest dir") if @ARGV;
+	$dest = path($dest);
+}
+else
+{
+	@dest =
+		map  { path($_)                                                    }
+		grep { -e $_ or usage_error("dest file does not exist [$_]")       }
+		     ( @ARGV                                                       )
+	;
+}
+
+say "using this as reference permissions:";
+sh(ls => -dlF => $ref) unless $OPT{r};
+my $acl = sh(getfacl => '--absolute-names', $ref);
+say $acl;
+confirm "continue?" || exit unless $OPT{y};
+
+my $aclf = tempfile;
+$aclf->spew($acl);
+
+if ($OPT{r})
+{
+	my @find = ( find => $dest );
+	my $count = sh( @find, -printf => '.', '|', wc => -c => );
+	sh( @find, -print0 => '|', xargs => '-0', setfacl => '--set-file', $aclf );
+	say "set ACLs for $count files (some maybe redundantly)" if $OPT{v};
+}
+else
+{
+	my $count = 0;
+	foreach my $dest (@dest)
+	{
+		if ($ref->ef($dest))
+		{
+			warning("skipping $dest (same as ref)");
+			next;
+		}
+
+		my $tref = filetype($ref);
+		my $dref = filetype($dest);
+		unless ($tref eq $dref)
+		{
+			warning("won't set perms across file types ($tref => $dref)");
+			next;
+		}
+
+		sh( sudo => chown   => '--reference' => $ref,  $dest );
+		sh( sudo => chmod   => '--reference' => $ref,  $dest );
+		sh( sudo => setfacl => '--set-file'  => $aclf, $dest );
+		++$count;
+	}
+	say "modified perms for $count files" if $OPT{v};
+}
+
+
+sub warning
+{
+	say STDERR "$ME: @_";
+}
+
+sub filetype
+{
+	my $f = shift;
+	-f $f ? 'file' : -d _ ? 'dir' : -p _ ? 'pipe' : -S _ ? 'socket' :
+			-c _ ? 'chardev' : -b _ ? 'blockdev' : -l _ ? 'link' : '???';
+}
