@@ -28,8 +28,10 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vmerge vc merge
 	alias resolved vc resolved
 	alias stash vc my-stash
+	alias tstash vc my-stash just-a-sec
 	alias stash-p vc stash-p
 	alias unstash vc my-unstash
+	alias tunstash vc my-unstash just-a-sec
 
 	alias branch vbranch
 
