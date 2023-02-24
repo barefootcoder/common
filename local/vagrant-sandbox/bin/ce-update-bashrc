@@ -43,8 +43,8 @@ then
 fi
 
 # this gets us whatever helper scripts we have created
-cessh $host mkdir -p bin/
-cescp $CHEOPSROOT/launch-ec2/control-instance/bin/* $host:bin/
+cessh -Q $host bash -c 'mkdir -p bin/ ; chgrp CE bin ; chmod g+w bin'
+launch LOCAL archer-rsync -v $CHEOPSROOT/launch-ec2/control-instance/bin/* $host:bin/
 
 # set up for pjawk, but only on dirk
 if [[ $screen == "logs" ]]
