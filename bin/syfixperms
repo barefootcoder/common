@@ -18,7 +18,7 @@ $dir = path($dir);
 
 
 my $acl = sh(getfacl => '--absolute-names', $dir);
-unless ( $acl =~ /^user:rslsync:rwx$/m )
+unless ( $acl =~ /^user:rslsync:rwx\b/m )
 {
 	fatal("must set ACL properly on current dir");
 }
