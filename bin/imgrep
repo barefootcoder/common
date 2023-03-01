@@ -38,7 +38,7 @@ else
 {
 	$pattern = $OPT{'e'} // shift // die("must supply pattern!");
 }
-$pattern = qr/$pattern/i;
+$pattern = qr/$pattern/si;
 my $contact_pattern = join('|', @ARGV);
 say "# checking logs that match /$contact_pattern/" if $OPT{'v'};
 
