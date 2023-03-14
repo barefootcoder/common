@@ -26,6 +26,7 @@ my %DESCRIPTIONS =
 							qr/BAC Home Loans/i,
 							qr/Bank of America/i,
 							qr/Nationstar dba/i,
+							qr/NSM DBAMR.COOPER/i,
 						],
 	'Power/Heat'	=>	[
 							qr/S CA Edison/i,
@@ -92,6 +93,7 @@ my %DESCRIPTIONS =
 							qr/Trader Joe's/i,
 							qr/HelloFresh/i,
 							qr/HLLFRSH/i,
+							qr/EMeals/i,
 							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
 							qr/Lassens/i,
@@ -116,6 +118,7 @@ my %DESCRIPTIONS =
 							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
 							qr/WW INT'L/i,
+							qr/Lume deodorant/i,
 						],
 	Grooming		=>	[
 							qr/SuperCuts/i,
@@ -138,9 +141,12 @@ my %DESCRIPTIONS =
 							qr/THE AQUARIUM CO/i,
 							qr/Theresa'?s/i,
 							qr/Valley Veterinary/i,
+							qr/Nordhoff Veterin(ary)?/i,
 							qr/Chewy\.?com/i,
 						],
 	School			=>	[
+							qr/Outschool/i,
+							qr/Barefoot Within the( Trees Curriculum)?/i,
 							qr/CuriosityStream/i,
 							qr/Discovery Cube/i,
 							qr/Discovery Scien(ce)?/i,
@@ -217,6 +223,7 @@ my %DESCRIPTIONS =
 							qr/Viva la Pasta/i,
 							qr/Yolandas/i,
 							qr/Outback/i,
+							qr/Denny's/i,
 							qr/Junkyard/i,
 							qr/Sharky's/i,
 							qr/Thai House/i,
@@ -245,6 +252,7 @@ my %DESCRIPTIONS =
 							qr/SteamGames/i,
 							qr/paypal inst xfer/i,
 							qr/Kickstarter/i,
+							qr/Critical Role/i,
 							qr/Treasured Memories/i,
 							qr/Jimmy Beans Wool?/i,
 							qr/Joann\b/i,
@@ -259,6 +267,7 @@ my %DESCRIPTIONS =
 							qr/Miniature Market?/i,
 							qr/TrollAndToad/i,
 							qr/ONEBOOKSHELF.COM?/i,
+							qr/Elderbrain/i,
 							qr/MCDM Prod/i,
 							qr/Nintendo/i,
 							qr/GameStop/i,
@@ -297,6 +306,10 @@ my %DESCRIPTIONS =
 							qr/SOL RESTAURANTS/i,
 							qr/TONY PS DOCKSIDE/i,
 						],
+	'HSA to be reimbursed' => [
+							qr/Lifespan/i,
+						],
+	
 );
 
 my %WHAT_LOOKUP =
@@ -306,6 +319,7 @@ my %WHAT_LOOKUP =
 	'N6723 ARCHER ED'					=>	'Paycheck',
 	'BAC Home Loans'					=>	'Mortgage Payment',
 	'Nationstar dba'					=>	'Mortgage Payment',
+	'NSM DBAMR.COOPER'					=>	'Mortgage Payment',
 	'S CA Edison'						=>	'Electric Bill',
 	'SOUTHERN CALIFOR Online Payment'	=> 	'So Cal Gas Co',
 	'Golden State (Water|Wtr|Wat)'		=>	'Water Bill',
@@ -472,7 +486,7 @@ foreach (@transactions)
 		{
 			$what = 'Target []' if $what eq $descr;
 		}
-		when ( /Wal-Mart/i or /WM SUPERCENTER/i )
+		when ( /Wal-Mart/i or /WM SUPERCENTER/i or /WALMART EGIFT/i or /WALMART\.COM/i )
 		{
 			$what = 'Wal-Mart []' if $what eq $descr;
 		}
@@ -545,6 +559,7 @@ foreach (@transactions)
 						'DriveThruRPG []'		=>	'Buddy',
 						'MCDM Prod'				=>	'Buddy',
 						BandCamp				=>	'Buddy',
+						Elderbrain				=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
