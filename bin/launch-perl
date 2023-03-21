@@ -1,0 +1,13 @@
+#! /bin/bash
+
+ME=${0##*/}
+if [[ ${1:-} == "LOGGING" ]]
+then
+	shift
+else
+	mkdir -p /tmp/$ME
+	set -x
+	$0 LOGGING "$@" >/tmp/$ME/$$.error 2>&1
+fi
+
+PERL5LIB=/home/buddy/common/perl /home/buddy/perl5/perlbrew/bin/perlbrew exec "$@"

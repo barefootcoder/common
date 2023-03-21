@@ -1,0 +1,63 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $INFO     => '/usr/share/icons/Humanity/status/48/info.svg';
+const my $ERROR    => '/usr/share/icons/Humanity/status/48/error.svg';
+const my $CONNECT  => '/usr/NX/bin/nxplayer';
+const my $PREVIOUS => file('/tmp/previously-shown-desktop');
+
+
+opts <<'-';
+	[-D] <machine>
+	-D : debug mode (implies -v)
+	<machine>  : which host to show desktop for
+-
+#$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $host = shift // usage_error('must supply host');
+
+
+if ($host eq sh('hostname'))
+{
+	my $cur_window = sh( xdotool => getactivewindow => getwindowname => );
+	if ($cur_window =~ /NoMachine - (\w+)/)
+	{
+		sh('notify-send' => -t => 5000, -i => $ERROR, "This should not be possible!");
+	}
+	else
+	{
+		sh('notify-send' => -t => 3000, -i => $INFO, "Already on ${host}'s desktop.");
+	}
+}
+else
+{
+	if ($host eq 'PREVIOUS')
+	{
+		-r $PREVIOUS or sh('notify-send' => -t => 5000, -i => $ERROR, "No previous desktop yet.");
+		$host = $PREVIOUS->slurp;
+	}
+	else
+	{
+		$PREVIOUS->spew($host);
+	}
+
+	my $rdesktop = "NoMachine - $host";
+	my $win = sh(xdotool => search => '--name' => $rdesktop);
+	if ($win)
+	{
+		my $cur_desktop = sh(xdotool => get_desktop => );
+		sh(xdotool => set_desktop_for_window => $win, $cur_desktop);
+		sh(wmctrl => -ir => $win, -b => 'add,fullscreen');
+		sh(xdotool => windowactivate => '--sync' => $win);
+	}
+	else
+	{
+		my $machine = file("~/NoMachine/\u$host.nxs");
+		sh($CONNECT => $machine);
+	}
+}
