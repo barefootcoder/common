@@ -432,7 +432,7 @@ sub extract_ticket
 sub save_ticket
 {
 	my (@stuff) = @_;
-	return $stuff[-1] && $stuff[-1] =~ /^(\d+|SAVE(\w)?)$/ ? $2 // 1 : 0;
+	return $stuff[-1] && $stuff[-1] =~ /^(\d+|[A-Z]+-\d+|SAVE(\w)?)$/ ? $2 // 1 : 0;
 }
 
 
