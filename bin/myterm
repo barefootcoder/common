@@ -119,7 +119,7 @@ then
 
 	# figure out geometry/font adjustments
 	# get screen size
-	proglet='if (/\*/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}'
+	proglet='if (/\*|VSync/){($s) = /(\d+\s*x\s*\d+)/; $s =~ s/ //g; print $s}elsif(/RandR extension missing/){print "VNC"}'
 	scrsize=$(xrandr -q 2>&1 | perl -lne "$proglet")
 	# figure proper font size
 	case $scrsize in
