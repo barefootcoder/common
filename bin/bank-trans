@@ -71,6 +71,7 @@ my %DESCRIPTIONS =
 							qr/Waste Management/i,
 						],
 	House			=>	[
+							qr/Gottlieb's/i,
 							qr/BRETT MORGAN/i,
 							qr/Q's Quality Pool/i,
 							qr/carlos ortega/i,
@@ -90,7 +91,7 @@ my %DESCRIPTIONS =
 							qr/AUTO CLUB SO CAL/i,
 						],
 	Groceries		=>	[
-							qr/Trader Joe's/i,
+							qr/Trader Joe.?s/i,
 							qr/HelloFresh/i,
 							qr/HLLFRSH/i,
 							qr/EMeals/i,
@@ -117,8 +118,11 @@ my %DESCRIPTIONS =
 							qr/CVS\.com/i,
 							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
-							qr/WW INT'L/i,
+							qr/WW INT(ERNATIONA|')L/i,
 							qr/Lume deodorant/i,
+						],
+	Clothing		=>	[
+							qr/WomanWithin/i,
 						],
 	Grooming		=>	[
 							qr/SuperCuts/i,
@@ -126,7 +130,7 @@ my %DESCRIPTIONS =
 						],
 	Travel				=>	[
 							qr/chevron/i,
-							qr/shell (oil|service|\d+)/i,
+							qr/shell (oil|service|simi|\d+)/i,
 							qr/exxon/i,
 							qr/USA 63216/i,
 							qr/HD Fuel/i,
@@ -324,6 +328,7 @@ my %WHAT_LOOKUP =
 	'SOUTHERN CALIFOR Online Payment'	=> 	'So Cal Gas Co',
 	'Golden State (Water|Wtr|Wat)'		=>	'Water Bill',
 	'VZWRLSS'							=>	'Verizon Wireless',
+	"Gottlieb's"						=>	"Gottlieb's (new pool guy)",
 	'BRETT MORGAN'						=>	'Pool Guy',
 	'jessie flores'						=>	'Gardeners',
 	'carlos ortega'						=>	'Gardener',
@@ -353,7 +358,7 @@ my %WHAT_LOOKUP =
 	'OFFICE DE'							=>	'Office Depot',
 	'^D&B '								=>	"Dave & Buster's",
 	'T.O. E-LIBRARY'					=>	'Library (TO)',
-	"WW INT'L"							=>	'Weight Watchers',
+	"WW INTERNATIONA|'L"				=>	'Weight Watchers',
 	'JUNKYARD'							=>	'Junkyard Cafe',
 	'Imperfect Foods'					=>	'Veggie box',
 	'GOOGLE *INNERSLOTH',				=>	'Android Game',
