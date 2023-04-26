@@ -1,0 +1,23 @@
+#! /bin/bash -e
+
+function show-mem
+{
+	echo "$1"
+	perl -le 'print "=" x length(shift)' "$1"
+	free -h
+	echo
+}
+
+show-mem "BEFORE:"
+
+echo "turning off swap"
+swapoff -a
+echo
+
+show-mem "DURING:"
+
+echo "re-enabling swap"
+swapon -a
+echo
+
+show-mem "AFTER:"
