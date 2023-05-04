@@ -6,7 +6,12 @@
 ###########
 # Just find the socket; who cares about the PID?
 
-socket=$(/bin/ls -t1 /run/user/`id -u`/keyring*/ssh /tmp/ssh-*/agent.* 2>/dev/null | head -n1)
+function _newest_file
+{
+	/bin/ls -t1 "$@" 2>/dev/null
+}
+# prioritize /run/user sockets over /tmp sockets, even if older
+socket=$( (_newest_file /run/user/$(id -u)/keyring*/ssh ; _newest_file /tmp/ssh-*/agent.*) | head -n1)
 
 if [[ -z $socket ]]
 then
