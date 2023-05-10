@@ -9,8 +9,9 @@ const my $AVAIL => ':AVAILABILITY';
 
 
 opts <<'-';
-	[-avD] [-w <num>] <command> <cmd_arg> file [...]
+	[-akvD] [-w <num>] <command> <cmd_arg> file [...]
 	-a : operate on all weeks (default: only the latest/first one found)
+	-k : skip the current week (only works with -a and/or -w)
 	-v : be more verbose (currently only works with `review' command)
 	-D : debug mode (implies -v)
 	-w : operate on <num> weeks ago (1 == current week--default)
@@ -383,6 +384,8 @@ sub range_label
 sub include_week
 {
 	my ($week) = @_;
+	#	 -k         : skip the current week, regardless of other switches
+	return 0 if $OPT{k} and $week == 1;
 	if ($OPT{w})
 	{
 		# -a + -w<N> : include all weeks up to and including <N>

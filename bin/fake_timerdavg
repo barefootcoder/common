@@ -9,7 +9,7 @@ use POSIX qw< ceil >;
 
 
 opts <<'-';
-	[-vD] [ { -w<N> | -S<date> } ] [ { -s [-k] | -H<avg> | -W<avg> } [-k] ] [-O]
+	[-vD] [ { -w<N> | -S<date> } ] [ { -s [-k] | -H<avg> | -W<avg> [-k] [-M<M>] } ] [-O]
 	-v : be more verbose
 	-D : debugging mode
 	-w : look back <N> weeks (overridden by -S)
@@ -19,13 +19,16 @@ opts <<'-';
 	-r : reverse order of weeks in summary
 	-H : show # hours to bring the average to <avg> hours
 	-W : show # weeks to look back until average reaches <avg>
+	-M : look back a minimum number of <M> weeks before trying to reach -W avg
 	-O : identify outliers
 	<N>    : number of weeks (default: all weeks)
+	<M>    : minimum number of weeks (default: 1)
 	<date> : date in arbitrary format
 	note1  : default for -w is 0 (current week only)
 	note2  : -W overrides -w default (=> 52)
 	note3  : -W ignores availability
 -
+$OPT{M} //= 1;
 
 
 my $how_far = 1 + ($OPT{S} ? round(UP => (date("last mon") - date($OPT{S})) / 7) : $OPT{w} // ($OPT{W} ? 52 : 0));
@@ -63,7 +66,9 @@ elsif ($OPT{W})
 	foreach (@week_by_week)
 	{
 		$average = $_->{running_time} / ++$num_weeks;
-		print form "week {>>}  : {>.<} hours", $num_weeks, $average unless $hit_it;
+		print form "week {>>}  : {>.0} hours  => {>.0} avg  {}{>>.0}{}", $num_weeks, $_->{time}, $average,
+				$OPT{D} ? ('[', $_->{running_time}, ']') : ('') x 3
+			unless $hit_it;
 		if (defined $start_state)
 		{
 			unless ($hit_it)
@@ -82,12 +87,12 @@ elsif ($OPT{W})
 				$min_numweeks = $num_weeks;
 			}
 		}
-		else
+		elsif ($num_weeks >= $OPT{M})
 		{
 			$start_state = $_->{time} <=> $target;
 			say "# start state is: $start_state" if $OPT{D};
 			$max_avg = $min_avg = $average;
-			$max_numweeks = $min_numweeks = 1;
+			$max_numweeks = $min_numweeks = $num_weeks;
 		}
 	}
 	say "# reached state of: $cur_state" if $OPT{D};
@@ -102,6 +107,7 @@ elsif ($OPT{W})
 	}
 	print form "maxed at   : {>.0} hours [{>>} weeks]", $max_avg, $max_numweeks;
 	print form "floored at : {>.0} hours [{>>} weeks]", $min_avg, $min_numweeks;
+	print form "total avg  : {>.0} hours [{>>} weeks]", $average, $num_weeks;
 	exit;
 }
 
@@ -182,6 +188,7 @@ func time_and_avail ($file)
 	my $min_date = today;
 	my $max_date = date(0);
 	my $timer_cmd = "fake_timer -a -w$how_far total email $file";
+	   $timer_cmd =~ s/-a/-ak/ if $OPT{k};
 	say "running: $timer_cmd" if $OPT{D};
 	open(IN, "$timer_cmd |") or die("can't open pipe");
 	my $week = 0;
@@ -200,13 +207,10 @@ func time_and_avail ($file)
 				system(@cmd);
 				exit 1;
 			}
-			unless ($OPT{k} and $week == 1)
-			{
-				print "$file : $_" if $OPT{D};
-				$min_date = min($min_date, date($1));
-				$max_date = max($max_date, date($2));
-				push @week_by_week, { date => $min_date } if $OPT{s} or $OPT{W};
-			}
+			print "$file : $_" if $OPT{D};
+			$min_date = min($min_date, date($1));
+			$max_date = max($max_date, date($2));
+			push @week_by_week, { date => $min_date } if $OPT{s} or $OPT{W};
 		}
 
 		#  0 hrs, 36 mins : cpan
@@ -222,12 +226,9 @@ func time_and_avail ($file)
 		}
 		if ($OPT{s} or $OPT{W})
 		{
-			unless ($OPT{k} and $week == 1)
-			{
-				my $which = $timer eq 'AVAILABILITY' ? 'avail' : 'time';
-				$week_by_week[-1]->{              $which } = $this_week;
-				$week_by_week[-1]->{ 'running_' . $which } = $timer_hours;
-			}
+			my $which = $timer eq 'AVAILABILITY' ? 'avail' : 'time';
+			$week_by_week[-1]->{              $which } = $this_week;
+			$week_by_week[-1]->{ 'running_' . $which } = $timer_hours;
 		}
 		if ( $OPT{O} and $timer ~~ [keys %$OUTLIER_RANGES] )
 		{
