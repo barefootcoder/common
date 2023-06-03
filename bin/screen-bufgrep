@@ -3,10 +3,13 @@
 use myperl::Pxb;
 use autodie ':all';
 
+const my $PROMPT => '(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) ';
+
 
 opts <<'-';
-	[-cvD] { -e <pattern> | <pattern> } [<buf>]
+	[-cHvD] { -e <pattern> | <pattern> } [<buf>]
 	-c : search for commands
+	-b : bare (don't show filename; with -c, don't show prompt either)
 	-v : be more verbose
 	-D : debug mode (implies -v)
 	-e : next arg is the <pattern>, even if it starts with -
@@ -16,7 +19,7 @@ opts <<'-';
 $OPT{v} = 1 if $OPT{D};
 
 my $regex = $OPT{e} // shift // usage_error('must supply regex');
-$regex = '^(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) .*' . $regex if $OPT{c};
+$regex = "^$PROMPT.*" . $regex if $OPT{c};
 $regex = qr{$regex};
 my $bufs = shift // ''; $bufs .= '*';
 
@@ -30,7 +33,17 @@ foreach (reverse sh @cmd)
 	my ($file, $line) = m{^/.*?/screen-buflog/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
 	# skip if we're showing commands and this line is just a previous output of us showing commands
 	next if $OPT{c} and m{^\d{4}-\d\d-\d\d/[\w-]+\.buf:};
+	# handle headers (or lack thereof)
+	if ( $OPT{b} )				# bare mode
+	{
+		$file = '';
+		$line =~ s/^$PROMPT// if $OPT{c};
+	}
+	else						# normal mode
+	{
+		$file .= ':';
+	}
 	# save the line, but only if we haven't already seen it
-	unshift @results, "$file:$line" unless $seen{$line}++;
+	unshift @results, "$file$line" unless $seen{$line}++;
 }
 say foreach @results;
