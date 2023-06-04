@@ -43,13 +43,18 @@ say $acl;
 confirm "continue?" || exit unless $OPT{y};
 
 my $aclf = tempfile;
-$aclf->spew($acl);
+$aclf->spew($acl =~ s/^.*?::.*?\n//mgr);
+if ($OPT{D})
+{
+	say "+ setting to:";
+	say $aclf->slurp =~ s/^/+ /mgr;
+}
 
 if ($OPT{r})
 {
 	my @find = ( find => $dest );
 	my $count = sh( @find, -printf => '.', '|', wc => -c => );
-	sh( @find, -print0 => '|', xargs => '-0', setfacl => -P => '--set-file', $aclf );
+	sh( @find, -print0 => '|', xargs => '-0', setfacl => -P => -M => $aclf );
 	say "set ACLs for $count files (some maybe redundantly)" if $OPT{v};
 }
 else
@@ -71,9 +76,15 @@ else
 			next;
 		}
 
-		sh( sudo => chown   =>      '--reference' => $ref,  $dest );
-		sh( sudo => chmod   =>      '--reference' => $ref,  $dest );
-		sh( sudo => setfacl => -P => '--set-file' => $aclf, $dest );
+		# come up with reset string for base ACLs to match base mode
+		my $mode = sprintf("%o", $ref->lstat->mode & 0777);
+		my ($u, $g, $o) = split(//, $mode);
+		my $reset = "mask::$u,user::$u,group::$g,other::$o";
+
+		sh( sudo => chown   => '--reference' => $ref,   $dest );
+		sh( sudo => chmod   => '--reference' => $ref,   $dest );
+		sh( sudo => setfacl =>      -P => -m => $reset, $dest );
+		sh( sudo => setfacl =>      -P => -M => $aclf,  $dest );
 		++$count;
 	}
 	say "modified perms for $count files" if $OPT{v};

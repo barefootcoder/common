@@ -3,9 +3,7 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
-
-const my $CONST => 'Some Constant';
+use List::MoreUtils qw< natatime >;
 
 
 opts <<'-';
@@ -24,4 +22,22 @@ unless ( $acl =~ /^user:rslsync:rwx\b/m )
 }
 
 sh(sudo => chown => -R => 'buddy:buddy', $dir);
-sh(cpperm => -ry => $dir, $dir);
+my @files = map { path($_) } sh(find => $dir);
+
+my %modes;
+foreach (@files)
+{
+	my $mode = sprintf("%o", $_->lstat->mode & 0777);
+	$modes{$mode} //= [];
+	push @{ $modes{$mode} }, $_;
+}
+
+foreach (keys %modes)
+{
+	my ($u, $g, $o) = split(//);
+	my $i = natatime 1000, @{ $modes{$_} };
+	while (my @files = $i->())
+	{
+		sh(setfacl => -P => -m => "user:rslsync:$u,mask::$u,user::$u,group::$g,other::$o", @files);
+	}
+}
