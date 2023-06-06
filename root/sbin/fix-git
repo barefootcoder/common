@@ -1,0 +1,33 @@
+#! /bin/bash
+
+readonly ME=${0##*/}
+function die
+{
+	echo "$ME: $1" >&2
+	exit 1
+}
+
+
+if [[ ! -e .git ]]
+then
+	die "no .git dir found (run from the root of the corrupted repo)"
+fi
+
+refsdir=refs/remotes/origin
+if [[ ! -e .git/$refsdir/HEAD ]]
+then
+	mainline=$(ls -1 .git/$refsdir)
+	num_refs=$(wc -l <<<"$mainline")
+	if [[ $num_refs -eq 1 ]]
+	then
+		git symbolic-ref $refsdir/HEAD $refsdir/$mainline
+		echo "fixed: ref refs/remotes/origin/HEAD is not a symbolic ref"
+	elif [[ $num_refs -lt 1 ]]
+	then
+		die "no refs found in $refsdir!"
+	else						# must be -gt 1
+		die "too many possibilities found for mainline: $mainline"
+	fi
+else
+	echo "cannot find any problems to fix"
+fi
