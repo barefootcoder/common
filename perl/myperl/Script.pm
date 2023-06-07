@@ -11,7 +11,7 @@ use myperl ();
 
 
 use parent 'Exporter';
-our @EXPORT = qw< $ME %OPT opts fatal usage_error >;
+our @EXPORT = qw< $ME %OPT opts fatal usage_error color_msg >;
 
 our $ME = $0 eq '-e' ? '<one-liner>' : basename($0);
 
@@ -131,6 +131,16 @@ sub usage_error
 {
 	my $msg = shift;
 	fatal(2 => "$msg ($ME -h for help)");
+}
+
+
+# There are no unit tests for color messaging (yet).
+sub color_msg
+{
+	state $do_color = -t STDOUT && require Term::ANSIColor;
+    my ($color, $msg) = @_;
+
+    say $do_color ? Term::ANSIColor::colored($msg, $color) : $msg;
 }
 
 
