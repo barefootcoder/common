@@ -1,4 +1,5 @@
 #! /bin/bash
+set -euo pipefail
 
 readonly me=${0##*/}													# slightly prettier than $0
 NO_SERVER_BOUNCE=/tmp/sandbox_server_off 
@@ -89,6 +90,7 @@ function copy-to-clipboard
 }
 
 
+VCTOOLS_SHELL=${VCTOOLS_SHELL:-}
 if [[ $VCTOOLS_SHELL == "proj:$proj" || ( $VCTOOLS_SHELL == "git" && $(pwd) == */proj/rent* ) ]]
 then
 	send_to_sandbox "$1"
@@ -106,18 +108,20 @@ then
 		wikify "$1"
 	elif [[ $(pwd) == *personal/blog* || $(pwd) == *docs/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
-		set -o pipefail
 		copy-to-clipboard blogify "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.trac || $fullpath == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
-		set -o pipefail
 		copy-to-clipboard fmt-for-trac "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.txt || "$1" == *.md || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $1 == *.testing.notes ]]
+	elif [[ "$1" == *.txt || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $1 == *.testing.notes ]]
 	then
 		copy-to-clipboard cat "$1"
 		echo "copied to X clipboard"
+	elif [[ "$1" == *.md ]]
+	then
+		copy-to-clipboard fmt-for-md "$1"
+		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == xtrack_posts ]]
 	then
 		scp $1 heroscapers:bin

@@ -1,0 +1,118 @@
+#! /usr/bin/env perl
+
+use utf8;
+use 5.14.0;
+use autodie ':all';
+use warnings FATAL => 'all';
+use open qw< :std :encoding(utf8) >;
+
+use Const::Fast;
+use Text::Balanced qw<:ALL>;
+use Text::Tabs; $tabstop = 4;
+
+
+my $pre_re = qr/^\.$/;
+my $commit_sha_re = qr/\[([0-9a-f]{10})\]/;
+const my $REPO_URL => 'https://github.com/campus-explorer/CE/commit';
+
+my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block
+my $in_list = '';				# one char per type of list currently nested in (thus, '' == not in any lists)
+while (<>)
+{
+	if ( not $in_pre and ( /$pre_re/ or /^\t+(.)/ and !($1 ~~ ['*','#']) and not $in_list) )
+	{
+		if ( /$pre_re/ )
+		{
+			$_ = "```\n";
+			$in_pre = 2;
+		}
+		else
+		{
+			say '```';
+			s/^    //;
+			$in_pre = 1;
+		}
+	}
+	elsif ($in_pre == 1 and /^$/ or $in_pre == 2 and /$pre_re/ )
+	{
+		$in_pre == 1 ? say '```' : ($_ = "```\n");
+		$in_pre = 0;
+	}
+	elsif ($in_pre == 1)
+	{
+		$_ = expand($_);
+		s/^    //;
+	}
+	elsif ($in_pre == 2)
+	{
+		$_ = expand($_);
+		s/.{125}\K/\n/g if length > 125;
+	}
+	elsif (not $in_pre)
+	{
+		# as ever, stolen shamelessly from Filter::Simple by The Damian
+		# in this case, we're not avoiding normal quotes, but backquotes
+		# because those indicate preformatted text that's safe from interference anyway
+		my @quoted_strings;
+		$_ = join('', map { ref $_ ? scalar((push @quoted_strings, $_), "{Q$#quoted_strings}") : $_ }
+			extract_multiple($_,
+			[
+				{ BQ => sub { extract_delimited($_[0], q{`}, '', q{`}) } },
+				qr/[^`]+/,
+			])
+		);
+
+		$in_list = '' if /^\S/;											# out of list if not continuation
+		s/^(\s*)([*#]|\d+\.)(\s+)/calc_indent($1, $2) . $2 . $3/e		# bullet or numbered lists
+			or $in_list && s/^(\s+)\n/calc_indent($1)/e;				# continuation of list items
+
+		s{$commit_sha_re}{[$1]($REPO_URL)}g;							# link to GitHub via commit SHA1
+
+		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
+		s{\[(.*?)\|(.*?)\]}{[$2]($1)}g;									# external links
+		s/(?<!-)--(?!-)/\N{U+2060}\N{U+2014}\N{U+200B}/g;				# word joiner + em dash + zero-width space
+		s/ - /\N{U+00A0}\N{U+2013} /g;									# non-breaking space + en dash + normal space
+
+		# put any quoted strings back
+		s/{Q(\d+)}/${$quoted_strings[$1]}/g;
+	}
+
+	print;
+}
+
+
+sub _curindent
+{
+	join('', map { $_ eq '*' ? '  ' : '   ' } @_);
+}
+
+sub calc_indent
+{
+	my ($pre, $leader) = @_;
+	my @indents = split(//, $in_list);
+
+#say "--> prior to popping: @indents ; pre: ", $pre =~ s/\t/T/gr =~ s/ /S/gr;
+	if ( $pre =~ /^\t*$/ )
+	{
+#say "---> indents is " . @indents . " long and pre is " . length($pre) . " long";
+		pop @indents while @indents > length($pre);
+	}
+	elsif ( $pre =~ /^ *$/ )
+	{
+		pop @indents while length(_curindent(@indents)) > length($pre);
+	}
+	else
+	{
+		die("can't work out leading spaces: " . $pre =~ s/\t/'\t'/egr);
+	}
+
+#say "-> calculating indent based on: @indents";
+	my $indent = _curindent(@indents);
+	if ($leader)
+	{
+		push @indents, $leader eq '*' ? '*' : '#';
+	}
+
+	$in_list = join('', @indents);
+	return $indent;
+}
