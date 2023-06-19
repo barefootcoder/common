@@ -51,7 +51,8 @@ fi
 # Remove bogusly restored files outside `.git/`
 ###############################################
 
-bogus_files="refresh fortunes/buddy.dat fortunes/buddy_zadash_Jul-16-201322-2022_Conflict bin/dbconf*"
+bogus_files="refresh fortunes/buddy.dat fortunes/buddy_*Conflict bin/search bin/syconf-fixperms bin/dbconf*
+		local/zadash/bin/work-desktop"
 for_deletion=""
 for file in $bogus_files
 do
