@@ -234,6 +234,18 @@ foreach repo (pjawk)
 		end
 	endif
 end
+
+# "fix" alias
+alias fix '	switch ($PWD)																						\
+				case $HOME/common:																				\
+					echo "fixing common repo ..."																\
+					bash fix_perms																				\
+					echo "done"																					\
+					breaksw																						\
+				default:																						\
+					echo "dunno how to fix $PWD"																\
+				endsw'
+
 source ~/bin/tcshrc-DEBUG "set vars and aliases"
 
 # this should be a list of the hosts that we typically keep sync'ed up

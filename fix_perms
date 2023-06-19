@@ -4,6 +4,69 @@
 source functions
 set_admin
 
+#########################
+# Fix syncing permissions
+#########################
+
+syfixperms
+
+#################################################
+# Check for weird `git` states
+# caused by bogusly restored `git` internal files
+#################################################
+
+# written with the help of ChatGPT-4
+rebase_merge_dir=.git/rebase-merge
+rebase_todo_file=$rebase_merge_dir/git-rebase-todo
+if [[ -d $rebase_merge_dir ]]
+then
+	if [[ ! -f $rebase_todo_file ]]
+	then
+		function all-files-empty
+		{
+			local dir="$1"
+			[[ -d $dir ]] || die "must supply directory"
+			local empty=true
+			for file in "$dir"/*
+			do
+				if [[ -s "$file" ]]
+				then
+					empty=false
+					break
+				fi
+			done
+			$empty
+		}
+		if all-files-empty $rebase_merge_dir
+		then
+			echo "detected bogus $rebase_merge_dir; removing"
+			/bin/rm -rf $rebase_merge_dir
+		else
+			echo "$rebase_merge_dir looks bogus, but some files not emtpy; fix manually"
+		fi
+	fi
+fi
+
+###############################################
+# Remove bogusly restored files outside `.git/`
+###############################################
+
+bogus_files="refresh fortunes/buddy.dat fortunes/buddy_zadash_Jul-16-201322-2022_Conflict bin/dbconf*"
+for_deletion=""
+for file in $bogus_files
+do
+	[[ -e $file ]] && for_deletion="$for_deletion $file"
+done
+if [[ $for_deletion ]]
+then
+	echo "potential bogus files: $for_deletion"
+	confirm "remove all those?" && /bin/rm -rf $for_deletion
+fi
+
+#########################################
+# Force executable files to be executable
+#########################################
+
 chmod +x makeln
 chmod +x repl-bottom
 chmod +x repl-top
@@ -20,6 +83,10 @@ chmod -x bin/tcshrc-DEBUG		# exception
 	find lbin sbin -type f | fgrep -xvf notmine | xargs chgrp $ADMIN
 	find lbin sbin -type f | fgrep -xvf notmine | xargs chmod g+w
 )
+
+#########################################################
+# Check with `git` as to any remaining mode discrepancies
+#########################################################
 
 # report/fix any remaining issues
 bin/sygit-fixperms
