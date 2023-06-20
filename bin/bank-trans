@@ -89,6 +89,7 @@ my %DESCRIPTIONS =
 							qr/CA(LIF)? DMV/i,
 							qr/\bsmog\b/i,
 							qr/AUTO CLUB SO CAL/i,
+							qr/Bill's Quality Auto Care/i,
 						],
 	Groceries		=>	[
 							qr/Trader Joe.?s/i,
@@ -239,6 +240,7 @@ my %DESCRIPTIONS =
 							qr/Hook Burger/i,
 							qr/Panera/i,
 							qr/Corner Bakery/i,
+							qr/Chipotle/i,
 							qr/Lucky'?s Dog House/i,
 							qr/Starbucks/i,
 							qr/Baskin/i,
@@ -249,6 +251,7 @@ my %DESCRIPTIONS =
 							qr/Donuts Plus/i,
 							qr/Dairy Queen/i,
 							qr/Coldstone( Creamery)?/i,
+							qr/Yogurtland/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Net(work)?/i,
@@ -303,6 +306,7 @@ my %DESCRIPTIONS =
 							qr/Mojgan Makhsoosi?/i,
 						],
 	Reimburse		=>	[
+							qr/ChatGPT/i,
 							qr/SM City Parking Meters/i,
 							qr/Optum Bank/i,
 							qr/OPTUM BANK REIMBUR/i,
