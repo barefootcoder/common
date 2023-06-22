@@ -1,0 +1,23 @@
+#!/bin/bash
+set -euo pipefail
+source ~/common/functions
+
+function USAGE
+{
+    cat <<EOM
+
+usage: $0 <source> <dest>
+
+    <source> : symlink to copy
+    <dest>   : name for copy
+	if <dest> is dir, `basename <source> is appended
+EOM
+}
+
+source=$1
+dest=$2
+[[ -L $source ]] || die "source must be a symlink"
+[[ -d $dest   ]] && dest=${dest%/}/$(basename $source)
+[[ -e $dest || -L $dest ]] && die "dest must not exist"
+
+ln -s $(readlink $1) $2
