@@ -14,8 +14,8 @@ fi
 : ${LOCALHOSTNAME:=`$mydir/root/lbin/localhostname`}
 
 # Determine what type of machine we're on:
-# "personal" : we have free reign to do whatever we want
-# "work"     : also free reign, but there are a few extra things to set up
+# "personal" : we have free rein to do whatever we want
+# "work"     : also free rein, but there are a few extra things to set up
 # "vagrant"  : a work virt that has some constraints
 # "ec2"      : an EC2 server for work that has a *lot* of constraints
 [[ -d ~/.vagrant.d/boxes/ce-dev-sandbox ]]                                && MACHINE_TYPE="work"
@@ -175,7 +175,9 @@ fi
 # dirs to symlink in from external storage
 if [[ $1 != refresh ]]
 then
-	for dir in rpg proj
+	dirs="rpg proj"
+	[[ $MACHINE_TYPE == "work" ]] && dirs="proj"
+	for dir in $dirs
 	do
 		src_dir=$(storage_dir $dir)
 		if [[ ! $src_dir ]]
@@ -360,10 +362,10 @@ file=dataprinter
 make_copy $mydir/conf/$file $HOME/.$file
 
 
-###############################################
+##############################################
 # Install crontab
-# (but only on places where we have free reign)
-###############################################
+# (but only on places where we have free rein)
+##############################################
 
 if [[ $MACHINE_TYPE == "personal" || $MACHINE_TYPE == "work" ]]
 then
