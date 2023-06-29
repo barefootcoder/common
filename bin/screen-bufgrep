@@ -7,25 +7,28 @@ const my $PROMPT => '(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) ';
 
 
 opts <<'-';
-	[-cHvD] { -e <pattern> | <pattern> } [<buf>]
+	[-c | -F] [-bvD] { -e <pattern> | <pattern> } [<buf>]
 	-c : search for commands
+	-F : treat pattern as literal, like `grep -F` (not particularly faster)
 	-b : bare (don't show filename; with -c, don't show prompt either)
 	-v : be more verbose
 	-D : debug mode (implies -v)
 	-e : next arg is the <pattern>, even if it starts with -
 	<pattern> : Perl-style regex
-	<file>    : one or more files to process
+	<buf>     : screen buffer to search (default: *)
 -
 $OPT{v} = 1 if $OPT{D};
+usage_error("-c and -F are incompatible") if $OPT{c} and $OPT{F};
 
 my $regex = $OPT{e} // shift // usage_error('must supply regex');
 $regex = "^$PROMPT.*" . $regex if $OPT{c};
-$regex = qr{$regex};
+$regex = $OPT{F} ? shq($regex) : qr{$regex};
 my $bufs = shift // ''; $bufs .= '*';
 
 
 my (%seen, @results);
-my @cmd = (ack => -H => '--match' => $regex, "~/local/data/screen-buflog/*/$bufs");
+my @switches = $OPT{F} ? qw< -H -Q > : qw< -H >;
+my @cmd = (ack => @switches, '--match' => $regex, "~/local/data/screen-buflog/*/$bufs");
 say STDERR "+ @{[@cmd]}" if $OPT{D};
 foreach (reverse sh @cmd)
 {
