@@ -49,7 +49,8 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vbranch git-helper-branch
 	alias blameline 'perl -lne '\''($f,$l)=split(":"); print "$f:",`git blame -L$l,$l $f` =~ s/\).*/)/r'\'
 	alias tfix 'checktabs -n ; sleep 1 ; vcpatchws -f `checktabs -nb`'
-			set page_and_hilite='$PAGER +"/^commit|"`perl -e "print shift =~ s/^#?/#/r" \!^`'
+			set tweak_ticket='print shift =~ s/^(\d+)$/#$1/r =~ s/^(\w+-\d+)/\U$1/r'
+			set page_and_hilite='$PAGER +"/^commit|"`perl -e '\'"$tweak_ticket"\'' \!^`'
 	alias vld "vlog -dLR | $page_and_hilite"
 	alias vLd 'vlog -dR -- --grep \"\!^\" | '"$page_and_hilite"
 	alias vldr 'vlog -sNLDR'
