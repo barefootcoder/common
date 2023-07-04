@@ -11,6 +11,7 @@ BEGIN
 		   )
 		{
 			-e 'cpanfile' or die("must run from ~/common for bootstrapping");
+			my $err = system("cpm --version >/dev/null") and die("can't run cpm (not installed? [$!]");
 			print "bootstrapping [for: $1], then exiting (rerun once successful)\n";
 			system("cpm install -g --feature bootstrap");
 			exit;

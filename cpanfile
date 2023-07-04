@@ -10,8 +10,10 @@ feature bootstrap => sub
 
 	# need this much just to run the `cpm` wrapper
 	requires 'CLASS';
+	requires 'thanks';
 	requires 'Debuggit';
 	requires 'Const::Fast';
+	requires 'Type::Utils';
 	requires 'Import::Into';
 	requires 'Sub::Install';
 	requires 'version', '0.99';
@@ -26,13 +28,18 @@ feature build => sub
 {
 	requires 'Test::Pod';
 	requires 'Test::Most';
-	requires 'Dist::Zilla';
 	requires 'File::Which';
 	requires 'Devel::Confess';
 	requires 'Test::Pod::Coverage';
+	requires 'App::Cmd', '== 0.331';
+	requires 'Pod::Weaver', '== 4.015';
+	requires 'Dist::Zilla', '== 6.017';
 	requires 'Pod::Coverage::TrustPod';
 	requires 'Module::Install::JSONMETA';
+	requires 'Log::Dispatchouli', '== 2.023';
 	requires 'Dist::Zilla::PluginBundle::BAREFOOT';
+	requires 'Dist::Zilla::Plugin::PodWeaver', '== 4.008';
+	requires 'Dist::Zilla::Plugin::CheckPrereqsIndexed', '== 0.020';
 };
 
 # required for myperl et al
@@ -40,7 +47,6 @@ feature myperl => sub
 {
 	requires 'CLASS';
 	requires 'parent';
-	requires 'thanks';
 	requires 'version';
 	requires 'Debuggit';
 	requires 'Template';
