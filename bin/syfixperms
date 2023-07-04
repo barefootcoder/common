@@ -21,7 +21,7 @@ unless ( $acl =~ /^user:rslsync:rwx\b/m )
 	fatal("must set ACL properly on current dir");
 }
 
-sh(sudo => chown => -R => 'buddy:buddy', $dir);
+sh(sudo => chown => -R => 'buddy:users', $dir);
 my @files = map { path($_) } sh(find => $dir);
 
 my %modes;
