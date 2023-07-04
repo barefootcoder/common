@@ -1,3 +1,4 @@
 */30  * * * * tcsh -c "$HOME/bin/proc-mem -k 33 'thunderbird$'"
 *     * * * * $HOME/local/bin/unfocus-alarms
 */10  * * * * tcsh -c "$HOME/bin/screen-bufsave -Aq"
+*/5   * * * * grep -qs /mnt/avalir /proc/mounts || /usr/bin/notify-send -u critical -t 0 "Avalir sshfs not mounted!"
