@@ -9,27 +9,30 @@ use Perl6::Form;
 use Lingua::EN::Inflect	qw< PL    >;
 
 const my $NAS         => 'taaveren';
-const my @MACHINES    => qw< caemlyn zadash >;
+const my @MACHINES    => qw< caemlyn zadash avalir haven >;
 our %OTHER_MACHINE    = (@MACHINES, reverse @MACHINES);
 const my $SYNCDIR     => dir('/', var => sync => synology => );
 const my $ALT_SYNCDIR => dir('/', var => sync => resilio  => );
 
 
 opts <<'-';
-	[-D] { [-G] [-i] [-y] [-q] <dir> | -Q <file> }
+	[-D] { [-H] [-G] { -L | [-i] [-y] } [-q] [<remote>:]<dir> | -Q <file> }
 	-y : answer "yes" to comparing files (still asks about full update)
 	-q : quiet (suppress reporting of individual files)
 	-Q : query one particular <file>
+	-H : "hard" sync (not only newer; allow deletes; sync as root)
 	-G : skip (report but don't ask to cmp) .git/ files
+	-L : don't sync anything; just log what would be sync'ed to a temp file
 	-i : ignore (exclude entirely) vim swapfiles
 	-D : debug mode (implies -v)
-	<dir>  : directory to compare or sync (2-way)
-	<file> : file to compare (3-way)
+	<dir>    : directory to compare or sync (2-way)
+	<file>   : file to compare (3-way)
+	<remote> : one way sync from current to this machine (default: 2-way work <=> laptop; initials okay)
 -
 
 my $from = $ENV{LOCALHOSTNAME} // sh('hostname');
 my $to   = $OTHER_MACHINE{$from} // fatal("can't determine hostnames from $from");
-my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle');
+my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle', '.SynologyWorkingDirectory', '.stfolder');
 
 if ($OPT{Q})
 {
@@ -95,35 +98,51 @@ if ($OPT{Q})
 	exit;
 }
 
+my $one_way = 0;
 @ARGV or usage_error("must supply directory");
-my $dir = path(shift)->realpath;
+my $dir = $ARGV[0];
+$one_way = 1 && ($to, $dir) = ($1,$2) if $dir =~ m|^(\w+):(.*)|;
+($to) = grep { /^$to/ } @MACHINES;
+usage_error("unrecognized machine: " . $ARGV[0] =~ s/:.*//r) unless $to and $OTHER_MACHINE{$to};
+$dir = path($dir); $dir = $dir->realpath unless $dir->is_absolute;
 -d $dir or usage_error("$dir is not a directory");
 
 
 my @identical;
 
-my @sync = qw< rsync -avz -u >;
+my @sync = $OPT{H}
+		? (qw< sudo -E rsync -avz --delete -e >, "sudo -u buddy -HE ssh", '--rsync-path=sudo rsync')
+		: qw< rsync -avz -u >;
 push @sync, @excludes;
 push @sync, '--exclude' => '"*.sw?"' if $OPT{i};
-sync_from_to($to   => "$to:$dir/", $from => "$dir/");
+sync_from_to($to   => "$to:$dir/", $from => "$dir/")			unless $one_way;
 sync_from_to($from => "$dir/",     $to   => "$to:$dir/");
 
 sub sync_from_to
 {
 	my ($from_mach, $from_path, $to_mach, $to_path) = @_;
+	my @dry_run = (@sync => -n => $from_path, $to_path);
+	sh(printf => "%q ", "+", @dry_run, ">&2"), say STDERR '' if $OPT{D};
 	my @files;
-	foreach (sh(@sync => -n => $from_path, $to_path))
+	foreach (sh @dry_run)
 	{
 		next if /^(sending|receiving) .* list$/;
 		last unless $_;
-		next if -d "$dir/$_";
+		next if -d "$dir/$_" and not $OPT{L};
 		push @files, $_;
 	}
 	say '';
 	if (@files)
 	{
 		say "$from_mach => $to_mach: found ", scalar @files, " files to be sync'ed";
-		if ($OPT{y} or confirm "compare individual files?")
+		if ($OPT{L})
+		{
+			my $log = tempfile(TEMPLATE => "$ME-log.XXXXXX", UNLINK => 0);
+			$log->spew( map { "$_\n" } @files );
+			say "wrote to: $log";
+			exit;
+		}
+		elsif ($OPT{y} or confirm "compare individual files?")
 		{
 			my $IN_GITDIR = qr{^\.git/};
 			my %paths = map { $_ => $dir->child($_) } grep { $OPT{G} ? !m{$IN_GITDIR} : 1 } @files;
@@ -156,13 +175,18 @@ sub sync_from_to
 				}
 			}
 		}
-		else
+		elsif (not $OPT{q})
 		{
 			say "  to be sync'ed:";
 			say foreach @files;
 		}
 		if (confirm "perform update for real?")
 		{
+			if ( $OPT{q} )
+			{
+				@sync = map { $_ eq '-avz' ? '-az' : $_ } @sync;
+				say "copying ", scalar @files, " files; please be patient";
+			}
 			sh(@sync => $from_path, $to_path);
 		}
 		elsif (@identical and confirm "sync identical files to older dates?")
