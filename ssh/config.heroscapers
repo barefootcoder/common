@@ -1,3 +1,5 @@
 Host			heroscapers
 	HostName			heroscapers.com
 	User				buddy
+	HostKeyAlgorithms	ssh-rsa,ssh-dss
+	PubkeyAcceptedKeyTypes=+ssh-rsa
