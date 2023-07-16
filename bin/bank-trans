@@ -96,6 +96,7 @@ my %DESCRIPTIONS =
 							qr/HelloFresh/i,
 							qr/HLLFRSH/i,
 							qr/EMeals/i,
+							qr/Thrive Market/i,
 							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
 							qr/Lassens/i,
