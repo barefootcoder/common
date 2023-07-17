@@ -15,7 +15,7 @@ sub run_command();
 my $format = '%f:%l';
 
 my $opt = {};
-getopts("qlF:vcCPDg:h", $opt);
+getopts("qlF:vcCPSDg:h", $opt);
 usage() if $opt->{h};
 
 $format = '%l' if $opt->{q};
@@ -41,9 +41,10 @@ sub usage
 {
 	my $me = basename($0);
 	print STDERR <<END;
-usage: $me [-q|-l|-v|-c|-F <format>] [-CPDh] [-g <regex>] 'command to run on {}' [files ...]
+usage: $me [-q|-l|-v|-c|-F <format>] [-CPSDh] [-g <regex>] 'command to run on {}' [files ...]
     command is run on every provided filename
     in command, {} is replaced by "filename" (including double quotes)
+    if {} is omitted, it is added at the end (like xargs)
     if no files are given, STDIN is treated as a list of filenames
     -q : do not precede output by filename (shortcut for -F %l)
     -l : print filenames which have output, but not output (not same as -F %f)
@@ -56,10 +57,12 @@ usage: $me [-q|-l|-v|-c|-F <format>] [-CPDh] [-g <regex>] 'command to run on {}'
             in this case, evaluation of code is output
             value is split into lines
             no output if evaluation is false
+    -S : print separators between files' output
     -D : debugging (print commands to be run to STDERR)
     -h : this help message
   in FORMATs:
     %f : filename
+    %d : dirname of filename
     %l : output line
     %% : literal %
 END
@@ -83,6 +86,7 @@ sub run_command ()
 	$cfile =~ s/([ *?[<>|&;\$'"`({})!#\\])/\\$1/g;
 
 	my $run_file = $command;
+	$run_file .= " {}" unless $run_file =~ /\{\}/;
 	$run_file =~ s/\\\{\}/\cC\0/g;
 	$run_file =~ s/\{\}/$cfile/g;
 	$run_file =~ s/\cC\0/{}/g;
@@ -133,6 +137,7 @@ sub run_command ()
 	}
 	print "$file\n" if $opt->{v} and !$count;
 	print "$file:$count\n" if $opt->{c} and $count;
+	print '-' x 80, "\n" if $opt->{S};
 
 	chdir $orig_dir if $opt->{C};
 }
@@ -145,6 +150,7 @@ sub print_output
 
 	my $line = $format;
 	$line =~ s/%f/$filename/g;
+	$line =~ s/%d/dirname($filename)/ge;
 	$line =~ s/%l/$output/g;
 	$line =~ s/%%/%/g;
 
