@@ -5,6 +5,10 @@ use autodie ':all';
 
 use List::Util				qw< pairs unpairs pairmap pairgrep >;
 use Date::Easy;
+use PerlX::Maybe;
+
+const my $FIRST_MON_OF_PANDEMIC    => date("3/16/2020");
+const my $PANDEMIC_START_WEEKS_AGO => (today - $FIRST_MON_OF_PANDEMIC) / 7;
 
 
 my $retval = 0;
@@ -26,7 +30,7 @@ while ( <> )
 		if ($name eq ':AVAILABILITY')
 		{
 			my $lunch = $lunch[$week];
-			if (ref $lunch)												# we couldn't find a lunch timer for this week
+			if (ref $lunch and $week >= $PANDEMIC_START_WEEKS_AGO)		# we couldn't find a lunch timer for this week
 			{
 				my ($avail_from, $avail_to, @other) =
 						pairgrep { $a->hour >= 12 || $b->hour >= 12   }
@@ -61,9 +65,9 @@ while ( <> )
 	}
 	else
 	{
+		my $line = $.;
 		unless ($in_week)
 		{
-			my $line = $. - 1;
 			$retval = 1, say STDERR "timer $_ in week $week [$line] lacks a description altogether" foreach keys %accrued;
 			undef %accrued;
 			$in_week = 1;
@@ -73,8 +77,9 @@ while ( <> )
 		if ($chunks)
 		{
 			$accrued{$name} = 1 if $name !~ /^timer-fixes/;
+			my @chunks = verify_chunks($name => $chunks);
 			# check Mondays
-			my $first_start_date = datetime($chunks =~ m|^(?:\d/)?(\d+)-|);
+			my $first_start_date = datetime($chunks[0]->{start});
 			if ($first_start_date->day_of_week == 1)						# i.e. Monday
 			{
 				# note if there's a lunch timer (or if Monday was a PTO day)
@@ -83,7 +88,12 @@ while ( <> )
 				$lunch[$week] //= [];
 				push $lunch[$week], $chunks if ref $lunch[$week];
 			}
-			verify_chunks($name => $chunks);
+			# check monday-mtg
+			if ($name eq 'monday-mtg')
+			{
+				say STDERR "monday-mtg timer in week $week [$line] has non-Monday time"
+						if grep { datetime($_->{start})->day_of_week != 1 } @chunks;
+			}
 		}
 	}
 }
@@ -122,9 +132,12 @@ sub verify_chunks
 	my ($name, $chunks) = @_;
 	my @chunks = split(',', $chunks);
 
+	my @parsed;
 	for (@chunks)
 	{
 		my ($div, $start, $end) = m{(\d/)?(\d+)-(\d*)};
 		say STDERR "negative chunk in week $week [timer: $name :: $_]" if $end and $start > $end;
+		push @parsed, { start => $start, end => $end, maybe div => $div };
 	}
+	return @parsed;
 }
