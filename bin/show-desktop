@@ -4,6 +4,7 @@ use myperl::Pxb;
 use autodie ':all';
 
 use Date::Easy;
+use List::AllUtils qw< pairkeys pairgrep >;
 
 const my $INFO     => '/usr/share/icons/Humanity/status/48/info.svg';
 const my $ERROR    => '/usr/share/icons/Humanity/status/48/error.svg';
@@ -20,6 +21,16 @@ opts <<'-';
 $OPT{n} //= 1;
 
 my $host = shift // usage_error('must supply host');
+
+
+# Get rid of any stray disconnected windows before opening new ones.
+# (ChatGPT helped write this: https://chat.openai.com/share/51318917-e9ad-4370-8fa6-5f814dcd8f2d)
+sh(wmctrl => -ic => $_) foreach
+		pairkeys
+		pairgrep { $b eq "NoMachine"      }
+		map      { (split(" ",$_,4))[0,3] }
+		sh       ( wmctrl => -l =>        )
+;
 
 
 if ($host eq sh('hostname'))
