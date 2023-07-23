@@ -21,7 +21,7 @@ opts <<'-';
 
 if ($OPT{A})
 {
-	my %EXCEPTIONS = map { $_ => 1 } qw< bc >;
+	my %EXCEPTIONS = map { $_ => 1 } qw< bc top >;
 	sh(screen => -X => msgwait => 0) if $OPT{q};
 	my @windows = grep { not $EXCEPTIONS{$_} } sh('screen-windowlist');
 	sh($0 => $OPT{q} ? "-fq" : "-f", $_) foreach @windows;

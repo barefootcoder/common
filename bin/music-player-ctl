@@ -301,8 +301,10 @@ sub player_api
 	my @extra;
 	push @extra, shift while $_[0] =~ /^-/;
 	my ($object, $prop) = @_;
-	sh(qdbus => @extra, 'org.mpris.MediaPlayer2.clementine',
+	my @qdbus_cmd = (qdbus => @extra, 'org.mpris.MediaPlayer2.clementine',
 		'/org/mpris/MediaPlayer2', 'org.freedesktop.DBus.Properties.Get', "org.mpris.MediaPlayer2.$object", $prop);
+	sh(printf => "%q ", "+", @qdbus_cmd, ">&2"), say STDERR '' if $OPT{D};
+	sh @qdbus_cmd;
 }
 
 sub PlaybackMode ()

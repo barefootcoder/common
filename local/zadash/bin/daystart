@@ -6,7 +6,7 @@ use autodie ':all';
 
 opts <<'-';
 	[-D]
-	-D : debug mode (implies -v)
+	-D : debug mode
 -
 
 
