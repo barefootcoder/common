@@ -27,4 +27,3 @@ HOME=/home/buddy
 DISPLAY=:0.0
 
 *     * * * * $HOME/bin/remote-control
-0  0,12 * * * $HOME/bin/dropboxd start 2>&1 | logger -t 'dropbox restart'

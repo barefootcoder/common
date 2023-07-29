@@ -1,6 +1,23 @@
 #! /bin/bash
 
-cd ~/Dropbox
-find . -name .dropbox.cache -prune -o -iname "*(*conflict*)*" -print0 | xargs -0 ls -ltr
-cd /var/sync/synology
-find . -iname "*(*conflict*)*" -print0 | xargs -0 ls -ltr
+if [[ -t 1 ]]
+then
+	$0 "$@" |& ${PAGER:-less -RaF}
+	exit $?
+fi
+
+dirs=
+for d in ~/Dropbox /var/sync/* /export/*
+do
+	[[ -d $d && $(basename $d) != "lost+found" ]] && dirs="$dirs $d/"
+done
+
+function find_conflicts
+{
+	find $dirs -name .dropbox.cache -prune -o -iname "*[(-]*conflict*[)-]*" "$@"
+}
+
+if [[ $(find_conflicts -print) ]]
+then
+	find_conflicts -print0 | xargs -0 ls -dltr
+fi
