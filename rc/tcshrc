@@ -161,12 +161,13 @@ alias cal ~/bin/cal
 	# yes, those 3 *'s in a row are correct (even tho i have no idea why)
 alias ff 'bash -c "find . -name /proc -prune -o -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
 alias ffd 'bash -c "find . -name /proc -prune -o -type d -iname '"'"'*\!***'"'"' -print 2>/dev/null"'
+alias flf 'find \!* -type f -printf "%T@ %p\n"|sort -n|tail -n1|perl -lpe '\''s/^\d+(\.\d+)?\h+//'\''|xargs -i ls -lF {}'
 alias vi "fe_vi"
 alias vims "vim-session"
 alias buf 'rm -f /tmp/tempfile.txt ; vim -c "set paste" -c "set nolbr" -c startinsert /tmp/tempfile.txt'
 alias list "vi -v +'map   '"
 alias less "less -a -x4"
-alias dlocate "locate -be \!^ | each -l '[ -d {} ] && echo x'"
+alias dlocate "locate -be \!* | each -l '[ -d {} ] && echo x'"
 alias xlocate "locate -be \!^ | each -l '[ -f {} -a -x {} ] && echo x'"
 alias xpath "perl -le 'print foreach split(q/:/, @ENV{qw<PATH>})' | each -q 'ls {}/*\!{^}* 2>/dev/null'"
 alias ed "vim -u ~/.edrc"
