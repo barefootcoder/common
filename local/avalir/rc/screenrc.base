@@ -1,0 +1,80 @@
+bind ^y source .screenrc.sandbox
+bind ^_ source .screenrc.search
+bind ^v source .screenrc.vctools
+bind  T exec screen-testwin-switch -Sq
+bind ^t exec screen-testwin-switch
+
+screen -t base
+screen -t timer
+	stuff "timer\015"
+screen -t man
+	stuff "man screen\015"
+screen -t top topall
+screen -t root sudo su -
+screen -t launch
+screen -t copy
+screen -t notes
+	number 9
+	stuff "vims notes\015"
+screen -t common
+	source .screenrc.vctools
+	stuff "vcd common\015"
+screen -t bc
+	stuff "bc\015"
+screen -t cheops
+	stuff "vcd cheops\015"
+	stuff "vagrant-push-box\015"
+screen -t vagrant
+	stuff "vcd cheops\015"
+	stuff "vims vagrant\015"
+screen -t sandbox
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t st
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t aboot
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+	sleep 25
+	stuff "cd ../archer-boot\015"
+screen -t proj
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t sql
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t cetest
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t server
+	stuff "cd $CHEOPSROOT\015"
+	source .screenrc.sandbox
+screen -t awsess
+	stuff "$CHEOPSROOT/bin/awsess\015"
+screen -t work
+	stuff "cd ~/work\015"
+screen -t lib
+	source .screenrc.vctools
+	stuff "vcd method-signatures\015"
+screen -t ltest
+	source .screenrc.vctools
+	stuff "vcd VCtools\015"
+screen -t mixes
+	stuff "vims mixes\015"
+screen -t mtest
+	stuff "cd /export/music\015"
+	stuff "source etc/musicsh\015"
+screen -t blog
+	stuff "cd docs/blog\015"
+screen -t nas
+	stuff "ssh taaveren\015"
+screen -t vbuild
+	stuff "vcd cheops\015"
+	stuff "vagrant/bin/new-sandbox --help\015"
+screen -t cloudfront
+	source .screenrc.sandbox
+	stuff "cd ../ce-cloudfront-event-tracking/\015"
+screen -t monitor
+screen -t zadash
+	stuff "ssh zadash\015"

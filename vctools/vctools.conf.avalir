@@ -3,6 +3,7 @@
 VCtoolsDir=~/proj/VCtools
 
 WorkingDir=~/proj
+WorkingDir=~/workproj
 
 DefaultVC=git
 <<include ~/proj/VCtools/share/conf/git.conf>>
@@ -21,4 +22,7 @@ DefaultSourcePath=git@github.com:%user/%project.git
 
 
 
+#<<include $CEROOT/etc/ceflow/CE.conf>>
+
 <<include ~/.vctools/custom.conf>>
+<<include ~/.vctools/CE-custom.conf>>

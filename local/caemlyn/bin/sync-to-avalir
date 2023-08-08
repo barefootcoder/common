@@ -1,0 +1,38 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-D]
+	-D : debug mode (implies -v)
+-
+
+
+my $base = dir("/var/sync/synology");
+foreach my $src (glob("$base/*"))
+{
+	my $share = $src->basename;
+	my $src   = "$src/";
+	my $dest  = "/mnt/avalir/$share/";
+	my $msg   = "syncing $share";
+	my @cmd   = (rsync => -az => '--delete');
+
+	my $how_much = sh(@cmd => -vn => $src, $dest, '|', wc => -l => );
+	if ($how_much < 100)
+	{
+		push @cmd, '-v';
+	}
+	else
+	{
+		$msg .= " (too many files to show)";
+	}
+	say '';
+	color_msg(cyan => $msg);
+	sh(@cmd => $src, $dest);
+}
