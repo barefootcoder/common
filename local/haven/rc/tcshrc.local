@@ -1,0 +1,9 @@
+# necessary for local VCtools libs
+# (Actually, I'm pretty sure this isn't neessary at all ...)
+#setenv VCTOOLS_EXTLIB_DIR /var/tmp/VCtools-extlib
+
+# have `daystart` run on Caemlyn too
+alias daystart ~/local/bin/daystart
+
+# have a CLI way to turn the touchpad back on when I forget to click the applet)
+alias tp '~/common/local/haven/applets/touchpad-toggle toggle'

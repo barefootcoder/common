@@ -1,0 +1,23 @@
+#!/bin/bash
+. ~/bin/bash_funcs
+
+ssh-add-if-necessary
+ssh-add -l
+
+if ( screen -ls ||: ) | grep base
+then
+	cmd="screen -x base"
+else
+	cmd="screen -S base"
+fi
+
+~/common/local/haven/applets/touchpad-toggle &
+xrestore -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet"
+
+myterm -D Main -s Haven haven-fortress 125x50+7+30 $cmd
+myterm -D Main -s Caemlyn sunset-capital 125x50-10-40 ssh caemlyn
+myterm -D Main -s Avalir avalir-on-fire 125x50-10-40 ssh avalir
+myterm -D Media -s -S Zadash night-in-zadash 125x50+478-34 ssh zadash
+
+music-player
+xrestore -desktop Music -geometry 1200x798+716+254 kid3

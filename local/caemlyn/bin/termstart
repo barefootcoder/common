@@ -32,6 +32,7 @@ myterm -D Main -s Avalir avalir-on-fire 125x50+7+30 ssh avalir
 myterm -D Main -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
 myterm -D Main -s -S Quin cityofgold 125x50-24+72 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
 myterm -D Main -s -S Zadash night-in-zadash 125x50+478-34 ssh zadash
+myterm -D Main -s -S Haven haven-fortress 125x50+478-34 ssh haven
 
 # get alarm window set properly
 xrestore -geometry 371x442-0-0 -desktop Music "alarm-clock-applet --hidden"

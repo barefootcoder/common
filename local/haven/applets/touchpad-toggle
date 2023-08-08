@@ -1,0 +1,83 @@
+#! /usr/bin/env perl
+use strict;
+use warnings;
+
+use Tk;
+use Proc::Pidfile;
+use File::Basename;
+
+my $my_dir = dirname($0);
+my $touchpad_device = 13;
+my $pidfile_path = "/var/tmp/run/touchpad-toggle.pid";
+my $toggle_prev_run = (@ARGV and $ARGV[0] eq "toggle");
+
+my $is_touchpad_enabled = read_touchpad_state();
+
+# Attempt to create pidfile, kill existing process if necessary
+my $pidfile;
+eval { $pidfile = Proc::Pidfile->new(pidfile => $pidfile_path) };
+if ($@)
+{
+    if ($@ =~ /already running: (\d+)/)
+	{
+        my $old_pid = $1;
+		if ($toggle_prev_run)
+		{
+			kill USR1 => $old_pid or die("Failed to notify previous process ($old_pid): $!\n");
+			exit;
+		}
+		else
+		{
+			kill TERM => $old_pid or warn("Failed to kill process $old_pid: $!\n");
+			sleep 1;
+			$pidfile = Proc::Pidfile->new(pidfile => $pidfile_path);
+		}
+    }
+	else
+	{
+        die $@;
+    }
+}
+die("no previous process found to communicate with!\n") if $toggle_prev_run;
+
+$SIG{USR1} = sub
+{
+	$is_touchpad_enabled = read_touchpad_state();
+	toggle_touchpad();
+};
+
+my $height = 26;
+my $width  = 145;
+my $mw = MainWindow->new;
+$mw->overrideredirect(1); # make it borderless
+$mw->geometry("${width}x$height+600+0"); # adjust position
+
+# load images
+my @text  = qw<        Off                                   On                     >;
+my @image =   ($mw->Photo(-file => "$my_dir/mouse.gif"), $mw->Photo(-file => "$my_dir/touchpad.gif"));
+
+my $frame = $mw->Frame(-width => $width, -height => $height)->pack();
+my $button = $frame->Button(
+    -text => "Touchpad $text[$is_touchpad_enabled]",
+    -image => $image[$is_touchpad_enabled],
+    -compound => 'left', # places image to left of text
+    -command => \&toggle_touchpad
+)->pack();
+
+sub read_touchpad_state
+{
+	my ($state) = grep /Enabled/, `xinput list-props 13`;
+	$state =~ /:\s+(\d)/;
+	my $on_off = $1;
+	die("cannot determine touchpad state!") unless defined $on_off and ($on_off == 0 or $on_off == 1);
+	return $on_off;
+}
+
+sub toggle_touchpad
+{
+	$is_touchpad_enabled ^= 1;
+	system("xinput --set-prop $touchpad_device 'Device Enabled' $is_touchpad_enabled");
+	$button->configure(-text => "Touchpad $text[$is_touchpad_enabled]", -image => $image[$is_touchpad_enabled]);
+}
+
+MainLoop;
