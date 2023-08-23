@@ -1,22 +1,29 @@
-#! /bin/bash
+#! /bin/bash -u
 
 . ~/bin/bash_funcs
 readonly wikibase='http://confluence.rent.com/display'					# needed for checking wikify files
 
 
+path=$(realpath "$1")
 taint=$(perl -lne 'print "T" if /perl -T/; exit if $. > 1' $1)
 #echo "url would be $(perl -lne 'print "'$wikibase'/$1/$2" if $. == 1 && /^==> (.+?):(.+?) <==$/' "$1")"
 
 function syntax-check
 {
 	local ftype=$(file $1)
-	if [[ $ftype == *"shell script"* || $ftype == *"launch bash"* ]]
+	if [[ $ftype == *"shell script"* || $ftype == *"launch bash"* || $path == *"lib/bash/"* ]]
 	then
 		echo "checking bash syntax ..."
 		bash -n $1
 	else
-		[[ $USER == 'vagrant' ]] && launch="launch"
-		$launch perl -c$taint $1
+		if [[ $ftype == *"/launch "* ]]
+		then
+			shebang=$(head -n1 $1)
+			cd $(dirname $1)
+			launch "${shebang##*!*/launch }" -c$taint $(basename $1)
+		else
+			perl -c$taint $1
+		fi
 	fi
 	exit 0
 }
@@ -28,14 +35,13 @@ then
 	readonly sandbox=$(perl -lne 'print $1 if m{^root\s*=\s*ssh://(?:\w+@)?([\w.-]+)//}' ~/.unison/sandbox.prf)
 
 	#unison -ui text -batch sandbox
-	file="$(realpath "$1")"
 	echo
-	ssh $sandbox perl -c$taint "$file"
+	ssh $sandbox perl -c$taint "$path"
 elif [[ $proj == "CE" ]]
 then
 	syntax-check $1
 else
-	if realpath "$1" | grep -q blog
+	if [[ $path == *blog* ]]
 	then
 		blog-wc "$1"
 	elif [[ "$1" == xtrack_posts ]]
