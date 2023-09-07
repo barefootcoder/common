@@ -212,11 +212,15 @@ sub handle_pos_subcommand
 		when ('save')
 		{
 			my %save_opt = map { $_ => 1 } @_;
-			my $info = get_playlist_info();
+			my $info = eval { get_playlist_info() };
+			if ( not $info )
+			{
+				return if $save_opt{existing};
+				die;			# otherwise, just rethrow
+			}
 			say "\nwould save:" if $OPT{n};
 			print_playlist_info($info) if $OPT{v};
 			my $tracklists = read_playlist_posfile();
-			return if $save_opt{existing} and not exists $tracklists->{ $info->{playlist} };
 			do { print "save position of playlist? [y/N] "; return unless <STDIN> =~ /^y/i } if $save_opt{confirm};
 			$tracklists->{ $info->{playlist} } = $info;
 			write_playlist_posfile($tracklists) unless $OPT{n};
@@ -350,7 +354,7 @@ sub print_playlist_info
 {
 	my ($info, $leader) = @_;
 	my $min_sec = display_time($info->{seconds});
-	my $track = '[' . ($leader ? 'track ' : '') . $info->{list_pos} . ']' . ($leader ? '' : ':');
+	my $track = '[' . ($leader ? 'track ' : '') . ($info->{list_pos} + 1) . ']' . ($leader ? '' : ':');
 
 	say '';
 	print $leader if $leader;
