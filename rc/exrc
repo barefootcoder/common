@@ -108,11 +108,11 @@ nnoremap <Esc>c<Esc>l :%g/^# line/d<CR>:up<CR>|												" Alt-C Alt-L
 " use my tfmt program for reformatting non-comment stuff
 set equalprg=tfmt\ -t4\ -w100
 
-"syntax off
+syntax off
 set nohlsearch
 set noincsearch
 set nocindent
-filetype off
+set filetype=
 filetype indent off
 
 " useful in Changes files
