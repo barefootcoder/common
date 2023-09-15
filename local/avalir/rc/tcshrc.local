@@ -14,3 +14,9 @@ alias vagrant-latest-test \
 alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 alias vagrant-env-clear    'unsetenv CE_VAGRANT_*'
+
+# music player stuff
+alias mpup 'music-player-volume up'
+alias mpdn 'music-player-volume down'
+alias mppr 'clementine --previous'
+alias mpnx 'clementine --next'

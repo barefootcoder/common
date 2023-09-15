@@ -154,6 +154,7 @@ feature heroscape => sub
 feature CE => sub
 {
 	requires 'IO::All';								# used by push song data collater
+	requires 'Text::CSV';							# used by push song data collater
 };
 
 # required for building a new sandbox *UNTIL* archer-boot is completed

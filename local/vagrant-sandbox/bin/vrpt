@@ -40,6 +40,9 @@ function normalize_filename
 		fi
 	fi
 
+	# if the file already exists, we're done
+	[[ -r $file ]] && echo $file && return
+
 	# farm the rest of the work out to get-report-files
 	file=$(get-report-files -i1 $file)
 
