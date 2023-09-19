@@ -4,7 +4,10 @@ readonly ME=${0##*/}													# slightly prettier than $0
 
 get=cat
 stdin=STDIN
-while getopts ":sibcI:O:h" opt
+context=false
+highlight=false
+debug=false
+while getopts ":sibcHI:O:Dh" opt
 do
 	case $opt in
 		s)	sort=1
@@ -16,18 +19,25 @@ do
 		b)	diffopts="wB$diffopts"
 			;;
 		c)	diffopts="u$diffopts"
-			context=1
+			context=true
+			;;
+		H)	diffopts="u$diffopts --color=always"
+			context=true
+			highlight=true
 			;;
 		I)	input_label=$OPTARG
 			;;
 		O)	output_label=$OPTARG
 			;;
-		h)	echo "usage: $ME [-sibch] [-I label] [-O label] '<command1> [arg ...]' '<command2> [arg ...]'" >&2
-			echo "       <command1> [arg ...] | $ME [-sibch] [-I label] [-O label] '<command2> [arg ...]'" >&2
+		D)	debug=true
+			;;
+		h)	echo "usage: $ME [-sib] [ { -c | -H } ] [-I label] [-O label] '<command1> [arg ...]' '<command2> [arg ...]'" >&2
+			echo "       <command1> [arg ...] | $ME [-sib] [ { -c | -H } ] [-I label] [-O label] '<command2> [arg ...]'" >&2
 			echo "    -s : sort both streams before diff'ing" >&2
 			echo "    -i : ignore case (i.e. diff -i)" >&2
 			echo "    -b : ignore whitespace (i.e. diff -wB)" >&2
 			echo "    -c : context diff (i.e. diff -u)" >&2
+			echo '    -c : context diff with color highlighting (using `diff-highlight`)' >&2
 			echo "    -I : use this for input label (default: full command line or 'cat')" >&2
 			echo "    -O : use this for output label (default: full command line)" >&2
 			echo "    -h : this help message" >&2
@@ -70,9 +80,17 @@ fi
 
 : ${input_label:="$cmd1"}
 : ${output_label:="$cmd2"}
-if [[ ! $context ]]
+if ! $context
 then
 	echo "< $input_label"
 	echo "> $output_label"
 fi
-diff $diffopts --label "$input_label" --label "$output_label" <(eval "$cmd1") <(eval "$cmd2")
+diffopts="$diffopts --label \"$input_label\" --label \"$output_label\""
+if $highlight
+then
+	$debug && set -x
+	diff $diffopts <(eval "$cmd1") <(eval "$cmd2") | diff-highlight
+else
+	$debug && set -x
+	diff $diffopts <(eval "$cmd1") <(eval "$cmd2")
+fi
