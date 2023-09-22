@@ -32,6 +32,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias stash-p vc stash-p
 	alias unstash vc my-unstash
 	alias tunstash vc my-unstash just-a-sec
+	alias vcresrc 'source ~/.vctoolsrc'
 
 	alias branch vbranch
 
