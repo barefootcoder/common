@@ -199,6 +199,7 @@ my %DESCRIPTIONS =
 							qr/Popeye'?s/i,
 							qr/SMART MANAGEMENT & CO/i,
 							qr/Arbys/i,
+							qr/Wienerschnitzel/i,
 							qr/Freddy'?s/i,
 							qr/5Guys/i,
 							qr/Burgerim/i,
@@ -306,6 +307,7 @@ my %DESCRIPTIONS =
 	'Professional Fees'=>	[
 							qr/HLW Tax/i,
 							qr/HK Associates/i,
+							qr/Vincere ?Wealth/i,
 						],
 	Medical			=>	[
 							qr/Simi Chiro/i,
@@ -417,6 +419,7 @@ foreach (@transactions)
 	$source = 'BillPay' if $descr =~ /Online Payment/;
 	$source = 'Check' if is_debit($amount) and $descr =~ /check\b.*#?\d/i;
 	$source = 'CC' if $source eq 'Withdrawal';
+	$source = 'Venmo' if $descr =~ /VENMO/;
 
 	if ($OPT{a})
 	{
