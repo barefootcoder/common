@@ -1,0 +1,26 @@
+#! /bin/bash
+
+histdir=/srv/sync_hist
+logoutput=/var/log/rsync/run-sync_hist.log
+logrsync=/var/log/rsync/sync_hist.log
+
+if [[ $1 ]]
+then
+	source=$histdir/$1
+	dest=taaveren:/volume1/sync_hist/$1
+else
+	source=$histdir
+	dest=taaveren:/volume1/sync_hist
+fi
+if [[ ! -d $source ]]
+then
+	message="$(basename $0): no such directory $source"
+	echo $message >&2
+	echo $message | ts >>$logoutput
+	exit 1
+fi
+
+echo "Starting rsync from $source to $dest" | ts >>$logoutput
+rsync -a --no-o --no-g --no-p --filter '-p @eaDir/' --log-file=$logrsync										\
+		-e 'ssh -p 2322 -l egwene' $source/ $dest/ 2>&1 | ts >>$logoutput
+echo "rsync finished" | ts >>$logoutput
