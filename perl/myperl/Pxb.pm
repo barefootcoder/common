@@ -88,10 +88,33 @@ sub import
 
 sub _sh
 {
-	unshift @_, -x => if $myperl::Script::OPT{D};
+	_dash_x(@_) if $myperl::Script::OPT{D};
 	# Yes, the Carp POD says don't do this.  Alternative suggestions welcomed.
 	local $Carp::CarpLevel = $Carp::CarpLevel + 2;
-	PerlX::bash::bash @_;
+	&PerlX::bash::bash;
+}
+
+# I really need to build this into PerlX::bash ...
+sub _dash_x
+{
+	my @args;
+	# Ignore capture args and switches that are handled by PerlX::bash::bash.
+	# (This is correct as of Pxb v0.05.)
+	while ( $_[0] and ($_[0] =~ /^-/ or ref $_[0]) )
+	{
+		local $_ = shift;
+		next if ref;
+		next if $_ eq '-c' or $_ eq '-e';
+		push @args, $_;
+	}
+	# Now toss out the filter, if any.
+	pop if ref $_[-1] eq 'CODE';
+	# All remaining args are good.
+	push @args, @_;
+	# Now print it out the way bash would see it.
+	PerlX::bash::bash(printf => "%q ", "+", @args, ">&2");
+	# Add a final newline.
+	say STDERR '';
 }
 
 sub sh
