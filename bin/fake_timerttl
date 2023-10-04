@@ -17,9 +17,9 @@ opts <<'-';
 	<file> timer file(s)
 -
 
-my $ticket = shift;
+my $ticket = uc(shift);
 die("don't recoginze Jira/Trac ticket num: $ticket")
-		unless $ticket =~ /^[[:upper:]]{2,5}-\d{1,5}$/ or $ticket =~ /^\d{4,5}$/;;
+		unless $ticket =~ /^\w{2,5}-\d{1,5}$/ or $ticket =~ /^\d{4,5}$/;;
 
 die("must specify timer file(s)") unless @ARGV;
 
