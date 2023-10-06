@@ -22,3 +22,9 @@ alias vagrant-latest-test \
 alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 alias vagrant-env-clear    'unsetenv CE_VAGRANT_*'
+
+# music player stuff
+alias mpup 'ssh avalir each '\''"music-player-volume up"'\'' 1 2 3'
+alias mpdn 'ssh avalir each '\''"music-player-volume down"'\'' 1 2 3'
+alias mppr 'ssh avalir clementine --previous'
+alias mpnx 'ssh avalir clementine --next'
