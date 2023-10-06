@@ -456,5 +456,5 @@ sub breakdown
 		$total_mins += $mins;
 	}
 	#printf("%5d mins : TOTAL\n", $total_mins);
-	print_time("TOTAL", $total_mins);
+	print_time("TOTAL  (as of " . now . ")", $total_mins);
 }
