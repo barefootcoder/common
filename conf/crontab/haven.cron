@@ -1,3 +1,3 @@
-*     * * * * xdotool search --name URGENT >/dev/null || sudo -H -u buddy -i $HOME/bin/monitor-pidgin-unseen caemlyn >/dev/null 2>&1
+*     * * * * xdotool search --name URGENT >/dev/null || sudo -H -u buddy -i $HOME/bin/monitor-pidgin-unseen avalir >/dev/null 2>&1
 10    * * * * tcsh -c "$HOME/bin/screen-bufsave -Aq"
 

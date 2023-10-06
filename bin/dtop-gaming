@@ -40,25 +40,6 @@ say "# gaming windows will land on desktop $desktop (index 0)" if $OPT{D};
 # window for music
 term_window('Music', '80x24+2-33');
 
-# browser window for maps etc
-if ( not (find_window("Gaming Checklist") or find_window("Campaign")) )
-{
-	# trying to combine the below into one assignment statement doesn't work, for some reason ...
-	my @windows;
-	push @windows, find_window("Gaming Checklist",			desktop => 'ALL');
-	push @windows, find_window("Campaign",					desktop => 'ALL');
-	push @windows, find_window("GM Binder",					desktop => 'ALL');
-	push @windows, find_window("Dungeon Master's Vault",	desktop => 'ALL');
-	if (@windows)
-	{
-		put_window_on_gaming($_) foreach @windows;
-	}
-	else
-	{
-		fatal("start Vivaldi first!");
-	}
-}
-
 # file browser and the PDF we'll need
 unless (find_window("5e"))
 {

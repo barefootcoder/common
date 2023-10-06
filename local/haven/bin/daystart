@@ -10,7 +10,6 @@ opts <<'-';
 -
 
 
-sh( xdotool => search => '--name', '^Avalir', => windowkill => );
 my @term = split(' ', first { $_ } map { s/\n$//r } grep { / Avalir / } path("~/local/bin/termstart")->slurp);
 sh( @term );
 
