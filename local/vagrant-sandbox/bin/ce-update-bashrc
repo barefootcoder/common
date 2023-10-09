@@ -29,6 +29,7 @@ fi
 # make aliases
 cat <<'END' | cessh $host cat ">.bash_aliases"
 alias go='sudo -H -u CE -- sh -c "cd $PWD ; exec $SHELL -l"'
+alias rehash='hash -r'
 alias resrc='source ~/.bashrc'
 alias ssh-sock-reset='source ~/bin/ssh-sock-reset'
 END
