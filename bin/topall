@@ -5,12 +5,17 @@ function exists
 	type -p $1 >/dev/null
 }
 
-                        top
-                   sudo iotop
-exists iftop    && sudo iftop -p
-exists nethogs  && sudo nethogs
-                        glances
-                  watch dropbox status
-                  watch sensors
-exists powertop && sudo powertop
+function runs_dropbox
+{
+	[[ -d ~/Dropbox/.dropbox ]]
+}
+
+                         top
+                    sudo iotop
+exists iftop    &&  sudo iftop -p
+exists nethogs  &&  sudo nethogs
+                         glances
+runs_dropbox    && watch dropbox status
+                   watch sensors
+exists powertop &&  sudo powertop
 exec "$0"
