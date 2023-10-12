@@ -39,6 +39,9 @@ do
 done
 
 
+# we should only be running this on one machine:
+[[ $LOCALHOSTNAME == "avalir" ]] || die "wrong machine"
+
 # remember current desktop so we can go back there when we're done
 orig_desktop=$(xdotool get_desktop)
 
@@ -72,7 +75,8 @@ then
 	if [[ ! $skip_tbird ]]
 	then
 		info restoring Thunderbird
-		run-xrestore -geometry +150+58 -desktop Comms -ps /usr/lib/thunderbird/thunderbird thunderbird >/dev/null &
+		thunderbird_process="/opt/thunderbird-102.15/thunderbird -profile /home/buddy/.thunderbird/wxzw807t.default"
+		run-xrestore -geometry +150+58 -desktop Comms -ps "$thunderbird_process" thunderbird >/dev/null &
 	fi
 
 	PidginWindow="Buddy List"

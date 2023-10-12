@@ -1,0 +1,2 @@
+#! /bin/bash
+/opt/thunderbird-102.15/thunderbird -profile ~/.thunderbird/wxzw807t.default
