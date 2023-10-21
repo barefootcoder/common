@@ -40,7 +40,7 @@ done
 
 
 # we should only be running this on one machine:
-[[ $LOCALHOSTNAME == "avalir" ]] || die "wrong machine"
+[[ ${LOCALHOSTNAME:-$(hostname)} == "avalir" ]] || die "wrong machine"
 
 # remember current desktop so we can go back there when we're done
 orig_desktop=$(xdotool get_desktop)
