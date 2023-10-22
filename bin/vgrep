@@ -76,6 +76,7 @@ else
 	open OUT, '>&', \*STDOUT;
 }
 
+local *IN;
 open IN, "@cmd |";
 while ( <IN> )
 {
