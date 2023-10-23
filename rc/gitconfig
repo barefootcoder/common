@@ -30,3 +30,5 @@
 	defaultBranch = main
 [maintenance]
 	repo = /home/vagrant/CE
+[diff]
+	tool = meld
