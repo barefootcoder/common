@@ -6,10 +6,20 @@ use autodie ':all';
 use Date::Easy;
 use List::AllUtils qw< pairkeys pairgrep >;
 
-const my $INFO     => '/usr/share/icons/Humanity/status/48/info.svg';
-const my $ERROR    => '/usr/share/icons/Humanity/status/48/error.svg';
 const my $CONNECT  => '/usr/NX/bin/nxplayer';
 const my $PREVIOUS => file('/tmp/previously-shown-desktop');
+const my $ICONS    =>
+{
+	ERROR	=> '/usr/share/icons/Humanity/status/48/error.svg',
+	INFO	=> '/usr/share/icons/Humanity/status/48/info.svg',
+};
+
+const my $WORK_DESKTOP =>
+{
+	zadash	=>	'caemlyn',
+	haven	=>	'avalir',
+};
+const my $HOME_DESKTOP => { reverse %$WORK_DESKTOP };
 
 
 opts <<'-';
@@ -33,42 +43,93 @@ sh(wmctrl => -ic => $_) foreach
 ;
 
 
-if ($host eq sh('hostname'))
+my $me = sh('hostname');
+if ($host eq 'PREVIOUS')
 {
-	my $cur_window = sh( xdotool => getactivewindow => getwindowname => );
-	if ($cur_window =~ /NoMachine - (\w+)/)
-	{
-		sh('notify-send' => -t => 5000, -i => $ERROR, "This should not be possible!");
-	}
-	else
-	{
-		sh('notify-send' => -t => 3000, -i => $INFO, "Already on ${host}'s desktop.");
-	}
+	-r $PREVIOUS or notify(ERROR => "No previous desktop yet.");
+	$host = $PREVIOUS->slurp;
 }
 else
 {
-	if ($host eq 'PREVIOUS')
+	if ($host eq 'WORK')
 	{
-		-r $PREVIOUS or sh('notify-send' => -t => 5000, -i => $ERROR, "No previous desktop yet.");
-		$host = $PREVIOUS->slurp;
+		if ( exists $WORK_DESKTOP->{$me} )
+		{
+			$host = $WORK_DESKTOP->{$me};
+		}
+		else
+		{
+			if ( exists $HOME_DESKTOP->{$me} )
+			{
+				$host = $me;						# trigger error below
+			}
+			else
+			{
+				notify(ERROR => "show-desktop: couldn't find work desktop for $me");
+			}
+		}
 	}
-	else
+	elsif ($host eq 'HOME')
 	{
-		$PREVIOUS->spew($host);
+		if ( exists $HOME_DESKTOP->{$me} )
+		{
+			$host = $HOME_DESKTOP->{$me};
+		}
+		else
+		{
+			if ( exists $WORK_DESKTOP->{$me} )
+			{
+				$host = $me;						# trigger error below
+			}
+			else
+			{
+				notify(ERROR => "show-desktop: couldn't find home desktop for $me");
+			}
+		}
+	}
+	elsif ($host eq uc $host)
+	{
+		notify(ERROR => "show-desktop: called with unknown arg [$host]");
 	}
 
-	my $rdesktop = "NoMachine - $host";
-	my $win = sh(xdotool => search => '--name' => $rdesktop);
-	if ($win)
+	if ($host eq $me)
 	{
-		my $cur_desktop = sh(xdotool => get_desktop => );
-		sh(xdotool => set_desktop_for_window => $win, $cur_desktop);
-		sh(wmctrl => -ir => $win, -b => 'add,fullscreen');
-		sh(xdotool => windowactivate => '--sync' => $win);
+		my $cur_window = sh( xdotool => getactivewindow => getwindowname => );
+		if ($cur_window =~ /NoMachine - (\w+)/)
+		{
+			notify(ERROR => "This should not be possible!");
+		}
+		else
+		{
+			notify(INFO => "Already on ${host}'s desktop.");
+			exit;
+		}
 	}
-	else
-	{
-		my $machine = file("~/NoMachine/\u$host.nxs");
-		sh($CONNECT => $machine);
-	}
+
+	$PREVIOUS->spew($host);
+}
+
+my $rdesktop = "NoMachine - $host";
+my $win = sh(xdotool => search => '--name' => $rdesktop);
+if ($win)
+{
+	my $cur_desktop = sh(xdotool => get_desktop => );
+	sh(xdotool => set_desktop_for_window => $win, $cur_desktop);
+	sh(wmctrl => -ir => $win, -b => 'add,fullscreen');
+	sh(xdotool => windowactivate => '--sync' => $win);
+}
+else
+{
+	my $machine = file("~/NoMachine/\u$host.nxs");
+	sh($CONNECT => $machine);
+}
+
+
+sub notify
+{
+	my ($type, $msg) = @_;
+	exists $ICONS->{$type} or notify(ERROR => "show-desktop: called `notify` with an unknown type [$type]");
+	my $delay = $type eq 'ERROR' ? 5000 : 3000;
+	sh('notify-send' => -t => $delay, -i => $ICONS->{$type}, $msg);
+	exit 1 if $type eq 'ERROR';
 }
