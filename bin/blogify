@@ -139,7 +139,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		s{(\d) 1/2}{$1&frac12;}g;													# number + one half
 		s{(?<!\\)\b([123])/([234])\b}{&frac$1$2;}g;										# stand-alone fractions
 		s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;					# a Monty Python quote, preserving case
-		s{(\w)'(\w)}{$1&rsquo;$2}g;													# apostrophes
+		s{([\w-])'(\w)}{$1&rsquo;$2}g;												# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
 		s{(\W)'em\b}{$1&rsquo;em}g;													# ditto
 		s{(\W)'nother\b}{$1&rsquo;nother}g;											# double ditto
