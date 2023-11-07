@@ -23,23 +23,32 @@
 :map <C-D><C-F> :up<CR>^:!fake_timer -w2 daybreak 'last friday' %<CR>
 :map <C-D><C-R> :up<CR>^:!fake_timer review <cword> %<CR>
 :map <C-W><C-W> :up<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
+:map <C-T><C-T> :call SavePos()<CR><C-N>n$:!fake_timerttl <C-R><C-A> %<CR>:call PauseAndRestorePos()<CR>
 :map <Esc>n /-,<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
-:let g:timer="email"
+:let b:timer="email"
 :function! GetTimer()
 :	call inputsave()
-:	let g:timer=input("Timer to search for:")
+:	let b:timer=input("Timer to search for:")
 :	call inputrestore()
 :endfunction
 :function! FindCurrent()
 :	let fred=search("-$\\|-\t")
 :endfunction
 :function! FindTimer()
-:	if search(g:timer, "n")
-:		execute "normal" "/".g:timer."\r"
+:	if search(b:timer, "n")
+:		execute "normal" "/".b:timer."\r"
 :	else
 :		call FindCurrent()
 :	endif
+:endfunction
+:function SavePos()
+:	let b:save_position=getpos(".")
+:endfunction
+:function PauseAndRestorePos()
+:	echo "Press any key to continue"
+:	let l:key = getchar()
+:	call setpos(".", b:save_position)
 :endfunction
 :map <C-Z> :call GetTimer()<CR>
 :noremap <C-N> 1G:call FindTimer()<CR>/<C-R><C-A><CR>Nzz<C-L>
