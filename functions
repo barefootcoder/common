@@ -24,6 +24,25 @@ function confirm
 	[[ $answer == [yY]* ]]
 }
 
+# wait a few seconds, then continue
+function wait-for-seconds
+{
+	local seconds=${1:-5}       # default to 5 seconds
+
+	echo -n "Pausing $seconds seconds; hit ^C now if something looks wrong " >&2
+	# doing this the hard way in case we have a really old bash
+	# (brace sequence expansion--e.g. `{1..5}`--aren't available until bash 3.0)
+	# and, anyway: you can't use variables in brace expansion (you'd have to `eval` it)
+	local i=0
+	while [[ $i -lt $seconds ]]
+	do
+		sleep 1
+		echo -n "." >&2
+		i=$(( $i + 1 ))
+	done
+	echo >&2
+}
+
 
 # find a valid directory from a list of choices
 # args will be a list of potential directories

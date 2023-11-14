@@ -1,0 +1,65 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CLIENT => 'nxplayer.bin';
+
+
+opts <<'-';
+	-D : debug mode
+-
+
+
+my @pids = get_pids();
+if (@pids)
+{
+	show_procs(@pids);
+	pause_3_secs("killing these procs");
+	kill TERM => @pids;
+
+	sleep 1; say '';
+	@pids = get_pids();
+	if (@pids)
+	{
+		show_procs(@pids);
+		pause_3_secs("*really* killing these procs");
+		kill KILL => @pids;
+
+		sleep 1; say '';
+		@pids = get_pids();
+		if (@pids)
+		{
+			show_procs(@pids);
+			fatal('failed to kill :-(');
+		}
+	}
+}
+else
+{
+	fatal("no NoMachine client processes running");
+}
+
+
+sub get_pids
+{
+	sh('/usr/bin/pgrep' => -f => $CLIENT);
+}
+
+sub show_procs
+{
+	sh(ps => -wwwo => 'user,group,pid,ppid,stime,stat,time,cmd', @_);
+}
+
+sub pause_3_secs
+{
+    print STDERR shift, ' ';
+    foreach (1..3)
+    {   
+        sleep 1;
+        print STDERR ".";
+    }
+    say STDERR "";
+}
