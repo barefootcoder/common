@@ -1,0 +1,47 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-D]
+	-D : debug mode (implies -v)
+-
+
+
+sub kill_all_the
+{
+	my ($pattern) = @_;
+	my @procs = sh('/usr/bin/pgrep' => -f => $pattern);
+	kill TERM => @procs;
+}
+
+kill_all_the('windowlist');
+kill_all_the('screen-bufsave');
+kill_all_the('msgwait');
+kill_all_the('screen.*-Q');
+sh(screen => -wipe =>);
+
+=for example
+
+     2	15:52	screen -ls
+     5	15:52	psg windowlist
+     6	15:53	psg windowlist | tail -n+2
+     7	15:53	psg windowlist | tail -n+2 | awk '{print $3}'
+     8	15:53	psg windowlist | tail -n+2 | awk '{print $3}' | xargs kill
+     9	15:53	psg | grep screen
+    11	15:54	psg screen-bufsave | tail -n+2 | awk '{print $3}' | xargs kill
+    13	15:54	psg msgwait | tail -n+2 | awk '{print $3}' | xargs kill
+    14	15:54	psg screen | & $PAGER
+    15	15:54	history | tail
+    16	15:55	history | tail > screen.cleanout
+    17	15:55	vi screen.cleanout
+    18	15:56	sr
+    19	15:56	screen -ls
+    20	15:56	psg screen | & $PAGER
+    21	15:57	psg 'screen.*-Q'
+    22	15:57	psg 'screen.*-Q' | tail -n+2 | awk '{print $3}' | xargs kill
+    23	15:58	history | tail >> screen.cleanout
+
+=end
