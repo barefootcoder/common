@@ -1,4 +1,0 @@
-#! /bin/bash
-
-# this command is from the myperl POD
-podselect -section PREREQS `perlfind -f myperl` | grep '^[a-zA-Z]' | cpanm -n
