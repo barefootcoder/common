@@ -355,12 +355,6 @@ done
 # actually work unless the perms are correct
 chmod -R go-rwx ~/.ssh
 
-# 6: .dataprinter
-# this is not allowed to be a symlink
-# because someone thought that would be more secure <rolling eyes>
-file=dataprinter
-make_copy $mydir/conf/$file $HOME/.$file
-
 
 ##############################################
 # Install crontab

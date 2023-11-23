@@ -70,7 +70,7 @@ feature myperl => sub
 	requires 'Any::Moose', '== 0.26';				# newer version breaks Method::Signatures
 	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';
-	requires 'Data::Printer', '== 0.40';
+	requires 'Data::Printer', '>= 1.0';
 	requires 'MooseX::StrictConstructor';
 	requires 'Devel::Declare', '== 0.006019';		# newer version breaks Method::Signatures
 };
