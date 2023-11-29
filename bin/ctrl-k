@@ -1,0 +1,17 @@
+#!/bin/bash
+
+killall xbindkeys
+
+wname=$(/usr/bin/xdotool getactivewindow getwindowname)
+if [[ $wname == *" - Vivaldi" ]]
+then
+	/bin/logger "sending Ctrl-L, Tab to $wname"
+	/usr/bin/xdotool key --delay 50 ctrl+l Tab
+else
+	sleep 0.5
+	/bin/logger "sending Ctrl-K to $wname"
+	/usr/bin/xdotool key --clearmodifiers ctrl+k
+fi
+
+sleep 0.5
+/bin/xbindkeys -f ~/common/conf/ctrl-k.xbk
