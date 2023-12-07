@@ -1,0 +1,50 @@
+#! /bin/bash
+
+maildir=$HOME/Dropbox/machine/caemlyn/thunderbird/wxzw807t.default/ImapMail/imap.googlemail.com
+
+cols=$(perl -MTerm::Size -le 'open TTY, "/dev/tty" and print scalar Term::Size::chars(*TTY{IO}) and close TTY')
+
+me=${0##*/}
+numlines=1
+while getopts ":l:H:h" opt
+do
+	case $opt in
+		l)	numlines=$OPTARG
+			;;
+		H)	hours_ago=$OPTARG
+			;;
+		h)	echo "usage: $me [-h] [-l lines] [-H hours_ago]" >&2
+			echo "    -l : display this many lines (default: $numlines)" >&2
+			echo "    -H : look for mail this many hours ago (default: 0)" >&2
+			echo "    -h : this help message" >&2
+			exit
+			;;
+		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
+			exit 2
+			;;
+		\?)	echo "$me: unknown argument $OPTARG ($me -h for help)" >&2
+			exit 2
+			;;
+	esac
+done
+shift $(( $OPTIND - 1 ))
+
+function exclude_path
+{
+	egrep -v "$(perl -e 'print q{/(}.join("|",map{"$_\\.msf"}@ARGV).q{)$}' "$@")"
+}
+
+if [[ -n $hours_ago ]]
+then
+	ago="-cmin +$(( hours_ago * 60 ))"
+fi
+
+readarray -t folders < <(find $maildir -name '*.msf' $ago -mtime -7														\
+		| exclude_path INBOX mlists Starred Drafts "All Mail" "Sent Mail")
+
+# We don't store the full emails locally any more (too much disk usage), so the `grep` of subject
+# lines is moot at this point.  However, compared to the previous version, I _did_ figure out how to
+# handle the issue of mailbox folders with spaces in the name, so I'm leaving that here (commented
+# out) in case I need it again some day.
+ls -dltr "${folders[@]}" | tail -n$numlines | perl -ane 'chomp; splice @F, 0, 5; $f="@F[3..$#F]";
+		$F[3] =~ s@^'$maildir'/@@; $F[3] =~ s@\.(sbd|msf$)@@g; printf "%-40s  %s", "@F", `perlsecs -qr "$f"`'
