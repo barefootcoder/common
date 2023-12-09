@@ -17,7 +17,9 @@ echo
 show-mem "DURING:"
 
 echo "re-enabling swap"
+systemctl restart zram-config.service
 swapon -a
 echo
 
 show-mem "AFTER:"
+swapon -s
