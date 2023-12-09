@@ -6,8 +6,6 @@ use autodie ':all';
 use X11::Protocol;
 use X11::Protocol::WM	qw< get_wm_hints change_wm_hints >;
 
-const my $CONST => 'Some Constant';
-
 
 opts <<'-';
 	[-vD] <title>
@@ -28,6 +26,11 @@ sh( wmctrl => -r => $title, -b => 'add,skip_taskbar,skip_pager' );		# because `w
 
 my $X = X11::Protocol->new;
 change_wm_hints($X, $win, input => 0);
+my %hints = get_wm_hints($X, $win);
+if ($hints{input} != 0)
+{
+	fatal("failed to set input hint! you *will* experience pain and suffering ...");
+}
 
 if ($OPT{v})
 {
