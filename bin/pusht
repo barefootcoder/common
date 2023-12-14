@@ -81,8 +81,8 @@ function copy-to-clipboard
 		# I have no idea why this ridiculous dance is necessary.  But, via trial-and-error, this
 		# seems to be the only way to make it work.
 		local tmpfile=/tmp/$$.xhost-xclip
-		"$@" | ssh buddy@10.0.2.2 bash -c "'cat >$tmpfile'"
-		ssh buddy@10.0.2.2 bash -c "'DISPLAY=:0.0 xclip -selection c $tmpfile'" &
+		"$@" | ssh -p8822 buddy@10.0.2.2 bash -c "'cat >$tmpfile'"
+		ssh -p8822 buddy@10.0.2.2 bash -c "'DISPLAY=:0.0 xclip -selection c $tmpfile'" &
 		sleep 5 ; kill %1
 	else
 		"$@" | xclip -selection c
