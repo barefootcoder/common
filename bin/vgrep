@@ -54,7 +54,7 @@ push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
 my @ignores  = map {; '--ignore-file', $_ } @IGNORE_FILES;
 push @ignores, map {; '--ignore-dir',  $_ } @IGNORE_DIRS;
 $regex =~ s/'/'\\''/g;
-my @cmd = ('ack', @ignores, $FILE_TYPE ? "--type=$FILE_TYPE" : (), '--match', "'$regex'");
+my @cmd = ('ack', @ignores, $FILE_TYPE ? "--type=$FILE_TYPE" : (), '--nofilter', '--match', "'$regex'");
 push @cmd, '-l' if $OPT{l} or $OPT{p};
 push @cmd, @TEST_DIRS if $OPT{T};
 push @cmd, @ARGV;
@@ -64,16 +64,14 @@ if ( $OPT{D} )
 	say STDERR "    | perl -F/;\\s*\$/ -ne 'print if /$final_re/'" if $OPT{p};
 }
 
-say STDERR '' foreach 1..10;
-
-my $PAGER = $ENV{PAGER} // 'less';
+local *OUT;
 if (-t STDOUT)
-{
+{																		warn("# stdout is a term\n") if $OPT{D};
+	say STDERR '' foreach 1..10;
+
+	my $PAGER = $ENV{PAGER} // 'less';
 	open OUT, "| $PAGER";
-}
-else
-{
-	open OUT, '>&', \*STDOUT;
+	select OUT;
 }
 
 local *IN;
@@ -85,14 +83,13 @@ while ( <IN> )
 		# line will be a filename
 		chomp; my $file = $_;
 		my @matches = grep /$final_re/, split(/;\s*$/m, path($file)->slurp);
-		say OUT $OPT{l} ? $file : join("\n", map { "$file:$_;" } @matches) if @matches;
+		say $OPT{l} ? $file : join("\n", map { "$file:$_;" } @matches) if @matches;
 	}
 	else
 	{
 		$_ =~ s/:.*$/:<<LINE TOO LONG!>>/ if length >= 512;
-		print OUT;
+		print;
 	}
 }
-eval { close(IN) };
-
-close(OUT);
+eval { close(IN); close(OUT) };
+exit $?;

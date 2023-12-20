@@ -1,0 +1,75 @@
+#! /usr/local/bin/launch bash -*DEVOPS -*PROJ:CE
+
+# This just does a `vgrep` in all of the three main Archer repos:
+# 	*	`CE:`
+# 	*	`archer-boot:`
+# 	*	`cheops:`
+#
+# This would be trivial, except that `cheops:` is mounted from the host, so you
+# can't do recursive things (like `vgrep`) on it, or else it takes forever.  We
+# get around that by `ssh`ing back to the host and running it there.  And, in
+# order to do that, we cheat somewhat by using the script that spits out
+# Vagrant backup parameters as bash variable assignments.  And, in order to do
+# _that_, we have to cheat a bit and call `backup-vars-for` with a weird URL
+# parameter (because we don't actually use those vars).  What we use for the
+# `--url` switch is the bare minimum that will make it not throw an error.
+# This, in combination with the `-*PROJ` launch flag above, allows us to be
+# called from any directory.
+#
+# Whatever args we are passed are just passed straight through to `vgrep`.
+
+assert-var CHEOPSROOT
+
+# there must be *some* args
+[[ $# -ge 1 ]] || die "gotta tell me what to search for, bro"
+
+
+function print-header
+{
+	local header="$1"
+	echo "$header:"
+	# this repeating character trick works the same as the above-referenced SO answer
+	printf '=%.0s' $( seq 1 $(( ${#header} + 1 )) ) ; echo
+}
+
+function run-on-host
+{
+	# get just the backup vars relating to the host
+	local $($CHEOPSROOT/vagrant/bin/backup-vars-for --url /.git | grep vbak_host)
+
+	ssh -p$vbak_host_port $vbak_host_machine "$@"
+}
+
+# handle the break lines and paging that `vgrep` would normally do
+if [[ -t 1 ]]
+then
+ 	printf '%.0s\n' {1..10} >&2						# https://stackoverflow.com/questions/5349718/5349842#5349842
+	$ME "$@" | ${PAGER:-less -aF}
+	exit $?
+fi
+
+err=0
+
+cd $(launch SHOW root)
+print-header "archer-boot repo"
+vgrep "$@" || err=$(( $err + $? ))
+
+echo
+
+cd $CEROOT
+print-header "CE repo"
+vgrep "$@" || err=$(( $err + $? ))
+
+echo
+
+print-header "cheops repo"
+# Use printf "%q" to concatenate and escape all arguments
+concat_args=$(printf " %q" "$@")
+
+# Construct the full command to be executed on the remote side
+full_command="cd \$CHEOPSROOT && vgrep $concat_args"
+
+# Pass the full command to the run-on-host function
+run-on-host "tcsh -c '$full_command'" || err=$(( $err + $? ))
+
+exit $err
