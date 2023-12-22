@@ -1,3 +1,5 @@
 #! /bin/bash
 
-DISPLAY=:0 setxkbmap -rules xorg -layout us -model pc105
+export DISPLAY=:0
+user=buddy
+sudo -H -u $user setxkbmap -rules xorg -layout us -model pc105

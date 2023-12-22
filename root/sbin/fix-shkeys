@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export DISPLAY=:0
+user=buddy
+grep '^#define' /usr/include/X11/keysymdef.h | sed -r 's/^#define XK_(\S*?).*$/\1/;'							\
+		| grep -E '_(L|R|Level.*)$' | sudo -H -u $user xargs xdotool keyup
