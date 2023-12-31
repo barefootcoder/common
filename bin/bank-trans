@@ -75,9 +75,11 @@ my %DESCRIPTIONS =
 							qr/BRETT MORGAN/i,
 							qr/Q's Quality Pool/i,
 							qr/carlos ortega/i,
+							qr/Cloud ?Paper/i,
+							qr/EARTHBREEZE.COM/,
+							qr/Earth Breeze/i,
 							qr/jessie flores/i,
 							qr/fidelity nationa/i,
-							qr/CloudPaper/i,
 							qr/Home Depot/i,
 						],
 	Cars			=>	[
@@ -113,8 +115,6 @@ my %DESCRIPTIONS =
 							qr/Imperfect Foods/i,
 							qr/Pure Indian (Foods)?/i,
 							qr/Bennets_Honey_Farm/i,
-							qr/Cloud Paper/i,
-							qr/EARTHBREEZE.COM/,
 						],
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
@@ -126,6 +126,7 @@ my %DESCRIPTIONS =
 						],
 	Clothing		=>	[
 							qr/WomanWithin/i,
+							qr/LaneBryant/i,
 						],
 	Grooming		=>	[
 							qr/SuperCuts/i,
@@ -280,7 +281,9 @@ my %DESCRIPTIONS =
 							qr/BackBlaze/i,
 							qr/Miniature Market?/i,
 							qr/TrollAndToad/i,
-							qr/ONEBOOKSHELF.COM?/i,
+							qr/NobleKnight/i,
+							qr/Game Nerdz/i,
+							qr/ONEBOOKSHEL(F.COM)?/i,
 							qr/Elderbrain/i,
 							qr/MCDM Prod/i,
 							qr/Nintendo/i,
@@ -529,7 +532,7 @@ foreach (@transactions)
 			$what = 'Lunch parking';
 			$who = 'Buddy';
 		}
-		when ( /^DRIVETHRU\b.*GA/ )
+		when ( /^DRIVETHRU\b.*[GC]A/ )
 		{
 			$what = 'DriveThruRPG';
 			$category = "Personal";
@@ -579,6 +582,8 @@ foreach (@transactions)
 						'MCDM Prod'				=>	'Buddy',
 						BandCamp				=>	'Buddy',
 						Elderbrain				=>	'Buddy',
+						NobleKnight				=>	'Buddy',
+						'Game Nerdz'			=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
