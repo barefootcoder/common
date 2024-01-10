@@ -117,6 +117,7 @@ if ($win)
 	sh(xdotool => set_desktop_for_window => $win, $cur_desktop);
 	sh(wmctrl => -ir => $win, -b => 'add,fullscreen');
 	sh(xdotool => windowactivate => '--sync' => $win);
+	sh(xdotool => click => '--window' => $win, 1);
 }
 else
 {
