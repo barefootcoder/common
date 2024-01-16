@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor Network Connectivity (and potentially fix)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/fix-network --as-service
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,11 +1,15 @@
 #! /bin/bash
 
 
+SERVICE_CHECKS_EVERY=30								# seconds
+
+
+readonly ME=${0##*/}
 function USAGE
 {
     cat <<EOM
 
-usage: $me [--manager] [--eth0] [--kernel-mod]
+usage: $ME [--manager] [--eth0] [--kernel-mod]
 
     --manager       : bounce Network Manager
     --eth0          : bounce eth0 interface (or equivalent)
@@ -20,6 +24,7 @@ EOM
 manager=false
 eth0=false
 driver=false
+as_service=false
 
 while [ $# -gt 0 ]
 do
@@ -31,6 +36,9 @@ do
 						shift
 						;;
 		--driver)		driver=true
+						shift
+						;;
+		--as-service)	as_service=true
 						shift
 						;;
 		--help|-h|-\?)  USAGE
@@ -66,10 +74,38 @@ function eth0
 
 
 # figure out whether we're going to connect or not
-function network_up
+function network-up
 {
-	[[ $(route | tail -n +3 | wc -l) -ge 2 ]]
+	ping -c 1 google.com > /dev/null 2>&1
 }
+
+# check for being up; exit cleanly if we are
+function exit-if-network-up
+{
+	if network-up
+	then
+		if $as_service
+		then
+			[[ ${1:-} ]] && logger -t $ME "$1"
+		else
+			echo " and we're up"
+		fi
+		exit 0
+	fi
+}
+
+# progress message, but only if not running as a service
+function progress-msg
+{
+	! $as_service && echo -ne "$@"
+}
+
+
+if $as_service && network-up
+then
+	sleep $SERVICE_CHECKS_EVERY
+	exec $ME --as-service
+fi
 
 if $manager
 then
@@ -82,56 +118,50 @@ then
 		service network-manager restart
 	fi
 
-	echo -n "waiting for reconnect "
+	progress-msg "waiting for reconnect "
 	for n in $(seq 1 20)
 	do
-		echo -n "."
+		progress-msg "."
 		sleep 1
-		if network_up
-		then
-			echo " and we're up"
-			exit
-		fi
+		exit-if-network-up "restarted network manager"
 	done
-	echo " tired of waiting"
+	progress-msg " tired of waiting\n"
 fi
 
 if $eth0
 then
 	# this is a bit more intrusive,
 	# but fixes some things the above doesn't
-	echo -ne "\ngoing deeper "
+	progress-msg "\ngoing deeper "
 	ip link set $(eth0) down
 	ip link set $(eth0) up
 
 	for n in $(seq 1 20)
 	do
-		echo -n "."
+		progress-msg "."
 		sleep 1
-		if network_up
-		then
-			echo " and we're up"
-			exit
-		fi
+		exit-if-network-up "bounced ethernet link"
 	done
-	echo " tired of waiting"
+	progress-msg " tired of waiting\n"
 fi
 
 if $driver
 then
 	# go extreme
-	echo "going medieval on its ass"
+	progress-msg "going medieval on its ass\n"
 	basemod=$(lsmod | awk '{print $1}' | grep 'iwl.vm')
 	rmmod $basemod
 	rmmod iwlwifi
 	modprobe $basemod iwlwifi
 	lsmod | grep iwlwifi
 
-	if network_up
-	then
-		echo "success!"
-		exit
-	fi
+	exit-if-network-up "reloaded network kernel mod"
 fi
 
-echo "out of tricks"
+if $as_service
+then
+	logger -t $ME "failed to restart network"
+else
+	echo "out of tricks"
+fi
+exit 1
