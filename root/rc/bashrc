@@ -28,7 +28,7 @@ alias lls='ls -lhSr'
 alias dux='du -xh --max-depth=1 | grep -v "^0	" | sortk'
 alias rehash='hash -r'
 alias resrc='. ~/.bashrc'
-alias psync='/root/common/psync'
+alias psync='cd /root/common && ./psync && ./makeln && cd -'
 
 alias rm='rm -i'
 alias cp='cp -i'
