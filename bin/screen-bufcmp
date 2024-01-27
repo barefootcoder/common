@@ -9,24 +9,26 @@ const my $SCREENBUF_DIR => path("~/local/data/screen-buflog");
 
 
 opts <<'-';
-	[-qD] { -f | -H <base> | -A | <oldfile> <newfile> }
+	[-qD] [-B <dir>] { -f | -H <base> | -A | <oldfile> <newfile> }
 	-q : quieter than usual
 	-f : find all bases
 	-H : analyze complete history of <base> buf files
 	-A : analyze complete history of all bases
+	-B : pretend that <dir> is the base dir for buflogs
 	-D : debug mode (implies -v)
 	<base>    : base name of buf file (w/o date dir and .buf ext)
 	<oldfile> : older (smaller) file to compare
 	<newfile> : newer (larger) file to compare
 -
+my $screenbuf_dir = $OPT{B} ? path($OPT{B}) : $SCREENBUF_DIR;
 
 if ($OPT{f})
 {
-	say foreach sort { $a cmp $b } uniq map { s/\.buf$//r } map { $_->basename } glob($SCREENBUF_DIR->child("*/*.buf"));
+	say foreach sort { $a cmp $b } uniq map { s/\.buf$//r } map { $_->basename } glob($screenbuf_dir->child("*/*.buf"));
 }
 elsif ($OPT{A})
 {
-	my @du = (du => -sB => '1k', $SCREENBUF_DIR);
+	my @du = (du => -sB => '1k', $screenbuf_dir);
 	my ($usage_before) = sh(@du) =~ /(\d+)/;
 	my ($l, @to_rm);
 	foreach (sh($0 => -f =>))
@@ -55,9 +57,9 @@ elsif ($OPT{A})
 }
 elsif ($OPT{H})
 {
-	my $fpat = $SCREENBUF_DIR->child("*/$OPT{H}.buf");					say "# looking for: $fpat" if $OPT{D};
+	my $fpat = $screenbuf_dir->child("*/$OPT{H}.buf");					say "# looking for: $fpat" if $OPT{D};
 	my @bufs = glob($fpat);
-	@bufs or usage_error("cannot find any `$OPT{H}.buf' files in $SCREENBUF_DIR");
+	@bufs or usage_error("cannot find any `$OPT{H}.buf' files in $screenbuf_dir");
 
 	my $most_complete;
 	my (@to_remove, @to_keep);

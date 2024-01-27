@@ -7,17 +7,19 @@ const my $PROMPT => '(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) ';
 
 
 opts <<'-';
-	[-c | -F] [-bvD] { -e <pattern> | <pattern> } [<buf>]
+	[-c | -F] [-bvD] { -e <pattern> | <pattern> } [-B <dir>] [<buf>]
 	-c : search for commands
 	-F : treat pattern as literal, like `grep -F` (not particularly faster)
 	-b : bare (don't show filename; with -c, don't show prompt either)
 	-v : be more verbose
-	-D : debug mode (implies -v)
 	-e : next arg is the <pattern>, even if it starts with -
+	-B : pretend that <dir> is the base dir for buflogs
+	-D : debug mode (implies -v)
 	<pattern> : Perl-style regex
 	<buf>     : screen buffer to search (default: *)
 -
 $OPT{v} = 1 if $OPT{D};
+my $screenbuf_dir = path( $OPT{B} // "~/local/data/screen-buflog" );
 usage_error("-c and -F are incompatible") if $OPT{c} and $OPT{F};
 
 my $regex = $OPT{e} // shift // usage_error('must supply regex');
@@ -28,12 +30,12 @@ my $bufs = shift // ''; $bufs .= '*';
 
 my (%seen, @results);
 my @switches = $OPT{F} ? qw< -H -Q > : qw< -H >;
-my @cmd = (ack => @switches, '--match' => $regex, "~/local/data/screen-buflog/*/$bufs");
+my @cmd = (ack => @switches, '--match' => $regex, "$screenbuf_dir/*/$bufs");
 say STDERR "+ @{[@cmd]}" if $OPT{D};
 foreach (reverse sh @cmd)
 {
 	# extract the filename and the matching line
-	my ($file, $line) = m{^/.*?/screen-buflog/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
+	my ($file, $line) = m{^$screenbuf_dir/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
 	# skip if we're showing commands and this line is just a previous output of us showing commands
 	next if $OPT{c} and m{^\d{4}-\d\d-\d\d/[\w-]+\.buf:};
 	# handle headers (or lack thereof)
