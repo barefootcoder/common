@@ -4,6 +4,7 @@ use utf8;
 use 5.14.0;
 use autodie ':all';
 use warnings FATAL => 'all';
+use experimental 'smartmatch';
 use open qw< :std :encoding(utf8) >;
 
 use Const::Fast;
@@ -68,7 +69,7 @@ while (<>)
 
 		s{$commit_sha_re}{[$1]($REPO_URL)}g;							# link to GitHub via commit SHA1
 
-		s/\*\b(.+?)\*(?=\W)/**$1**/g;									# bold
+		s/(?<!\*)\*\b(.+?)\*(?=\W)/**$1**/g;							# bold (that's not already in proper MD format)
 		s{\[(.*?)\|(.*?)\]}{[$2]($1)}g;									# external links
 		s/(?<!-)--(?!-)/\N{U+2060}\N{U+2014}\N{U+200B}/g;				# word joiner + em dash + zero-width space
 		s/ - /\N{U+00A0}\N{U+2013} /g;									# non-breaking space + en dash + normal space
