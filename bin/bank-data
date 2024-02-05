@@ -1,0 +1,22 @@
+#! /bin/bash
+source ~/common/functions
+
+checking=/tmp/transactions.csv
+savings=/tmp/s-transactions.csv
+
+[[ -r $checking ]] || die "no such file: $checking"
+[[ -r $savings  ]] || die "no such file: $savings"
+
+{
+	bank-trans -N -B $checking 2>/dev/null
+	bank-trans -N -B $savings  2>/dev/null
+} | $PAGER
+
+echo
+wait-for-seconds 10
+echo
+
+bank-trans    $checking >/tmp/ledger.csv
+bank-trans -B $checking >/tmp/cat.csv
+bank-trans    $savings  >/tmp/s-ledger.csv
+bank-trans -B $savings  >/tmp/s-cat.csv
