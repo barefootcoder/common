@@ -277,7 +277,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 			{ alt => "or, $subtitle", vol => qq{"$subtitle"}, paren => "($subtitle)", }->{$subtitle_type}) . "\n"}e
 		if $subtitle;
 	# provide outer `div` for html types
-	$_ = "<div>\n$_\n</div>";
+	$_ = "<div><br/>\n$_\n</div>" unless $blog_type eq 'bbcode';
 
 	print;
 }
