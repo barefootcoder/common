@@ -2,13 +2,24 @@
 #
 # I wrote the original version of this cript based on a couple of StackOverflow articles:
 #
-# 		https://stackoverflow.com/questions/21903972
-# 		https://stackoverflow.com/questions/746684
+#		https://stackoverflow.com/questions/21903972
+#		https://stackoverflow.com/questions/746684
 #
 # The rewrite, including adding all the parallelization and excluding empty commits to reduce false
 # positives, etc, was guided almost entirely by ChatGPT:
 #
-# 		https://chat.openai.com/share/3000121b-4271-4a14-ab7c-740a9eab4144
+#		https://chat.openai.com/share/3000121b-4271-4a14-ab7c-740a9eab4144
+#
+# And, when that didn't work, it came the rescue again (note: may require
+# access to Archer's team ChatGPT space):
+#
+#		https://chat.openai.com/share/e/e5ab3ead-3798-47ba-9572-b0806cc7275c
+#		https://chat.openai.com/share/e/bf504f7a-6c4a-4f4c-aa5e-a620462c3955
+#
+# I also hightly recommend this truly brillant (and insanely complete)
+# StackOverflow answer about commits, parents, and stashes:
+#
+#		https://stackoverflow.com/a/62868403
 
 use myperl::Pxb;
 use autodie ':all';
@@ -57,15 +68,9 @@ if ($OPT{D})
 .
 }
 
-my $regex = $OPT{e} // shift // $OPT{X} || usage_error('must supply regex');
 $OPT{d} = datetime($OPT{d}) if $OPT{d};
-$regex =~ s/'/'\\''/g; $regex = "'$regex'";
-
-my @path;
-push @path, $OPT{p} if defined $OPT{p};
-
-my @grep_args = qw< -P >;
-push @grep_args, '-i' if $OPT{i};
+my $regex = $OPT{e} // shift // $OPT{X} || usage_error('must supply regex');
+$regex = $OPT{i} ? qr/$regex/i : qr/$regex/;
 
 
 # this used to just page itself to `$ENV{PAGER}` in a simlar way that `hunks` does
@@ -81,14 +86,42 @@ if (-t STDOUT)
 }
 
 
+# Stash commits are special in many ways, so retrieve them all first for later reference.
+sub stash_parent
+{
+	my ($commit, $how_far) = @_;
+	eval { sh( git => 'rev-parse' => "$commit^$how_far", '2>/dev/null' ) };
+}
+
+my %stash_commits =
+	map     { $_ => 1											}
+	grep	{ defined											}
+	map		{ $_, stash_parent($_, 2), stash_parent($_, 3)		}
+			( sh(git => stash => 'list', '--format=%H')			)
+	;
+say "Considering ", scalar keys %stash_commits, " stash commits." if $OPT{v};
+
+
+sub is_stash_commit ()
+{
+	return $stash_commits{ $_->{sha1_full} };
+}
+
 sub is_valid ()
 {
-	# stash commits are always valid
-	return 1 if sh(git => 'log', '-1', '--pretty=%s', $_->{sha1}) =~ /^WIP on/;
+	# stash commits must always be considered valid, because `git diff-tree` doesn't work on them
+	return 1 if is_stash_commit;
+
+	my @paths = sh(git => 'diff-tree', '--no-commit-id', '--name-only', '-r', $_->{sha1});
+
+	# first, ensure the commit contains the path we care about (if we care about a path)
+	if (defined $OPT{p})
+	{
+		return 0 unless grep { $_ eq $OPT{p} } @paths;
+	}
 
 	# otherwise, empty commits are _not_ valid; everything else is okay
-	# (piping to `head -n1` to avoid having to read the full output; we only care if there's _any_ output)
-	return sh(git => 'diff-tree', '--no-commit-id', '--name-only', '-r', $_->{sha1} => '|', head => '-n1') ne '';
+	return @paths > 0;
 }
 
 
@@ -101,6 +134,7 @@ unless ($OPT{R})
 }
 unless ($OPT{U})
 {
+	push @commits, keys %stash_commits;
 	push @commits, sh(git => 'rev-list' => '--reflog');
 }
 @commits = uniq @commits;
@@ -111,10 +145,10 @@ my $tmpfile = Path::Tiny->tempfile;
 $tmpfile->spew( map { "$_\n" } @commits );
 @commits = ();
 const my $SEP => '<<|>>';
-foreach ( sh("xargs git show -s --no-renames --format='%h$SEP%at$SEP%ae$SEP%an' <$tmpfile") )
+foreach ( sh("xargs git show -s --no-renames --format='%h$SEP%H$SEP%at$SEP%ae$SEP%an' <$tmpfile") )
 {
 	my $commit = {};
-	@$commit{qw< sha1 date author_email author_name >} = split(quotemeta($SEP));
+	@$commit{qw< sha1 sha1_full date author_email author_name >} = split(quotemeta($SEP));
 	if ($OPT{m})
 	{
 		next unless $commit->{author_email} eq $me;
@@ -125,6 +159,9 @@ foreach ( sh("xargs git show -s --no-renames --format='%h$SEP%at$SEP%ae$SEP%an' 
 	}
 	push @commits, $commit;
 }
+$total_commits = scalar @commits;
+say "Validating $total_commits total commits." if $OPT{v};
+
 @commits = mce_map { is_valid ? $_ : () } @commits;
 $total_commits = scalar @commits;
 say "Grepping $total_commits filtered commits." if $OPT{v};
@@ -148,30 +185,25 @@ my $interval = int($total_commits / 20);			# show a dot for every 5% progress
 my $countdown = MCE::Shared->scalar($total_commits);
 @commits = mce_map
 {
-	# remember: @path is empty if `-p` was not specified
-	#my $out = eval { sh(git => grep => @grep_args, -e => $regex, $_->{sha1}, @path) };
-	my $out = eval
+	my @out = eval
 	{
-		my $contains = sh(git => log => -1 => -G => $regex, '--format=%h', $_->{sha1}, @path);
-		my $len = min( map { length } $_->{sha1}, $contains );
-		if ( substr($_->{sha1}, 0, $len) eq substr($contains, 0, $len) )
-		{
-			sh(git => grep => @grep_args, -e => $regex, $_->{sha1}, @path);
-		}
+		my @git_args = ( show => $_->{sha1} );
+		push @git_args, $OPT{p} if defined $OPT{p};
+		grep { /$regex/ } sh(git => @git_args );
 	};
-	if ($out and not $@)
+	if (@out and not $@)
 	{
 		$_->{ref} = sh(git => 'name-rev', $_->{sha1}) =~ s/ undefined$//r;
-		$_->{out} = $out;
+		$_->{out} = join("\n", @out);
 	}
-	{
+	{												# scope so the lock on `$countdown` gets released
 		lock $countdown;
 		print STDERR "." if --$$countdown % $interval == 0 and $OPT{v};
 	}
 	return $_->{out} ? ($_) : ();
 } @commits;
 $total_commits = scalar @commits;
-say STDERR " done ($total_commits commit remain)" if $OPT{v};
+say STDERR " done ($total_commits commits remain)" if $OPT{v};
 p @commits if $OPT{D};
 
 foreach (sort { $a->{date} <=> $b->{date} } @commits)
