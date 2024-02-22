@@ -97,8 +97,9 @@ then
 elif [[ -n $1 ]]
 then
 	base=$(basename "$1")
-	first_line="$(head -n1 "$1")"
-	second_line="$(head -n2 "$1" | tail -n1)"
+	mapfile -n2 -t <"$1"
+	first_line=${MAPFILE[0]}
+	second_line=${MAPFILE[1]}
 	fullpath="$(realpath "$1")"
 	if [[ "$second_line" == "# pusht: "* ]]
 	then
