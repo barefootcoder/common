@@ -1,6 +1,0 @@
-:se comments=
-:se tw=0
-:map <Esc>c hea}}<Esc>hbi{{<Esc>
-:ab nf {noformat}
-:ab oq {color:purple}{*}OPEN QUESTION:*{color}
-:ab tr {color:orange}Ticket Ref:{color} {jira:IB-X}

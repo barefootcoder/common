@@ -103,9 +103,6 @@ then
 	if [[ "$second_line" == "# pusht: "* ]]
 	then
 		eval ${second_line#*pusht: }
-	elif [[ "$first_line" == '==>'* ]]
-	then
-		wikify "$1"
 	elif [[ $(pwd) == *personal/blog* || $(pwd) == *docs/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		copy-to-clipboard blogify "$1"

@@ -36,10 +36,6 @@ elsif (grep { /(PRE-QA|TESTING) NOTES/i } @lines)
 {
 	exec 'vim', '+', '-c', 'set comments=', @ARGV;
 }
-elsif ($lines[0] =~ /^==> .*:.* <==$/ and $lines[1] =~ /^-+$/ and $lines[2] eq "\n")
-{
-	exec qw<vim -s /home/buddy/.vim-wikify>, @ARGV;
-}
 elsif ($lines[0] eq "\n" and $lines[1] =~ /^($timer_line_sep|$svn_line_sep|$cvs_line_sep|$git_line_sep)/)
 {
 	exec 'vim', '+1', '-c', 'startinsert', @ARGV;

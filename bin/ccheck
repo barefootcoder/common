@@ -1,12 +1,10 @@
 #! /bin/bash -u
 
 . ~/bin/bash_funcs
-readonly wikibase='http://confluence.rent.com/display'					# needed for checking wikify files
 
 
 path=$(realpath "$1")
 taint=$(perl -lne 'print "T" if /perl -T/; exit if $. > 1' $1)
-#echo "url would be $(perl -lne 'print "'$wikibase'/$1/$2" if $. == 1 && /^==> (.+?):(.+?) <==$/' "$1")"
 
 function syntax-check
 {
@@ -49,14 +47,6 @@ else
 		scp $1 heroscapers:bin
 		ssh heroscapers perl5/perlbrew/perls/perl-5.14.2/bin/perl -c bin/$1
 	else
-		url=$(perl -lne 'print "'$wikibase'/$1/$2" if $. == 1 && /^==> (.+?):(.+?) <==$/' "$1")
-		if [[ -n $url ]]
-		then
-			echo "got url! [$url]"
-			# http://confluence.rent.com/display/Arch/Home
-			wikify "$url" | diff -b "$1" -
-		else
-			syntax-check $1
-		fi
+		syntax-check $1
 	fi
 fi
