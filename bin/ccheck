@@ -20,7 +20,7 @@ function syntax-check
 			cd $(dirname $1)
 			launch "${shebang##*!*/launch }" -c$taint $(basename $1)
 		else
-			if [[ $(head -n1 $1) == *"launch"*"perl" ]]
+			if [[ $proj == "CE" || $(head -n1 $1) == *"launch"*"perl" ]]
 			then
 				launch perl -c$taint $1
 			else
