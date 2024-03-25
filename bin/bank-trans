@@ -150,6 +150,7 @@ my %DESCRIPTIONS =
 							qr/Theresa'?s/i,
 							qr/Valley Veterinary/i,
 							qr/Nordhoff Veterin(ary)?/i,
+							qr/Sycamore Veteri(nary)?/i,
 							qr/Chewy\.?com/i,
 							qr/Aquarium City/i,
 						],
@@ -225,6 +226,7 @@ my %DESCRIPTIONS =
 							qr/Baja Fresh/i,
 							qr/118 Cafe/i,
 							qr/The Dugout/i,
+							qr/Bao Su a/i,
 							qr/Szechuwan Garden/i,
 							qr/Guido['`]s Pizza/i,
 							qr/East Coast Pizza/i,
@@ -385,6 +387,7 @@ my %WHAT_LOOKUP =
 	'OTT* DROPOUT',						=>	'DropoutTV',
 	'Costco com'						=>	'Costco.com',
 	'ACH Withdrawal MOSAIC'				=>	'Mosaic (solar)',
+	'Bao Su a'							=>	'Bao Su a (Chinese food)',
 );
 
 
@@ -475,7 +478,7 @@ foreach (@transactions)
 		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
 		{
 			$source = 'PayPal';
-			$what = '<<PAYPAL>>' if $what eq $descr;
+			$what = 'PayPal []' if $what eq $descr;
 		}
 		when ( /Amazon/i or /Amzn\b/i or /Prime Video/i or /Audible/i )
 		{
@@ -496,7 +499,15 @@ foreach (@transactions)
 			}
 			elsif ($category eq 'Books')
 			{
-				$what = /Audible/i ? 'Audible (subscription)' : 'Kindle book';
+				if ($amount eq '-2.99')
+				{	# this is the monthly extortion fee for Amazon Prime, accidentally misclassified as 'Books'
+					$what = 'Amazon Prime extortion fee (for ad-free)';
+					$category = 'TV/Internet';
+				}
+				else
+				{
+					$what = /Audible/i ? 'Audible (subscription)' : 'Kindle book';
+				}
 			}
 			$what = 'Amazon []' if $what eq $descr;
 		}
@@ -536,6 +547,12 @@ foreach (@transactions)
 		when ( /^DRIVETHRU\b.*[GC]A/ )
 		{
 			$what = 'DriveThruRPG';
+			$category = "Personal";
+			$who = 'Buddy';
+		}
+		when ( /GOOGLE.*CODENAME/ )
+		{
+			$what = 'Idle Champions familiar';
 			$category = "Personal";
 			$who = 'Buddy';
 		}
@@ -594,7 +611,7 @@ foreach (@transactions)
 	}
 
 	my $display = 1;
-	$display = 0 if $OPT{N} and $category;
+	$display = 0 if $OPT{N} and ($category or $what =~ / \[\]/);
 	if ($OPT{F})
 	{
 		$amount = -$amount if is_debit($amount);
