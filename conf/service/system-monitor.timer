@@ -1,0 +1,10 @@
+[Unit]
+Description=Runs the System Monitor every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=system-monitor.service
+
+[Install]
+WantedBy=timers.target

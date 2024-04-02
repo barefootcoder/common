@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Directory where logs will be stored
+LOG_DIR=/var/log/system-monitor
+mkdir -p $LOG_DIR
+
+# Current time for file naming
+LOG_TIME=$(date +"%Y%m%d-%H%M")
+
+# Filename pattern
+LOG_FILE=$LOG_DIR/$LOG_TIME.log
+
+# Collect information
+echo "Timestamp: $(date)" >$LOG_FILE
+echo "=== Temperature ===" >>$LOG_FILE
+sensors >>$LOG_FILE
+
+echo "=== Battery Status ===" >>$LOG_FILE
+upower -i /org/freedesktop/UPower/devices/battery_BAT0 >>$LOG_FILE
+
+echo "=== Latest Graphics Driver Errors ===" >>$LOG_FILE
+dmesg | grep i915 | tail -n 10 >>$LOG_FILE || echo "No recent i915 graphics driver errors found." >>$LOG_FILE
+
+echo "=== System Load ===" >>$LOG_FILE
+uptime >>$LOG_FILE
+ps -eo %cpu,%mem,cmd --sort=-%cpu | head -n 5 >>$LOG_FILE
+
+echo "=== Disk Health ===" >>"$LOG_FILE"
+INTERESTING_ATTRIBS="ID#|Temperature|Power_On_Hours|Reallocated_Sector_Ct|Reported_Uncorrect|Uncorrectable_Error_Cnt"
+smartctl -A /dev/sda | egrep "$INTERESTING_ATTRIBS" >>$LOG_FILE
+
+echo "=== Memory Usage ===" >>$LOG_FILE
+free -h >>$LOG_FILE
+
+echo "=== Disk Usage ===" >>$LOG_FILE
+df -h >>$LOG_FILE
+
+# Delete old logs:
+# 1: Minutely logs older than 2 hours
+find $LOG_DIR -type f -not -name '*-??00.log' -mmin +120 -delete
+# 2: Hourly logs older than 2 days
+find $LOG_DIR -type f -not -name '*-0000.log' -mtime +2 -delete
+# 3: Daily logs older than 2 weeks
+find $LOG_DIR -type f -name '*.log' -mtime +14 -delete
