@@ -3,16 +3,25 @@ screen -t push
 	stuff "cd $CEROOT\015"
 screen -t monitor
 	stuff "cd $CEROOT\015"
-screen -t CE
+screen -t ce
 	stuff "go\015"
 	stuff "cd $CEROOT\015"
 screen -t tail1
 	stuff "cd $CEROOT\015"
-	stuff "make tail-error-prod\015"
+	stuff "ssh-sock-reset ; make tail-error-prod\015"
 screen -t tail2
 	stuff "cd $CEROOT\015"
-	stuff "make tail-queue-worker-error-prod\015"
+	stuff "ssh-sock-reset ; make tail-queue-worker-error-prod\015"
+screen -t st
+	stuff "cd $CEROOT\015"
 screen -t run
-	stuff "go\015"
 	stuff "cd $CEROOT\015"
 screen -t root sudo su -
+screen -t sql
+	stuff "db\015"
+screen -t aboot
+	stuff "cd `launch SHOW root`\015"
+screen -t droptable
+	stuff "cessh cody\015"
+screen -t monitor
+	stuff "cd $CEROOT\015"
