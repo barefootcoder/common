@@ -27,30 +27,38 @@ die("must specify timer file(s)") unless @ARGV;
 my $pipe_opened = 0;
 foreach my $file (@ARGV)
 {
-	my @file = slurp $file;
-	shift @file if $file[0] =~ /^$/;
+	my @lines = slurp $file;
+	shift @lines if $lines[0] =~ /^$/;
 
 	my $week = 1;
-	my $newlines = 0;
+	my $lineno = 1;
+	my $blanklines = 0;
 	my (@current, @timers, @comments);
-	foreach (@file)
+	foreach (@lines)
 	{
 		if ( /^$/ )
 		{
-			++$newlines;
-			if ($newlines == 1)
+			++$blanklines;
+			if ($blanklines == 1)
 			{
+				die("no timers in batch (extra blank line at $lineno?)") unless @current;
 				@timers = @current;
+				@current = ();
 			}
-			elsif ($newlines == 2)
+			elsif ($blanklines == 2)
 			{
+				die("no comments in batch (extra blank line at $lineno?)") unless @current;
 				@comments = @current;
 				PROCESS:
 				{
 					my $timer_re = join('|', map { /^([\w-]+):/ }  grep { /\t$ticket(\t|$)/ } @comments);
-					process_timer $file, $week => grep { /^($timer_re)\t/ } @timers;
+					if ($timer_re)
+					{
+						debuggit(4 => "::applying", $timer_re, "to", scalar @timers, "timers");
+						process_timer $file, $week => grep { /^($timer_re)\t/ } @timers
+					}
 				}
-				$newlines = 0;
+				$blanklines = 0;
 				++$week;
 				@current = ();
 			}
@@ -59,6 +67,7 @@ foreach my $file (@ARGV)
 		{
 			push @current, $_;
 		}
+		++$lineno;
 	}
 }
 
