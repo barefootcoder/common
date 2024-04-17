@@ -23,7 +23,6 @@ screen -t bc
 	stuff "bc\015"
 screen -t cheops
 	stuff "vcd cheops\015"
-	stuff "vagrant-push-box\015"
 screen -t vagrant
 	stuff "vcd cheops\015"
 	stuff "vims vagrant\015"

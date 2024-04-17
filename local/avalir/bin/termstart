@@ -22,8 +22,8 @@ xrestore -desktop Music -geometry 1200x798+715+285 kid3
 myterm -D Main -s Avalir avalir-on-fire 125x50+7+30 $cmd
 myterm -D Main -s -S Quin cityofgold 125x50-24+72 $CEROOT/devtools/cessh $($MYDIR/local/vagrant-sandbox/bin/push-machine)
 myterm -D Main -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
-myterm -D Main -s -S Haven haven-fortress 125x50+478-34 ssh haven
-myterm -D Comms -s -S Zadash night-in-zadash 125x50+478-34 ssh zadash
+myterm -D Main -s -S Haven haven-fortress 125x50+378-34 ssh haven
+myterm -D Comms -s -S Zadash night-in-zadash 125x50+578-34 ssh zadash
 myterm -D Comms -s -S Caemlyn sunset-capital 125x50+478-34 ssh caemlyn
 
 # get alarm window set properly
