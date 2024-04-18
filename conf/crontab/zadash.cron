@@ -1,4 +1,4 @@
 0  0,12 * * * $HOME/bin/dropboxd start 2>&1 | logger -t 'dropbox restart'
-*     * * * * xdotool search --name URGENT >/dev/null || sudo -H -u buddy -i $HOME/bin/monitor-pidgin-unseen caemlyn >/dev/null 2>&1
 10    * * * * tcsh -c "$HOME/bin/screen-bufsave -Aq"
-*/5   * * * * grep -qs /mnt/avalir /proc/mounts || /usr/bin/notify-send -u critical -t 0 "Avalir sshfs not mounted!"
+37   01 * * * $HOME/local/bin/sync-hist-to-nas
+#*/5   * * * * grep -qs /mnt/avalir /proc/mounts || /usr/bin/notify-send -u critical -t 0 "Avalir sshfs not mounted!"

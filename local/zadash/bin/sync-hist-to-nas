@@ -1,8 +1,9 @@
 #! /bin/bash
 
+date=$(date +%Y%m%d)
 histdir=/srv/sync_hist
-logoutput=/var/log/rsync/run-sync_hist.log
-logrsync=/var/log/rsync/sync_hist.log
+logoutput=/var/log/rsync/run-sync_hist-$date.log
+logrsync=/var/log/rsync/sync_hist-$date.log
 
 if [[ $1 ]]
 then

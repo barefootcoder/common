@@ -26,4 +26,4 @@ USER=buddy
 HOME=/home/buddy
 DISPLAY=:0.0
 
-*     * * * * $HOME/bin/remote-control
+#*     * * * * $HOME/bin/remote-control
