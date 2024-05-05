@@ -99,11 +99,15 @@ then
 	base=$(basename "$1")
 	mapfile -n2 -t <"$1"
 	first_line=${MAPFILE[0]}
-	second_line=${MAPFILE[1]}
+	second_line=${MAPFILE[1]:-}
 	fullpath="$(realpath "$1")"
 	if [[ "$second_line" == "# pusht: "* ]]
 	then
 		eval ${second_line#*pusht: }
+	elif [[ "$1" == *.txt || "$1" == *.eml || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $1 == *.testing.notes ]]
+	then
+		copy-to-clipboard cat "$1"
+		echo "copied to X clipboard"
 	elif [[ $(pwd) == *personal/blog* || $(pwd) == *docs/blog* || $first_line == "/bbcode/" || $first_line == "/article/" ]]
 	then
 		copy-to-clipboard blogify "$1"
@@ -112,10 +116,6 @@ then
 	then
 		copy-to-clipboard fmt-for-trac "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.txt || "$1" == *.email || "$1" == *.gs || "$1" == *.gas || $1 == *.testing.notes ]]
-	then
-		copy-to-clipboard cat "$1"
-		echo "copied to X clipboard"
 	elif [[ "$1" == *.md ]]
 	then
 		copy-to-clipboard fmt-for-md "$1"
