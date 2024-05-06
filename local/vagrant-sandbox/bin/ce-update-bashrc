@@ -6,7 +6,13 @@ host=$(archer-hostname $host)
 function cessh { $ABOOTROOT/devtools/archer-ssh "$@" ; }
 function cescp { $ABOOTROOT/devtools/archer-scp "$@" ; }
 
-instance_id=$(cessh $host ec2metadata --instance-id)
+if [[ $host == *"-i-"* ]]
+then
+	instance_id=i-${host##*-i-}
+	instance_id=${instance_id%%.*}
+else
+	instance_id=$(cessh $host ec2metadata --instance-id)
+fi
 hostclass=$(ec2-tag $instance_id class)
 screen=monitor										# most machines are used for monitoring something
 [[ $hostclass == dirk* ]] && screen=logs			# but dirk is special in a couple of ways
@@ -44,8 +50,7 @@ then
 fi
 
 # this gets us whatever helper scripts we have created
-cessh -Q $host bash -c 'mkdir -p bin/ ; chgrp CE bin ; chmod g+w bin'
-launch LOCAL archer-rsync -v $CHEOPSROOT/launch-ec2/control-instance/bin/* $host:bin/
+$CHEOPSROOT/launch-ec2/control-instance/upload-helper-scripts $host
 
 # set up for pjawk, but only on dirk
 if [[ $screen == "logs" ]]
