@@ -13,7 +13,7 @@ savings=/tmp/s-transactions.csv
 } | $PAGER
 
 echo
-wait-for-seconds 10
+confirm "Continue?" || exit
 echo
 
 bank-trans    $checking >/tmp/ledger.csv

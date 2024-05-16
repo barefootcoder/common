@@ -81,6 +81,7 @@ my %DESCRIPTIONS =
 							qr/jessie flores/i,
 							qr/fidelity nationa/i,
 							qr/Home Depot/i,
+							qr/ChatGPT/i,
 						],
 	Cars			=>	[
 							qr/Carmax Auto Fin./i,
@@ -115,6 +116,7 @@ my %DESCRIPTIONS =
 							qr/Imperfect Foods/i,
 							qr/Pure Indian (Foods)?/i,
 							qr/Bennets_Honey_Farm/i,
+							qr/The Valley Hive/i,
 						],
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
@@ -321,7 +323,6 @@ my %DESCRIPTIONS =
 							qr/Mojgan Makhsoosi?/i,
 						],
 	Reimburse		=>	[
-							qr/ChatGPT/i,
 							qr/SM City Parking Meters/i,
 							qr/Optum Bank/i,
 							qr/OPTUM BANK REIMBUR/i,
@@ -331,6 +332,7 @@ my %DESCRIPTIONS =
 						],
 	'HSA to be reimbursed' => [
 							qr/Lifespan/i,
+							qr/MDLive/i,
 						],
 	
 );
@@ -388,6 +390,7 @@ my %WHAT_LOOKUP =
 	'Costco com'						=>	'Costco.com',
 	'ACH Withdrawal MOSAIC'				=>	'Mosaic (solar)',
 	'Bao Su a'							=>	'Bao Su a (Chinese food)',
+	'ABACUS CERTIFY'					=>	'Certify (expense reimbursement)',
 );
 
 
