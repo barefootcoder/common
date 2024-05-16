@@ -1,4 +1,9 @@
 #! /bin/bash
 
-id="d6360f21091f7124ececf168c52663f1"
-curl -sL "https://gist.githubusercontent.com/barefootcoder/$id/raw"
+if [[ $USER == "vagrant" ]]
+then
+	push-quin
+else
+	cd $CHEOPSROOT
+	vagrant ssh -c push-quin | tail -n+4 | dos2unix -f
+fi
