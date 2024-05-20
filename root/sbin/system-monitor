@@ -10,35 +10,61 @@ LOG_TIME=$(date +"%Y%m%d-%H%M")
 # Filename pattern
 LOG_FILE=$LOG_DIR/$LOG_TIME.log
 
+# Function to log messages
+function log
+{
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >>$LOG_FILE
+}
+
+# Function to check command success
+function run_command
+{
+    bash -c "$*" >>$LOG_FILE 2>&1 || log "Error: Failed to get results [$1]"
+}
+
+log "Starting system monitor"
+
 # Collect information
-echo "Timestamp: $(date)" >$LOG_FILE
-echo "=== Temperature ===" >>$LOG_FILE
-sensors >>$LOG_FILE
+log "=== Temperature ==="
+run_command "sensors"
 
-echo "=== Battery Status ===" >>$LOG_FILE
-upower -i /org/freedesktop/UPower/devices/battery_BAT0 >>$LOG_FILE
+log "=== Battery Status ==="
+run_command "upower -i /org/freedesktop/UPower/devices/battery_BAT0"
+run_command "cat /sys/class/power_supply/BAT0/status"
 
-echo "=== Latest Graphics Driver Errors ===" >>$LOG_FILE
-dmesg | grep i915 | tail -n 10 >>$LOG_FILE || echo "No recent i915 graphics driver errors found." >>$LOG_FILE
+log "=== Latest Graphics Driver Errors ==="
+run_command "dmesg | grep i915 | tail -n 10"
 
-echo "=== System Load ===" >>$LOG_FILE
-uptime >>$LOG_FILE
-ps -eo %cpu,%mem,cmd --sort=-%cpu | head -n 5 >>$LOG_FILE
+log "=== System Load ==="
+run_command "uptime"
+run_command "ps -eo %cpu,%mem,cmd --sort=-%cpu | head -n 5"
 
-echo "=== Disk Health ===" >>"$LOG_FILE"
-INTERESTING_ATTRIBS="ID#|Temperature|Power_On_Hours|Reallocated_Sector_Ct|Reported_Uncorrect|Uncorrectable_Error_Cnt"
-smartctl -A /dev/sda | egrep "$INTERESTING_ATTRIBS" >>$LOG_FILE
+log "=== Disk Health ==="
+INTERESTING_ATTRIBS="Temperature:|Percentage Used:|Power On Hours:|Data Units Read:|Data Units Written:"
+INTERESTING_ATTRIBS="$INTERESTING_ATTRIBS|Media and Data Integrity Errors:|Error Information Log Entries:|Unsafe Shutdowns:"
+run_command "smartctl -x /dev/nvme0n1 | egrep '$INTERESTING_ATTRIBS'"
 
-echo "=== Memory Usage ===" >>$LOG_FILE
-free -h >>$LOG_FILE
+log "=== Memory Usage ==="
+run_command "free -h"
 
-echo "=== Disk Usage ===" >>$LOG_FILE
-df -h >>$LOG_FILE
+log "=== Disk Usage ==="
+run_command "df -h"
+
+log "=== Service Status ==="
+run_command "systemctl status system-monitor.service"
 
 # Delete old logs:
-# 1: Minutely logs older than 2 hours
-find $LOG_DIR -type f -not -name '*-??00.log' -mmin +120 -delete
-# 2: Hourly logs older than 2 days
-find $LOG_DIR -type f -not -name '*-0000.log' -mtime +2 -delete
+log "Cleaning up old logs"
+if [[ $(perl -lne '/^(\d+)/ and print int($1 / 60 / 60)' /proc/uptime) -lt 48 ]]
+then
+	: # The system has been up for less than 2 days; don't clean up anything recent.
+else
+	# 1: Minutely logs older than 2 hours
+	find $LOG_DIR -type f -not -name '*-??00.log' -mmin +120 -delete || log "Error: Failed to delete old minutely logs"
+	# 2: Hourly logs older than 2 days
+	find $LOG_DIR -type f -not -name '*-0000.log' -mtime +2 -delete || log "Error: Failed to delete old hourly logs"
+fi
 # 3: Daily logs older than 2 weeks
-find $LOG_DIR -type f -name '*.log' -mtime +14 -delete
+find $LOG_DIR -type f -name '*.log' -mtime +14 -delete || log "Error: Failed to delete old daily logs"
+
+log "System monitor completed"

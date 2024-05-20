@@ -4,3 +4,4 @@ Description=System Monitoring Service
 [Service]
 Type=simple
 ExecStart=/usr/local/sbin/system-monitor
+Restart=on-failure
