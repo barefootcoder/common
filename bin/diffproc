@@ -37,7 +37,7 @@ do
 			echo "    -i : ignore case (i.e. diff -i)" >&2
 			echo "    -b : ignore whitespace (i.e. diff -wB)" >&2
 			echo "    -c : context diff (i.e. diff -u)" >&2
-			echo '    -c : context diff with color highlighting (using `diff-highlight`)' >&2
+			echo '    -H : context diff with color highlighting (using `diff-highlight`)' >&2
 			echo "    -I : use this for input label (default: full command line or 'cat')" >&2
 			echo "    -O : use this for output label (default: full command line)" >&2
 			echo "    -h : this help message" >&2
@@ -60,11 +60,11 @@ if [[ $# == 1 ]]
 then
 	cmd1="cat"
 	cmd2="$1"
+	: ${input_label:=$stdin}
 elif [[ $# == 2 ]]
 then
 	cmd1="$1"
 	cmd2="$2"
-	: ${input_label:=$stdin}
 else
 	echo "$ME: too many args ($ME -h for help)" >&2
 	exit 2
