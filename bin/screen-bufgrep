@@ -23,16 +23,16 @@ my $screenbuf_dir = path( $OPT{B} // "~/local/data/screen-buflog" );
 usage_error("-c and -F are incompatible") if $OPT{c} and $OPT{F};
 
 my $regex = $OPT{e} // shift // usage_error('must supply regex');
-$regex = "^$PROMPT.*" . $regex if $OPT{c};
+$regex = "^$PROMPT.*(?:$regex)" if $OPT{c};
 $regex = $OPT{F} ? shq($regex) : qr{$regex};
 my $bufs = shift // ''; $bufs .= '*';
 
 
 my (%seen, @results);
 my @switches = $OPT{F} ? qw< -H -Q > : qw< -H >;
-my @cmd = (ack => @switches, '--match' => $regex, "$screenbuf_dir/*/$bufs");
-say STDERR "+ @{[@cmd]}" if $OPT{D};
-foreach (reverse sh @cmd)
+$regex = shq($regex);
+my $cmd = "ack @switches --match $regex $screenbuf_dir/*/$bufs";
+foreach (reverse sh bash => -c => -O => extglob => $cmd)
 {
 	# extract the filename and the matching line
 	my ($file, $line) = m{^$screenbuf_dir/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
