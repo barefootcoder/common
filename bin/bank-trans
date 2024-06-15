@@ -60,7 +60,6 @@ my %DESCRIPTIONS =
 							qr/Philo/i,
 							qr/Disney ?Plus/i,
 							qr/Sling.com/i,
-							qr/DisneyPlus/i,
 							qr/OTT\* DROPOUT/i,
 						],
 	Water			=>	[
@@ -265,6 +264,7 @@ my %DESCRIPTIONS =
 							qr/Dairy Queen/i,
 							qr/Coldstone( Creamery)?/i,
 							qr/Yogurtland/i,
+							qr/Raising Canes/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Net(work)?/i,
@@ -333,6 +333,7 @@ my %DESCRIPTIONS =
 	'HSA to be reimbursed' => [
 							qr/Lifespan/i,
 							qr/MDLive/i,
+							qr/Rula Health/i,
 						],
 	
 );
@@ -347,9 +348,9 @@ my %WHAT_LOOKUP =
 	'NSM DBAMR.COOPER'					=>	'Mortgage Payment',
 	'S CA Edison'						=>	'Electric Bill',
 	'SOUTHERN CALIFOR Online Payment'	=> 	'So Cal Gas Co',
-	'Golden State (Water|Wtr|Wat)'		=>	'Water Bill',
+	'Golden State Water|Wtr|Wat'		=>	'Golden State Water',
 	'VZWRLSS'							=>	'Verizon Wireless',
-	"Gottlieb's"						=>	"Gottlieb's (new pool guy)",
+	"Gottlieb's"						=>	"Gottlieb's (pool guy)",
 	'BRETT MORGAN'						=>	'Pool Guy',
 	'jessie flores'						=>	'Gardeners',
 	'carlos ortega'						=>	'Gardener',
@@ -391,6 +392,7 @@ my %WHAT_LOOKUP =
 	'ACH Withdrawal MOSAIC'				=>	'Mosaic (solar)',
 	'Bao Su a'							=>	'Bao Su a (Chinese food)',
 	'ABACUS CERTIFY'					=>	'Certify (expense reimbursement)',
+	'Disney Plus'						=>	'Hulu et al',
 );
 
 
@@ -490,15 +492,23 @@ foreach (@transactions)
 			{
 				given (abs($amount))
 				{
-					$what = 'Video rental:'	when $_ < 6;
-					$what = 'Disney+' 		when $_ < 8;
-					$what = 'AMC+' 			when $_ < 9;
-					#$what = 'Starz' 		when $_ < 9;
-					#$what = 'Showtime' 	when $_ < 11;
-					$what = 'HBO'			when $_ < 15;
+					$what = 'Kindle book ???'	when $_ < 2;
+					$what = 'Prime TV'			when $_ < 3;
+					$what = 'Video rental:'		when $_ < 6;
+					$what = 'Disney+' 			when $_ < 8;
+					$what = 'AMC+' 				when $_ < 9;
+					$what = 'HBO'				when $_ < 15;
 					$what = 'Movie purchase:';
 				}
-				$category = "Entertainment" if $what =~ /:$/;
+				if ( $what =~ /:$/ )
+				{
+					$category = "Entertainment";
+				}
+				elsif ( $what eq 'Prime TV' )
+				{
+					$what = 'Amazon Prime extortion fee (for ad-free)';
+					$category = 'TV/Internet';
+				}
 			}
 			elsif ($category eq 'Books')
 			{
@@ -562,6 +572,12 @@ foreach (@transactions)
 		when ( /(Knit(Crate|Picks))/i )
 		{
 			($what = lc $1) =~ s/knit(.)/'Knit' . uc $1/ie;
+			$category = "Personal";
+			$who = 'Christy';
+		}
+		when ( /SP TM ON THE GO/i )
+		{
+			$what = 'Treasured Memories';
 			$category = "Personal";
 			$who = 'Christy';
 		}
