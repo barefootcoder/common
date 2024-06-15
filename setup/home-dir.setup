@@ -1,0 +1,44 @@
+as buddy:
+
+	# verify this is set!
+	echo $LOCALHOSTNAME
+
+	cd ~/.ssh
+	ssh-keygen -t rsa -b 4096
+	cp id_rsa.pub $LOCALHOSTNAME.pub
+	chmod -R go-rwx .
+	cp $LOCALHOSTNAME.pub ~/common/ssh/
+
+	mkdir -p ~/common/local/$LOCALHOSTNAME/bin
+	# check to see if ~/local/bin already exists for some weird reason
+	ln -s ~/common/local/$LOCALHOSTNAME/bin ~/local/bin
+	# set up local/bin/termstart
+
+	cd /tmp
+	unzip /var/install/Inconsolata.zip
+	rm 'SIL Open Font License.txt'
+	addfont Inconsolata.otf
+	fc-list | grep -i incon # just to make sure it's there
+	rm Inconsolata.otf
+
+	FOR A FRESH MACHINE
+	-------------------
+		vi ~/common/.git/config
+			git://github.com/barefootcoder/common.git => git@github.com:barefootcoder/common.git
+	FOR A RESTORED MACHINE
+	----------------------
+		# `unget` everything in common/ that is marked "typechange"
+		mv ~/.config ~/.config-fresh
+
+	<open GitHub in browser>
+		barefootcoder
+		Settings
+		SSH and GPG Keys
+		New SSH key
+
+	cd ~/common
+	./makeln				# fixes annoying pjawk issue and links ~/proj, but may start cronjobs before you're ready
+	mkdir -p ~/common/local/$LOCALHOSTNAME/data/term-bg
+	mkdir -p ~/common/local/$LOCALHOSTNAME/data/sounds
+	ln -s ~/common/local/$LOCALHOSTNAME/data ~/local/data
+

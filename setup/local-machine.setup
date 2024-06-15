@@ -1,0 +1,23 @@
+as buddy:
+
+	chgrp -R dev ~/proj/VCtools
+	# The below is probably not necessary any more, particularly if you can copy over a previous `/var/tmp/VCtools-extlib/`.
+	# You might not be able to copy an old one if the architectures differ between old and new machines.
+	#
+	#mkdir -p `uname -i | perl -MList::Util=first -e 'chomp($a=<STDIN>); print first{/site_perl/ and not /$a/}@INC'`/VCtools
+	#chgrp dev `uname -i | perl -MList::Util=first -e 'chomp($a=<STDIN>); print first{/site_perl/ and not /$a/}@INC'`/VCtools
+	#chmod g+w `uname -i | perl -MList::Util=first -e 'chomp($a=<STDIN>); print first{/site_perl/ and not /$a/}@INC'`/VCtools
+	#sudo mkdir -p /usr/local/etc/VCtools /usr/local/VCtools
+	#sudo chgrp dev /usr/local/etc/VCtools /usr/local/VCtools
+	#sudo chmod g+w /usr/local/etc/VCtools /usr/local/VCtools
+	#cp ~/common/machinelocal/VCtools.conf /usr/local/etc/VCtools
+	#~/common/machinelocal/vctools-init-install
+
+		| # this is now handled with a symlink, and `makeln` should create that
+		| ---------------------------------------------------------------------
+		| mkdir -p ~/local/data/themes
+		| cp -r ~/common/local/axis/data/themes/Mint-Merlot ~/local/data/themes
+		| ln -s ~/local/data/themes ~/.themes
+
+	# re-enable cronjobs if you commented them out above
+

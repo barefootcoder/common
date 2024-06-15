@@ -1,0 +1,48 @@
+as buddy:
+
+	wget -O - http://install.perlbrew.pl | bash
+	resrc
+	pbinst 5.14.4
+	perlbrew switch 5.14.4
+	perlbrew install-cpanm
+	perlbrew install-cpm
+	cpanm -n local::lib
+	cpanm -n List::Util
+
+	cd ~/proj/VCtools
+	mkdir /var/tmp/VCtools-extlib
+	bin/vctools-prereq-verify
+		# you *may* have to do these manually:
+		cpanm -n -L extlib Any::Moose@0.26
+		cpanm -n -L extlib App::Cmd@0.331
+		# then do this again
+		bin/vctools-prereq-verify
+	# test it
+	bin/vc stat
+
+		| # don't do this any more
+		| podselect -section PREREQS `perlfind -f myperl` | grep '^[a-zA-Z]' | cpanm -n
+	# do this instead:
+	cd ~/common
+	myperl-cpm bootstrap
+	myperl-cpm myperl
+	myperl-cpm support
+	# probably need these
+	myperl-cpm pb
+	myperl-cpm vctools
+	myperl-cpm xrestore
+	myperl-cpm build
+	# might need these
+	myperl-cpm music
+	myperl-cpm blog
+	myperl-cpm bank
+	# probably don't need these
+	myperl-cpm onyx
+	myperl-cpm heroscape
+	myperl-cpm html2bbcode
+	myperl-cpm carp
+	myperl-cpm myperl-google
+	myperl-cpm dropbox
+	myperl-cpm todo
+	myperl-cpm old-barefoot
+

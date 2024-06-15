@@ -1,0 +1,50 @@
+in X-Windows:
+
+	make touchpad less sensitive
+	make sure computer won't hibernate if plugged in
+
+		| # probably unnecessary
+		| To get grip installed:
+		| 	as root:
+		| 		apt-get install libgnomeui-dev libvte-dev libcurl4-gnutls-dev
+		| 		cd /var/install
+		| 		tar xvpzf grip-3.3.1.tar.gz					# if necessary
+		| 		cd grip-3.3.1
+		| 		./configure
+		| 		make
+		| 		make install
+
+		| # definitely unnecessary
+		| verify /export/music (should be built already)
+		| configure Decibel
+		| 	Decibel
+		| 		check: Covers
+		| 	Desktop:
+		| 		check: Desktop Notification
+		| 		check: Status Icon
+		| 	Explorer:
+		| 		add /export/music/tracklists to dirs to scan
+		| 	keyboard shortcuts (should be done above)
+		| 		play / pause
+		| 		next track
+		| 		prev track
+		| 		volume up
+		| 		volume down
+
+	install alarm-clock-applet
+		edit alarm
+		set sound file to wind chimes
+			(look in local/data/sounds)
+
+	install fonts
+		as buddy:
+			addfont /export/backup/install/fonts/*
+
+	organize folders in Open File dialogs:
+		/tmp
+		/var/install
+		~/work								# work machine only
+		~/workproj/CE-mounted/tmp			# work machine only
+		/export/music
+		/home/buddy/rpg/5e					# personal machine only
+

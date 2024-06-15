@@ -1,0 +1,46 @@
+as buddy:
+	# whinges when run as root
+	curl -L https://bit.ly/glances | /bin/bash
+		(voluminous output)
+
+as root:
+	~buddy/common/root/psync
+	mv ~/.bashrc ~/.bashrc-orig
+	cd common
+	./makeln
+	source ~/.bashrc
+	chmod o+x ~
+
+	packages installed from /var/install:
+	(either d/l fresh or copy from backed up)
+		apt -f install
+		apt install /var/install/`ls -t1 /var/install | grep -i spider | head -n1`
+			| # decibel doesn't seem to work any more ...
+			| # decibel install (as per:)
+			| # https://forums.linuxmint.com/viewtopic.php?t=227609
+			| # plus a lot of manual tweaking as more and more packages become obsolete
+			| apt-get install python-gnome2
+			| dpkg --install /var/install/libx264*
+			| dpkg --install /var/install/libcdio13*
+			| dpkg --install /var/install/libgstreamer0.10-0*
+			| dpkg --install /var/install/libgstreamer-plugins-base0.10-0*
+			| dpkg --install /var/install/gstreamer*
+			| dpkg --install /var/install/python-gst0.10*
+			| dpkg --install /var/install/python-imaging*
+			| apt-get -f install
+			| dpkg --install /var/install/decibel*
+		# if using clementine instead of decibel or grip
+		apt install clementine qttools5-dev-tools qdbus-qt5
+			| # Firefox should no longer be necessary
+			|	# Firefox is tricky
+			|	apt-get remove firefox
+			|	mv /usr/lib/firefox /usr/lib/firefox-remnants
+			|	cd /var/install
+			|	tar xvpjf firefox-44.*
+			|	mv firefox /usr/lib
+			|	cp -pr /usr/lib/firefox-remnants/* /usr/lib/firefox
+			|	ln -s /usr/lib/firefox/firefox /usr/bin/firefox
+			| in X-Windows:
+			|	change Firefox launcher command line:
+			|		/usr/lib/firefox/firefox
+

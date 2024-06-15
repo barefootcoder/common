@@ -1,0 +1,132 @@
+in X-Windows:
+
+	main menu / Control Center / Hardware / Keyboard Shortcuts
+		Desktop
+			launch calc (Meta-C)
+			show the panel's main menu (Meta-Esc)
+			run a terminal (Meta-T)
+		Window Management
+			move between windows immediately (Meta-Tab)
+			switch to workspaces (Ctrl-Alt-1&c)
+			switch to workspace above / below <DISABLE!>
+
+as Buddy:
+
+	~/common/setup/dconf-load-custom
+
+in X-Windows:
+
+		| # MAY not be necessary after using `dconf-load-custom`
+		main menu / Control Center / Hardware / Keyboard
+			Layouts / Options
+				Alt and Win key behavior: Meta is mapped to Win
+				Position of Compose Key: Caps Lock
+
+		| # these are definitely superseded by `dconf-load-custom`
+		|	Add
+		|		Twiddle Monitors
+		|			mate-display-properties (Meta-D)
+		|		Volume Properties
+		|			mate-volume-control (Meta-V)
+		|		Middle Click
+		|			xdotool click 2 (Meta-KPEnter)
+		|		Restack Comms Windows
+		|			/home/buddy/bin/win-stack-comms --restack (Meta-W)
+		|		Window Screenshot
+		|			mate-screenshot -w (Meta-Print)
+		|		Clementine Pause/Play
+		|			/usr/bin/clementine -t (Meta-Space)
+		|		Clementine Next Track
+		|			/usr/bin/clementine --next (Meta-Right)
+		|		Clementine Prev Track
+		|			/usr/bin/clementine --previous (Meta-Left)
+		|		Music Player Volume Up
+		|			/home/buddy/bin/music-player-volume up (Meta-Up)
+		|		Music Player Volume Down
+		|			/home/buddy/bin/music-player-volume down (Meta-Down)
+
+	install alarm-clock-applet
+		edit alarm
+		set sound file to wind chimes
+			(look in local/data/sounds)
+
+	set desktop background
+	setup theme
+		main menu / Control Center / Look and Feel / Appearance
+			Customize
+				Controls
+					Mint-Y-Dark-Pink
+				Window Border
+					Mint-Y-Dark
+				Icons
+					Mint-Y-Dark-Purple
+				Pointer
+					DMZ (white)
+	add top panel (right click bottom panel, New Panel)
+		set properties (right click top panel, Properties)
+			General
+				Orientation: Top
+				Autohide : off
+		# necessary? ----v
+			Background:
+				Solid color : #000000
+				Style: completely Opaque
+	move main menu, notification tray, and clock to top panel
+		right click
+		uncheck Lock to Panel
+		move (middle click and drag)
+		right click
+		check Lock to Panel
+			| # no longer necessary; handled by `dconf-load-common`
+			| for clock:
+			|	right click, Preferences
+			|		12 hour format
+			|		Show seconds
+
+	change wording/icon on main menu (right click, Preferences, General, Menu Button)
+		Button text: <hostname>
+		Button icon:
+				linuxmint-logo-ring-symbolic		[for work]
+				linuxmint-logo-leaf					[for personal]
+	add to top (right click, add to panel)
+		Hardware Sensors Monitor
+		right click, Preferences
+			General Options
+				Temperature scale: Fahrenheit
+	add to bottom (right click, add to panel)
+		Workplace Switcher
+		right click, Preferences
+			names:
+				Main / Comms / Music / Personal		[for work]
+				Main / Media / Music / Gaming		[for personal]
+			check Show workplace names
+	add launchers to top (ctrl-click in main menu and drag to top panel)
+		Vivaldi
+		<space>
+		Google Chrome
+		Google Sheets
+			copy (ctrl-click + drag-n-drop) Chrome icon
+			right click, Properties
+				Name: Google Sheets
+				Command: /usr/bin/google-chrome-stable --user-data-dir=/home/buddy/.config/google-chrome-gsheets
+				Comment: Use chrome to access Google Sheets in a separate profile
+				Icon: /usr/share/icons/Mint-X/apps/48/libreoffice3-calc.png
+		Text Editor
+		<big space>
+		right click, Add to Panel, Custom Application Launcher:
+			Type: Application
+			Name: Restack Comms Windows
+			Command: /home/buddy/bin/win-stack-comms --restack
+			Icon: /usr/share/icons/oxygen/base/32x32/emblems/image-stack.png
+		right click, Add to Panel, Custom Application Launcher:
+			Type: Application
+			Name: Reset Window Manager
+			Command: marco --replace
+			Icon: /usr/share/icons/mate/scalable/apps/mate-desktop.svg
+		right click, Add to Panel, Custom Application Launcher:
+			Type: Application
+			Name: Fix Mate Settings
+			Command: /home/buddy/bin/fix-mate
+			Icon: /usr/share/icons/Mint-X/apps/96/mdmsetup.svg
+		get rid of other launchers (show desktop, etc)
+

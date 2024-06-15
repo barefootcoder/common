@@ -1,0 +1,143 @@
+#! /bin/bash
+
+								dconf load /org/mate/desktop/keybindings/		<<.
+[custom1]
+action='mate-display-properties'
+binding='<Mod4>d'
+name='Twiddle Monitors'
+
+[custom2]
+action='mate-volume-control'
+binding='<Mod4>v'
+name='Volume Properties'
+
+[custom3]
+action='blueberry'
+binding='<Mod4>b'
+name='Bluetooth Settings'
+
+[custom4]
+action='xdotool click 2'
+binding='<Mod4>KP_Enter'
+name='Middle Click'
+
+[custom5]
+action='/home/buddy/bin/win-stack-comms --restack'
+binding='<Mod4>w'
+name='Restack Comms Windows'
+
+[custom6]
+action='mate-screenshot -w'
+binding='<Mod4>Print'
+name='Window Screenshot'
+
+[custom7]
+action='/usr/bin/clementine -t'
+binding='<Mod4>space'
+name='Clementine Pause/Play'
+
+[custom8]
+action='/usr/bin/clementine --next'
+binding='<Mod4>Right'
+name='Clementine Next Track'
+
+[custom9]
+action='/usr/bin/clementine --previous'
+binding='<Mod4>Left'
+name='Clementine Prev Track'
+
+[custom10]
+action='/home/buddy/bin/music-player-volume up'
+binding='<Mod4>Up'
+name='Music Player Volume Up'
+
+[custom11]
+action='/home/buddy/bin/music-player-volume down'
+binding='<Mod4>Down'
+name='Music Player Volume Down'
+
+[custom12]
+action='/usr/bin/xdotool key --delay 50 ctrl+l alt+Left shift+F6'
+binding='<Alt><Mod4>Left'
+name='Previous Tab in Google Sheets'
+
+[custom13]
+action="bash -c 'sleep .1 && xdotool type :'"
+binding='<Shift>KP_Delete'
+name='Keypad Colon'
+
+[custom14]
+action='/home/buddy/bin/launch-perl show-desktop PREVIOUS'
+binding='<Primary><Alt>Up'
+name='Previous Desktop'
+
+[custom15]
+action='/home/buddy/bin/launch-perl show-desktop caemlyn'
+binding='<Primary><Alt>c'
+name='Caemlyn Desktop'
+
+[custom16]
+action='/home/buddy/bin/launch-perl show-desktop zadash'
+binding='<Primary><Alt>z'
+name='Zadash Desktop'
+
+[custom17]
+action='/home/buddy/bin/launch-perl show-desktop avalir'
+binding='<Primary><Alt>a'
+name='Avalir Desktop'
+
+[custom18]
+action='/home/buddy/bin/launch-perl show-desktop haven'
+binding='<Primary><Alt>h'
+name='Haven Desktop'
+.
+
+								dconf load /org/mate/desktop/peripherals/		<<.
+[keyboard]
+numlock-state='on'
+
+[keyboard/kbd]
+options=['altwin\taltwin:left_meta_win', 'Compose key\tcompose:caps']
+
+[mouse]
+accel-profile='default'
+cursor-size=24
+cursor-theme='DMZ-White'
+motion-acceleration=7.2465753424657535
+
+[touchpad]
+disable-while-typing=true
+motion-acceleration=6.3933823529411766
+natural-scroll=false
+tap-to-click=false
+three-finger-click=2
+two-finger-click=3
+vertical-edge-scrolling=false
+vertical-two-finger-scrolling=false
+.
+
+								dconf load /org/mate/marco/						<<.
+[global-keybindings]
+cycle-windows='<Mod4>Tab'
+panel-main-menu='<Mod4>Escape'
+run-command-terminal='<Mod4>t'
+switch-to-workspace-1='<Primary><Alt>1'
+switch-to-workspace-2='<Primary><Alt>2'
+switch-to-workspace-3='<Primary><Alt>3'
+switch-to-workspace-4='<Primary><Alt>4'
+switch-to-workspace-down='disabled'
+switch-to-workspace-right='<Primary><Alt>Right'
+switch-to-workspace-up='disabled'
+.
+
+								dconf load /org/mate/panel/objects/clock/		<<.
+[prefs]
+cities=['<location name="" city="Simi Valley" timezone="America/Los_Angeles" latitude="34.366669" longitude="-118.566666" code="K3A6" current="true"/>']
+custom-format=''
+expand-locations=false
+format='12-hour'
+show-seconds=true
+show-week-numbers=false
+speed-unit='mph'
+temperature-unit='Fahrenheit'
+.

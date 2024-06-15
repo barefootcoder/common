@@ -1,0 +1,39 @@
+as root:
+	cp ~buddy/common/setup/syncthing.service /etc/systemd/system/syncthing.service
+	systemctl daemon-reload
+	systemctl enable syncthing
+	systemctl start syncthing
+	chgrp sudo /export
+	chmod 775 /export
+
+		| # shouldn't need to do this
+		| echo 500000 >/proc/sys/fs/inotify/max_user_watches
+	echo "fs.inotify.max_user_watches = 500000" >>/etc/sysctl.conf
+	sysctl -p
+	# verify that it worked
+	cat /proc/sys/fs/inotify/max_user_watches
+
+as buddy:
+	cd /export
+	mkdir backup personal proj music work rpg
+	sudo chgrp users backup personal proj music work rpg
+	chmod g+s backup personal proj music work rpg
+
+in browser:
+	http://localhost:8384
+	<set up authentication (copy password from NAS)>
+	<set theme to dark>
+	Actions / Advanced Settings:
+		Default Ignore Patterns:
+			lost+found
+			*.sw?
+	Add Device (any master copy)
+	foreach (backup personal proj music work rpg):
+		Add Folder
+			General:
+				Label: <name>
+				ID: export-<name>
+				Path: /export/<name>
+			Advanced:
+				File Pull Order: Smallest First
+

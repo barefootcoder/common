@@ -1,0 +1,22 @@
+as root:
+		| # no longer necessary
+		| passwd buddy
+	groupadd -g502 dev
+	usermod -g100 -aG users,dev,sudo buddy
+	chsh -s /bin/tcsh buddy
+	visudo
+		%sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+	/usr/bin/perl -MCPAN -e shell
+		install CPAN
+		reload cpan
+		install local::lib
+		install IPC::System::Simple
+		install Path::Class
+		install Path::Tiny
+		install Const::Fast
+		install Time::ParseDate
+		install Shell::Guess
+		install Shell::Config::Generate
+			| # no longer necessary
+			| install Carp::Always
+

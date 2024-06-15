@@ -1,0 +1,16 @@
+Performance enhancements:
+	swappiness (as root):
+		# check current setting
+		cat /proc/sys/vm/swappiness
+		# it's probably 60, so crank it down significantly
+		echo vm.swappiness = 10 >>/etc/sysctl.conf
+		sysctl vm.swappiness=10
+	power management
+		https://itsfoss.com/reduce-overheating-laptops-linux/
+		http://www.makeuseof.com/tag/easily-increase-battery-life-tlp-linux/
+		as root:
+			add-apt-repository ppa:linrunner/tlp
+			apt-get update
+			apt-get install tlp tlp-rdw
+			tlp start
+

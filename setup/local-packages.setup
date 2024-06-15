@@ -1,0 +1,92 @@
+add repo's/ppa's
+	# might need to change "bionic" to something newer below
+	cd /etc/apt/sources.list.d/
+	add-apt-repository ppa:git-core/ppa
+	curl https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor >/etc/apt/trusted.gpg.d/google-chrome.gpg
+	# note that the "amd64" below is deliberate ... "x86_64" doesn't work
+	echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >google-chrome.list
+	curl https://repo.vivaldi.com/archive/linux_signing_key.pub | gpg --dearmor >/etc/apt/trusted.gpg.d/vivaldi.gpg
+	echo "deb https://repo.vivaldi.com/archive/deb/ stable main" >/etc/apt/sources.list.d/vivaldi.list
+	curl -s https://syncthing.net/release-key.txt | gpg --dearmor >/usr/share/keyrings/syncthing-archive-keyring.gpg
+	echo "deb [signed-by=/usr/share/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable" >/etc/apt/sources.list.d/syncthing.list
+	apt update
+
+	| # not sure what this was for, but it appears to be empty these days
+	| add-apt-repository ppa:malteworld/ppa
+
+packages to install:
+	apt install rxvt-unicode tcsh screen vim perl-doc openssh-server sshfs
+	apt install libssl-dev libexpat1-dev libxml2-dev libgtop2-dev libpurple-dev git
+	apt install gcal xclip fortune-mod gimp ack xdotool curl g++ iotop lzop pdftk fd-find
+	apt install google-chrome-stable vivaldi-stable syncthing mate-sensors-applet font-manager oxygen-icon-theme
+		| # no longer required
+		| task
+		| ntp
+		| ntpdate
+		| subversion
+		| realpath
+		| google-talkplugin
+		| dropbox
+		| synergy
+	<get NoMachine .deb from /var/install on an existing machine>
+	apt install /var/install/nomachine*.deb
+
+install music packages:
+	apt install kid3 picard cdparanoia lame sox libsox-fmt-mp3 bpm-tools
+
+package diversions:
+	# make sure these are necessary!  try `type fd` as root
+	dpkg-divert --local --divert /usr/bin/fd --rename --add /usr/bin/fdfind
+	dpkg-divert --local --divert /usr/share/man/man1/fd.1p.gz --rename --add /usr/share/man/man1/fdfind.1p.gz
+		| # these appear to be no longer necessary
+		| dpkg-divert --local --divert /usr/bin/ack --rename --add /usr/bin/ack-grep
+		| dpkg-divert --local --divert /usr/share/man/man1/ack.1p.gz --rename --add /usr/share/man/man1/ack-grep.1p.gz
+
+in X-Windows:
+	Administration / Driver Manager
+		set to proprietary drivers (in particular Nvidia)
+
+# prettier diff highlighting for git
+as root:
+	function discover-diff-highlight
+	{
+		for file in $(dpkg -L git | grep diff-highlight)
+		do  
+			local found=
+			if [[ $(basename $file) == "diff-highlight" ]]
+			then
+				found=$file
+				if [[ -f $file ]]
+				then
+					# no need to keep looking ...
+					break
+				fi
+			fi
+			if [[ $found ]]
+			then
+				if [[ -d "$found" ]]
+				then
+					# got the directory, but not the script ... maybe we need to make it?
+					if [[ -r "$found/Makefile" ]]
+					then
+						( cd "$found/" ; make )
+					fi                                                                                           
+					local newmade="$found/diff-highlight"                                                        
+					if [[ -f "$newmade" ]]                                                                       
+					then
+						found=$newmade
+					fi
+				fi
+				if [[ -f $found ]]
+				then
+					# make sure it's executable; inexplicably, it often isn't
+					chmod +x $found
+					# now stick it in the path
+					ln -s $found /usr/local/bin
+					break
+				fi
+			fi
+		done
+	}
+	discover-diff-highlight
+

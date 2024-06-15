@@ -1,0 +1,120 @@
+as root:
+	apt install pidgin pidgin-data pidgin-guifications pidgin-plugin-pack
+	apt install libpurple-dev libjson-glib-dev libglib2.0-dev libprotobuf-c-dev protobuf-c-compiler
+	cd /var/install/
+	git clone https://github.com/EionRobb/purple-googlechat/
+	cd purple-googlechat/
+	make
+	make install
+	cd /var/install/
+	git clone https://github.com/dylex/slack-libpurple.git
+	cd slack-libpurple/
+	make
+	make install
+
+as buddy:
+	rsync -a <oldmachine>:.purple/ .purple/
+
+in X-Windows:
+
+	configure Pidgin (may not be necessary if `~/.purple` was `rsync`ed):
+	|	turn on plugins (may not be necessary if `~/.purple` was `rsync`ed):
+	|		Autoaccept
+	|		Highlight
+	|			buddy barefoot
+	|		History
+	|		Join/Part Hiding
+	|		Markerline
+	|			uncheck "IM windows"
+	|			check "Chat windows"
+	|		Message Notification
+	|			check "IM windows"
+	|			uncheck "System messages"
+	|			check "Chat windows" and "Only when someone says your username"
+	|			check "Prepend string into window title:" "(*)"
+	|			check "Insert count of new messages into window title"
+	|		Message Timestamp Formats
+	|			Conversations: "Always"
+	|			Message Logs: "Always"
+	|		Nicksaid
+	|			Highlight: "buddy barefoot barefootcoder"
+	|		Offline Message Emulation
+	|	Tools / Preferences
+	|		Interface
+	|			Show system tray icon: Always
+	|			Show IMs and chats in tabbed windows (off)
+	|			Close conversations with the Escape key (off)
+	|		Browser
+	|			Browser: Firefox
+	|		Conversations
+	|			Show formatting on incoming messages (off)
+	|			Hightlight misspelled words (off)
+	|		Logging
+	|			Log format: Plain text
+	|			Log all status changes to system log
+	|		Status / Idle
+	|			Status at Startup: Available
+	|		Themes
+	|			Smiley Theme: none
+	|	Tools / Plugins
+	|		History
+	|		Message Notification
+	|			Chat windows
+	|				Only when someone says your username
+	|			Insert count of new messages into window title
+	|			Present conversation window
+
+	install Thunderbird (if not already installed)
+		may have to install v102.15.1 (see /var/install)
+	View / Toolbars / Menu Bar
+	View / Layout / Message Pane (off)
+		{alternative to below: http://superuser.com/questions/470532/thunderbird-export-email-account-settings}
+	Edit / Preferences
+		General
+			When Thunderbird launches, ... (off)
+			Play a sound (off)
+		Display
+			Formatting
+				Display emoticons as graphics (off)
+			Advanced
+				Open messages in: A new message window
+				Close message window/tab on move or delete
+				Show only display name ... (off)
+		Composition
+			Addressing
+				Automatically add outgoing email addresses ... (off)
+			Spelling
+				Enable spell check as you type (off)
+		Privacy
+			Accept 3rd party cookies: Never
+			Tell sites I do not want to be tracked
+		Security
+			Junk
+				When I mark messages as junk: Delete them
+				Enable adaptive junk filter logging
+		Advanced
+			about:config
+				mail.tabs.autoHide : true
+				mail.compose.wrap_to_window_width : true
+	Account Settings
+		Account Name
+		Organization
+		Copies & Folders
+			Place a copy in: Inbox
+			Place replies in the folder of the message being replied to
+			Keep message archives in (off)
+		Composition & Addressing
+			Compose messages in HTML format (off)
+	Customize Toolbar
+		fiddle with icons
+		turn off quick filter bar
+	Add-ons
+		Nostalgy
+			Completion
+				Restrict folder completion to the current server
+				Match only on folder name, not the full path
+				Match only the prefix of folder path or name, not any substring
+				Sort folders alphabetically
+				Match folder names in a case sensitive way
+				Tab triggers shell-like completion
+
