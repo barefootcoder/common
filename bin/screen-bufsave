@@ -15,9 +15,21 @@ opts <<'-';
 	-q : be quieter than usual
 	-n : don't actually do it (do a dry-run)
 	-A : save all windows (except for useless ones)
+	-C : do `screen-cleanup` first, if necessary
 	-D : debug mode
 	<name>  : name of window in `screen` to save
 -
+
+if ($OPT{C})
+{
+	const my $MAX_SCREEN_PROCS => 20;
+	# instead of `wc -l`, we can just stick the ouptut into an array and count the elements
+	my $num_procs = scalar (my @wc_l = sh(pgrep => -f => 'screen'));
+	if ($num_procs >= $MAX_SCREEN_PROCS)
+	{
+		$OPT{q} ? sh('screen-cleanup', '>/dev/null') : sh('screen-cleanup');
+	}
+}
 
 if ($OPT{A})
 {
