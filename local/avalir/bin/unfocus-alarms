@@ -1,0 +1,10 @@
+#! /bin/bash
+
+xdotool=/usr/bin/xdotool
+xprintidle=/usr/bin/xprintidle
+pgrep=/usr/bin/pgrep
+
+if [[ $($xprintidle) -ge 250 && $($xdotool getwindowfocus getwindowname) == "Alarms" ]]
+then
+	$xdotool windowactivate $($xdotool search --desktop 2 --pid $($pgrep 'clementine$'))
+fi
