@@ -44,7 +44,9 @@ elsif ($OPT{A})
 	{
 		say "recommend removing:"; say "  $_" foreach @to_rm;
 		my $saved = sum map { -s $_ } @to_rm;
-		say "would save: ~", int($saved / 1024) + 1, "kb";
+		my $disp_saved = int($saved / 1024) + 1;
+		   $disp_saved = $disp_saved >= 10_000 ? int($disp_saved / 1024 + .5) . "mb" : $disp_saved . "kb";
+		say "would save: ~$disp_saved";
 		if (confirm "remove all recommended files?")
 		{
 			unlink @to_rm;
