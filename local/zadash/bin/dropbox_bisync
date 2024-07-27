@@ -1,0 +1,73 @@
+#!/bin/bash
+
+LOG_DIR="$HOME/local/data/logs"
+LOG_FILE="$LOG_DIR/dropbox_sync.log"
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
+
+# Function to display help
+show_help() 
+{
+    echo "Usage: $0 [-p] [-h]"
+    echo "  -p    Pretend mode: show what would be done without making changes"
+    echo "  -h    Show this help message"
+}
+
+# Function to perform bidirectional sync
+sync_bidirectional() 
+{
+    if [[ "$1" == "pretend" ]]
+    then
+        unison dropbox
+    else
+        echo "Starting bidirectional sync at $(date)" >> "$LOG_FILE"
+        if unison dropbox -batch -terse
+        then
+            echo "Sync completed successfully at $(date)" >> "$LOG_FILE"
+        else
+            echo "Sync failed at $(date)" >> "$LOG_FILE"
+        fi
+    fi
+}
+
+# Parse command line options
+pretend_mode=false
+while getopts ":ph" opt
+do
+    case ${opt} in
+        p)  pretend_mode=true
+            ;;
+        h)  show_help
+            exit 0
+            ;;
+        \?) echo "Invalid option: $OPTARG" 1>&2
+            show_help
+            exit 2
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Perform an initial sync or show pretend output
+if $pretend_mode
+then
+    sync_bidirectional "pretend"
+    exit 0
+fi
+
+sync_bidirectional
+
+# Monitor both directories for changes
+inotifywait -m -r -e modify,create,delete,move,close_write --format '%w%f' \
+    /home/buddy/Dropbox /export/personal/Dropbox 2>> "$LOG_FILE" |
+while read -r changed_file
+do
+    echo "Change detected in file: $changed_file at $(date)" >> "$LOG_FILE"
+    
+    # Wait for a short period to allow for multiple rapid changes
+    sleep 5
+
+    # Perform the sync
+    sync_bidirectional
+done

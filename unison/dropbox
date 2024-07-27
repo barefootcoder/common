@@ -1,0 +1,44 @@
+# Roots of the synchronization
+root = /home/buddy/Dropbox
+root = /export/personal/Dropbox
+
+# Some regexps specifying names and paths to ignore
+ignore = Name temp.*
+ignore = Name .*~
+ignore = Name *.tmp
+ignore = Name .dropbox.cache
+
+# Log actions
+log = true
+
+# Sync option
+# If a file has been changed, propagate the change in both directions
+# without asking for confirmation
+auto = true
+
+# Fast checking by looking at file modification times
+fastcheck = true
+
+# Preserve file permissions
+perms = -1
+
+# Prefer the newer version of a file in case of conflict
+prefer = newer
+
+# Maximum number of simultaneous file transfers
+maxthreads = 6
+
+# Retry synchronization a few times for temporary failures
+retry = 3
+
+# Case sensitive
+ignorecase = false
+
+# Don't follow symlinks, copy them as symlinks
+links = false
+
+# Sort files by size, transferring smallest first
+sortbysize = true
+
+# Don't ask about identical files
+confirmbigdel = false

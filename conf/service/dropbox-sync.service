@@ -1,0 +1,12 @@
+[Unit]
+Description=Bidirectional Dropbox to Shares Sync Service
+After=network.target
+
+[Service]
+ExecStart=/home/buddy/local/bin/dropbox_bisync
+Restart=always
+User=buddy
+Group=buddy
+
+[Install]
+WantedBy=multi-user.target

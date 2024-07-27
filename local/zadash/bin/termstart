@@ -4,8 +4,6 @@
 ssh-add-if-necessary
 ssh-add -l
 
-color_msg_block $YELLOW "Show alarm clock applet!"
-
 if dropboxd status | grep -q 'not running'
 then
 	if ! dropboxd start
@@ -17,9 +15,6 @@ then
 	fi
 fi
 
-#cd $CHEOPSROOT
-#vagrant up
-
 if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"
@@ -27,15 +22,4 @@ else
 	cmd="screen -S base"
 fi
 
-music-player
-xrestore -desktop Music -geometry 1200x798+716+254 kid3
-
 myterm -s Zadash night-in-zadash 125x50+7+30 $cmd
-myterm -s Caemlyn sunset-capital 125x50-10-40 ssh caemlyn
-myterm -D Main -s -S Haven haven-fortress 125x50+478-34 ssh haven
-myterm -D Media -s -S Avalir avalir-on-fire 125x50-24+72 ssh avalir
-
-xrestore -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet --hidden"
-
-# some windows are just stubborn ...
-xdotool search --name "Thunderbird" set_desktop_for_window 1
