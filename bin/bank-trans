@@ -569,6 +569,12 @@ foreach (@transactions)
 			$category = "Personal";
 			$who = 'Buddy';
 		}
+		when ( /GOOGLE.*Toca Bo/i )
+		{
+			$what = 'Toca Boca';
+			$category = "Personal";
+			$who = 'Merrick';
+		}
 		when ( /(Knit(Crate|Picks))/i )
 		{
 			($what = lc $1) =~ s/knit(.)/'Knit' . uc $1/ie;
