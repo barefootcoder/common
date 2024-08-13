@@ -220,6 +220,18 @@ sub msg
 }
 
 
+sub _unquote
+{
+	local $_ = shift;
+	s/^"//; s/"$//;				# remove the quotes, fore and aft
+	s/\\"/"/g;					# quoted filenames might contain double quotes; unescape the internal quotes
+	return $_;
+}
+sub _prepend_modtime
+{
+	local $_ = _unquote(shift);
+	return join("\t", lstat($_)->mtime, $_);
+}
 sub build_times
 {
 	my @files;
@@ -227,15 +239,37 @@ sub build_times
 	$recursed->prefix($REPO_ROOT);
 	foreach (bash \lines => $GIT => status => '--porcelain')
 	{
-		next if /^\?\?/ and not $OPT->{untracked};
+		my ($status, $file, $rename_or_copy) = /^ (..) \s (.*?) (?: \s->\s (.*) )? $/x
+				or die("cannot parse `git status` line: |$_|");
+		next if $status eq '??' and not $OPT->{untracked};
 		# if it's _marked_ deleted, and it's actually gone, there's no need to try to save its time
-		next if ( /^D/ or /^.D/ ) and not -e $_;
-		s/^...//;				# remove status (we don't care)
-		s/ -> .*$//;			# don't care what a symlink points to either
-		s/^"//; s/"$//;			# handle quoted files (quoting would be redundant for us)
-		s/\\"/"/g;				# filenames containing double quotes would have been quoted; unescape the internal quotes
-		# dirs we handle below; files we just take care of right here
-		-d $_ ? $recursed->add($_) : push @files, join("\t", lstat($_)->mtime, $_);
+		if ( $status =~ /D/ and not -e $file )
+		{
+			next;
+		}
+		elsif ( $status =~ /R/ and not -e $file )	# meaning $file was renamed to $rename_or_copy
+		{
+			-e $rename_or_copy or die("unexpectedly missing object of rename ($file)");
+			push @files, _prepend_modtime($rename_or_copy);
+		}
+		elsif ( $status =~ /C/ )					# meaning $file was copied to $rename_or_copy
+		{
+			# probably only need to save the copy, but better safe than sorry
+			push @files, _prepend_modtime($file);
+			push @files, _prepend_modtime($rename_or_copy);
+		}
+		elsif ( $rename_or_copy )
+		{
+			die("don't know what the -> target means: |$_|");
+		}
+		elsif ( -d $file )							# dirs we handle below
+		{
+			$recursed->add($file);
+		}
+		else										# just a regular file
+		{
+			push @files, _prepend_modtime($file);
+		}
 	}
 
 	# recursively get all files under untracked directories
