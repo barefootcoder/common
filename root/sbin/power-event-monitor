@@ -1,0 +1,27 @@
+#!/bin/bash
+
+LOG_FILE="/var/log/power-events.log"
+
+function log_event
+{
+    echo "$(date): $1" >> $LOG_FILE
+}
+
+previous_state=$(cat /sys/class/power_supply/AC/online)
+log_event "Power Event Monitor started. Initial state: AC $([ "$previous_state" -eq 1 ] && echo 'connected' || echo 'disconnected')"
+
+while true
+do
+    current_state=$(cat /sys/class/power_supply/AC/online)
+    if [ "$current_state" != "$previous_state" ]
+    then
+        if [ "$current_state" -eq 1 ]
+        then
+            log_event "AC power connected"
+        else
+            log_event "AC power disconnected"
+        fi
+        previous_state=$current_state
+    fi
+    sleep 60
+done

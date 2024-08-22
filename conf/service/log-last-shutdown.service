@@ -1,0 +1,10 @@
+[Unit]
+Description=Log Last Shutdown Reason
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'journalctl -b -1 -n 50 | grep -i "shutdown\|poweroff\|reboot" >> /var/log/last_shutdown.log || echo "No shutdown info found in previous boot" >> /var/log/last_shutdown.log'
+
+[Install]
+WantedBy=multi-user.target

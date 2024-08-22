@@ -10,6 +10,9 @@ LOG_TIME=$(date +"%Y%m%d-%H%M")
 # Filename pattern
 LOG_FILE=$LOG_DIR/$LOG_TIME.log
 
+# Counter file for less frequent checks
+COUNTER_FILE=/tmp/system_monitor_counter
+
 # Function to log messages
 function log
 {
@@ -22,11 +25,45 @@ function run_command
     bash -c "$*" >>$LOG_FILE 2>&1 || log "Error: Failed to get results [$1]"
 }
 
+# Function to run less frequent checks
+function run_less_frequent_checks
+{
+    log "=== Less Frequent Checks ==="
+
+    log "=== Disk Health (S.M.A.R.T.) ==="
+    run_command "smartctl -a /dev/nvme0n1 | grep -E 'SMART overall-health|Temperature:|Percentage Used|Data Units Written'"
+
+    log "=== Detailed Temperature Readings ==="
+    run_command "sensors"
+
+    log "=== Detailed Process Information ==="
+    run_command "ps -eo %cpu,%mem,cmd --sort=-%cpu | head -n 10"
+}
+
 log "Starting system monitor"
 
-# Collect information
-log "=== Temperature ==="
-run_command "sensors"
+# Increment and read counter
+if [[ -f $COUNTER_FILE ]]
+then
+    COUNTER=$(($(cat $COUNTER_FILE) + 1))
+else
+    COUNTER=0
+fi
+echo $COUNTER > $COUNTER_FILE
+
+# Run less frequent checks every 15 minutes (15 * 60 seconds / 60 seconds per run = 15 runs)
+if [[ $((COUNTER % 15)) -eq 0 ]]
+then
+    run_less_frequent_checks
+fi
+
+# Always collect these metrics
+log "=== CPU Frequencies ==="
+run_command "grep MHz /proc/cpuinfo"
+
+log "=== Power Management Info ==="
+run_command "cat /sys/class/power_supply/AC/online"
+run_command "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor | uniq"
 
 log "=== Battery Status ==="
 run_command "upower -i /org/freedesktop/UPower/devices/battery_BAT0"
@@ -37,12 +74,6 @@ run_command "dmesg | grep i915 | tail -n 10"
 
 log "=== System Load ==="
 run_command "uptime"
-run_command "ps -eo %cpu,%mem,cmd --sort=-%cpu | head -n 5"
-
-log "=== Disk Health ==="
-INTERESTING_ATTRIBS="Temperature:|Percentage Used:|Power On Hours:|Data Units Read:|Data Units Written:"
-INTERESTING_ATTRIBS="$INTERESTING_ATTRIBS|Media and Data Integrity Errors:|Error Information Log Entries:|Unsafe Shutdowns:"
-run_command "smartctl -x /dev/nvme0n1 | egrep '$INTERESTING_ATTRIBS'"
 
 log "=== Memory Usage ==="
 run_command "free -h"
@@ -50,19 +81,25 @@ run_command "free -h"
 log "=== Disk Usage ==="
 run_command "df -h"
 
+log "=== Voltage Levels ==="
+run_command "sensors | grep -i 'volt'"
+
 log "=== Service Status ==="
 run_command "systemctl status system-monitor.service"
+
+log "=== Recent ACPI Events ==="
+run_command "journalctl -k | grep -i acpi | tail -n 10"
 
 # Delete old logs:
 log "Cleaning up old logs"
 if [[ $(perl -lne '/^(\d+)/ and print int($1 / 60 / 60)' /proc/uptime) -lt 48 ]]
 then
-	: # The system has been up for less than 2 days; don't clean up anything recent.
+    : # The system has been up for less than 2 days; don't clean up anything recent.
 else
-	# 1: Minutely logs older than 2 hours
-	find $LOG_DIR -type f -not -name '*-??00.log' -mmin +120 -delete || log "Error: Failed to delete old minutely logs"
-	# 2: Hourly logs older than 2 days
-	find $LOG_DIR -type f -not -name '*-0000.log' -mtime +2 -delete || log "Error: Failed to delete old hourly logs"
+    # 1: Minutely logs older than 2 hours
+    find $LOG_DIR -type f -not -name '*-??00.log' -mmin +120 -delete || log "Error: Failed to delete old minutely logs"
+    # 2: Hourly logs older than 2 days
+    find $LOG_DIR -type f -not -name '*-0000.log' -mtime +2 -delete || log "Error: Failed to delete old hourly logs"
 fi
 # 3: Daily logs older than 2 weeks
 find $LOG_DIR -type f -name '*.log' -mtime +14 -delete || log "Error: Failed to delete old daily logs"

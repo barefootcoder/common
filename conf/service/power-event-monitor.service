@@ -1,0 +1,12 @@
+[Unit]
+Description=Power Event Monitor
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/power-event-monitor
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

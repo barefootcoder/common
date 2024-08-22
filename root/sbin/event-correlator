@@ -1,0 +1,30 @@
+#!/bin/bash
+
+LOG_DIR="/var/log/system-monitor"
+CORRELATION_LOG="/var/log/shutdown-correlation.log"
+
+echo "Analyzing logs for the recent shutdown..." >> $CORRELATION_LOG
+echo "Analysis time: $(date)" >> $CORRELATION_LOG
+
+# Get the most recent system-monitor log before the shutdown
+LATEST_LOG=$(ls -t $LOG_DIR/*.log | head -n1)
+
+echo "Last system-monitor log: $LATEST_LOG" >> $CORRELATION_LOG
+echo "Recent system load:" >> $CORRELATION_LOG
+grep "System Load" $LATEST_LOG >> $CORRELATION_LOG
+
+echo "Recent temperatures:" >> $CORRELATION_LOG
+grep -A20 "Temperature Readings" $LATEST_LOG >> $CORRELATION_LOG
+
+echo "Recent ACPI events:" >> $CORRELATION_LOG
+grep -A10 "ACPI Events" $LATEST_LOG >> $CORRELATION_LOG
+
+echo "Recent power events:" >> $CORRELATION_LOG
+tail -n5 /var/log/power-events.log >> $CORRELATION_LOG
+
+echo "Voltage levels:" >> $CORRELATION_LOG
+grep -A5 "Voltage Levels" $LATEST_LOG >> $CORRELATION_LOG
+
+echo "---End of correlation log---" >> $CORRELATION_LOG
+
+echo "Correlation log has been updated at $CORRELATION_LOG"
