@@ -444,7 +444,7 @@ foreach (@transactions)
 	{
 		if ( not is_debit($amount) and $descr ~~ [ qr/Expensify/, qr/OPTUM BANK REIMBUR/, qr/ATM Fee Reimbursement/ ] )
 		{
-			$category = 'Reimburse';
+			$category = $descr =~ /OPTUM/ ? 'HSA to be reimbursed' : 'Reimburse';
 		}
 
 		if ( $descr eq 'PAYPAL INST XFER' and abs($amount) == 5 and date($date)->day <= 5 )
@@ -581,7 +581,7 @@ foreach (@transactions)
 			$category = "Personal";
 			$who = 'Christy';
 		}
-		when ( /SP TM ON THE GO/i )
+		when ( /TM ON THE GO/i )
 		{
 			$what = 'Treasured Memories';
 			$category = "Personal";
