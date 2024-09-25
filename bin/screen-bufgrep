@@ -32,7 +32,7 @@ my (%seen, @results);
 my @switches = $OPT{F} ? qw< -H -Q > : qw< -H >;
 $regex = shq($regex);
 my $cmd = "ack @switches --match $regex $screenbuf_dir/*/$bufs";
-foreach (reverse sh bash => -c => -O => extglob => $cmd)
+foreach (sh bash => -c => -O => extglob => $cmd)
 {
 	# extract the filename and the matching line
 	my ($file, $line) = m{^$screenbuf_dir/(.*?):(?:\d+:)?(.*)$} or die("cannot parse: $_");
@@ -49,6 +49,6 @@ foreach (reverse sh bash => -c => -O => extglob => $cmd)
 		$file .= ':';
 	}
 	# save the line, but only if we haven't already seen it
-	unshift @results, "$file$line" unless $seen{$line}++;
+	push @results, "$file$line" unless $seen{$line}++;
 }
 say foreach @results;

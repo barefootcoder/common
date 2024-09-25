@@ -1,0 +1,45 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $BASEDIR => glob("~/local/data/screen-buflog");				# `glob` to expand the `~`
+
+
+opts <<'-';
+	[-vD] <buf>
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<buf> : buffer to show (must contain date and screen name; `.buf` optional)
+-
+$OPT{v} = 1 if $OPT{D};
+
+my $buf;
+$buf = shift or do
+{
+	-t STDIN and usage_error("must supply buf to display");
+	$buf = <STDIN>;
+	chomp $buf;
+};
+$buf =~ s/:.*$//                           and splain("cut off trailing gobbledygook");
+$buf =~ /\.buf$/ or $buf .= '.buf'         and splain("added `.buf` extension");
+$buf =~ m|^/|    or $buf = "$BASEDIR/$buf" and splain("prepended base dir");
+-f $buf or fatal("no such file: $buf");
+
+
+page($buf);
+
+
+sub splain
+{
+	print STDERR "# @_" if $OPT{D};
+}
+
+# might want to turn this into a common lib function
+sub page
+{
+	my @pager_cmd = $ENV{PAGER} ? split(' ', $ENV{PAGER}) : qw< less -RF >;
+	sh(@pager_cmd => @_);
+}
