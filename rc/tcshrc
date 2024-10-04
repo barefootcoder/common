@@ -168,6 +168,7 @@ alias vims "vim-session"
 alias buf 'rm -f /tmp/tempfile.txt ; vim -c "set paste" -c "set nolbr" -c startinsert /tmp/tempfile.txt'
 alias list "vi -v +'map   '"
 alias less "less -a -x4"
+alias latest '$PAGER `/bin/ls -t1 "\!^"* | head -n1`'
 alias dlocate "locate -be \!* | each -l '[ -d {} ] && echo x'"
 alias xlocate "locate -be \!^ | each -l '[ -f {} -a -x {} ] && echo x'"
 alias xpath "perl -le 'print foreach split(q/:/, @ENV{qw<PATH>})' | each -q 'ls {}/*\!{^}* 2>/dev/null'"
