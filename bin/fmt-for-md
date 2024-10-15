@@ -16,7 +16,7 @@ my $pre_re = qr/^\.$/;
 my $commit_sha_re = qr/\[([0-9a-f]{10})\]/;
 const my $REPO_URL => 'https://github.com/campus-explorer/CE/commit';
 
-my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block
+my $in_pre = 0;					# 0 == not in pre, 1 == indented pre block, 2 == explicit pre block `.`, 3 == explicit ```
 my $in_list = '';				# one char per type of list currently nested in (thus, '' == not in any lists)
 while (<>)
 {
@@ -34,6 +34,17 @@ while (<>)
 			$in_pre = 1;
 		}
 	}
+	elsif ( /^```/ )
+	{
+		if ($in_pre == 3)
+		{
+			$in_pre = 0;
+		}
+		elsif ($in_pre == 0)
+		{
+			$in_pre = 3;
+		}
+	}
 	elsif ($in_pre == 1 and /^$/ or $in_pre == 2 and /$pre_re/ )
 	{
 		$in_pre == 1 ? say '```' : ($_ = "```\n");
@@ -44,7 +55,7 @@ while (<>)
 		$_ = expand($_);
 		s/^    //;
 	}
-	elsif ($in_pre == 2)
+	elsif ($in_pre >= 2)
 	{
 		$_ = expand($_);
 		s/.{125}\K/\n/g if length > 125;
