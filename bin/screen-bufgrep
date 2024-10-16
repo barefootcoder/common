@@ -3,7 +3,7 @@
 use myperl::Pxb;
 use autodie ':all';
 
-const my $PROMPT => '(\[.*?\]|\w+ [~/].*? #|[\w\@]+:[~/].*?\$) ';
+const my $PROMPT => '(\[.*?\]|\w+ [~/].*? #|[\w\@-]+:[~/].*?\$) ';
 
 
 opts <<'-';
