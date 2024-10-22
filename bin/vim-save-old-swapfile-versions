@@ -9,7 +9,8 @@ dir="$2"
 
 base="$(basename "$file")"
 
-list="$( /bin/ls -a1 $(dirname "$file") | grep -P "\.$(basename "$file")([ _].*[cC]onflict.*)?.sw?" )"
+list="$( /bin/ls -a1 $(dirname "$file") | grep -P "\.$(basename "$file")([ _].*[cC]onflict.*)?.sw?" ||: )"
+[[ $list ]]    || die "no swap files for: $file"
 count=$(echo "$list" | wc -l)
 echo "saving $count swap files ..."
 
