@@ -55,4 +55,5 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vLd 'vlog -dR -- --grep \"\!^\" | '"$page_and_hilite"
 	alias vldr 'vlog -sNLDR'
 	alias vls vc ls-mods
+	alias vfc git-find-changesets
 endif

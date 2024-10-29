@@ -1,0 +1,29 @@
+#!/bin/bash
+# Generated with the help of Claude 3.5 Sonnet
+# cf. https://claude.ai/share/0177d9fb-5bfc-4daa-b841-2d3f718cb878
+
+target_commit=$1
+if [[ -z "$target_commit" ]]; then
+   echo "Usage: git find-changesets <commit-sha>" >&2
+   exit 1
+fi
+
+# Get the patch-id for our target commit
+target_patch=$(git format-patch -1 --stdout $target_commit | git patch-id | cut -d' ' -f1)
+if [[ -z "$target_patch" ]]; then
+   echo "Error: Could not generate patch-id for commit $target_commit" >&2
+   exit 1
+fi
+
+# Find commits from around the same timeframe
+commit_date=$(git log -1 --format=%ci "$target_commit")
+search_date=$(date -d "$commit_date - 10 days" +%Y-%m-%d)
+
+git log --all --since="$search_date" --format="%H" | while read commit; do
+   if [ "$(git format-patch -1 --stdout $commit | git patch-id | cut -d' ' -f1)" = "$target_patch" ]; then
+       # Show the commit info in requested format
+       git log -1 --date=human --pretty='%C(auto)%h %ad %s' $commit
+       # Show containing branches, indented by 2 spaces
+       git branch -a --contains $commit | sed 's/^/  /'
+   fi
+done
