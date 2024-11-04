@@ -313,14 +313,10 @@ my %DESCRIPTIONS =
 							qr/CHASE EPAY/i,
 						],
 	'Professional Fees'=>	[
-							qr/HLW Tax/i,
+							qr/Money Illustrate/i,
 							qr/HK Associates/i,
-							qr/Vincere ?Wealth/i,
 						],
 	Medical			=>	[
-							qr/Simi Chiro/i,
-							qr/Family Psych/i,
-							qr/Mojgan Makhsoosi?/i,
 						],
 	Reimburse		=>	[
 							qr/SM City Parking Meters/i,
@@ -332,8 +328,11 @@ my %DESCRIPTIONS =
 						],
 	'HSA to be reimbursed' => [
 							qr/Lifespan/i,
+							qr/Simi Chiro/i,
 							qr/MDLive/i,
 							qr/Rula Health/i,
+							qr/Mojgan Makhsoosi?/i,
+							qr/Family Psych/i,
 						],
 	
 );
@@ -393,6 +392,7 @@ my %WHAT_LOOKUP =
 	'Bao Su a'							=>	'Bao Su a (Chinese food)',
 	'ABACUS CERTIFY'					=>	'Certify (expense reimbursement)',
 	'Disney Plus'						=>	'Hulu et al',
+	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)'
 );
 
 
@@ -430,7 +430,7 @@ foreach (@transactions)
 	my $source = $type;
 	$source = 'BillPay' if $descr =~ /Online Payment/;
 	$source = 'Check' if is_debit($amount) and $descr =~ /check\b.*#?\d/i;
-	$source = 'CC' if $source eq 'Withdrawal';
+	$source = $descr =~ /BK OF AMER VISA/ ? 'External CC' : 'CC' if $source eq 'Withdrawal';
 	$source = 'Venmo' if $descr =~ /VENMO/;
 
 	if ($OPT{a})
