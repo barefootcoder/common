@@ -152,7 +152,6 @@ alias dux "du -xchH --max-depth=1 \!* | grep -v '^0	' | sortk"
 alias cdiff colordiff
 alias diffdir "diff --brief -r --no-dereference \!* |& $PAGER"
 alias rsupdate "sudo rsync -avz --no-o --no-g -u"
-alias topswap "swap-used | sort -k3 -nr | head"
 	set sbcountperl='s|/.*buflog/|| and print'
 alias sbcount "find ~/local/data/screen-buflog/ -type f | sort | tail -n20 | xargs wc -l | perl -lne '$sbcountperl'"
 alias sbsave 'screen-bufsave \!* ; sbcount'

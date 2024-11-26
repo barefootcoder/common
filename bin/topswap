@@ -1,0 +1,53 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+const my @UNITS => qw< KB MB GB TB >;
+const my %NEXT_UNIT => map { $UNITS[$_] => $UNITS[ $_ + 1 ] // '??' } 0..$#UNITS;
+
+
+$OPT{n} = 10;
+opts <<"-";
+	[-n <N>] [-t] [-D]
+	-n : show <N> procs (default: $OPT{n})
+	-t : print total swap used
+	-D : debug mode (implies -v)
+-
+
+
+# old alias: "swap-used | sort -k3 -nr | head"
+my (@PROCS, $total_used);
+foreach (sh('swap-used'))
+{
+	if ( /^ Overall .*? (\d+) /x )
+	{
+		$total_used = $1;
+		last;
+	}
+
+	my ($pid, $size, $name) = /^ PID=(\d+) \h+ swapped \h+ (\d+) \s* KB \s+ \( (.*?) \) $/x
+			or die("can't parse line: $_");
+	my $h = { pid => $pid, size_kb => $size, name => $name };
+	( $h->{size}, $h->{unit} ) = reduce_size($size);
+	push @PROCS, $h;
+}
+
+print form '{>>>>>>}  {>>} {}  {<<<<<<<<<<<<<<<<<<}', $_->{pid}, $_->{size}, $_->{unit}, $_->{name}
+	foreach head $OPT{n} => sort { $b->{size_kb} <=> $a->{size_kb} } @PROCS;
+say '--------'                                                            if $OPT{t};
+print form '          {>>} {}  TOTAL SWAP USED', reduce_size($total_used) if $OPT{t};
+
+
+sub reduce_size
+{
+	my ($size) = @_;
+	my $unit = $UNITS[0];
+
+	while ($size > 1500)
+	{
+		$size = int($size / 1024);
+		$unit = $NEXT_UNIT{ $unit };
+	}
+	return ($size, $unit);
+}
