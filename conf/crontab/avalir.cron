@@ -1,3 +1,3 @@
-#*/30  * * * * tcsh -c "$HOME/bin/proc-mem -k 33 'thunderbird$'"
+*/30  * * * * tcsh -c "$HOME/bin/proc-mem -k 33 'thunderbird$'"
 *     * * * * $HOME/local/bin/unfocus-alarms
 */10  * * * * tcsh -c "$HOME/bin/screen-bufsave -ACq"
