@@ -112,13 +112,13 @@ then
 	then
 		copy-to-clipboard blogify "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
+	elif [[ "$1" == *.md || "$1" == class-*.notes ]]
+	then
+		copy-to-clipboard fmt-for-md "$1"
+		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == *.trac || $fullpath == */work/* && ( $1 == *.notes || $1 == *.descr ) ]]
 	then
 		copy-to-clipboard fmt-for-trac "$1"
-		[[ $? -eq 0 ]] && echo "copied to X clipboard"
-	elif [[ "$1" == *.md ]]
-	then
-		copy-to-clipboard fmt-for-md "$1"
 		[[ $? -eq 0 ]] && echo "copied to X clipboard"
 	elif [[ "$1" == xtrack_posts ]]
 	then
