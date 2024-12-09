@@ -7,3 +7,7 @@ alias daystart ~/local/bin/daystart
 
 # have a CLI way to turn the touchpad back on when I forget to click the applet)
 alias tp '~/common/local/haven/applets/touchpad-toggle toggle'
+
+# for watching Beacon.TV (until they get their shit together and make an app for it)
+alias beacon-on 'xdotool search --name Beacon windowsize 1750 1000 windowmove 1950 30 && win-display-only Beacon'
+alias beacon-off 'win-display-only -u Beacon && xdotool search --name Beacon set_desktop_for_window 1'
