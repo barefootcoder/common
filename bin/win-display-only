@@ -1,4 +1,6 @@
 #! /usr/bin/env perl
+# Undo mode provided by Claude (Sonnet 3.5)
+# 	https://claude.ai/share/84be47e9-0b25-41a0-b570-1a42a16c4b8e
 
 use myperl::Pxb;
 use autodie ':all';
@@ -8,7 +10,8 @@ use X11::Protocol::WM	qw< get_wm_hints change_wm_hints >;
 
 
 opts <<'-';
-	[-vD] <title>
+	[-uvD] <title>
+	-u : undo previous changes
 	-v : display new values
 	-D : debug mode (implies -v)
 	<title> : title of the window to modify
@@ -21,18 +24,33 @@ my $title = shift // usage_error("must supply window title");
 my $win = sh( xdotool => search => '--name' => $title );
 $win =~ /^\d+$/ or fatal("can't find a window named $title (or found too many)");
 
-sh( wmctrl => -r => $title, -b => 'add,above,sticky' );					# max 2 hints per command,
-sh( wmctrl => -r => $title, -b => 'add,skip_taskbar,skip_pager' );		# because `wmctrl` is just weird that way
-
-my $X = X11::Protocol->new;
-change_wm_hints($X, $win, input => 0);
-my %hints = get_wm_hints($X, $win);
-if ($hints{input} != 0)
-{
-	fatal("failed to set input hint! you *will* experience pain and suffering ...");
-}
+modify_window($win, $OPT{u});
 
 if ($OPT{v})
 {
 	sh( xwininfo => -wm => -id => $win );
+}
+
+
+sub modify_window
+{
+	my ($win, $undo_or_not) = @_;
+	my $on_off = $undo_or_not ? 1 : 0;				# turn input back on if we're undoing; otherwise, turn off
+	const my @HINT_OP => qw< add remove >;
+
+	sh( wmctrl => -r => $title, -b => "$HINT_OP[$on_off],above,sticky" );
+	sh( wmctrl => -r => $title, -b => "$HINT_OP[$on_off],skip_taskbar,skip_pager" );
+
+	my $X = X11::Protocol->new;
+	# input hint is inverse of display-only state, and we want explicit 0/1
+	change_wm_hints($X, $win, input => $on_off);
+	my %hints = get_wm_hints($X, $win);
+	if ($hints{input} != $on_off)
+	{
+		my $msg = $undo_or_not
+			? "failed to restore input hint; things could be a little wonky ..."
+			: "failed to set input hint! you *will* experience pain and suffering ..."
+		;
+		fatal($msg);
+	}
 }
