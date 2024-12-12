@@ -99,6 +99,7 @@ my %DESCRIPTIONS =
 							qr/HelloFresh/i,
 							qr/HLLFRSH/i,
 							qr/EMeals/i,
+							qr/EveryPlate/i,
 							qr/Thrive Market/i,
 							qr/Sprouts\b/i,
 							qr/Sprouts Farmers/i,
@@ -153,6 +154,7 @@ my %DESCRIPTIONS =
 							qr/Nordhoff Veterin(ary)?/i,
 							qr/Sycamore Veteri(nary)?/i,
 							qr/Chewy\.?com/i,
+							qr/CHWYINC/i,
 							qr/Aquarium City/i,
 						],
 	School			=>	[
@@ -314,6 +316,7 @@ my %DESCRIPTIONS =
 						],
 	'Professional Fees'=>	[
 							qr/Money Illustrate/i,
+							qr/ADVICEPAY.COM/i,
 							qr/HK Associates/i,
 						],
 	Medical			=>	[
@@ -392,7 +395,9 @@ my %WHAT_LOOKUP =
 	'Bao Su a'							=>	'Bao Su a (Chinese food)',
 	'ABACUS CERTIFY'					=>	'Certify (expense reimbursement)',
 	'Disney Plus'						=>	'Hulu et al',
-	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)'
+	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)',
+	'ADVICEPAY.COM'						=>	'Money Illustrated (CFP Jen)',
+	'CHWYINC'							=>	'Chewy',
 );
 
 
@@ -581,7 +586,7 @@ foreach (@transactions)
 			$category = "Personal";
 			$who = 'Christy';
 		}
-		when ( /TM ON THE GO/i )
+		when ( /TM ON THE GO?/i )
 		{
 			$what = 'Treasured Memories';
 			$category = "Personal";
