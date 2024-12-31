@@ -5,6 +5,8 @@ setenv CHEOPSROOT ~/workproj/cheops
 alias cessh $CEROOT/devtools/cessh
 alias cescp $CEROOT/devtools/cescp
 
+alias abc-go 'vcd abc ; eval `addpath -e $HOME/.local/bin` ; source ~/.local/bin/abc.tcsh'
+
 # Vagrant environment stuff
 alias vscp vagrant-scp
 
@@ -20,3 +22,6 @@ alias mpup 'music-player-volume up'
 alias mpdn 'music-player-volume down'
 alias mppr 'clementine --previous'
 alias mpnx 'clementine --next'
+
+# added by `abc_setup`
+source /home/buddy/.local/share/abc/abc.tcsh
