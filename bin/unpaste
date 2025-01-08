@@ -1,0 +1,20 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb DEBUG => 1;
+use autodie ':all';
+
+
+opts <<'-';
+	[-D] <string> [...]
+	-D : debug mode
+	<string> : string(s) to paste-without-pasting
+-
+my $string = "@ARGV";
+
+
+say "Answer 'y', then you got 2 seconds to get your cursor into the form field.";
+if (confirm("Ready to proceed?"))
+{
+	sleep 2;
+	sh(xdotool => type => $string);
+}
