@@ -15,6 +15,7 @@ function runs_dropbox
 exists iftop    &&  sudo iftop -p
 exists nethogs  &&  sudo nethogs
                          glances
+                    sudo slabtop
 runs_dropbox    && watch dropbox status
                    watch sensors
 exists powertop &&  sudo powertop
