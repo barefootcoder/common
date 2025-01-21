@@ -7,7 +7,7 @@ use autodie ':all';
 opts <<'-';
 	[-D] <stashid>
 	-D : debug mode
-	<file>    : one or more files to process
+	<stashid> : stash ID with conflict to recover
 -
 
 my $stashid = shift // usage_error("must supply stashid");
