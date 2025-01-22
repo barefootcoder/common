@@ -1,0 +1,70 @@
+#! /usr/local/bin/launch perl -*PROJ:CE -*DEVOPS
+
+use autodie		':all';
+use myperl::Pxb	ONLY => [qw< glob title_case round >];					# minimal list of what _might_ be needed
+
+use DevOps::EC2;
+
+const my $CEROOT         => "$ENV{CEROOT}";
+const my $CEFLOW         => "$CEROOT/devtools/ceflow";
+const my $INSTALL_REMOTE => "$CEROOT/bin/install-remote";
+
+sub blank_line () { say '' }
+
+
+opts <<'-';
+	[-fD] <instance>
+	-f : force sync from GitHub, even if repo was pulled recently
+	-D : debug mode (implies -v)
+	<instance> : EC2 instance to sync to (must be processable by `bin/install-remote`)
+-
+
+my $instance = shift;
+sub verify_connectivity ()
+{
+	color_msg(cyan => "verifying connectivity");
+	bash($INSTALL_REMOTE => '--quiet', '--connect' => $instance);
+}
+fatal_error("must supply instance to sync to")         unless $instance;
+fatal_error("cannot locate install-remote")            unless -x $INSTALL_REMOTE;
+fatal_error("cannot connect to $instance (bad name?)") unless verify_connectivity;
+
+sub remote_last_pulled ()
+{
+	open my $PIPE, "| launch SNIPPET";
+	say $PIPE 'bashlib-demand archer-network';
+	say $PIPE 'run-remote brat-i-0a3f05b53249a622b "launch SNIPPET -Msandbox ce-last-pulled-hours-ago"';
+}
+my $remote_user = ec2_remote_owner($instance);
+color_msg(cyan => "remote user: $remote_user") if $OPT{D};
+my $local_last_pulled = bash_function(sandbox => 'ce-last-pulled-hours-ago');
+color_msg(cyan => "local CE last pulled: $local_last_pulled hrs ago") if $OPT{D};
+my $pull_command       = '"launch SNIPPET -Msandbox ce-last-pulled-hours-ago"';
+my $remote_last_pulled = bash_function('archer-network' => 'run-remote', $instance, $pull_command);
+color_msg(cyan => "remote CE last pulled: $remote_last_pulled hrs ago") if $OPT{D};
+
+
+blank_line;
+sh('git-helper-stat' => -S =>);
+blank_line;
+exit unless confirm("continue with sync?");
+
+if ( $remote_last_pulled >= 3 or $OPT{f} )
+{
+	color_msg_block(cyan => "syncing both sides with GitHub");
+	chdir $CEROOT;
+	sh($CEFLOW => 'my-sync');
+	sh($INSTALL_REMOTE => '--copy-code' => $instance);
+}
+else
+{
+	color_msg_block(cyan => "skipping sync with GitHub due to recent pull");
+	wait_seconds(3);
+}
+
+color_msg_block(cyan => 'syncing code (local => remote)');
+sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user ", 'verify=1', "$CEROOT/", "$instance:/var/local/CE-src/");
+color_msg_block(cyan => 'syncing code (remote SRCDIR => remote APPDIR)');
+sh("$CEROOT/devtools/cessh" => '--root', $instance => '/var/local/bin/install-ce' => '--make-src-live',
+		'--owner' => $remote_user, '--group' => 'CE');
+color_msg_block(green => 'All done!');

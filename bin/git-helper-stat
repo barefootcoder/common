@@ -5,7 +5,7 @@ use autodie ':all';
 
 
 opts <<'-';
-	-
+	-S : don't show stash list
 	used by `vc stat-plus`; do not use independently
 -
 
@@ -23,7 +23,7 @@ if ( not $commits and $cur_branch ne $mainline )
 	$commits =~ s/\A\n*/Branch commits:\n/;
 }
 
-say join("\n\n", map { filter_for_length($_) } $stat, $stash, $commits);
+say join("\n\n", map { filter_for_length($_) } $stat, $OPT{S} ? () : $stash, $commits);
 
 
 sub numlines { scalar shift =~ tr/\n// }
