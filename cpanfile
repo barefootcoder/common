@@ -97,12 +97,6 @@ feature xrestore => sub
 	requires 'Syntax::Keyword::Try';
 };
 
-# required for Dropbox scripts
-feature dropbox => sub
-{
-	requires 'Git::Helpers';
-};
-
 # required for banking/budget scripts
 feature bank => sub
 {
@@ -121,6 +115,7 @@ feature support => sub
 	requires 'Regexp::Common';							# `clgrep` uses this
 	requires 'List::AllUtils';
 	requires 'Time::ParseDate';							# `perlsecs` uses this, but should be rewritten to use Date::Easy
+	requires 'Number::Bytes::Human';
 	requires 'Date::Gregorian::Business';				# `fake_timerdavg` uses this
 };
 
@@ -156,12 +151,6 @@ feature CE => sub
 {
 	requires 'IO::All';								# used by push song data collater
 	requires 'Text::CSV';							# used by push song data collater
-};
-
-# required for building a new sandbox *UNTIL* archer-boot is completed
-feature vagrant => sub
-{
-	requires 'Config::Any';							# used by backup/restore scripts
 };
 
 # possibly unused: move to proper section if definite dependency discovered
