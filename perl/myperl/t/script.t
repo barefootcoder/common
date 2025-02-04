@@ -33,7 +33,7 @@ END
 
 
 perl_output_is( "collects options properly", <<OUT, <<'END', qw< -a -c foo > );
-{ a => 1, c => "foo" }
+a=1 c=foo
 OUT
 	use myperl::Script;
 	opts <<"-";
@@ -43,8 +43,7 @@ OUT
 		-c : specify a <thingy>
 		at least one file
 -
-	use Data::Printer output => 'stdout', sort_keys => 1, hash_separator => ' => ', multiline => 0;
-	p %OPT;
+	say join ' ', map { "$_=$OPT{$_}" } sort keys %OPT;
 END
 
 perl_output_is( "proper help message", <<OUT, <<'END', qw< -h > );

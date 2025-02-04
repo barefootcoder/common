@@ -109,12 +109,18 @@ sub _dash_x
 	}
 	# Now toss out the filter, if any.
 	pop if ref $_[-1] eq 'CODE';
+
 	# All remaining args are good.
 	push @args, @_;
+	# If `@args` is empty at this point, our caller did something bad; let's warn them.
+	Carp::carp("unexpected empty argument list") unless @args;
+
 	# Now print it out the way bash would see it.
-	PerlX::bash::bash(printf => "%q ", "+", @args, ">&2");
-	# Add a final newline.
-	say STDERR '';
+	print STDERR "+ ";													# `set -x` prefix
+	my $last = pop @args;												# so we can handle final arg specially
+	PerlX::bash::bash(printf => "%q ", @args, ">&2") if @args;			# spaces _between_ args ...
+	PerlX::bash::bash(printf => '%q', $last, ">&2");					# ... but no trailing space!
+	say STDERR '';														# close out the line
 }
 
 sub sh
