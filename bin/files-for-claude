@@ -1,0 +1,91 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+use Devel::Confess;
+
+
+opts <<'-';
+	[-vD] <file> [...]
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<file> : one or more files to process
+
+	writes to stdout!
+-
+$OPT{v} = 1 if $OPT{D};
+
+my @files = map { file($_) } @ARGV or usage_error("must supply at least one file");
+fatal("cannot process non-existent files") if grep { !  -e        } @files;
+fatal("cannot process special files")      if grep { ! (-f || -d) } @files;
+
+
+my $doc_index = 1;
+say "<documents>";				# start the XML wrapper
+
+# Process each argument
+for my $arg (@ARGV)
+{
+    process_path($arg);
+}
+
+say "</documents>";				# close out the XML wrapper
+
+
+sub info
+{
+	say STDERR "# @_ ..." if $OPT{v};
+}
+
+sub process_path
+{
+    my ($path) = @_;
+    
+    # If it's a directory, recurse through it
+    if (-d $path)
+    {
+		info("recursing into dir $path");
+        my $dir = path($path);
+        for my $child ($dir->children)
+        {
+            if (-d $child)
+            {
+                process_path($child);
+            }
+            else
+            {
+                process_file($child);
+            }
+        }
+    }
+    # If it's a file, process it directly
+    elsif (-f $path)
+    {
+        process_file(path($path));
+    }
+}
+
+sub process_file
+{
+    my ($path) = @_;
+    
+    # Try to read the file - skip if we can't
+    my $content;
+    eval {
+        $content = $path->slurp;
+        1;
+    } or do {
+        warn "Warning: Couldn't read $path: $@\n";
+        return;
+    };
+	info("processing file $path");
+    
+    say qq{<document index="$doc_index">};
+    say "<source>$path</source>";
+    say "<document_content>";
+    print $content;  # keeping this as print since we don't want to add a newline
+    say "</document_content>";
+    say "</document>";
+    
+    $doc_index++;
+}
