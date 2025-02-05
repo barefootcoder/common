@@ -88,6 +88,20 @@ perl_error_is( "-D sets bash -x", join('', map { "$_\n" } @lines), <<'END', '-D'
 	sh(test => qw< a == b >);
 END
 
+# more complex debugging
+@lines = ('+ echo foo | cat', '+ echo foo >/dev/null', '+ echo foo 2>&1', '+ cat </dev/null');
+perl_error_is( "-D handles redirections", join('', map { "$_\n" } @lines), <<'END', '-D' );
+	use myperl::Pxb;
+	opts <<"-";
+		[-D]
+		-D : debug
+-
+	sh(echo => 'foo', '|', cat => );
+	sh(echo => 'foo', '>/dev/null');
+	sh(echo => 'foo', '2>&1');
+	sh(cat  => '</dev/null');
+END
+
 
 # verify types
 perl_no_error( "pxb exports Path type stuff", <<'END', '-a' );

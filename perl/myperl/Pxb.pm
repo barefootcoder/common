@@ -116,11 +116,12 @@ sub _dash_x
 	Carp::carp("unexpected empty argument list") unless @args;
 
 	# Now print it out the way bash would see it.
-	print STDERR "+ ";													# `set -x` prefix
-	my $last = pop @args;												# so we can handle final arg specially
-	PerlX::bash::bash(printf => "%q ", @args, ">&2") if @args;			# spaces _between_ args ...
-	PerlX::bash::bash(printf => '%q', $last, ">&2");					# ... but no trailing space!
-	say STDERR '';														# close out the line
+	say STDERR join(' ', '+', map { PerlX::bash::_process_bash_arg } @args);
+	#print STDERR "+ ";													# `set -x` prefix
+	#my $last = pop @args;												# so we can handle final arg specially
+	#PerlX::bash::bash(printf => "%q ", @args, ">&2") if @args;			# spaces _between_ args ...
+	#PerlX::bash::bash(printf => '%q', $last, ">&2");					# ... but no trailing space!
+	#say STDERR '';														# close out the line
 }
 
 sub sh
