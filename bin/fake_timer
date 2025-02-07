@@ -115,10 +115,12 @@ while ( <> )
 					}
 					if ($OPT{a})
 					{
+						say "  (total as of " . now . ")";
 						exit if $OPT{w} and $cur_week > $OPT{w};
 					}
 					else
 					{
+						say "  (total as of " . now . ")";
 						exit;
 					}
 					say '';
