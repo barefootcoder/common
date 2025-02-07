@@ -7,6 +7,17 @@ if ( $?tcsh_reset ) then
 	source ~/bin/tcshrc-DEBUG "ran makeln"
 endif
 
+# determine run mode
+# (Claude [3.5 Sonnet] helped write this block)
+set bail_early=no
+if ( ! $?prompt ) then
+	if ( $?VIM ) then
+		set bail_early=vi
+	else
+		set bail_early=immediate
+	endif
+endif
+
 # figure out where we are
 setenv LOCALHOSTNAME `~/common/root/lbin/localhostname`
 
@@ -24,7 +35,11 @@ set notify
 set symlinks=ignore
 set ellipsis
 set prompt="[${LOCALHOSTNAME}:%{\e[96m%}%.04%{\e[0m%}] "
-source ~/bin/tcshrc-DEBUG "set shell stuff"
+source ~/bin/tcshrc-DEBUG "set shell stuff (will bail? $bail_early)"
+
+if ( $bail_early == 'immediate' ) then
+	goto END
+endif
 
 if ( $?PERL5OPT ) then
 	echo $PERL5OPT | grep -q Devel::Confess
@@ -253,6 +268,30 @@ alias fix '	switch ($PWD)																						\
 
 source ~/bin/tcshrc-DEBUG "set vars and aliases"
 
+# perlbrew setup
+if ( -e ~/perl5/perlbrew/etc/cshrc ) then
+	setenv PERLBREW_PERL perl-5.14.2
+	source ~/perl5/perlbrew/etc/cshrc
+endif
+
+setenv PINTO_HOME /home/buddy/opt/local/pinto
+if ( -d $PINTO_HOME ) then
+	alias pinto $PINTO_HOME/bin/pinto
+endif
+source ~/bin/tcshrc-DEBUG "finished perlbrew et al"
+
+source ~/.vctoolsrc
+	set pbtest_path=~/proj/Pb.testing/bin:$PATH
+	set pbtest_lib=$HOME/proj/Pb.testing/lib:$HOME/proj/perlx-bash/lib:$PERL5LIB
+	set pbtest_setup="unalias vc ; setenv PATH $pbtest_path ; setenv PERL5LIB $pbtest_lib"
+	complete pbtest "p/1/(`vc info --oneline project:all`)/"
+alias pbtest "vcd \!^ ; set prompt='[Pb.testing: \!^] ' ; $pbtest_setup"
+source ~/bin/tcshrc-DEBUG "finished VCtools (will bail? $bail_early)"
+
+if ( $bail_early != 'no' ) then
+	goto END
+endif
+
 # this should be a list of the hosts that we typically keep sync'ed up
 # with this one.  we'll use it for two things:
 # 1) alias the hostname so it ssh'es into it
@@ -303,18 +342,6 @@ uncomplete cp
 uncomplete ln
 source ~/bin/tcshrc-DEBUG "finished completions"
 
-# perlbrew setup
-if ( -e ~/perl5/perlbrew/etc/cshrc ) then
-	setenv PERLBREW_PERL perl-5.14.2
-	source ~/perl5/perlbrew/etc/cshrc
-endif
-
-setenv PINTO_HOME /home/buddy/opt/local/pinto
-if ( -d $PINTO_HOME ) then
-	alias pinto $PINTO_HOME/bin/pinto
-endif
-source ~/bin/tcshrc-DEBUG "finished perlbrew et al"
-
 if ( $?tcsh_reset ) then
 	# this will start dropbox if not started, and not do anything if it is
 	if ( -d ~/.dropbox-dist ) then
@@ -331,17 +358,11 @@ if ( -e ~/.tcshrc.local ) then
 endif
 source ~/bin/tcshrc-DEBUG "back from .tcshrc.local"
 
-source ~/.vctoolsrc
-	set pbtest_path=~/proj/Pb.testing/bin:$PATH
-	set pbtest_lib=$HOME/proj/Pb.testing/lib:$HOME/proj/perlx-bash/lib:$PERL5LIB
-	set pbtest_setup="unalias vc ; setenv PATH $pbtest_path ; setenv PERL5LIB $pbtest_lib"
-	complete pbtest "p/1/(`vc info --oneline project:all`)/"
-alias pbtest "vcd \!^ ; set prompt='[Pb.testing: \!^] ' ; $pbtest_setup"
-source ~/bin/tcshrc-DEBUG "finished VCtools"
-
 # Heroscapers stuff
 alias hsreply 'vimS hsreply'
 
 # make sure our subshells don't count as resets
+END:
 unset tcsh_reset
+unset bail_early
 source ~/bin/tcshrc-DEBUG "exiting .tcshrc"
