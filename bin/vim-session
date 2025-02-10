@@ -296,7 +296,7 @@ opts <<'-';
 	-l : list all possible session files
 	-g : list possible session files which load a file matching <pattern> (Perl regex)
 	-G : list possible session files which have <pattern> anywhere in them (Perl regex)
-	-v : with -l, display full pathnames of session files; with -g|-G, diplay full matching lines
+	-v : with -l, display full paths of session files; with -g|-G, diplay full matching lines; else, display session file
 	-e : edit template (instead of starting session); with -l, edit all; with -g|-G, edit all matching
 	-C : create a template from a vim <session> file (default name: add .V to session filename)
 	-N : create a new template in <dir>; without -C, session dir is $PWD and file list is the given files, if any
@@ -361,6 +361,7 @@ if ( defined $file )
 	}
 }
 fatal "session file $file not specified, doesn't exist, or is unreadable" unless $file;
+say STDERR "# loading sessionfile $file" if $OPT{v};
 
 
 # then, handle modes which require a template but don't actually use it for a session
