@@ -2,7 +2,6 @@
 
 use myperl::Pxb;
 use autodie ':all';
-use Devel::Confess;
 
 
 opts <<'-';
@@ -21,15 +20,9 @@ fatal("cannot process special files")      if grep { ! (-f || -d) } @files;
 
 
 my $doc_index = 1;
-say "<documents>";				# start the XML wrapper
-
-# Process each argument
-for my $arg (@ARGV)
-{
-    process_path($arg);
-}
-
-say "</documents>";				# close out the XML wrapper
+say "<documents>";									# start the XML wrapper
+process_path($_) foreach @ARGV;						# process command line args
+say "</documents>";									# close out the XML wrapper
 
 
 sub info
@@ -46,28 +39,23 @@ sub process_path
     {
 		info("recursing into dir $path");
         my $dir = path($path);
-        for my $child ($dir->children)
-        {
-            if (-d $child)
-            {
-                process_path($child);
-            }
-            else
-            {
-                process_file($child);
-            }
-        }
+		process_path($_) foreach $dir->children;
     }
     # If it's a file, process it directly
     elsif (-f $path)
     {
         process_file(path($path));
     }
+	else
+	{
+		info("skipping special file $path");
+	}
 }
 
 sub process_file
 {
     my ($path) = @_;
+	return if $path->basename =~ /^\./;				# skip "hidden" files
     
     # Try to read the file - skip if we can't
     my $content;
