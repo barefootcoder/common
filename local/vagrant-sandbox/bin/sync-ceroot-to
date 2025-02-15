@@ -13,11 +13,13 @@ sub blank_line () { say '' }
 
 
 opts <<'-';
-	[-fD] <instance>
+	[-fYD] <instance>
 	-f : force sync from GitHub, even if repo was pulled recently
+	-Y : assume "yes" for all questions
 	-D : debug mode (implies -v)
 	<instance> : EC2 instance to sync to (must be processable by `bin/install-remote`)
 -
+$Prompts = 0 if $OPT{Y};
 
 my $instance = shift;
 sub verify_connectivity ()
@@ -47,7 +49,7 @@ color_msg(cyan => "remote CE last pulled: $remote_last_pulled hrs ago") if $OPT{
 blank_line;
 sh('git-helper-stat' => -S =>);
 blank_line;
-exit unless confirm("continue with sync?");
+confirm_or_wait("continue with sync?");
 
 my $is_quin = $instance =~ /^quin-/;
 if ( $remote_last_pulled >= 3 or $OPT{f} )
@@ -72,7 +74,8 @@ else
 }
 
 color_msg_block(cyan => 'syncing code (local => remote)');
-sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user ", 'verify=1', "$CEROOT/", "$instance:/var/local/CE-src/");
+my @verify_or_not = $OPT{Y} ? () : ( 'verify=1' );
+sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user ", @verify_or_not, "$CEROOT/", "$instance:/var/local/CE-src/");
 unless ($is_quin)
 {
 	color_msg_block(cyan => 'syncing code (remote SRCDIR => remote APPDIR)');
