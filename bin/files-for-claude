@@ -3,14 +3,16 @@
 use myperl::Pxb;
 use autodie ':all';
 
+const my $VREGEX => '-v(\d+)\.txt$';
+
 
 opts <<'-';
-	[-vD] <file> [...]
+	[-O <outfile>] [-vD] <file> [...]
+	-O : write to <outfile> (default: write to stdout)
 	-v : be more verbose
 	-D : debug mode (implies -v)
-	<file> : one or more files to process
-
-	writes to stdout!
+	<file>    : one or more files to process (dirs handled recursively)
+	<outfile> : output .txt file (will be versioned)
 -
 $OPT{v} = 1 if $OPT{D};
 
@@ -19,10 +21,23 @@ fatal("cannot process non-existent files") if grep { !  -e        } @files;
 fatal("cannot process special files")      if grep { ! (-f || -d) } @files;
 
 
+my $OUT;
+if ($OPT{O})
+{
+	my $base = $OPT{O} =~ s/$VREGEX//r;
+	my $curver = max map { /$VREGEX/ ? $1 : die("weird unversioned file: $+") } glob("$base-v*.txt");
+	my $nextver = ($curver // 0) + 1;
+	my $outfile = "$base-v$nextver.txt";
+	open ($OUT, ">$outfile");
+	select $OUT;
+}
+
 my $doc_index = 1;
 say "<documents>";									# start the XML wrapper
 process_path($_) foreach @ARGV;						# process command line args
 say "</documents>";									# close out the XML wrapper
+
+close $OUT if $OPT{O};
 
 
 sub info
