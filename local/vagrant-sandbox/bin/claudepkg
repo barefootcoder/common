@@ -1,0 +1,28 @@
+#! /bin/bash
+set -euo pipefail
+
+function die
+{
+	echo "$@" >&2
+	exit 1
+}
+
+[[ $# -ge 1 ]] || die 'must supply output pattern'
+output=$1 ; shift
+[[ $output == */* || -e $output ]] && die 'first arg must be output file pattern, not actual file'
+
+if [[ $HOST == "vagrant-sandbox" ]]
+then
+	[[ $# -ge 1 ]] || die "must provide files to package"
+
+	echo "generating ..."
+	files-for-claude -O $CEROOT/tmp/$output "$@"
+	ssh -p8822 buddy@10.0.2.2 common/local/$HOST/bin/$(basename $0) $output
+else
+	echo "copying ..."
+	new=$(printf "%s\n" $HOME/workproj/CE-mounted/tmp/$output-v[0-9]*.txt | sort -V | tail -n1)
+	[[ $new == *"*"* ]] && die 'cannot locate generated file'
+	dest=$HOME/docs/ai/projfiles/$(basename $new)
+	/bin/cp -pi $new $dest
+	/bin/ls -lh $dest
+fi
