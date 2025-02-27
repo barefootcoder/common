@@ -269,16 +269,17 @@ while ( <> )
 		debug(CMD => "new-week", week_data_tag('gathering data'));
 		if ($processed_labels)
 		{
+			my $timer_name = $name =~ s/:$//r;							# turn label name back into timer name
 			if (my $save = save_ticket(@stuff))
 			{
 				my $new_stuff = "$_\n";
 				$new_stuff =~ s/\(.*?\)\t/()\t/ if $save eq 'p';
-				$week_timers{ $name =~ s/:$//r } = $new_stuff;
+				$week_timers{$timer_name} = $new_stuff;
 			}
 			unless ( $no_time_timers{$name} )
 			{
-				warn("no comment for timer: $name") unless $chunks;
-				warn("comment for timer is incomplete: $name") if $chunks and $chunks =~ /\(\)$/;
+				warn("no comment for timer: $timer_name") unless $chunks;
+				warn("comment for timer is incomplete: $timer_name") if $chunks and $chunks =~ /\(\)$/;
 				$week_timers .= "$_\n";
 			}
 		}
