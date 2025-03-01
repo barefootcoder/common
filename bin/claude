@@ -1,0 +1,171 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Term::ReadKey;   # Install with: cpan Term::ReadKey
+use Expect;          # Install with: cpan Expect
+use POSIX;
+
+# Configuration constants
+my $CLAUDE_PATH = "/var/npm/bin/claude";                          # Full path to Claude executable
+my $SUBMISSION_PATTERN = ".\n";                                   # Pattern that triggers submission
+my $SUBMISSION_DESCRIPTION = "a period (.) on a line by itself";  # Human-readable description
+
+=head1 Claude Code Wrapper Script
+
+This script wraps the Claude Code CLI to invert the Enter key behavior:
+
+=over
+
+=item - Enter creates a newline instead of submitting
+
+=item - Submit by typing a specific pattern (set in constant above)
+
+=item - Ctrl-D is available as a fallback submission method
+
+=back
+
+=head2 Requirements:
+
+=over
+
+=item - Perl modules: Term::ReadKey, Expect (install with 'cpan Term::ReadKey Expect')
+
+=back
+
+=head2 Usage:
+
+<scriptname> [claude arguments]
+
+=head2 Configuration:
+
+Edit the constants at the top of the script to customize:
+
+=over
+
+=item - CLAUDE_PATH: Full path to Claude executable
+
+=item - SUBMISSION_PATTERN: The pattern that triggers submission
+
+=item - SUBMISSION_DESCRIPTION: Human-readable description of the pattern
+
+=back
+
+=cut
+
+# Get and store original terminal settings
+my $original_mode = ReadMode('normal');
+
+# Build Claude command with arguments
+my @claude_args = ($CLAUDE_PATH, @ARGV);
+my $exp = Expect->spawn(@claude_args) or die "Cannot spawn Claude: $!\n";
+
+# Handle cleanup when the script exits
+$SIG{INT} = sub { 
+    ReadMode('normal'); 
+    print "\r\nWrapper exiting due to Ctrl-C...\r\n"; 
+    # Also terminate the child process
+    kill('INT', $exp->pid) if $exp->pid;
+    exit 1; 
+};
+
+$SIG{TERM} = sub { 
+    ReadMode('normal'); 
+    exit 1; 
+};
+
+END {
+    # Restore terminal settings
+    ReadMode('normal');
+}
+
+# Set unbuffered output
+$| = 1;
+
+print "\r\nClaude Wrapper: Press Enter for newline. Submit by typing $SUBMISSION_DESCRIPTION or press Ctrl-D\r\n";
+
+# Set terminal to raw mode for character-by-character input
+ReadMode('raw');
+
+my $input_buffer = "";
+
+while (1) {
+    # Check for and display Claude's output
+    while ($exp->expect(0, '-re', qr/.+/)) {
+        print $exp->match();
+    }
+    
+    # Check if Claude is still running
+    last unless $exp->pid;
+    
+    # Read a single character from input
+    my $char = ReadKey(-1);
+    next unless defined $char;
+    
+    my $ord = ord($char);
+    
+    # Check for a lone period on a line to submit input
+    # This happens when the buffer ends with the submission pattern
+    if ($input_buffer =~ /\n\Q$SUBMISSION_PATTERN\E$/ || ($input_buffer eq $SUBMISSION_PATTERN)) {
+        # Remove the submission marker
+        $input_buffer =~ s/\Q$SUBMISSION_PATTERN\E$//;
+        
+        # Check if there's any actual content to submit
+        if (length($input_buffer) == 0 || $input_buffer =~ /^\s*$/) {
+            print "\r\nNothing to submit. Please enter some text first.\r\n";
+            $input_buffer = "";
+            next;
+        }
+        
+        print "\r\nSubmitting input to Claude...\r\n";
+        $exp->send($input_buffer . "\n");
+        $input_buffer = "";
+        next;
+    }
+    
+    # Keep Ctrl-D as an alternative submission method
+    if ($ord == 4) {
+        # Check if there's any actual content to submit
+        if (length($input_buffer) == 0 || $input_buffer =~ /^\s*$/) {
+            print "\r\nNothing to submit. Please enter some text first.\r\n";
+            next;
+        }
+        
+        print "\r\nSubmitting input to Claude...\r\n";
+        $exp->send($input_buffer . "\n");
+        $input_buffer = "";
+        next;
+    }
+    
+    # Handle Enter key - add a newline to buffer and display it
+    if ($char eq "\r" || $char eq "\n") {
+        $input_buffer .= "\n";
+        print "\r\n";
+        next;
+    }
+    
+    # Handle Ctrl-C to interrupt
+    if ($ord == 3) {
+        $exp->send("\cC");
+        next;
+    }
+    
+    # Handle backspace/delete
+    if ($ord == 8 || $ord == 127) {
+        if (length($input_buffer) > 0) {
+            $input_buffer = substr($input_buffer, 0, -1);
+            print "\b \b";  # Erase character on screen
+        }
+        next;
+    }
+    
+    # Regular character - add to buffer and echo
+    $input_buffer .= $char;
+    print $char;
+}
+
+# Make sure to restore terminal settings
+ReadMode('normal');
+
+# Get Claude's exit status
+my $status = $exp->exitstatus();
+exit($status >> 8);
