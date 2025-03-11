@@ -1,0 +1,5 @@
+! Change the standard blue to cyan:
+! Blue -> Light Cyan
+URxvt.color4: #00FFFF
+! Bright Blue -> Brighter Cyan
+URxvt.color12: #80FFFF
