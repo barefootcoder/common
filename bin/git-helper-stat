@@ -6,12 +6,13 @@ use autodie ':all';
 
 opts <<'-';
 	-S : don't show stash list
+	-D : debug mode
 	used by `vc stat-plus`; do not use independently
 -
 
 
-my $cur_branch = sh(git => 'rev-parse',    '--abbrev-ref',     'HEAD');
-my $mainline   = sh(git => 'symbolic-ref', 'refs/remotes/origin/HEAD') =~ s{^.*/}{}r;
+my $cur_branch = sh(git => 'rev-parse', '--abbrev-ref', 'HEAD');
+my $mainline   = sh('git-helper-mainline');
 
 my $stat    = sh(git => status =>         );
 my $stash   = sh(git => stash  => list => );

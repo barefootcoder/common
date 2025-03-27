@@ -1,0 +1,34 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	-D : debug mode
+	used by `vc stat-plus` (et al); do not use independently
+-
+
+
+my $mainline;
+if ( grep { /origin/ } sh(git => 'remote') )
+{
+	$mainline = sh(git => 'symbolic-ref', 'refs/remotes/origin/HEAD') =~ s{^.*/}{}r;
+}
+else
+{
+	# fallback: no upstream, so whatever `git` thinks is the default branch
+	eval
+	{
+		$mainline = sh(git => config => '--get', 'init.defaultBranch');
+		# but make sure that exists; repo might have been made with a different version of `git`
+		die unless sh(git => branch => '--list', $mainline);
+	};
+	if ($@)
+	{
+		# ultimate fallback: current branch
+		$mainline = sh(git => 'rev-parse', '--abbrev-ref', 'HEAD');
+	}
+}
+
+say $mainline;
