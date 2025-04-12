@@ -275,6 +275,7 @@ my %DESCRIPTIONS =
 							qr/paypal inst xfer/i,
 							qr/Kickstarter/i,
 							qr/Critical Role/i,
+							qr/Renegade Games/i,
 							qr/Treasured Memories/i,
 							qr/Jimmy ?Beans ?Wool?/i,
 							qr/Joann\b/i,
@@ -459,6 +460,12 @@ foreach (@transactions)
 			$who = 'Christy';
 		}
 
+		if ( $descr eq 'BK OF AMER VISA ONLINE PMT' and abs($amount) == 35 )
+		{
+			$category = 'Pets';
+			$what = 'Payment on vet bills';
+		}
+
 		when ( /Cardtronics/ )
 		{
 			$what = 'Petty Cash';
@@ -483,6 +490,11 @@ foreach (@transactions)
 			$what = join(' ', Transfer => map { lc } $1, $3);
 			$source = 'Transfer';
 			$category = 'Reserve';
+		}
+		when ( /^Zelle payment/ )
+		{
+			$source = 'Zelle';
+			$what = $descr =~ s/^Zelle payment from .*? to //r;
 		}
 
 		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
