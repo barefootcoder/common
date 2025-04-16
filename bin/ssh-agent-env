@@ -1,71 +1,73 @@
 #! /bin/bash
 
+# Reliable SSH agent environment detector
+# Returns environment variables for the running ssh-agent
+# written with the help of Claude (3.7 Sonnet):
+# 	https://claude.ai/share/89195029-5b8a-4e60-a268-dc68dd5f21bb
 
-###########
-# NEW WAY #
-###########
-# Just find the socket; who cares about the PID?
-
-function _newest_file
+# Find all potential SSH agent sockets
+function find_ssh_sockets
 {
-	/bin/ls -t1 "$@" 2>/dev/null
+    # Look in common locations, including hidden files (with .)
+    find /tmp /run/user/$(id -u) -path "*/ssh*"  -type s 2>/dev/null
+    find /tmp /run/user/$(id -u) -path "*/.ssh*" -type s 2>/dev/null
 }
-# prioritize /run/user sockets over /tmp sockets, even if older
-socket=$( (_newest_file /run/user/$(id -u)/keyring*/ssh ; _newest_file /tmp/ssh-*/agent.*) | head -n1)
 
-if [[ -z $socket ]]
+# Find running ssh-agent processes for current user
+function find_ssh_agents
+{
+    /bin/pgrep -u $(id -u) ssh-agent
+}
+
+# Test if a socket works
+function test_socket
+{
+    local socket="$1"
+
+    # Just test the socket without setting environment
+    SSH_AUTH_SOCK="$socket" ssh-add -l >/dev/null 2>&1
+
+    # Return codes:
+    # 0 = connection works, has keys
+    # 1 = connection works, no keys
+    # 2 = connection failed
+    [[ $? -lt 2 ]]
+}
+
+# Find the first working socket
+function find_working_socket
+{
+    local sockets=$(find_ssh_sockets)
+
+    for socket in $sockets
+    do
+        if test_socket "$socket"
+        then
+            echo "$socket"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# MAIN: output environment settings
+# Get the first working socket
+socket=$(find_working_socket)
+
+if [[ "$socket" ]]
 then
-	echo "$0: can't find the socket!" >&2
-	exit 1
-fi
-
-echo "unsetenv SSH_AGENT_PID;"						# you don't really need this at all, it turns out ...
-echo "setenv SSH_AUTH_SOCK $socket;"
-
-
-exit
-
-
-###########
-# OLD WAY #
-###########
-# Find both socket and PID; make sure they match.
-
-# oldest copy of ssh-agent running
-pid=$(/usr/bin/pgrep -x ssh-agent)
-[[ $pid ]] || exit									# no agent running; probably a sandbox
-pid=$(/bin/ps -o pid= --sort -stime -p $pid | head -n1)
-
-# find the socket(s)
-sockets=$(/bin/ls -1 /run/user/`id -u`/keyring*/ssh /tmp/ssh-*/agent.*)
-if [[ $(echo "$sockets" | wc -l) == 1 ]]
-then
-	socket=$sockets
+    echo "unsetenv SSH_AGENT_PID;"
+    echo "setenv SSH_AUTH_SOCK $socket;"
+    exit 0
 else
-	for socket in $sockets
-	do
-		# `ls -l` returns dates as *either* Mmm DD HH:MM *or* Mmm DD  YYYY
-		# whereas `ps -o lstart` always returns Dow Mmm DD HH:MM:SS YYYY
-		# so we'll just compare both ways; if either match, this is the right socket
-		ls_date=$(/bin/ls -l $socket | awk '{print $6, $7, $8}')
-		pid_date=$(/bin/ps -o lstart= $pid)
-		pid_daytime=$(echo "$pid_date" | awk '{print $2, $3, $4}')
-		pid_dayyear=$(echo "$pid_date" | awk '{print $2, $3, $5}')
-		pid_daytime=${pid_daytime%:*}									# remove seconds
-		if [[ $ls_date == $pid_daytime || $ls_date == $pid_dayyear ]]
-		then
-			break
-		fi
-		socket=
-	done
+    # Check if agent is running but no working sockets found
+    agents=$(find_ssh_agents)
+    if [[ "$agents" ]]
+    then
+        echo "# SSH agent is running ($agents) but no working sockets found" >&2
+    else
+        echo "# No SSH agent found" >&2
+    fi
+    exit 1
 fi
-
-if [[ -z $socket ]]
-then
-	echo "$0: can't find the socket!" >&2
-	exit 1
-fi
-
-
-echo "setenv SSH_AGENT_PID $pid;"
-echo "setenv SSH_AUTH_SOCK $socket;"
