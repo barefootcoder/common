@@ -1,0 +1,35 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+
+opts <<'-';
+	[-D] [<aider-arg> ...]
+	-D : debug mode
+	<aider-arg> : passed through to Aider
+	automatically reads most relevant instruction files
+-
+
+
+my ($env) = glob("~/local/data/ai-keys/aider-keys.gpg");
+debuggit(2 => "env file is", $env);
+open(my $PIPE, "gpg --quiet --decrypt $env |") or die("can't locate and/or decrypt env file");
+while ( <$PIPE> )
+{
+	next if /^$/ or /^#/; 							# skip comments / blank lines
+	/^[a-zA-Z_]\w*=.*$/								# avoid injection attacks
+		or die "invalid variable assignment [$_]";
+	chomp; my ($key,$val) = split('=', $_, 2);
+	$ENV{$key} = $val;
+}
+close($PIPE);
+
+my @instr_files = grep { -r } (
+	"CLAUDE.md", "STYLE_GUIDE.md",
+	glob("~/common/conf/ai/aider-conventions.md"),
+	glob("*-project-goals.md"),
+	glob("*-implementation-plan.md")
+);
+
+sh("~/.local/bin/aider" => (map {; '--read' => $_ } @instr_files), @ARGV);

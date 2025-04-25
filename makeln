@@ -125,7 +125,7 @@ fi
 # we have a few rc's in a separate place because they have passwords in them
 if [[ $MACHINE_TYPE == "personal" || $MACHINE_TYPE == "work" ]]
 then
-	alt_rcdir=~/Dropbox/sensitive
+	alt_rcdir=~/docs/Dropbox/sensitive
 	if [[ -d $alt_rcdir ]]
 	then
 		cd $alt_rcdir
@@ -144,6 +144,8 @@ then
 			fi
 		done
 	fi
+	# not technically an rc, but is used for senstive API keys
+	make_link $alt_rcdir/ai $HOME/local/data/ai-keys
 fi
 
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: constructed special rc's"

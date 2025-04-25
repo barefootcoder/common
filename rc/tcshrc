@@ -227,6 +227,8 @@ alias dzinst 'dz install'
 alias pbinst 'perlbrew install -n -j 5 --noman'
 alias cpi 'cpanm -n \!*'
 
+unalias aider
+
 alias resrc "set tcsh_reset ; source ~/.tcshrc"
 set sys_complete=/etc/profile.d/tcsh-complete
 if ( $?tcsh_reset && -e $sys_complete ) then

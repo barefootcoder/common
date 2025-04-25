@@ -1,0 +1,12 @@
+model: sonnet
+stream: true										# might mis-estimate costs with prompt caching, but false is worse
+cache-prompts: true									# saves money
+
+multiline: false									# default, but may need to enable later
+edit-format: editor-diff							# better for architect mode
+auto-commits: false									# for now
+attribute-committer: false							# redundant with commit-prompt (below)
+commit-prompt: "Aider {type}: {description}, for {issue_number}"
+
+dark-mode: true										# better color scheme for my terms
+assistant-output-color: #00FFFF						# except for this one: change blue to cyan
