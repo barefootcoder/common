@@ -160,8 +160,10 @@ alias dfa 'df -h | head -n1 ; df -h | awk '\''$1 ~ "[/_]"'\'
 	set mfawk='{ mem = $2 / 1024; t = "Mb"; if (mem > 1024) { mem = mem / 1024; t = "Gb" } }'
 	set mfawk="$mfawk"' $1 == "MemFree:" { printf "%7.2f %s main\n", mem, t }'
 	set mfawk="$mfawk"' $1 == "SwapFree:" { printf "%7.2f %s swap\n", mem, t }'
-alias mount "findmnt -D | grep -P '^(S|/|[\w@.-]+:/)'"					# https://unix.stackexchange.com/a/635267
 alias mf "cat /proc/meminfo | awk '$mfawk'"
+# https://unix.stackexchange.com/a/635267 + Claude (3.7 Sonnet, via Aider)
+	set mountperl='next unless /^(S|\/|[\w@.-]+:\/|[\w-]+)/; print unless $seen{$_}++'
+alias mount "findmnt -D | perl -lne '$mountperl'"
 alias du. 'du -chs "`ls -1 | grep /`"'
 alias dus "du -sh * | sortk | tail"
 alias dux "du -xchH --max-depth=1 \!* | grep -v '^0	' | sortk"
