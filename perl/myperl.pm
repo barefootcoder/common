@@ -248,6 +248,7 @@ sub prompt
 			$prompt = "$prompt [$in_opts{default}] ";
 			$out_opts{-default} = $in_opts{default};
 		}
+		undef @ARGV;													# if we don't do this, odd things will happen
 		$answer = IO::Prompter::prompt($prompt, %out_opts);
 	}
 	return $answer ? "$answer" : 0;
