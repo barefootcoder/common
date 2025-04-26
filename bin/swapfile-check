@@ -1,0 +1,177 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb DEBUG => 1;
+use autodie ':all';
+
+use Date::Easy;
+
+
+opts <<'-';
+	[-fDv] <file> [...]
+	-f : force delete swapfiles without prompting
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<file> : one or more files to check for swapfiles
+-
+$OPT{v} = 1 if $OPT{D};
+
+usage_error("must supply at least one file") unless @ARGV;
+
+
+foreach my $file (@ARGV)
+{
+    check_swapfiles($file);
+}
+
+
+sub check_swapfiles
+{
+    my ($file) = @_;
+
+    # Ensure file exists
+	fatal("file $file does not exist or is not readable") unless -f $file and -r _;
+	$file = path($file);
+
+    # Get absolute path
+    my $abs_path = $file->absolute;
+    my $dirname =  $abs_path->parent;
+    my $basename = $abs_path->basename;
+
+    # Check for various conflict file patterns
+    my @patterns = (
+        $dirname->child(".$basename.sw?"),                 # Vim swapfiles
+        $dirname->child(".$basename.sync-conflict-*.sw?"), # Syncthing conflict swapfiles
+        $dirname->child(".$basename.sync-conflict-*"),     # Other syncthing conflict files
+    );
+    
+    my @swapfiles;
+    foreach my $pattern (@patterns)
+    {
+        debug("searching for: $pattern");
+        push @swapfiles, glob("$pattern");
+    }
+
+    if (@swapfiles == 0)
+    {
+        color_msg(yellow => "no swapfiles found for $file") if $OPT{v};
+        return;
+    }
+
+    color_msg(cyan => "found " . scalar(@swapfiles) . " swapfile(s) for $file:") if $OPT{v};
+
+	process_swapfile($file, $_) foreach uniq @swapfiles;
+}
+
+sub process_swapfile
+{
+    my ($file, $swapfile) = @_;
+
+	say '';
+    color_msg(cyan => "Processing swapfile: $swapfile") if $OPT{v};
+
+    # Check if the swapfile has modifications
+    my $has_modifications = check_for_modifications($file, $swapfile);
+	debug("has mods: " . (defined $has_modifications ? $has_modifications : "undefined"));
+
+    if (not $has_modifications)
+    {
+		debuggit(4 => "no mods, -f is", $OPT{f}, "theoretically about to call confirm");
+        if ( $OPT{f} or confirm("swapfile $swapfile has no modifications; delete?") )
+		{
+			unlink $swapfile;
+		}
+        else
+        {
+            say "keeping swapfile" if $OPT{v};
+        }
+        return;
+    }
+
+    # Create temporary recovered file for comparison and/or recovery
+    my $tmpfile = tempfile();
+    
+    # Handle different file types
+    if ($swapfile =~ /\.sw[a-z]$/)
+    {
+        # For vim swapfiles, use vim recovery - redirect output to /dev/null to suppress noise
+        sh(vim => -r => $swapfile, -c => "w! $tmpfile", -c => 'q!', '>/dev/null', '2>/dev/null');
+		fatal("recovery failed: empty file") if -z $tmpfile;
+    }
+
+    # Show diff between original file and what would be recovered
+    show_diff($file, $swapfile, $tmpfile);
+
+    # Prompt for action
+    unless ($OPT{f})
+    {
+        my $answer = prompt("options: [R]ecover, [D]elete swapfile, [S]kip", default => "s");
+		my $opt = lc(substr($answer, 0, 1));
+
+        if ($opt eq 'r')
+        {
+            recover_file($file, $swapfile, $tmpfile);
+        }
+        elsif ($opt eq 'd')
+        {
+            unlink $swapfile;
+            color_msg(green => "swapfile deleted");
+        }
+        else
+        {
+            say "skipping swapfile" if $OPT{v};
+        }
+    }
+}
+
+sub check_for_modifications
+{
+    my ($file, $swapfile) = @_;
+
+    # For vim swapfiles
+    if ($swapfile =~ /\.sw[a-z]$/)
+    {
+        my $file_output = sh(file => $swapfile);
+        debug("file output: $file_output");
+        return $file_output =~ /modified/ ? 1 : 0;
+    }
+    
+    # For sync conflict files, they always represent modifications
+    return 1;
+}
+
+sub show_diff
+{
+    my ($file, $swapfile, $recovered) = @_;
+
+    color_msg(cyan => "differences between original file and recovered swapfile:");
+	my $cur_time = $file->mtime;
+	my $rec_time = $swapfile->mtime;
+    sh(colordiff => '--label' => "$file [current]    $cur_time", '--label' => "$file [recovered]  $rec_time",
+			$file, $recovered);
+	say '';
+}
+
+sub recover_file
+{
+    my ($file, $swapfile, $recovered) = @_;
+
+    color_msg(cyan => "recovering file from swapfile");
+
+    # Create a backup of the original file
+    my $backup = "$file.bak-" . time();
+    sh(mv => $file, $backup);
+    say "original file backed up to: $backup" if $OPT{v};
+
+    # Replace original file with recovered one
+    sh(mv => $recovered, $file);
+
+    # Delete the swapfile
+    unlink $swapfile;
+
+    color_msg(green => "file recovered and swapfile deleted");
+}
+
+sub debug
+{
+	say "+ ", @_ if $OPT{D};
+}
