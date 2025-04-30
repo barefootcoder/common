@@ -34,6 +34,7 @@ if ( $?VCTOOLS_SHELL ) then
 	alias vcresrc 'source ~/.vctoolsrc'
 
 	alias branch vbranch
+	alias bcontains 'vc branch-contains'
 
 	alias vd git diff --color-moved
 	alias vcf vc commit-filedate
