@@ -10,6 +10,7 @@
   - Constants: ALL_CAPS
   - Error handling: die/fatal or try/catch (Syntax::Keyword::Try)
   - Imports: group by purpose, core first
+  - Quoted word lists: use `qw< foo bar >` rather than `qw(foo bar)`
 - **Bash Style**:
   - Use Allman style
   - Define $ME for error reporting

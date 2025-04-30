@@ -12,9 +12,19 @@ opts <<'-';
 -
 
 
-my ($env) = glob("~/local/data/ai-keys/aider-keys.gpg");
-debuggit(2 => "env file is", $env);
-open(my $PIPE, "gpg --quiet --decrypt $env |") or die("can't locate and/or decrypt env file");
+my $cmd;
+if ( $ENV{CEROOT} and -r (my $env = "$ENV{CEROOT}/tmp/aider-keys.env") )
+{
+	debuggit(2 => "env file is", $env);
+	$cmd = "cat $env";
+}
+else
+{
+	my ($env) = glob("~/local/data/ai-keys/aider-keys.gpg");
+	debuggit(2 => "env file is", $env);
+	$cmd = "gpg --quiet --decrypt $env";
+}
+open(my $PIPE, "$cmd |") or die("can't locate and/or decrypt env file");
 while ( <$PIPE> )
 {
 	next if /^$/ or /^#/; 							# skip comments / blank lines

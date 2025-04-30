@@ -2,9 +2,12 @@ model: sonnet
 stream: true										# might mis-estimate costs with prompt caching, but false is worse
 cache-prompts: true									# saves money
 
+editor: 'vim +"set paste" +"set nolbr" +startinsert'
 multiline: false									# default, but may need to enable later
 edit-format: editor-diff							# better for architect mode
 auto-commits: false									# for now
+lint: false											# appears to be annoying in practice
+auto-lint: false									# the truly annoying part
 attribute-committer: false							# redundant with commit-prompt (below)
 commit-prompt: "Aider {type}: {description}, for {issue_number}"
 

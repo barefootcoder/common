@@ -1,0 +1,122 @@
+#! /bin/bash
+source bash_funcs
+
+root_sbin_files="
+	root/sbin/chgid
+	root/sbin/chuid
+	root/sbin/fix-audio
+	root/sbin/fix-clock
+	root/sbin/fix-dpkg
+	root/sbin/fix-git
+	root/sbin/fix-keyboard
+	root/sbin/fix-kidle
+	root/sbin/fix-mouse
+	root/sbin/fix-network
+	root/sbin/fix-shkeys
+	root/sbin/fix-swap
+	root/sbin/fix-wmouse
+	root/sbin/modefix.pl
+	root/sbin/mount-export
+	root/sbin/pip-install-clean
+	root/sbin/pkgdetails
+	root/sbin/pkglls
+	root/sbin/pkprog
+	root/sbin/rmgrp
+	root/sbin/swap-used
+	root/sbin/vivaldi-allow-custom
+	root/sbin/whichpkg
+"
+bin_files="
+	bin/addfont
+	bin/addpath
+	bin/backup-laptop
+	bin/bash_funcs
+	bin/bfortune
+	bin/cal
+	bin/cda
+	bin/cdi
+	bin/checktabs
+	bin/clgrep
+	bin/cmp-cz
+	bin/colordiff
+	bin/compare_repos
+	bin/cpperm
+	bin/ctrl-k
+	bin/C-V
+	bin/diffproc
+	bin/dir_reduce
+	bin/dropboxd
+	bin/dropbox-to-nas
+	bin/fe_vi
+	bin/files-for-claude
+	bin/fix-mate
+	bin/friendly-hosts
+	bin/fsync-cz
+	bin/inf
+	bin/kill_compiz
+	bin/latest-files
+	bin/middle-click
+	bin/monitor-pidgin-unseen
+	bin/myperl-cpm
+	bin/myterm
+	bin/nasupdate
+	bin/nxkill
+	bin/proc-mem
+	bin/psf
+	bin/psync
+	bin/pusht
+	bin/script-latest
+	bin/secsperl
+	bin/ssh-add-if-necessary
+	bin/ssh-agent-env
+	bin/t
+	bin/tcshrc-DEBUG
+	bin/term-title
+	bin/topall
+	bin/topswap
+	bin/unpaste
+	bin/vgrep
+	bin/vimS
+	bin/vim-save-old-swapfile-versions
+	bin/vim-session
+	bin/vim-session-convert
+	bin/vim-session-makeV
+	bin/xget
+	bin/xgetpid
+	bin/xrestore
+"
+root_lbin_files="
+	root/lbin/each
+	root/lbin/localhostname
+	root/lbin/perlfind
+	root/lbin/perlsecs
+	root/lbin/scripts
+	root/lbin/sortdiff
+	root/lbin/sortk
+	root/lbin/wye
+"
+rc_files="
+	rc/exrc
+	rc/gitconfig
+	rc/gitignore
+	rc/gtkrc-2.0
+	rc/screenrc
+	rc/screenrc.logs
+	rc/screenrc.monitor
+	rc/screenrc.push
+	rc/screenrc.search
+	rc/screenrc.vctools
+	rc/tcshrc
+	rc/Xresources
+"
+local_files="
+	local/haven/bin/termstart
+	local/haven/rc/tcshrc.local
+	local/avalir/bin/termstart
+	local/avalir/rc/tcshrc.local
+"
+
+cd $MYDIR
+root_files="$root_sbin_files $root_lbin_files"
+files-for-claude -O ~/docs/ai/projfiles/home-network-admin-scripts $bin_files $rc_files $root_files $local_files
+ls $bin_files $rc_files $root_sbin_files $root_lbin_files >/dev/null

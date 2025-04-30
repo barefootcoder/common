@@ -1,0 +1,14 @@
+#! /usr/local/bin/launch bash -*PROJ:archer-boot -*DEVOPS
+
+assert-var CEROOT
+
+shared_tmp=$CEROOT/tmp
+if [[ ! -d $shared_tmp ]]
+then
+	fatal-error "the Vagrant box seems to be down; this can't work"
+fi
+new_env=$shared_tmp/aider-keys.env
+
+env=~/local/data/ai-keys/aider-keys.gpg
+gpg --quiet --decrypt $env >$new_env
+chmod 600 $new_env
