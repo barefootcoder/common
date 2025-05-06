@@ -1,0 +1,124 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+use Date::Easy;
+
+const my $CEROOT => $ENV{CEROOT};
+
+
+opts <<'-';
+	[-nD] <ticket>
+	-n : noaction (don't do it, just say what you would have done)
+	-D : debug mode (implies -v)
+	<ticket> : ticket (all equivalent): CLASS-123 class-123 123
+
+	directory is always $CEROOT/tmp
+	basename is drawn from ticket
+	- either match existing pattern `class-123-*'
+	- or create new basename as `class-123-code'
+-
+
+my $ticket = shift or usage_error("must supply ticket to build for");
+$ticket =~ /^(class-)?(\d{3,})$/i or usage_error("don't recognize ticket format");
+$ticket = "class-$2";
+my $dirname = path($CEROOT, 'tmp');
+my $basename = do
+{
+	my @candidates =	map  { s/-v\d+\.txt$//r or ()              }
+						sort { path($a)->mtime <=> path($b)->mtime }
+						     ( glob("$dirname/$ticket-*")          )
+	;
+	@candidates ? pop @candidates : "$ticket-code";
+};
+
+
+my @files;
+given ($ticket)
+{
+	when ('class-448')
+	{
+		push @files, glob("$CEROOT/devtools/new-db-*");
+		push @files, glob("$CEROOT/devtools/preqa-*");
+		push @files, "$CEROOT/bin/config-aurora-login";
+		push @files, "$CEROOT/bin/mysql-as-root";
+	}
+
+	when ('class-533')
+	{
+		push @files, "$CEROOT/bin/ec2-launch-instance";
+		push @files, glob("$CEROOT/lib/CE/Command/ec2_launch_instance*");
+		push @files, "$CEROOT/etc/puppet/templates/iptables/iptables-nat";
+		push @files, "$CEROOT/etc/puppet/manifests/$_"
+				foreach qw< modules/apache.pp modules/ce-website.pp modules/iptables.pp nodes/development.pp >;
+
+		my $infile  = path("$CEROOT/lib/CE/Dbconfig.pm");
+		my $outfile = path("$CEROOT/tmp/Dbconfig-trimmed.pm");
+		$outfile->spew( map { trim_config($_) } $infile->slurp );
+		push @files, $outfile;
+	}
+
+	# otherwise:
+	fatal-error("don't know how to build for $ticket; teach me");
+}
+
+my @cmd = ('files-for-claude' => -O => $basename, @files);
+$OPT{n} ? color_msg(cyan => "would run: @cmd") : sh @cmd;
+
+
+# ---------- trim_config.pm -----------------------------------
+# This part written by ChatGPT (o3).
+
+# ---------------------------------------------------------------
+#  trim_config( $line )
+#     ▸ Implements Buddy’s 4‑step algorithm verbatim:
+#         1.  On "my %DBCONFIG_INFO" → emit that line, an open
+#             parenthesis, and one “entries omitted” comment; stop
+#             passthru.
+#         2.  On "preqa-main-rw"     → resume passthru *and* emit
+#             the line itself.
+#         3.  On "'prod-dw-rw' =>"   → emit one “entries omitted”
+#             comment; stop passthru.
+#         4.  On ");" (while stopped)→ emit the line and resume.
+# ---------------------------------------------------------------
+sub trim_config
+{
+    my ( $line ) = @_;
+
+    state $passthru = 1;          # currently copying lines?
+	# comment to print while we're skipping
+    state $ommitted_comment = "    # :\n    # some entries omitted to save space\n    # :\n";
+
+    # ‣ 1.  first sentinel – replace big prologue with 1 comment
+    if ( $line =~ /^\s*my \s+ %DBCONFIG_INFO \b/x )
+    {
+        $passthru = 0;
+        return $line . "(\n$ommitted_comment";
+    }
+
+    # ‣ 2.  start of keep‑range
+    if ( !$passthru && $line =~ /preqa-main-rw/ )
+    {
+        $passthru = 1;
+        return $line;
+    }
+
+    # ‣ 3.  end‑of‑keep‑range
+    if ( $passthru && $line =~ /^\s*'prod-dw-rw'\s*=>/ )
+    {
+        $passthru = 0;
+        return $ommitted_comment;
+    }
+
+    # ‣ 4.  closing paren of the hash (while skipping)
+    if ( !$passthru && $line =~ /^\s*\);\s*$/ )
+    {
+        $passthru = 1;
+        return $line;
+    }
+
+    # default: copy line if passthru is on
+    return $passthru ? $line : q{};
+}
