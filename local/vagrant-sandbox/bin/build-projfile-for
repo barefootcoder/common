@@ -52,7 +52,10 @@ given ($ticket)
 		push @files, glob("$CEROOT/lib/CE/Command/ec2_launch_instance*");
 		push @files, "$CEROOT/etc/puppet/templates/iptables/iptables-nat";
 		push @files, "$CEROOT/etc/puppet/manifests/$_"
-				foreach qw< modules/apache.pp modules/ce-website.pp modules/iptables.pp nodes/development.pp >;
+				foreach qw<
+							modules/apache.pp modules/ce-website.pp modules/iptables.pp
+							nodes/development.pp nodes/corporate.pp
+						  >;
 
 		my $infile  = path("$CEROOT/lib/CE/Dbconfig.pm");
 		my $outfile = path("$CEROOT/tmp/Dbconfig-trimmed.pm");
