@@ -6,6 +6,19 @@ use autodie ':all';
 use List::Util qw< any >;
 
 
+const my %NAS =>
+(
+	taaveren	=>	{
+						port => 2322,
+						user => 'egwene',
+						base_path => '/volume1',
+					},
+);
+const my $CUR_NAS            => 'taaveren';
+const my $CUR_NAS_BASE_PATH  => "$CUR_NAS:$NAS{$CUR_NAS}->{base_path}";
+const my @CUR_NAS_RSYNC_OPTS => ( -e => "ssh -p $NAS{$CUR_NAS}->{port} -l $NAS{$CUR_NAS}->{user}" );
+
+
 opts <<'-';
 	[-qRCD] { <dir> | -d <path> [<dir>] } | [-qCD] { nas:<path> <path> | <path> nas:<path> }
 	-R : reverse sync (local => NAS)
@@ -24,19 +37,19 @@ my ($src, $dest) = do
 		my $dest = $OPT{d};
 		-d $dest && $dest =~ m|^/| or fatal("must use existing absolute path with -d");
 		my $dir = $dest =~ m{^/export/(.*)$} ? $1 : shift // usage_error("cannot infer share name from $dest");
-		my $src = "taaveren:/volume1/$dir";
+		my $src = "$CUR_NAS_BASE_PATH/$dir";
 		($src, $dest);
 	}
 	elsif (@ARGV == 2)
 	{
 		usage_error("for path-to-path copy, exactly one path must start with a remote")
 				unless (grep { /^\w+:/ } @ARGV) == 1;
-		map { s|/$||r } map { s/^nas:/taaveren:/r } @ARGV;
+		map { s|/$||r } map { s/^nas:/$CUR_NAS:/r } @ARGV;
 	}
 	else
 	{
 		my $dir = shift or usage_error("must supply directory to sync");
-		my $src = "taaveren:/volume1/$dir";
+		my $src = "$CUR_NAS_BASE_PATH/$dir";
 		my $dest = dir( '/export', $dir );
 		-d $dest or fatal("can't locate: $dest");
 		($src, $dest);
@@ -53,7 +66,7 @@ if ($OPT{R})
 my $update = $OPT{C} ? '-rlDvc' : '-a';									# `-C` version suggested by ChatGPT
 my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle');
 my @cmd = (rsync => $update, qw< --no-o --no-g --no-p >, qw< -u >, @excludes);
-push @cmd, -e => 'ssh -p 2322 -l egwene' if any { /^taaveren:/ } ($src, $dest);
+push @cmd, @CUR_NAS_RSYNC_OPTS if any { /^$CUR_NAS:/ } ($src, $dest);
 my @view = (@cmd => -v => -n => "$src/", "$dest/", '|', split(' ', $ENV{PAGER}));
 sh @view;
 
