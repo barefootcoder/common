@@ -16,32 +16,56 @@ function find_ssh_sockets
 # Find running ssh-agent processes for current user
 function find_ssh_agents
 {
-    /bin/pgrep -u $(id -u) ssh-agent
+    /bin/pgrep -u $(id -u) ssh-agent | tr '\n' ' ' | sed 's/ $//'
 }
 
 # Test if a socket works
 function test_socket
 {
     local socket="$1"
+    local verbose="$2"
 
-    # Just test the socket without setting environment
-    SSH_AUTH_SOCK="$socket" ssh-add -l >/dev/null 2>&1
+    # Test if the socket file exists and is accessible
+    if [[ ! -S "$socket" ]]
+    then
+        [[ "$verbose" ]] && echo "# Socket $socket does not exist or is not a socket" >&2
+        return 1
+    fi
+
+    # Just test the socket without setting environment, with timeout
+    timeout 2 env SSH_AUTH_SOCK="$socket" /bin/ssh-add -l >/dev/null 2>&1
 
     # Return codes:
     # 0 = connection works, has keys
     # 1 = connection works, no keys
     # 2 = connection failed
-    [[ $? -lt 2 ]]
+    # 124 = timeout
+    local result=$?
+
+    if [[ "$verbose" ]]
+    then
+        case $result in
+            0) echo "# Socket $socket: working (has keys)" >&2 ;;
+            1) echo "# Socket $socket: working (no keys)" >&2 ;;
+            2) echo "# Socket $socket: connection failed" >&2 ;;
+            124) echo "# Socket $socket: timeout (likely stale)" >&2 ;;
+            127) echo "# Socket $socket: command not found or execution error" >&2 ;;
+            *) echo "# Socket $socket: unknown error ($result)" >&2 ;;
+        esac
+    fi
+
+    [[ $result -lt 2 ]]
 }
 
 # Find the first working socket
 function find_working_socket
 {
     local sockets=$(find_ssh_sockets)
+    local verbose="$1"
 
     for socket in $sockets
     do
-        if test_socket "$socket"
+        if test_socket "$socket" "$verbose"
         then
             echo "$socket"
             return 0
@@ -52,8 +76,12 @@ function find_working_socket
 }
 
 # MAIN: output environment settings
+# Check for verbose flag
+verbose=""
+[[ "$1" == "-v" || "$1" == "--verbose" ]] && verbose="1"
+
 # Get the first working socket
-socket=$(find_working_socket)
+socket=$(find_working_socket "$verbose")
 
 if [[ "$socket" ]]
 then
@@ -65,9 +93,19 @@ else
     agents=$(find_ssh_agents)
     if [[ "$agents" ]]
     then
-        echo "# SSH agent is running ($agents) but no working sockets found" >&2
+        echo "# SSH agent is running (PIDs: $agents) but no working sockets found" >&2
+        echo "# Suggestion: kill existing agents and start fresh with 'ssh-agent'" >&2
+        echo "# Or try: pkill ssh-agent && eval \$(ssh-agent)" >&2
+
+        # If verbose, test all sockets to show their status
+        if [[ "$verbose" ]]
+        then
+            echo "# Socket diagnostic:" >&2
+            find_working_socket "$verbose" >/dev/null
+        fi
     else
         echo "# No SSH agent found" >&2
+        echo "# Suggestion: start one with 'eval \$(ssh-agent)'" >&2
     fi
     exit 1
 fi
