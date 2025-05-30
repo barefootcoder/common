@@ -1,6 +1,12 @@
 # Claude Helper Guide for Common Repository
 
 ## Testing & Development (for `myperl` subtree)
+- Use Test Driven Development (TDD):
+  1. Write tests first that verify the expected behavior
+  2. Run tests to confirm they fail (validating the tests themselves)
+  3. Implement the code to make tests pass
+  4. Run tests again to verify implementation
+  5. Refactor as needed while keeping tests passing
 - Run test suite: `t myperl`
 - Run specific unit test: `t perl/myperl/t/<test_file>.t`
 - Install dependencies: `bin/myperl-cpm myperl`
@@ -30,3 +36,19 @@
 - `/local/`: Machine-specific code
 
 Follow existing patterns when adding new code.
+
+## Git Commit Format
+When committing changes, use this format:
+```
+brief summary line (imperative mood, lowercase)
+
+- Bullet point description of key changes
+- Use descriptive bullets focusing on "what" and "why"
+- Keep lines under 72 characters when possible
+
+🤖 Generated with [Claude Code](https://claude.ai/code) (<model_name>)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Note:** Replace `<model_name>` with the actual Claude model being used (e.g., "Sonnet 4", "Sonnet 4.1", etc.)
