@@ -1,0 +1,15 @@
+#!/bin/bash
+info=$(upsc apc 2>/dev/null | perl -lne '
+    BEGIN { %labels = (
+        "ups.status" => "Status",
+        "battery.charge" => "Battery",
+        "battery.runtime" => "Runtime (sec)",
+        "ups.load" => "Load",
+        "input.voltage" => "Input Voltage"
+    )}
+    if (/^(ups\.status|battery\.charge|battery\.runtime|ups\.load|input\.voltage):\s*(.+)/) {
+        printf "%-20s  ::  %s\n", $labels{$1}, $2
+    }
+')
+
+zenity --info --title="UPS Status" --text="$info" --width=300 --height=200
