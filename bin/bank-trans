@@ -335,8 +335,9 @@ my %DESCRIPTIONS =
 							qr/Simi Chiro/i,
 							qr/MDLive/i,
 							qr/Rula Health/i,
-							qr/Mojgan Makhsoosi?/i,
 							qr/Family Psych/i,
+							qr/Joyce Weckl/i,
+							qr/Mojgan Makhsoosi?/i,
 						],
 	
 );
@@ -397,7 +398,7 @@ my %WHAT_LOOKUP =
 	'ABACUS CERTIFY'					=>	'Certify (expense reimbursement)',
 	'Disney Plus'						=>	'Hulu et al',
 	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)',
-	'ADVICEPAY.COM'						=>	'Money Illustrated (CFP Jen)',
+	'ADVICEPAYCOM'						=>	'Money Illustrated (CFP Jen)',
 	'CHWYINC'							=>	'Chewy',
 );
 
