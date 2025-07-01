@@ -6,6 +6,7 @@ use myperl::Pxb	ONLY => [qw< glob title_case round >];					# minimal list of wha
 use DevOps::EC2;
 
 const my $CEROOT         => "$ENV{CEROOT}";
+const my $CHEOPSROOT     => "$ENV{CHEOPSROOT}";
 const my $CEFLOW         => "$CEROOT/devtools/ceflow";
 const my $INSTALL_REMOTE => "$CEROOT/bin/install-remote";
 
@@ -31,45 +32,87 @@ fatal_error("must supply instance to sync to")         unless $instance;
 fatal_error("cannot locate install-remote")            unless -x $INSTALL_REMOTE;
 fatal_error("cannot connect to $instance (bad name?)") unless verify_connectivity;
 
-sub remote_last_pulled ()
-{
-	open my $PIPE, "| launch SNIPPET";
-	say $PIPE 'bashlib-demand archer-network';
-	say $PIPE 'run-remote brat-i-0a3f05b53249a622b "launch SNIPPET -Msandbox ce-last-pulled-hours-ago"';
-}
+my $is_quin = $instance =~ /^quin-/;
+
+my $remote_root = ec2_remote_root($instance);
 my $remote_user = ec2_remote_owner($instance);
 color_msg(cyan => "remote user: $remote_user") if $OPT{D};
-my $local_last_pulled = bash_function(sandbox => 'ce-last-pulled-hours-ago');
-color_msg(cyan => "local CE last pulled: $local_last_pulled hrs ago") if $OPT{D};
-my $pull_command       = '"launch SNIPPET -Msandbox ce-last-pulled-hours-ago"';
-my $remote_last_pulled = bash_function('archer-network' => 'run-remote', $instance, $pull_command);
-color_msg(cyan => "remote CE last pulled: $remote_last_pulled hrs ago") if $OPT{D};
+color_msg(cyan => "remote root: $remote_root") if $OPT{D};
 
+sub run_remote
+{
+	my ($instance, $command) = @_ == 2 ? @_ : die("need 2 args: instance and command");
+	my $out = bash_function('archer-network' => 'run-remote', '--start-dir' => $remote_root, $instance, $command);
+	return defined wantarray ? $out : say $out;
+}
+sub run_with_ceroot
+{
+	my ($instance, $command) = @_ == 2 ? @_ : die("need 2 args: instance and command");
+	my $out = bash_function('archer-network' => 'run-with-CEROOT', 'archer-ssh', $instance, $command);
+	return defined wantarray ? $out : say $out;
+}
+
+my $remote_cheops;				# this is expensive to calculate
+if ($is_quin)					# and we only need it if it's a `quin`
+{
+	$remote_cheops = run_with_ceroot($instance, 'echo $CHEOPSROOT');
+	color_msg(cyan => "remote cheops: $remote_cheops") if $OPT{D};
+}
+
+my ($local_ce_last_pulled, $remote_ce_last_pulled, $local_cheops_last_pulled, $remote_cheops_last_pulled);
+unless ($OPT{f})				# no need to check last pulled's if we're just going to force the refresh anyway
+{
+	$local_ce_last_pulled = bash_function(sandbox => 'ce-last-pulled-hours-ago');
+	color_msg(cyan => "local CE last pulled: $local_ce_last_pulled hrs ago") if $OPT{D};
+	my $pull_command    = 'launch SNIPPET -Msandbox ce-last-pulled-hours-ago';
+	$remote_ce_last_pulled = run_remote($instance, $pull_command);
+	color_msg(cyan => "remote CE last pulled: $remote_ce_last_pulled hrs ago") if $OPT{D};
+	if ($is_quin)				# don't care about cheops state except on `quin`s
+	{
+		$local_cheops_last_pulled = bash_function(sandbox => 'cheops-last-pulled-days-ago');
+		color_msg(cyan => "local cheops last pulled: $local_cheops_last_pulled days ago") if $OPT{D};
+		my $cheops_pull_command    = 'launch SNIPPET -Msandbox cheops-last-pulled-days-ago';
+		$remote_cheops_last_pulled = run_remote($instance, $cheops_pull_command);
+		color_msg(cyan => "remote cheops last pulled: $remote_cheops_last_pulled days ago") if $OPT{D};
+	}
+}
 
 blank_line;
+if ($is_quin)					# have to check for dirty `cheops:` repo on `quin`s
+{
+	my $git_status_check   = 'git -C $CHEOPSROOT status --short';
+	my $dirty_cheops_files = run_with_ceroot($instance, $git_status_check);
+	if ($dirty_cheops_files)
+	{
+		fatal_error("cannot refresh remote `cheops:` with modified files:\n\n$dirty_cheops_files");
+	}
+}
+
+
 sh('git-helper-stat' => -S =>);
 blank_line;
 confirm_or_wait("continue with sync?");
 
-if ( $local_last_pulled >= 3 or $OPT{f} )
+if ( $OPT{f} or $local_ce_last_pulled >= 3 )
 {
 	my ($cur_branch) = grep { /^\*/ } sh(git => branch => '--no-color', '-vv');
+	color_msg(cyan => "current branch (local): $cur_branch") if $OPT{D};
 	if ( $cur_branch =~ m{\[.*?/.*?\]} )			# IOW, if the current branch has an upstream version
 	{
-		color_msg_block(cyan => "syncing local side with GitHub");
+		color_msg_block(cyan => "syncing local CE with GitHub");
 		chdir $CEROOT;
-		sh($CEFLOW => 'my-sync');
+		sh(-e => $CEFLOW => 'my-sync');
 	}
 	elsif ( $cur_branch =~ m{^\* feature/} )		# IOW, if it's a feature branch
 	{
-		color_msg_block(cyan => "syncing local side and updating feature branch");
+		color_msg_block(cyan => "syncing local CE and updating feature branch");
 		my $is_dirty = sh(git => status => '--porcelain') ne '';
 		if ($is_dirty)
 		{
 			sh('git-savetimes' => '--save',  -u => '--auto', $ME);
 			sh( git => stash   =>    push => -u =>     -m => $ME);
 		}
-		sh($CEFLOW => 'branch-update');
+		sh(-e => $CEFLOW => 'branch-update');
 		if ($is_dirty)
 		{
 			sh( git => stash   =>    pop          =>    'stash@{0}');
@@ -78,37 +121,49 @@ if ( $local_last_pulled >= 3 or $OPT{f} )
 	}
 	else
 	{
-		color_msg_block(cyan => "no need to sync local side (unpublished non-feature branch)");
+		color_msg_block(cyan => "no need to sync local CE (unpublished non-feature branch)");
 	}
 }
 
-my $is_quin = $instance =~ /^quin-/;
-if ( $remote_last_pulled >= 3 or $OPT{f} )
+# remember: CE last pulled is in hours; cheops last pulled is in days
+if ( $OPT{f} or $local_cheops_last_pulled > 0 )
+{
+	color_msg_block(yellow => "You must manually sync your local cheops!");
+	0 until confirm("Ready to proceed? (Ctrl-C to exit)");
+}
+
+if ( $OPT{f} or $remote_ce_last_pulled >= 3 or $remote_cheops_last_pulled > 0 )
 {
 	color_msg_block(cyan => "syncing remote side with GitHub");
 	if ($is_quin)
 	{
-		my $mondays = '"mondays --update-only --bail-after-pull"';
-		bash_function('archer-network' => 'run-with-CEROOT' => 'archer-ssh' => $instance, $mondays);
+		my $mondays = "devtools/mondays --update-only --bail-after-pull";
+		run_with_ceroot($instance, $mondays);
 	}
 	else
 	{
-		sh($INSTALL_REMOTE => '--copy-code' => $instance);
+		sh(-e => $INSTALL_REMOTE => '--copy-code' => $instance);
 	}
 }
 else
 {
-	color_msg_block(cyan => "skipping sync with GitHub due to recent pull");
+	color_msg_block(cyan => "skipping remote sync with GitHub due to recent pull");
 	wait_seconds(3);
 }
 
 color_msg_block(cyan => 'syncing code (local => remote)');
 my @verify_or_not = $OPT{Y} ? () : ( 'verify=1' );
-sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user ", @verify_or_not, "$CEROOT/", "$instance:/var/local/CE-src/");
-unless ($is_quin)
+sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user", @verify_or_not, "$CEROOT/", "$instance:$remote_root/");
+if ($is_quin)
+{
+	color_msg_block(cyan => 'syncing cheops (local => remote)');
+	sh(launch => LOCAL => 'archer-rsync' => "user=$remote_user", @verify_or_not,
+			"$CHEOPSROOT/", "$instance:$remote_cheops/");
+}
+else
 {
 	color_msg_block(cyan => 'syncing code (remote SRCDIR => remote APPDIR)');
-	sh("$CEROOT/devtools/cessh" => '--root', $instance => '/var/local/bin/install-ce' => '--make-src-live',
+	sh(-e => "$CEROOT/devtools/cessh" => '--root', $instance => '/var/local/bin/install-ce' => '--make-src-live',
 			'--owner' => $remote_user, '--group' => 'CE');
 }
 color_msg_block(green => 'All done!');
