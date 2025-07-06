@@ -43,7 +43,7 @@ else
 $curvol = force_into_range($curvol, 0, 100);
 
 adjust_volume($curvol);
-say "voume set to: $curvol";
+say "volume set to: $curvol";
 $curvol_file->spew($curvol);
 
 

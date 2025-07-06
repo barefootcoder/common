@@ -125,7 +125,7 @@ sub change_volume
 	$curvol = force_into_range($curvol, 0, 100);
 
 	adjust_volume($curvol);
-	say "voume set to: $curvol";
+	say "volume set to: $curvol";
 	VolumeFile->spew($curvol) unless $OPT{n};
 }
 
