@@ -40,13 +40,22 @@ function do_git
 
 function vc
 {
-	eval "local $(grep VCtoolsDir ~/.vctools/vctools.conf)"
-	$VCtoolsDir/bin/vc "$@"
+	if $CAN_ACCESS_VC
+	then
+		$VCtoolsDir/bin/vc "$@"
+	else
+		die "no VCtools access!"
+	fi
 }
 
 function Mainline
 {
-	vc info %Mainline
+	if $CAN_ACCESS_VC
+	then
+		vc info %Mainline
+	else
+		die "no VCtools access!"
+	fi
 }
 
 function current_branch
@@ -77,6 +86,10 @@ function all_unpushed
 {
 	vc info %local_commits
 }
+
+eval "declare $(grep VCtoolsDir ~/.vctools/vctools.conf)"				# sets `$VCtoolsDir`
+CAN_ACCESS_VC=true
+[[ -e $VCtoolsDir/extlib || ${VCTOOLS_EXTLIB_DIR:-} ]] || CAN_ACCESS_VC=false
 
 cmd="log"
 
