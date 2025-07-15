@@ -1,7 +1,3 @@
-# necessary for local VCtools libs
-# (Actually, I'm pretty sure this isn't neessary at all ...)
-#setenv VCTOOLS_EXTLIB_DIR /var/tmp/VCtools-extlib
-
 # have `daystart` run on Caemlyn too
 alias daystart ~/local/bin/daystart
 

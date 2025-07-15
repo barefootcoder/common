@@ -1,3 +1,4 @@
+#setenv TCSHRC_DEBUG 1
 source ~/bin/tcshrc-DEBUG "starting tcshrc"
 if ( $?tcsh_reset ) then
 	# make sure fortune index gets updated, symlinks are updated, etc
@@ -285,6 +286,12 @@ if ( -d $PINTO_HOME ) then
 endif
 source ~/bin/tcshrc-DEBUG "finished perlbrew et al"
 
+set _extlib_dir=/var/tmp/VCtools-extlib
+if ( -d $_extlib_dir ) then
+	setenv VCTOOLS_EXTLIB_DIR $_extlib_dir
+else
+	unsetenv VCTOOLS_EXTLIB_DIR $_extlib_dir
+endif
 source ~/.vctoolsrc
 	set pbtest_path=~/proj/Pb.testing/bin:$PATH
 	set pbtest_lib=$HOME/proj/Pb.testing/lib:$HOME/proj/perlx-bash/lib:$PERL5LIB
