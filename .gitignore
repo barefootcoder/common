@@ -1,2 +1,4 @@
 
+# Personal developer AI tool configurations
 .aider*
+**/.claude/settings.local.json
