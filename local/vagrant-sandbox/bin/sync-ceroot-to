@@ -77,8 +77,10 @@ unless ($OPT{f})				# no need to check last pulled's if we're just going to forc
 	}
 }
 
+my $should_pull_remote = ( $OPT{f} or $remote_ce_last_pulled >= 3 or $remote_cheops_last_pulled > 0 );
+
 blank_line;
-if ($is_quin)					# have to check for dirty `cheops:` repo on `quin`s
+if ($is_quin and $should_pull_remote)					# have to check for dirty `cheops:` repo on `quin`s
 {
 	my $git_status_check   = 'git -C $CHEOPSROOT status --short';
 	my $dirty_cheops_files = run_with_ceroot($instance, $git_status_check);
@@ -132,7 +134,7 @@ if ( $OPT{f} or $local_cheops_last_pulled > 0 )
 	0 until confirm("Ready to proceed? (Ctrl-C to exit)");
 }
 
-if ( $OPT{f} or $remote_ce_last_pulled >= 3 or $remote_cheops_last_pulled > 0 )
+if ($should_pull_remote)
 {
 	color_msg_block(cyan => "syncing remote side with GitHub");
 	if ($is_quin)
