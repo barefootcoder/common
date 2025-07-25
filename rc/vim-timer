@@ -23,7 +23,7 @@
 :map <C-D><C-F> :up<CR>^:!fake_timer -w2 daybreak 'last friday' %<CR>
 :map <C-D><C-R> :up<CR>^:!fake_timer review <cword> %<CR>
 :map <C-W><C-W> :up<CR>^1G!Gfake_timer new-week timer-fixes %<CR>
-:map <C-T><C-T> :call SavePos()<CR><C-N>n$:!fake_timerttl <C-R><C-A> %<CR>:call PauseAndRestorePos()<CR>
+:map <C-T><C-T> :call SavePos()<CR>0/<C-R><C-A>:<Tab><CR>$:!fake_timerttl <C-R><C-A> %<CR>:call PauseAndRestorePos()<CR>
 :map <Esc>n /-,<CR>
 :map <Esc>c 0/<C-R><C-A><CR>
 :let b:timer="email"
