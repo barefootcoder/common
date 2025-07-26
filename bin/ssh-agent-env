@@ -16,7 +16,7 @@ function find_ssh_sockets
 # Find running ssh-agent processes for current user
 function find_ssh_agents
 {
-    /bin/pgrep -u $(id -u) ssh-agent | tr '\n' ' ' | sed 's/ $//'
+    /usr/bin/pgrep -u $(id -u) ssh-agent | tr '\n' ' ' | sed 's/ $//'
 }
 
 # Test if a socket works
