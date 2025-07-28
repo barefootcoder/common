@@ -21,6 +21,7 @@ my %DESCRIPTIONS =
 							qr/booster transfer/i,
 							qr/requested transfer/i,
 							qr/overdraft transfer/i,
+							qr/Altruist/i,
 						],
 	Mortgage		=>	[
 							qr/BAC Home Loans/i,
@@ -121,7 +122,6 @@ my %DESCRIPTIONS =
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
 							qr/CVS\.com/i,
-							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
 							qr/WW INT(ERNATIONA|')L?/i,
 							qr/Lume deodorant/i,
@@ -213,6 +213,7 @@ my %DESCRIPTIONS =
 							qr/Pizza Hut/i,
 							qr/Toppers/i,
 							qr/MOD Pizza/i,
+							qr/Snapper Jack's/i,
 							qr/Fatte'?s Pizza/i,
 							qr/Burger Express/i,
 							qr/Ameci/i,
@@ -224,7 +225,7 @@ my %DESCRIPTIONS =
 							qr/\bThe Hat\b/i,
 							qr/^Habit\b/i,
 							qr/Golden Tiger/i,
-							qr/Indian Haweli/i,
+							qr/Indian Haweli?/i,
 							qr/FunBurger/i,
 							qr/Baja Fresh/i,
 							qr/118 Cafe/i,
@@ -454,13 +455,6 @@ foreach (@transactions)
 			$category = $descr =~ /OPTUM/ ? 'HSA to be reimbursed' : 'Reimburse';
 		}
 
-		if ( $descr eq 'PAYPAL INST XFER' and abs($amount) == 5 and date($date)->day <= 5 )
-		{
-			$category = 'Charity';
-			$what = 'Patreon';
-			$who = 'Christy';
-		}
-
 		if ( $descr eq 'BK OF AMER VISA ONLINE PMT' and abs($amount) == 35 )
 		{
 			$category = 'Pets';
@@ -632,7 +626,6 @@ foreach (@transactions)
 			$who  = {
 						'Treasured Memories'	=>	'Christy',
 						'Jimmy Beans Wool'		=>	'Christy',
-						Panera					=>	'Christy',
 						Starbucks				=>	'Christy',
 						'PlayStation Network'	=>	'Perrin',
 						Nintendo				=>	'Perrin',
