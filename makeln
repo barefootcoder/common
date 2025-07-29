@@ -148,6 +148,27 @@ then
 	make_link $alt_rcdir/ai $HOME/local/data/ai-keys
 fi
 
+# Claude Code configuration directories
+if [[ $MACHINE_TYPE != "ec2" ]]
+then
+	claude_src=$mydir/conf/ai/claude
+	if [[ -d $claude_src ]]
+	then
+		[[ -d ~/.claude ]] || mkdir ~/.claude
+		cd $claude_src
+		for item in *
+		do
+			if [[ -d $item ]]
+			then
+				make_smart_dirlink $claude_src/$item ~/.claude/$item
+			elif [[ -f $item ]]
+			then
+				make_link $claude_src/$item ~/.claude/$item
+			fi
+		done
+	fi
+fi
+
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: constructed special rc's"
 
 # for bin, what we really want is for the whole directory to be symlinked

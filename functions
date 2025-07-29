@@ -113,6 +113,34 @@ function verify_dirlink
 	fi
 }
 
+# make a symlink, but handle existing directories intelligently
+# empty dirs get replaced silently, non-empty dirs get warnings
+function make_smart_dirlink
+{
+	local src_dir=$1 dest_dir=$2
+
+	if [[ -L $dest_dir ]]
+	then
+		# Already a symlink, let make_link handle it normally
+		make_link $src_dir $dest_dir
+	elif [[ -d $dest_dir ]]
+	then
+		if [[ -z $(ls -A $dest_dir 2>/dev/null) ]]
+		then
+			# Directory exists but is empty: replace silently
+			rmdir $dest_dir
+			make_link $src_dir $dest_dir
+		else
+			# Directory has contents: warn and skip
+			echo "WARNING: $dest_dir exists and contains files; skipping symlink" >&2
+			echo "  Move or remove contents, then re-run to enable symlink" >&2
+		fi
+	else
+		# Doesn't exist: create normally
+		make_link $src_dir $dest_dir
+	fi
+}
+
 
 # copy a file, as safely as possible
 function make_copy

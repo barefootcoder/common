@@ -1,0 +1,5 @@
+{
+  "name": "reread",
+  "description": "Re-read current file to update Claude's understanding after external changes",
+  "prompt": "I've made changes to a file outside of this session. Look at our conversation history to identify the file I was most recently working on (the file I last edited, tested, or discussed), then use the Read tool to re-read that specific file. After reading it:\n\n1. Acknowledge what has changed since your last interaction with it\n2. Update your internal model of the file's contents\n3. If you notice any issues or have suggestions about the changes, please share them\n\nDo NOT search for project configuration files or assume I mean something other than the file we were actively working on.\n\nIf I've provided additional instructions after '/reread', please execute those as well once you've completed the re-reading process."
+}
