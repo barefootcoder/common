@@ -42,6 +42,7 @@ my %file_counts =
 
 try
 {
+	$SIG{ALRM} = sub { die "timeout\n" };
 	alarm(30);
 	mce_map { sleep 1 until connected($_) } keys %file_counts;
 
