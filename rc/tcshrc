@@ -229,7 +229,7 @@ alias pbinst 'perlbrew install -n -j 5 --noman'
 alias cpi 'cpanm -n \!*'
 
 unalias aider
-alias claude /var/npm/bin/claude
+unalias claude
 
 alias resrc "set tcsh_reset ; source ~/.tcshrc"
 set sys_complete=/etc/profile.d/tcsh-complete
