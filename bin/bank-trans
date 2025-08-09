@@ -71,6 +71,7 @@ my %DESCRIPTIONS =
 							qr/Waste Management/i,
 						],
 	House			=>	[
+							qr/BlueRipple Pool/i,
 							qr/Gottlieb's/i,
 							qr/BRETT MORGAN/i,
 							qr/Q's Quality Pool/i,
@@ -129,6 +130,7 @@ my %DESCRIPTIONS =
 	Clothing		=>	[
 							qr/WomanWithin/i,
 							qr/LaneBryant/i,
+							qr/TJ Maxx/i,
 						],
 	Grooming		=>	[
 							qr/SuperCuts/i,
@@ -214,6 +216,7 @@ my %DESCRIPTIONS =
 							qr/Toppers/i,
 							qr/MOD Pizza/i,
 							qr/Snapper Jack's/i,
+							qr/El ?Pollo ?Loco/i,
 							qr/Fatte'?s Pizza/i,
 							qr/Burger Express/i,
 							qr/Ameci/i,
@@ -292,6 +295,7 @@ my %DESCRIPTIONS =
 							qr/TrollAndToad/i,
 							qr/NobleKnight/i,
 							qr/Game Nerdz/i,
+							qr/Adventure Together/i,
 							qr/ONEBOOKSHEL(F.COM)?/i,
 							qr/Elderbrain/i,
 							qr/MCDM Prod/i,
@@ -638,6 +642,7 @@ foreach (@transactions)
 						Elderbrain				=>	'Buddy',
 						NobleKnight				=>	'Buddy',
 						'Game Nerdz'			=>	'Buddy',
+						'Adventure Together'	=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
