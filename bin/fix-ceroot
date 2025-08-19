@@ -1,0 +1,61 @@
+#!/bin/bash
+source ~/common/functions
+
+
+# Check if CEROOT is set
+if [[ ! $CEROOT ]]
+then
+    die "CEROOT environment variable is not set"
+fi
+
+# 1) Refuse to run if $CEROOT is the current directory
+if [[ $CEROOT -ef $(pwd) ]]
+then
+    die "Cannot mount over the current directory"
+fi
+
+# 2) Check if CEROOT is already accessible
+if ls "$CEROOT" >/dev/null 2>&1
+then
+    echo "$ME: $CEROOT is already accessible, not mounting" >&2
+    exit 0
+fi
+
+# 3) Check if sshfs/ssh process is already running and kill it
+# Look for the ssh process that sshfs exec's to
+# The pattern should match our specific mount command
+existing_pid=$(ps aux | grep -E "ssh.*2222.*vagrant@127.0.0.1.*CE" | grep -v grep | awk '{print $2}')
+
+if [[ $existing_pid ]]
+then
+    echo "$ME: found existing sshfs/ssh process (PID: $existing_pid), killing it..." >&2
+    kill "$existing_pid" 2>/dev/null ||:
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$existing_pid" 2>/dev/null
+    then
+        kill -9 "$existing_pid" 2>/dev/null ||:
+    fi
+fi
+
+# 4) Run the sshfs mount command
+echo "$ME: Mounting vagrant CE directory to $CEROOT..." >&2
+
+private_key=/home/buddy/.vagrant.d/boxes/ce-dev-sandbox/0/virtualbox/vagrant_private_key
+ssh_opts=UserKnownHostsFile=/dev/null,StrictHostKeyChecking=no,IdentityFile=$private_key
+sshfs -p 2222 -o $ssh_opts vagrant@127.0.0.1:/home/vagrant/CE $CEROOT
+
+mount_result=$?
+
+if [[ $mount_result -ne 0 ]]
+then
+    die "sshfs mount command failed with exit code $mount_result"
+fi
+
+# 5) Verify that CEROOT is now accessible
+if ls "$CEROOT" >/dev/null 2>&1
+then
+    echo "$ME: Successfully mounted $CEROOT" >&2
+else
+    die "Mount appeared to succeed but $CEROOT is not accessible"
+fi
