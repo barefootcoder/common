@@ -1,19 +1,21 @@
 #!/usr/bin/env perl
 
-use myperl;
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use PerlX::bash;
+
 
 my $ME = 'claude';
 my $CLAUDE_PATH = '/var/npm/bin/claude';
 
 # Check if docker is in user's groups
-my @groups = split /\s+/, `groups`;
+my @groups = bash \words => 'groups';
 my $has_docker = grep { $_ eq 'docker' } @groups;
+$has_docker or die "$ME: no docker in your grouplist; MCP servers may not work\n";
 
-if ($has_docker)
-{
-	exec $CLAUDE_PATH, @ARGV;
-}
-else
-{
-	exec 'sg', 'docker', $CLAUDE_PATH, @ARGV;
-}
+# Add AI helper scripts directory to path
+$ENV{PATH} = bash \string => (addpath => glob("addpath ~/common/conf/ai/devtools"));
+
+exec $CLAUDE_PATH, @ARGV;

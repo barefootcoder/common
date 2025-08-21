@@ -1,0 +1,47 @@
+#!/bin/bash
+# check-dir-age.sh - Returns the age in days of the oldest file in a directory
+# Usage: check-dir-age.sh <directory>
+# Returns: Number of days since the oldest file was modified (non-recursive)
+
+ME=$(basename "$0")
+
+usage()
+{
+    echo "Usage: $ME <directory>"
+    echo "  Returns the age in days of the oldest file in the directory (non-recursive)"
+    echo "  Exit code 0 if successful, 1 if error"
+}
+
+if [ $# -ne 1 ]
+then
+    usage
+    exit 1
+fi
+
+DIR="$1"
+
+if [ ! -d "$DIR" ]
+then
+    echo "Error: Directory '$DIR' does not exist" >&2
+    exit 1
+fi
+
+# Find the oldest file modification time in the directory (non-recursive)
+# Using find with -maxdepth 1 to avoid recursion, excluding the directory itself
+OLDEST_TIMESTAMP=$(find "$DIR" -maxdepth 1 -type f -printf '%T@\n' 2>/dev/null | sort -n | head -1)
+
+if [ -z "$OLDEST_TIMESTAMP" ]
+then
+    echo "Error: No files found in directory '$DIR'" >&2
+    exit 1
+fi
+
+# Current timestamp
+CURRENT_TIMESTAMP=$(date +%s)
+
+# Calculate age in days
+AGE_SECONDS=$(echo "$CURRENT_TIMESTAMP - $OLDEST_TIMESTAMP" | bc)
+AGE_DAYS=$(echo "scale=1; $AGE_SECONDS / 86400" | bc)
+
+# Output just the number of days
+echo "$AGE_DAYS"
