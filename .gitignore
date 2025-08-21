@@ -2,3 +2,6 @@
 # Personal developer AI tool configurations
 .aider*
 **/.claude/settings.local.json
+
+# Private project data (sensitive network info, credentials, etc.)
+aidoc/projects/**/private/

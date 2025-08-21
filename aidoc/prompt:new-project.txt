@@ -1,0 +1,5 @@
+Please analyze `~/common/conf/ai/claude/commands/project.md`.  Then analyze `aidoc/projects/`, in particular `aidoc/projects/README.md`.  This should give you enough information to create a new project.
+
+Ask me for the name of the project.  Convert to kebab-case if necessary, then create a directory with that name under `aidoc/projects/`.  Then ask me for information about the new project and create all neceesary files.  Be sure to provide sufficient information and instructions for future AI agents to be able to work on the project.
+
+Let me know when you're ready to proceed.

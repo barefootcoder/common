@@ -1,0 +1,74 @@
+# Common exclude patterns for rsync backups
+# Usage: rsync -av --exclude-from=rsync-exclude.txt source/ dest/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.fuse_hidden*
+.Trash-*
+.nfs*
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.pid
+*.lock
+tmp/
+temp/
+/var/tmp/
+/tmp/
+
+# Cache directories
+.cache/
+*cache*/
+.local/share/Trash/
+.Trash/
+*.pyc
+__pycache__/
+
+# Development
+.git/objects/
+.git/lfs/
+.svn/
+.hg/
+node_modules/
+vendor/
+bower_components/
+.sass-cache/
+dist/
+build/
+*.o
+*.so
+*.a
+
+# Media caches
+.thumbnails/
+.thumbs/
+
+# Large files (customize as needed)
+*.iso
+*.vmdk
+*.vdi
+*.ova
+core
+core.*
+
+# Backup files
+*.bak
+*.backup
+*.old
+.backup/
+backups/
+
+# Security sensitive (be careful)
+.ssh/known_hosts
+.bash_history
+.zsh_history
+.mysql_history
+.psql_history
+.gnupg/random_seed

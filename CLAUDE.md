@@ -1,15 +1,29 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Claude Helper Guide for Common Repository
 
-## Testing & Development (for `myperl` subtree)
-- Use Test Driven Development (TDD):
-  1. Write tests first that verify the expected behavior
-  2. Run tests to confirm they fail (validating the tests themselves)
-  3. Implement the code to make tests pass
-  4. Run tests again to verify implementation
-  5. Refactor as needed while keeping tests passing
-- Run test suite: `t myperl`
-- Run specific unit test: `t perl/myperl/t/<test_file>.t`
-- Install dependencies: `bin/myperl-cpm myperl`
+## Core Architecture
+
+This is a personal utilities repository containing:
+- **myperl framework**: Modern Perl utility library with enhanced features (strict, warnings, autodie, utf8)
+- **Personal scripts**: Collection of utility scripts in `/bin/`
+- **Configuration files**: Shell, editor, and application configs in `/rc/`
+- **Machine-specific code**: Host-specific configurations in `/local/`
+
+### myperl Framework
+The `myperl` module (perl/myperl.pm) provides:
+- Automatic imports of common modules (strict, warnings, autodie, utf8, etc.)
+- Utility functions: `title_case()`, `round()`, `expand()`, `prompt()`, `confirm()`
+- Enhanced class system via `myperl::Classlet` with keywords like `rw`, `via`, `by`
+- Script utilities via `myperl::Script` and `myperl::Pxb`
+
+## Testing & Development Commands
+- **Run test suite**: `t myperl` (runs all myperl tests)
+- **Run specific test**: `t perl/myperl/t/<test_file>.t`
+- **Install dependencies**: `bin/myperl-cpm myperl`
+- **TDD workflow**: Write failing tests first, implement code, verify tests pass
 
 ## Code Style Guidelines
 - **Languages**: Primarily Perl and Bash
@@ -29,13 +43,20 @@
   - Use kebab-case for functions/commands
   - Use snake_case for variables
 
-## Repository Organization
-- `/bin/`: Executable scripts
-- `/perl/`: Perl modules (myperl framework)
-- `/rc/`: Configuration files
-- `/local/`: Machine-specific code
+## Key Files and Directories
+- `/bin/t`: Comprehensive test runner with coverage, profiling, and parallel execution
+- `/bin/myperl-cpm`: Dependency installer using App::cpm with cpanfile features
+- `/perl/myperl.pm`: Core framework providing enhanced Perl environment
+- `/perl/myperl/`: Framework modules (Classlet, Script, Pxb, etc.)
+- `/cpanfile`: Dependency specifications with feature groups
+- `/local/*/`: Host-specific configurations and scripts
 
-Follow existing patterns when adding new code.
+## Development Workflow
+When working with myperl code:
+1. Use TDD: write tests in `perl/myperl/t/` first
+2. Run `t myperl` to execute test suite
+3. Install new dependencies via `bin/myperl-cpm <feature>`
+4. Follow existing patterns in framework modules
 
 ## Git Commit Format
 When committing changes, use this format:
@@ -52,3 +73,16 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Note:** Replace `<model_name>` with the actual Claude model being used (e.g., "Sonnet 4", "Sonnet 4.1", etc.)
+
+## Collaboration Style
+- **"BE CREATIVE"**: Provide multiple high-level ideas with outside-the-box thinking
+- **"BE SPECIFIC"**: Give explicit step-by-step instructions assuming no prior knowledge
+- Ask clarifying questions when uncertain
+- Don't assume the user is always right - they value your expertise
+- Trust that the user can see the big picture
+
+## User Technical Background
+- **Programming**: Professional since 1987, Perl since 1996, strong OOP/TDD/systems design
+- **Shell**: Uses tcsh interactively, scripts in bash (mid-2000s+)
+- **Tools**: Experienced with git/GitHub, vim power user, prefers command-line when practical
+- **System**: Linux user since mid-90s, decent CLI skills, minimal sysadmin experience
