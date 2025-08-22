@@ -1,0 +1,55 @@
+#! /bin/bash
+source ~/common/functions
+
+# Define search directories once
+aidoc_dirs=(./aidoc ~/common/aidoc)
+
+type=$1
+[[ $type ]] || die "must supply type of file to locate"
+name=$2
+
+# If no name provided, list available items of that type
+if [[ ! $name ]]
+then
+	for dir in "${aidoc_dirs[@]}"
+	do
+		if [[ $type == "project" ]]
+		then
+			pattern="$dir/projects/*"
+			for item in $pattern
+			do
+				if [[ -d "$item" ]]
+				then
+					basename "$item"
+				fi
+			done
+		else
+			pattern="$dir/$type:*.md"
+			for item in $pattern
+			do
+				if [[ -f "$item" ]]
+				then
+					basename "$item" .md | cut -d: -f2
+				fi
+			done
+		fi
+	done | sort -u
+	exit
+fi
+
+# Look for specific item
+for dir in "${aidoc_dirs[@]}"
+do
+	if [[ $type == "project" ]]
+	then
+		file="$dir/projects/$name"
+	else
+		file="$dir/$type:$name.md"
+	fi
+	if [[ -r $file ]]
+	then
+		echo $file
+		exit
+	fi
+done
+die "$type $name NOT FOUND"
