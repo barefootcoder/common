@@ -24,6 +24,7 @@ my %blog =
 						italic		=>	'span style="font-style: italic;"',
 						bold		=>	'b',
 						strike		=>	's',
+						underline	=>	'u',
 						big			=>	'span style="font-size: larger;"',
 						small		=>	'span style="font-size: smaller;"',
 						smallcap	=>	'span style="font-variant: small-caps;"',
@@ -102,6 +103,9 @@ my $section_break = <<EOT;
 <img style="display:block; margin:0px auto 0px; text-align:center; width: 200px; height: 20px;" src="http://i58.photobucket.com/albums/g245/barefootcoder/sectionbreak.png" border="0" alt="section break" />
 EOT
 
+# things you can escape: [ ] { } * _ /
+const our $ESCAPED_CHAR => qr{\\([\[{*_/}\]])};
+
 #while ( <> )
 $_ = slurp;
 $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of footnotes
@@ -110,9 +114,10 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^>>}{//--};s{<<$}{--//}g;														# old-style blockquotes
 	s[{{(.+?)}}][`$1`]sg;															# old-style inline code
 
-	# temporary conversion so -> and <- aren't considered literal > or <
+	# temporary conversion so -> <- and => aren't considered literal > or <
 	my %align = ( '-><-' => 'CENTER', '->->' => 'RIGHT', '<-<-' => 'LEFT' );
-	s{\h*(->|<-)(.+?)(->|<-)\h*}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;
+	s{\h*(->|<-)(.+?)(->|<-)\h*}{~~$align{"$1$3"}~~$2~~$align{"$1$3"}~~}msg;		# left just, right just, or center
+	s{^=>\h*}{~~INDENT~~}mg;														# full-indent paragraph
 
 	# save URLs so they don't get messed with later
 	s{(?<![\\^])\[([^\[\]]+?)\|}{ '[' . block_save($1) . '|' }eg;					# ]] <-- to keep % from freaking out
@@ -137,7 +142,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	unless ($blog_type eq 'bbcode')
 	{
 		s{(\d) 1/2}{$1&frac12;}g;													# number + one half
-		s{(?<!\\)\b([123])/([234])\b}{&frac$1$2;}g;										# stand-alone fractions
+		s{(?<!\\)\b([123])/([234])\b}{&frac$1$2;}g;									# stand-alone fractions
 		s{(a m)oo(se once bit my sister)}{$1&oslash;&oslash;$2}ig;					# a Monty Python quote, preserving case
 		s{([\w-])'(\w)}{$1&rsquo;$2}g;												# apostrophes
 		s{(\W)'cause\b}{$1&rsquo;cause}g;											# apostrophe, not quote
@@ -152,9 +157,9 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{^----$}{$section_break}mg;													# section break
 	s{^====$}{<hr/>}mg;																# horizontal rule
 	s{^(_+)$}{"<br/>" x length($1)}meg;												# X blank lines
-	s{^//---\s*(.*?)\s*---//\n}{fmt(quote => $1) . "\n"}mseg;						# nested blockquotes
-	s{^//--\n(.*?)\n--//\n}{"<pre>" . fmt(quote => $1) . "</pre>\n"}mseg;			# preformatted blockquotes
-	s{^//--\s*(.*?)\s*--//\n}{fmt(quote => $1) . "\n"}mseg;							# blockquotes
+	s{^//---\s*(.*?)\s*---//\n}{quote($1) . "\n"}mseg;								# nested blockquotes
+	s{^//--\n(.*?)\n--//\n}{"<pre>" . quote($1) . "</pre>\n"}mseg;					# preformatted blockquotes
+	s{^//--\s*(.*?)\s*--//\n}{quote($1) . "\n"}mseg;								# blockquotes
 	s{^//>>\s*(.*?)\s*<<//\n}{fmt(collapsed => $1)}mseg;							# collapsed ("spoiler") elements
 	s{^\|\|-\s*(.*?)\s*-\|\|\n}{fmt(dialog => $1) . "\n"}mseg;						# transcript-type blocks
 	s{(-{3,})}{"\cD".length($1)}eg;													# long lines of consecutive dashes
@@ -168,18 +173,20 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	{
 		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
 	}																				# confused with boldface
+	s{(?<!\\)${front_boundary}__(.+?)(?<!\\)__$back_boundary}{$1 . fmt(underline => $2)}seg; # underlined
 	s{${front_boundary}_(\w+)_(?=\w)}{$1 . fmt(italic => $2)}seg;					# partial word italics (front)
 	s{(\w)_(\w+)_$back_boundary}{$1 . fmt(italic => $2)}seg;						# partial word italics (rear)
 	s{(?<!\\)${front_boundary}_(.+?)(?<!\\)_$back_boundary}{$1 . fmt(italic => $2)}seg;	# italics
 	s{(?<!\\)$front_boundary\*(.+?)\*$back_boundary}{$1 . fmt(bold => $2)}seg;		# bold
 	s{(?<!-)$front_boundary-(\S.*?)-$back_boundary(?!-)}{$1 . fmt(strike => $2)}eg;	# strikethrough
-	s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ url_block($1, $3) }seg;						# links (in/external, with/out alt text)
+	s{(?<![\\^])\[(.*?)(\|(.*?))?(?<!\\)\]}{ url_block($1, $3) }seg;				# links (in/external, with/out alt text)
 	unless (bbstyle)
 	{
 		no warnings 'uninitialized';
 		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
 		s{ \.\.\.}{&nbsp;...}g;														# normal ellipsis
-		s{([]).?!:])([*_])?  }{$1$2&nbsp; }g;										# proper end-of-sentence
+		s{([.?!:]([])]|\&rdquo;|</a>)*?[*_]?)  }{$1&nbsp; }g;						# proper end-of-sentence
+		s{(\cQ\d+)  }{$1&nbsp; }g;													# proper end-of-sentence after link
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
 		s{\^_(.*?)_}{fmt(super => $1)}seg;											# superscript
@@ -190,7 +197,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{~~CENTER~~(.*?)~~CENTER~~}{fmt(center => $1)}mseg;							# centered
 	s{~~RIGHT~~(.*?)~~RIGHT~~}{<div style="float:right">$1</div>}msg;				# floated right
 	s{~~LEFT~~(.*?)~~LEFT~~}{<div style="float:left">$1</div>}msg;					# floated left
-	s[\{img(\d+x\d+)? (.*?)\}][image($2, $1)]eg;									# embedded images
+	s[\{img(\d+%?x\d+%?)? (.*?)\}][image($2, $1)]eg;								# embedded images
 	s[\{spc(\d+)\}][blank_space($1)]eg;												# vertical space
 	s[{mix (.*?) ($roman_numeral)(\n\s*(.*?)\s*)?}][mix_block($1, $2, $4)]seg;		# mix volume
 	s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ url_block(FORWARD => $1, $3) }seg;			# forward links (internal only)
@@ -201,11 +208,13 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{\^\^}{footnote('ref')}eg;														# footnote (reference only)
 	s{\^(\d+)\s+(.*?)$}{footnote(text => $2, $1)}meg;								# footnote (text only)
 	s{([.?!]<sup>.*?</sup>)  }{$1&nbsp; }g;											# end-of-sentence after a footnote
-	s{\\([\[{*_/}\]])}{$1}g;														# literal brackets, braces, or */_
+	s{$ESCAPED_CHAR}{$1}g;															# literal brackets, braces, or */_
 	s{\\(?=1/)}{}g;																	# literal fractions
 
 	# paragraph everything if blog type requires it
 	$blog{$blog_type}->{para}->() if $blog{$blog_type}->{para};
+	# indent any paragraphs that need it
+	s{<p>~~INDENT~~}{<p style="margin-left: 30px;">}g;
 	# handle italics inside blockquotes (blogspot only)
 	if ($blog_type eq 'blogspot')
 	{
@@ -342,6 +351,8 @@ sub url_block
 	$url =~ s/&[lr]squo;/'/g;											# fixup single quotes
 	$url =~ s/&[lr]dquo;/"/g;											# fixup double quotes
 	$alt_text =~ s[\{img(\d+x\d+)? (.*?)\}][image($2, $1, 1)]e;			# alt text can be an image
+	$alt_text =~ s{$ESCAPED_CHAR}{$1}g;									# fixup literal brackets/braces/et al
+	debuggit(4 => "__post fixup: =>", $alt_text);
 
 	if ($url =~ /^(\w+):\S+$/)											# external link
 	{
@@ -425,6 +436,7 @@ func diacritic_fixup ($string is alias)
 		passe			=>	{ 5 => 'acute', },
 		voila			=>	{ 5 => 'grave', },
 		outre			=>	{ 5 => 'acute', },
+		naive			=>	{ 3 => 'uml',   },
 		naivete			=>	{ 3 => 'uml',   },
 		'a la'			=>	{ 1 => 'grave', },
 		facade			=>	{ 3 => 'cedil', plural => 1, },
@@ -444,11 +456,18 @@ func diacritic_fixup ($string is alias)
 		'mon frere'		=>  { 7 => 'grave', },
 		'deja vu'		=>	{ 2 => 'acute', 4 => 'grave', },
 		'raison detre'	=>	{ 9 => 'circ',  8 => q|'|,    },
+		'piece de resistance'
+						=>	{ 3 => 'grave', 11 => 'acute', },
+		'Beyonce'		=>	{ 7 => 'acute', },
 		'Pokemon'		=>	{ 4 => 'acute',	},
 		'Ingy dot Net'	=>	{ 7 => 'uml',   },
 		'Gabor'			=>	{ 2 => 'acute', },
 		'Szabo'			=>	{ 5 => 'acute', },
+		'Orban'			=>	{ 4 => 'acute', },
+		'Erdogan'		=>	{ 5 => 'breve', },
 		'Faerun'		=>	{ 5 => 'circ', },
+		'Lahanas-Calderon'
+						=> { 15 => 'acute' },
 	};
 	my $PRE = qr/(^|[^\w\\]|_)/;
 	my $POST = qr/(?=_|\W|$)/;
@@ -469,6 +488,9 @@ func diacritic_fixup ($string is alias)
 		my $find = /^[A-Z]/ ? qr/$PRE($_)$POST/ : qr/$PRE($_)$POST/i;
 		$string =~ s/ $find / $1 . _fixup($2, $FIXUPS->{$_}) /egx;
 	}
+
+	# Spanish punctuation
+	$string =~ s/por que no los dos\?/&iquest;$&/g;
 }
 
 
@@ -495,6 +517,14 @@ func spanify ($open, $content)
 func closing_of ($opening)
 {
 	return $opening =~ s{ ([[<]) (\w+) .*? ([]>]) }{$1/$2$3}grx;
+}
+
+func quote ($text)
+{
+	my $formatted = fmt(quote => $text);
+	# Blogger blockquotes are all in italics, so we have to convert internal italics to bold
+	$formatted =~ s/_(.*?)_/*$1*/g if $blog_type eq 'html';
+	return $formatted;
 }
 
 
