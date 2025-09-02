@@ -5,6 +5,7 @@ use autodie ':all';
 
 package myperl::Classlet::keywords
 {
+	use utf8;					# ensure UTF-8 support
 	no thanks;					# don't try to load this module
 	use Exporter;
 	our @EXPORT = qw< rw via by per as set clear check Array Hash >;
@@ -171,6 +172,7 @@ package myperl::Classlet
 		push @{ $opts{imports} //= [] },
 		(
 			warnings						=>	[ FATAL => 'all' ],
+			utf8							=>	[],
 			Kavorka							=>	[ qw< classmethod >],
 			'myperl::Classlet::keywords'	=>	[ @myperl::Classlet::keywords::EXPORT ],
 		);

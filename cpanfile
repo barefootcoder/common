@@ -54,11 +54,11 @@ feature myperl => sub
 	requires 'Test::Trap';
 	requires 'Const::Fast';
 	requires 'Perl6::Form';
-	requires 'Math::Round';
+	requires 'Math::Round';							# for `round`
 	requires 'Import::Into';
 	requires 'Sub::Install';
 	requires 'Perl6::Slurp';
-	requires 'IO::Prompter';
+	requires 'IO::Prompter';						# for `prompt` and `confirm`
 	requires 'Perl6::Gather';
 	requires 'Test::Command';
 	requires 'MooseX::Declare';
@@ -67,6 +67,7 @@ feature myperl => sub
 	requires 'MooseX::Has::Sugar';
 	requires 'Method::Signatures';
 	requires 'Syntax::Keyword::Try';
+	requires 'Text::WideChar::Util';				# for `unipad`
 	requires 'Any::Moose', '== 0.26';				# newer version breaks Method::Signatures
 	requires 'Time::Local', '>= 1.26';				# Date::Easy requires this
 	requires 'MooseX::ClassAttribute';

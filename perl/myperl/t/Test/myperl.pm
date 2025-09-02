@@ -19,6 +19,8 @@ our %COMMON_SNIPPETS =
 	q{ 6 + 'fred' 					}	=>	qr/isn't numeric/,						# warnings FATAL => 'all'
 	q{ say 'fred' 					}	=>	undef,									# feature 'say'
 	q{ given (1) { when (1) {} }	}	=>	undef,									# feature 'switch'
+	q{ my $l=()="café"=~/\X/g;die $l}	=>	qr/^4\b/,								# utf8 in source
+	q{ my $π=3.14159; $π > 3 or die }	=>	undef,									# utf8 in variable names
 );
 
 our %CLASSLET_SNIPPETS =

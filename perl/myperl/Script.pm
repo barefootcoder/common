@@ -26,7 +26,10 @@ sub import
 
 	# set up file handles appropriately
 	$| = 1;
-	'open'->import::into(main => ':utf8' => ':std');
+	# Set UTF-8 on standard filehandles
+	binmode STDOUT, ':encoding(UTF-8)' or die "Failed to set binmode on STDOUT: $!";
+	binmode STDERR, ':encoding(UTF-8)' or die "Failed to set binmode on STDERR: $!";
+	binmode STDIN,  ':encoding(UTF-8)' or die "Failed to set binmode on STDIN: $!";
 
 	$package->export_to_level(1, CLASS, @EXPORT);
 	@_ = ( $package, NO_SYNTAX => 1, @_ );

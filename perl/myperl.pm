@@ -1,6 +1,8 @@
 use 5.014;
+use utf8;
 use warnings;
 use experimental 'smartmatch';
+use open qw< :encoding(UTF-8) :std >;
 
 package myperl;
 
@@ -57,7 +59,7 @@ sub import
 	Sub::Install::install_sub({ code => sub {}, into => $calling_package, as => $marker_sub });
 
 	# our own routines, which we have to transfer by hand
-	foreach (qw< title_case round expand prompt confirm >)
+	foreach (qw< title_case round slurp expand unipad prompt confirm >)
 	{
 		next if $ONLY and not $_ ~~ $ONLY;
 		Sub::Install::install_sub({ code => $_, into => $calling_package });
@@ -69,7 +71,6 @@ sub import
 	# function had been exported.
 	my %autoload_funcs =
 	(
-		'Perl6::Slurp'		=>	'slurp',
 		'Perl6::Form'		=>	'form',
 		'Date::Parse'		=>	'str2time',
 		'Date::Format'		=>	'time2str',
@@ -113,6 +114,7 @@ sub import
 	myperl->import_list_into($calling_package,
 
 		strict							=>
+		utf8							=>
 		warnings						=>					@{$mod_args{warnings}},,
 		feature							=>					[	':5.14'			],
 		experimental					=>					[	'smartmatch'	],
@@ -122,6 +124,7 @@ sub import
 		'Scalar::Util'					=>					[ qw< blessed > ],
 		'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
 		'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
+		'open'							=>					[ qw< :encoding(UTF-8) > ],
 
 	);
 
@@ -223,11 +226,45 @@ sub round
 }
 
 
+sub slurp
+{
+	require Perl6::Slurp;
+
+	# If first arg looks like a mode (starts with < > + or -), use it as-is.
+	# Otherwise, prepend '<:utf8' mode for UTF-8 support.
+	if ( @_ and $_[0] =~ /^[<>+-]/ )
+	{
+		goto \&Perl6::Slurp::slurp;
+	}
+	else
+	{
+		return Perl6::Slurp::slurp('<:utf8', @_);
+	}
+}
+
 sub expand
 {
 	require Text::Tabs;
 	$Text::Tabs::tabstop = 4;
 	goto &Text::Tabs::expand;
+}
+
+sub unipad
+{
+	require Text::WideChar::Util;
+
+	# Map intuitive alignment names to mbpad's confusing ones:
+	#	* our "left" (text on left) = mbpad's "right" (pad on right)
+	#	* our "right" (text on right) = mbpad's "left" (pad on left)
+	#	* "center" stays the same
+	state $align_opts = { left => 'right', right => 'left', center => 'center', };
+
+	my $string = shift // '';
+	# next argument might be one of our alignment keywords; if not, use default
+	my $how = $align_opts->{$_[0]} ? shift : 'left';
+	my ($len) = @_;
+
+	return Text::WideChar::Util::mbpad($string, $len, $align_opts->{$how});
 }
 
 
@@ -416,8 +453,6 @@ themselves are called.  See their respective modules for more info on them:
 
 =over
 
-=item B<slurp> (from L<Perl6::Slurp>)
-
 =item B<form> (from L<Perl6::Form>)
 
 =item B<str2time> (from L<Date::Parse>)
@@ -466,11 +501,21 @@ results, regardless of whether there are any special characters in the pattern o
 If you specify L</ONLY>, C<CORE::glob> will B<not> be overridden (unless, of course, C<glob> is one
 of the functions in the C<ONLY> list).
 
+=head2 slurp
+
+Like the date functions, C<slurp> from L<Perl6::Slurp> is made available, but the module is only
+loaded if the function itself is called.  Actually, this is a thin wrapper around the actual
+Perl6::Slurp function.  If you pass in your own layer spec(s), such as C<'<:encoding(UTF-8)'>, then
+your arguments are passed through unchanged.  Otherwise, C<'<:utf8'> is prepended to your args.
+This should help with the vast majority of mojibake issues and "wide char in print" errors.
+
+See L<Perl6::Slurp> for full details.
+
 =head2 prompt
 
-Like the date functions, C<prompt> from L<IO::Prompter> is made available, but the module is only
-loaded if the function itself is called.  Actually this is a thin wrapper around the actual
-IO::Prompter function.  There are currently only two differences:
+Also like the date functions, C<prompt> from L<IO::Prompter> is made available, but the module is
+only loaded if the function itself is called.  Like L</slurp>, this is a thin wrapper around the
+actual IO::Prompter function.  There are currently only two differences:
 
 =over
 
