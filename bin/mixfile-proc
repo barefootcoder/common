@@ -1,15 +1,12 @@
 #! /usr/bin/env perl
 
-use 5.14.0;
+use myperl DEBUG => 1;
 use autodie ':all';
 use charnames ':full';
-use warnings FATAL => 'all';
 
 use Roman;
-use Debuggit DEBUG => 1;
-use Path::Class::Tiny;
 use Scalar::Util qw< looks_like_number >;
-use List::AllUtils qw< max zip apply pairmap >;
+use List::AllUtils qw< pairmap >;
 
 
 my $MODES =
@@ -208,9 +205,10 @@ sub _print_cols
 	my ($indent, $left, $right) = @_;
 	my $line = '';
 	$_ = ' ' x ($indent * 4) . $_ foreach ($left, $right);
-	$line .= $left;
-	$line .= ' ' x (55 - length($left));
-	$line .= $right;
+
+	# Use unipad to handle the padding correctly with Unicode characters
+	# This fixes the alignment issue with titles like "Eldritch Ætherium"
+	$line = unipad($left, left => 55) . $right;
 	say $line;
 }
 
