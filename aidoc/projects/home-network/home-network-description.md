@@ -19,17 +19,23 @@
     - UFW firewall active (SSH, mDNS, and application ports)
     - Tailscale VPN configured and running
     - Experiencing intermittent shutdown issues (under monitoring)
+    - Interactive shell: tcsh; scripts use bash
+    - Filesystem: UsrMerge implemented (/bin → /usr/bin, etc.)
   - **Avalir**: Linux Mint 21.1 (Vera) running Mate, based on Ubuntu Jammy
     - Desktop machine hardwired through office hub
     - Static IP: [see private/network-details.md]
     - UFW firewall active (SSH and Syncthing ports)
     - Tailscale installed but not currently running
+    - Interactive shell: tcsh; scripts use bash
+    - Filesystem: UsrMerge implemented (/bin → /usr/bin, etc.)
   - **Zadash**: Slightly older version of Linux Mint
     - Intended to be hardwired but currently using WiFi due to connection issues
     - Static IP: [see private/network-details.md]
     - Experiencing some hardware issues
     - Tailscale active
     - Has mounted (via `sshfs`) copies of shares from Avalir
+    - Interactive shell: tcsh; scripts use bash
+    - Filesystem: Likely has UsrMerge (to be verified)
   - **Caemlyn**: 
     - Static IP: [see private/network-details.md]
     - Being decommissioned; contains backups pending transfer to new NAS
