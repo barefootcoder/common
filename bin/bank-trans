@@ -295,6 +295,7 @@ my %DESCRIPTIONS =
 							qr/TrollAndToad/i,
 							qr/NobleKnight/i,
 							qr/Game Nerdz/i,
+							qr/AtomicEmpire/i,
 							qr/Adventure Together/i,
 							qr/ONEBOOKSHEL(F.COM)?/i,
 							qr/Elderbrain/i,
@@ -307,6 +308,7 @@ my %DESCRIPTIONS =
 							qr/OFFICE DE\b/i,
 							qr/parking.*playa vista/i,
 							qr/GOOGLE \*INNERSLOTH/i,
+							qr/ACTBLUE\*/i,
 						],
 	Charity			=>	[
 							qr/Maximum Fun/i,
@@ -405,6 +407,7 @@ my %WHAT_LOOKUP =
 	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)',
 	'ADVICEPAYCOM'						=>	'Money Illustrated (CFP Jen)',
 	'CHWYINC'							=>	'Chewy',
+	'ACTBLUE*'							=>	'WFP membership',
 );
 
 
@@ -642,7 +645,9 @@ foreach (@transactions)
 						Elderbrain				=>	'Buddy',
 						NobleKnight				=>	'Buddy',
 						'Game Nerdz'			=>	'Buddy',
+						AtomicEmpire			=>	'Buddy',
 						'Adventure Together'	=>	'Buddy',
+						'WFP membership'		=>	'Buddy',
 						'Android Game'			=>	'Merrick',
 					}->{$what} // '';
 			# high-dollar 7-11 is gas, not food
