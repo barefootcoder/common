@@ -112,6 +112,7 @@ feature support => sub
 	requires 'File::Next';
 	requires 'Date::Parse';								# `perlsecs` uses this, but should be rewritten to use Date::Easy
 	requires 'MCE::Shared';								# `git-grep-all` uses this
+	requires 'Git::Helpers';							# `syconf-analyze` uses this
 	requires 'Sys::RunAlone';							# `music-player-ctl` uses this
 	requires 'Regexp::Common';							# `clgrep` uses this
 	requires 'List::AllUtils';

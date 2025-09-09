@@ -29,7 +29,8 @@ die("$base does not exist") unless -r $base;
 
 my $without_ext = $base =~ s/(\.[^.]+)$//r;
 my $ext = $1 // '';
-my @conflicts = (glob("$without_ext*conflicted*$ext"), glob("$without_ext*Conflict*$ext"));
+my @conflicts = map { glob($_) }
+		("$without_ext*conflicted*$ext", "$without_ext*Conflict*$ext", "$without_ext*sync-conflict*$ext");
 die("no conflict files found!") unless @conflicts;
 
 say '' if $OPT{'n'};
