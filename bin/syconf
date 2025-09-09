@@ -6,11 +6,16 @@ then
 	exit $?
 fi
 
-dirs=
-for d in ~/Dropbox /var/sync/* /export/*
-do
-	[[ -d $d && $(basename $d) != "lost+found" ]] && dirs="$dirs $d/"
-done
+if [[ $1 ]]
+then
+	dirs="$*"
+else
+	dirs=
+	for d in ~/Dropbox /var/sync/* /export/*
+	do
+		[[ -d $d && $(basename $d) != "lost+found" ]] && dirs="$dirs $d/"
+	done
+fi
 
 function find_conflicts
 {
