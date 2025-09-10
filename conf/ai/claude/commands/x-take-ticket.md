@@ -11,14 +11,24 @@ You are being asked to take ownership of a Jira ticket and execute the complete 
 The user has provided: $ARGUMENTS
 
 Your task is to:
-1. **Parse ticket number**: 
+1. **Run pre-flight validation**: Execute the `ticket-preflight` script to check all systems are ready:
+   ```bash
+   ticket-preflight
+   ```
+   - If validation fails with errors, stop and ask user to resolve issues
+   - **IMPORTANT**: When user says issues are fixed, RE-RUN `ticket-preflight` to verify
+   - Keep re-checking until validation passes (user might not have fixed everything)
+   - If validation passes with warnings, review them but proceed
+   - This script checks: vim file locks, triage date validity, timer week alignment, directory access
+
+2. **Parse ticket number**:
    - If input is empty, ask the user for the ticket number
    - If input is just a decimal number (e.g., "123"), prepend "CLASS-" to make "CLASS-123"
    - If input already has a project prefix (e.g., "CLASS-456", "PROJ-789"), use as-is
 
-2. **Execute ADMINISTRATIVE workflow only**: Read the instructions from `~/common/aidoc/projects/todo-management/ticket-onboarding-workflow.md` and follow the complete onboarding process for the ticket.
+3. **Execute ADMINISTRATIVE workflow only**: Read the instructions from `~/common/aidoc/projects/todo-management/ticket-onboarding-workflow.md` and follow the complete onboarding process for the ticket.
 
-3. **Follow all SETUP steps systematically** (no technical work):
+4. **Follow all SETUP steps systematically** (no technical work):
    - Jira assignment and development owner field updates
    - Google Sheets job and task creation
    - Optional subtask breakdown (ask user preference)
