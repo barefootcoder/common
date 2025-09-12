@@ -46,12 +46,12 @@ check_vim_swap() {
     local file="$1"
     local swap_file="$2"
     local name="$3"
-    
+
     if [ -f "$swap_file" ]
     then
         # Check if swap file shows unsaved changes
         local file_info=$(file "$swap_file" 2>/dev/null)
-        
+
         if echo "$file_info" | grep -q "modified"
         then
             print_error "$name has unsaved changes in vim!" $EXIT_VIM_UNSAVED
@@ -103,7 +103,7 @@ if [ -f "$TRIAGE_FILE" ]
 then
     # Check for vim swap file
     check_vim_swap "$TRIAGE_FILE" "$TRIAGE_SWAP" "Triage file"
-    
+
     # Check triage date is in future
     if [ -r "$TRIAGE_FILE" ]
     then
@@ -146,10 +146,21 @@ if [ -f "$TIMER_FILE" ]
 then
     # Check for vim swap file
     check_vim_swap "$TIMER_FILE" "$TIMER_SWAP" "Timer file"
-    
+
     # Check timer week alignment
     if [ -r "$TIMER_FILE" ]
     then
+        # Check timer structure for utests anchors (used for inserting new timers)
+        utests_chunk_line=$(grep -n "^utests	" "$TIMER_FILE" | cut -d: -f1 | head -1)
+        utests_comment_line=$(grep -n "^utests:	" "$TIMER_FILE" | cut -d: -f1 | head -1)
+
+        if [ -n "$utests_chunk_line" ] && [ -n "$utests_comment_line" ]
+        then
+            print_success "Timer structure located (utests at lines $utests_chunk_line/$utests_comment_line)"
+        else
+            print_warning "Could not locate utests anchor points in timer file"
+        fi
+
         # Find first timer chunk with timestamps (format: "name<tab>timestamp1-timestamp2,...")
         first_timestamp=$(grep -m1 -P '\t\d{10}' "$TIMER_FILE" | grep -oP '\d{10}' | head -1 || true)
         if [ -n "$first_timestamp" ]
@@ -173,7 +184,7 @@ then
                     days_back=$((day_of_week - 1))
                     current_monday=$(date -d "$days_back days ago" +%Y-%m-%d)
                 fi
-                
+
                 if [ "$timer_monday" = "$current_monday" ]
                 then
                     print_success "Timer file is for current week (first entry: $timer_date)"

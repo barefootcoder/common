@@ -36,7 +36,7 @@ Your task is to:
    - Timer system initialization
    - Handle any manual steps (like Jira checklist creation)
 
-4. **After onboarding completion**: Inform the user that the ticket is now properly set up in all tracking systems and that they can begin technical work separately.
+5. **After onboarding completion**: Inform the user that the ticket is now properly set up in all tracking systems and that they can begin technical work separately.
 
 Start by confirming the ticket number you'll be processing, then proceed with the ADMINISTRATIVE workflow systematically.
 

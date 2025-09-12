@@ -31,6 +31,25 @@ When taking on a new ticket, the following systems must be updated:
 5. **Timer file**: Initialize time tracking
 6. **Checklist API**: Add Jira checklist items (known issue - see troubleshooting)
 
+## Pre-Flight Validation
+
+**MANDATORY FIRST STEP**: Run the `ticket-preflight` validation script:
+```bash
+ticket-preflight
+```
+
+**Validation Loop**:
+1. Run `ticket-preflight`
+2. If errors are found:
+   - Report specific errors to user
+   - Wait for user to confirm fixes
+   - **RE-RUN `ticket-preflight` to verify** (don't assume fixes are complete)
+   - Repeat until validation passes
+3. If only warnings, note them but proceed
+4. Only continue to Step 1 after validation passes
+
+This ensures all systems are ready before starting the administrative workflow.
+
 ## Complete Workflow Process
 
 ### Step 1: Jira Assignment and Status Update
@@ -150,23 +169,9 @@ echo "Using work date: $WORK_DATE"
 **Purpose**: Add ticket to weekly triage reporting
 
 **Process**:
-1. **CRITICAL Safety Check (MUST BE DONE BEFORE ANY FILE EDIT)**: Multi-layered file safety validation
-   - First, use `LS` tool on `/export/work/ce/` (will prompt to add directory to session if needed)
-   - **Step 1**: Check for swap file: `test -f /export/work/ce/.triage.md.swp`
-   - **If no swap file**: Safe to proceed with editing
-   - **If swap file exists**: Analyze with multiple methods:
-     - **Method A**: `file /export/work/ce/.triage.md.swp` - check if it shows "modified"
-     - **Method B**: Extract PID from file output, check if process running: `ps aux | grep -v grep | grep "{PID}"`
-     - **Method C**: Check swap file age: `stat -c %Y /export/work/ce/.triage.md.swp`
-   - **Decision Matrix**:
-     - Swap file shows "modified" = **STOP** (unsaved changes)
-     - Swap file exists but not "modified" = **SAFE** (saved session)
-     - No swap file = **SAFE** (no active session)
-     - **Note**: User can keep vim open as long as file is saved
-2. **ONLY AFTER SAFETY CHECK PASSES**: Read triage file (see `private/user-config.md` for path)
-3. **Sanity Check**: Verify triage date > current date (future meeting)
-   - **Good**: Triage date in future (normal case)
-   - **Bad**: Triage date in past (would modify historical data)
+1. **Preflight validation already checked file safety** - proceed directly to reading
+2. Read triage file (see `private/user-config.md` for path)
+3. **Note**: Preflight already verified triage date is in the future
 4. **CRITICAL**: Read a small section around insertion point first to understand context
    - Read lines 10-25 to see current ticket structure
    - Identify exact insertion point before first "background" ticket
@@ -187,26 +192,10 @@ echo "Using work date: $WORK_DATE"
 **Purpose**: Initialize time tracking for ticket
 
 **Process**:
-1. **CRITICAL Safety Check (MUST BE DONE BEFORE ANY FILE EDIT)**: Multi-layered file safety validation
-   - First, use `LS` tool on `/export/work/timer/` (will prompt to add directory to session if needed)
-   - **Step 1**: Check for swap file: `test -f /export/work/timer/.timer-new.swp`
-   - **If no swap file**: Safe to proceed with editing
-   - **If swap file exists**: Analyze with multiple methods:
-     - **Method A**: `file /export/work/timer/.timer-new.swp` - check if it shows "modified"
-     - **Method B**: Extract PID from file output, check if process running: `ps aux | grep -v grep | grep "{PID}"`
-     - **Method C**: Check swap file age: `stat -c %Y /export/work/timer/.timer-new.swp`
-   - **Decision Matrix**:
-     - Swap file shows "modified" = **STOP** (unsaved changes)
-     - Swap file exists but not "modified" = **SAFE** (saved session)
-     - No swap file = **SAFE** (no active session)
-     - **Note**: User can keep vim open as long as file is saved
-2. **ONLY AFTER SAFETY CHECK PASSES - WARNING**: Timer file is very large (>1MB) - use offset/limit to read sections
-   - Read top 50 lines to understand structure: `offset=1, limit=50`
-   - Never try to read the entire file at once (causes token overflow)
-3. Read timer file header section (see `private/user-config.md` for path)
-4. **Sanity Check**: Verify timer file date matches work week
-5. Generate timer name suggestion based on ticket content
-6. Ask user for timer name (provide suggestion)
+1. **Preflight validation already checked file safety and located utests anchors** - proceed directly
+2. **Note**: Preflight already verified timer file is for current week and found utests line numbers
+3. Generate timer name suggestion based on ticket content
+4. Ask user for timer name (provide suggestion)
    - **Interface tip**: User can type "+" to accept the suggestion (faster than retyping)
 5. Add timer chunk line after `utests` entry:
    ```
