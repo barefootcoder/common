@@ -217,6 +217,8 @@ alias reset-term 'echo -n "\e]0;`echo $LOCALHOSTNAME | perl -lne print\ ucfirst`
 	set pxl_prog='/^PXL_(\d{8})_(\d\d)(\d\d)(\d\d)\d{3}(\..*)$/ ? rename $_, datetime('
 	set pxl_prog="$pxl_prog"'datetime(UTC => "$1 $2:$3:$4")->epoch)->strftime("%Y-%m-%d %H.%M.%S$5") : () foreach @ARGV'
 alias pxl-fix "ls -l PXL* && perl -MDate::Easy -E '$pxl_prog' PXL* || echo 'no files to fix'"
+	set _mpv="music-player-volume"
+alias fade-in "$_mpv set 3 ; music-player-ctl -v pos load \!^ ; bash -c 'for i in {4..9} ; do sleep 450 ; $_mpv up ; done'"
 
 set bundle_file=~/proj/dist-zilla-pluginbundle-barefoot/lib/Dist/Zilla/PluginBundle/BAREFOOT.pm
 set filter='/exclude_generated_files\s*=\s*qw<(.*?)>/ && print $1'
