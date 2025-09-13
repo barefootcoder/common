@@ -14,13 +14,14 @@ opts <<'-';
 		-E : look in all executable code
 		-P : only look in deployed (production) Perl code
 		-T : only look in Perl unit test code
+		-A : only look in AI dirs
 		-l : just list filenames that contain a match
 		-i : case insensitive search
 		-p : try to search Perl statements instead of lines of code
 		-D : debug mode (show `ack' command)
 		-e : next arg is the <regex>, even if it starts with -
 	<arg>(s) are passed through to `ack'
-	-C and -E omit t/, tlib/, and doc/
+	-C and -E omit t/, tlib/, doc/, and aidoc/
 	-P omits -C/-E dirs + etc/, devtools/, and oneoff/
 	-T includes only t/ and tlib/
 	default: look in all files and directories
@@ -45,8 +46,10 @@ my @IGNORE_FILES = qw< match:nytprof.* >;
 my @IGNORE_DIRS  = qw< nytprof tmp extlib docker perl5 var >;
 # for -T, we'll use these dirs only
 my @TEST_DIRS    = qw< t tlib >;
+# for -A, we'll use these dirs only
+my @AI_DIRS    = qw< aidoc .claude conf/ai >;
 # for -C or -P, ignore the -T dirs + doc dirs
-push @IGNORE_DIRS, @TEST_DIRS, qw< doc > if $CODE_ONLY;
+push @IGNORE_DIRS, @TEST_DIRS, qw< doc aidoc > if $CODE_ONLY;
 # for -P, also ignore things which don't actually get run on prod regularly
 push @IGNORE_DIRS, qw< etc devtools oneoff > if $OPT{P};
 
@@ -57,6 +60,7 @@ $regex =~ s/'/'\\''/g;
 my @cmd = ('ack', @ignores, $FILE_TYPE ? "--type=$FILE_TYPE" : (), '--nofilter', '--match', "'$regex'");
 push @cmd, '-l' if $OPT{l} or $OPT{p};
 push @cmd, @TEST_DIRS if $OPT{T};
+push @cmd, @AI_DIRS   if $OPT{A};
 push @cmd, @ARGV;
 if ( $OPT{D} )
 {
