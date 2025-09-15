@@ -6,8 +6,10 @@ use myperl;
 my %LETTER_SYMBOLS = map { $_ => 1 } qw< v= =v h1. h2. h3. h4. ~~LEFT~~ ~~RIGHT~~ ~~CENTER~~ {img {mix TM >;
 
 
-my $post = slurp;
+require Perl6::Slurp;								debuggit(5 => "about to slurp");
+my $post = Perl6::Slurp::slurp();					debuggit(5 => "done slurping");
 my $total = wc($post);
+debuggit(2 => "total words:", $total);
 
 # type line
 $post =~ s{\A/\w+/.*?$}{}m;
@@ -19,27 +21,32 @@ $post =~ s{^//---\s*.*?\s*---//\n}{}msg;
 $post =~ s{^//--\n.*?\n--//\n}{}msg;
 $post =~ s{^//--\s*.*?\s*--//\n}{}msg;
 my $in_quotes = $total - $typeline - wc($post);
+debuggit(2 => "words in quotes:", $in_quotes);
 
 # links
 $post =~ s{(?<![\\^])\[(.*?)(\|(.*?))?\]}{ $3 // $1 }seg;
 $post =~ s{(?<![\\^])\{(.*?)(\|(.*?))?\}}{ $3 // $1 }seg;
 $post =~ s[{img(\d+x\d+)? (.*?)}][]g;
 my $in_links = $total - $typeline - $in_quotes - wc($post);
+debuggit(2 => "words in links:", $in_links);
 
 # footnotes
 $post =~ s{\^\^\[.*?]}{}sg;
 $post =~ s{\^\^}{}g;
 $post =~ s{\^\d+\s+.*?$}{}mg;
 my $in_notes = $total - $typeline - $in_quotes - $in_links - wc($post);
+debuggit(2 => "words in notes:", $in_notes);
 
 # code blocks
 $post =~ s{^\.\n.+?^\.\n}{}smg;
 my $in_code = $total - $typeline - $in_quotes - $in_links - $in_notes - wc($post);
+debuggit(2 => "words in code:", $in_code);
 
 # fine print
 $post =~ s{v=.*?=v}{}sg;
 my $net = wc($post);
 my $in_fine_print = $total - $typeline - $in_quotes - $in_links - $in_notes - $in_code - $net;
+debuggit(2 => "words in fine print:", $in_fine_print);
 
 
 report("total words", $total);
