@@ -5,5 +5,5 @@ then
 	push-quin
 else
 	cd $CHEOPSROOT
-	vagrant ssh -c push-quin | tail -n+4 | dos2unix -f
+	vagrant ssh -c "push-quin -q" | tail -n+4 | dos2unix -f
 fi

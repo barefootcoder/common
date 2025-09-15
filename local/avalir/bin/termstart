@@ -30,8 +30,7 @@ if xdotool search --name Quin >/dev/null
 then
 	quincmd=
 else
-	#quin=$($MYDIR/local/vagrant-sandbox/bin/push-machine)
-	quin=quin-i-03af6dc257d2c1377
+	quin=$($MYDIR/local/vagrant-sandbox/bin/push-machine)
 	[[ $quin == *" "* ]] && die "can't retrieve EC2 ID for the Quin window (check AWS creds)"
 	quincmd="$CEROOT/devtools/cessh $quin"
 fi
