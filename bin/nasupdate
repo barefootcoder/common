@@ -13,8 +13,13 @@ const my %NAS =>
 						user => 'egwene',
 						base_path => '/volume1',
 					},
+	nakama		=>	{
+						port => 2322,
+						user => 'nami',
+						base_path => '/share',
+					},
 );
-const my $CUR_NAS            => 'taaveren';
+const my $CUR_NAS            => 'nakama';
 const my $CUR_NAS_BASE_PATH  => "$CUR_NAS:$NAS{$CUR_NAS}->{base_path}";
 const my @CUR_NAS_RSYNC_OPTS => ( -e => "ssh -p $NAS{$CUR_NAS}->{port} -l $NAS{$CUR_NAS}->{user}" );
 
@@ -64,7 +69,7 @@ if ($OPT{R})
 }
 
 my $update = $OPT{C} ? '-rlDvc' : '-a';									# `-C` version suggested by ChatGPT
-my @excludes = map {; '--exclude' => $_ } ('.sync', '@eaDir', '\#recycle');
+my @excludes = map {; '--exclude' => $_ } (qw< .stfolder .sync .SynologyWorkingDirectory @eaDir >, '\#recycle');
 my @cmd = (rsync => $update, qw< --no-o --no-g --no-p >, qw< -u >, @excludes);
 push @cmd, @CUR_NAS_RSYNC_OPTS if any { /^$CUR_NAS:/ } ($src, $dest);
 my @view = (@cmd => -v => -n => "$src/", "$dest/", '|', split(' ', $ENV{PAGER}));
