@@ -40,7 +40,7 @@ sub filter_for_length
 		state $color = qr/(?: \e\[ [\d;]*  m )/x;
 		state $line  = qr/(?:          .* \n )/x;
 
-		s|^($line{3}\s*$color?)($line{20,}.*?)($color?)$|$1 . "...{ @{[ numlines($2) ]} more lines }..." . ($3 // '')|e;
+		s|^($line{3}\s*$color?)($line{20,}.*?)($color?)$|$1 . "...{ @{[ numlines($2) ]} more files }...\e[0m"|e;
 		push @new, $_;
 	}
 	return join("\n\n", @new);
