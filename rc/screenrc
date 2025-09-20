@@ -21,6 +21,13 @@ defscrollback 100000
 windowlist title "Num  Name%=TTY / Flags"
 windowlist string "%3n  %t%=%T [%f]"
 
+# enable all UTF8 stuff
+# (thx Claude Opus 4.1)
+defutf8 on
+utf8 on on
+defencoding utf-8
+encoding utf-8 utf-8
+
 
 # this stuff from the orig example .screenrc
 ################

@@ -201,7 +201,7 @@ alias pfunc perlfunc
 alias pfind perlfind
 alias unison "unison -ui text"
 setenv CURRENT_SCREEN base
-alias sr 'screen -A -x $CURRENT_SCREEN'
+alias sr 'screen -A -U -x $CURRENT_SCREEN'
 alias dev 'umask 2 ; newgrp \!^ dev'
 alias pgrep 'grep -P \!*'
 if ( $?APACHE_LOG ) then
