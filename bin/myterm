@@ -5,14 +5,16 @@ termprog=urxvt
 force=0
 set_echo=0
 smaller=0
-while getopts ":sSfD:xh" opt
+while getopts ":sMSfD:xh" opt
 do
 	case $opt in
 		s)	scaled=1
 			;;
 		D)	desktop=$OPTARG
 			;;
-		S)	smaller=1
+		M)	smaller=1
+			;;
+		S)	smaller=2
 			;;
 		f)	force=1
 			;;
@@ -21,6 +23,7 @@ do
 		h)	echo "usage: $me -h | [-sSf] [-D <name>] <title> <pixmap> <geometry> [<cmd> [<arg> ...]]" >&2
 			echo "    -s : scaled image (default: tiled)" >&2
 			echo "    -S : smaller font (default: based on screen size)" >&2
+			echo "    -M : minor (slightly smaller) font (default: based on screen size)" >&2
 			echo "    -f : force (create even if exists)" >&2
 			echo "    -D : start term on desktop <name> (default: current)" >&2
 			echo "    -h : this help message" >&2
@@ -140,7 +143,7 @@ then
 		*)			echo "can't determine proper font size for this screen ($scrsize)" >&2
 					exit 1
 	esac
-	[[ $smaller -eq 1 ]] && fontsize=$(( $fontsize - 2 ))
+	fontsize=$(( $fontsize - $smaller ))
 
 	case $termprog in
 		urxvt)

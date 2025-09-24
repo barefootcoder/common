@@ -35,8 +35,8 @@ else
 	quincmd="$CEROOT/devtools/cessh $quin"
 fi
 
-myterm -D Main -s -S Quin cityofgold 125x50-24+72 $quincmd
-myterm -D Main -s Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
+myterm -D Main -s -M Quin cityofgold 125x50-40+107 $quincmd
+myterm -D Main -s -S Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
 
 # stupid hack for not being able to see when Pidgin windows are blinking
 msg_window=PidginMsgs
