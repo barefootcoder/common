@@ -16,7 +16,7 @@ do
 		h)	echo "usage: $me [-h] [ { -p pid | -g procname | tty } ]" >&2
 			echo "   tty : display process of this tty instead of the current one" >&2
 			echo "    -p : display complete parentage of pid instead of a tty" >&2
-			echo "    -g : display complete parentage of `pgrep -f procname` instead of a tty" >&2
+			echo '    -g : display complete parentage of `pgrep -f procname` instead of a tty' >&2
 			echo "         (error if pgrep -f procname returns more than one process)" >&2
 			echo "    -h : this help message" >&2
 			exit
