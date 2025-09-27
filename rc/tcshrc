@@ -231,7 +231,8 @@ alias pbinst 'perlbrew install -n -j 5 --noman'
 alias cpi 'cpanm -n \!*'
 
 unalias aider
-unalias claude
+alias claude '~/bin/claude'
+alias rbuf 'screen -X readbuf /tmp/tempfile.txt'
 
 alias resrc "set tcsh_reset ; source ~/.tcshrc"
 set sys_complete=/etc/profile.d/tcsh-complete

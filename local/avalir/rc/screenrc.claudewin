@@ -1,0 +1,3 @@
+stuff "claude doctor\015"
+sleep 5
+stuff "\015"

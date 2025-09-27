@@ -18,11 +18,54 @@ fi
 # "work"     : also free rein, but there are a few extra things to set up
 # "vagrant"  : a work virt that has some constraints
 # "ec2"      : an EC2 server for work that has a *lot* of constraints
-[[ -d ~/.vagrant.d/boxes/ce-dev-sandbox ]]                                && MACHINE_TYPE="work"
-[[ $(id -un) == "vagrant" ]]                                              && MACHINE_TYPE="vagrant"
-echo 'bashlib-demand aws-primitive ; is-ec2' | launch SNIPPET 2>/dev/null && MACHINE_TYPE="ec2"
-[[ "in all other cases ..." && ! $MACHINE_TYPE ]]                         && MACHINE_TYPE="personal"
+[[ -d ~/.vagrant.d/boxes/ce-dev-sandbox ]]			&& MACHINE_TYPE="work"
+[[ $(id -un) == "vagrant" ]]						&& MACHINE_TYPE="vagrant"
+is-ec2												&& MACHINE_TYPE="ec2"
+[[ "in all other cases ..." && ! $MACHINE_TYPE ]]	&& MACHINE_TYPE="personal"
 [[ $1 == refresh ]] && echo "$0: full refresh for $MACHINE_TYPE machine"
+
+
+###########################
+# Pre-initialization for EC2 sandboxes
+###########################
+
+if [[ $MACHINE_TYPE == "ec2" ]]
+then
+	# first the stuff we can always do
+	mkdir -p ~/local/data
+	mkdir -p ~/local/fortunes
+	make_link $mydir/local/vagrant-sandbox/bin $HOME/local/bin
+	make_link ~/work/vimS                      $HOME/local/data/vimS
+
+	# then the stuff we should only do if specifically requested
+	if [[ $1 == refresh ]]
+	then
+		# backup bog-standard config files so we can replace them with personalized ones
+		for conf in ~/.vctools/vctools.conf ~/.bash_aliases
+		do
+			if [[ -e $conf && ! -L $conf ]]
+			then
+				# still have the original VCtools config from the sandbox build
+				# have to move that out of the way so we can bring in our symlink
+				mv $conf $conf.orig
+			fi
+		done
+
+		# set up local Perl directory
+		_localperl=~/perl5
+		if ! [[ -d $_localperl ]]
+		then
+			perl -Mlocal::lib -le "local::lib->ensure_dir_structure_for('$_localperl')"
+			myperl-cpm bootstrap
+		fi
+
+		# ensure `vagrant` project is set up
+		if [[ ! -d /var/tmp/launch-projects/vagrant ]]
+		then
+			launch PREPARE $CHEOPSROOT/vagrant
+		fi
+	fi
+fi
 
 
 ###########################
@@ -52,7 +95,9 @@ do
 done
 
 # do localhost rc's, if any
-local_rcdir=$mydir/local/$LOCALHOSTNAME/rc
+localmach=$LOCALHOSTNAME
+[[ $MACHINE_TYPE == "ec2" ]] && localmach=vagrant-sandbox				# not vagrant, but probably a sandbox
+local_rcdir=$mydir/local/$localmach/rc
 if [[ -d $local_rcdir ]]
 then
 	cd $local_rcdir
@@ -100,13 +145,14 @@ fi
 # .vctools dir is a bit like .dzil, only (mostly) simpler
 # the only tricky bit is that the main vctools.conf file *might* have a
 # host-specific override
-if [[ $1 != refresh ]]
+if [[ $1 == refresh ]]
 then
 	[[ -d ~/.vctools ]] || mkdir ~/.vctools
 	cd $mydir/vctools
-	if [[ -r vctools.conf.$LOCALHOSTNAME ]]
+	local_vctools_conf=vctools.conf.${LOCALHOSTNAME%-i-*}
+	if [[ -r $local_vctools_conf ]]
 	then
-		make_link $mydir/vctools/vctools.conf.$LOCALHOSTNAME $HOME/.vctools/vctools.conf
+		make_link $mydir/vctools/$local_vctools_conf $HOME/.vctools/vctools.conf
 	elif [[ -r vctools.conf.$HOST ]]
 	then
 		make_link $mydir/vctools/vctools.conf.$HOST $HOME/.vctools/vctools.conf
@@ -149,7 +195,7 @@ then
 fi
 
 # Claude Code configuration directories
-if [[ $MACHINE_TYPE != "ec2" ]]
+if [[ $MACHINE_TYPE != "vagrant" ]]
 then
 	claude_src=$mydir/conf/ai/claude
 	if [[ -d $claude_src ]]
@@ -196,7 +242,7 @@ then
 fi
 
 # dirs to symlink in from external storage
-if [[ $1 != refresh ]]
+if [[ $1 != refresh && $MACHINE_TYPE == "personal" || $MACHINE_TYPE == "work" ]]
 then
 	dirs="rpg proj"
 	[[ $MACHINE_TYPE == "work" ]] && dirs="proj"

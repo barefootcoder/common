@@ -1,0 +1,7 @@
+alias go='sudo -H -u CE -i'
+alias sr='screen -x'
+alias resrc='source ~/.bashrc'
+
+export PAGER="less -RaF"
+
+alias csh="SHELL=$(type -p tcsh) VCTOOLS_SHELL=git tcsh -l"

@@ -278,3 +278,16 @@ function set_admin
 		die "can't figure out the name of the ADMIN group on this machine"
 	fi
 }
+
+
+# check to see if we're on an EC2 machine
+function is-ec2
+{
+	local ec2_cmd=ec2metadata
+	if command -v $ec2_cmd >/dev/null 2>&1
+	then
+		ec2metadata --instance-id >/dev/null 2>&1
+	else
+		false
+	fi
+}

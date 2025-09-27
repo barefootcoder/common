@@ -1,0 +1,20 @@
+eval `addpath -e $CEROOT/devtools /var/local/archer-dev/bin`
+
+eval `perl -Mlocal::lib=~/perl5,--no-create,--shelltype=csh`
+
+setenv CE_MONDAYS_STYLE pull
+
+set ceflow_completion=~/.tcshrc.complete.ceflow
+if (        ! -e $ceflow_completion                                                                     \
+        ||  -z $ceflow_completion                                                                       \
+        || `find ~ -maxdepth 1 -path $ceflow_completion -mtime +1` != ""                                \
+    ) then
+        ( cd $CEROOT ; ceflow shell-complete >$ceflow_completion )
+endif
+source $ceflow_completion
+complete test-feature 'C?*?`test-feature -C`?'
+complete copy-data-for 'C?*?`copy-data-for -l`?'
+complete ferry-changes 'C?*?`ferry-ls -c`?'
+complete unferry-changes 'C?*?`ferry-ls -c`?'
+
+cd $CEROOT ; eval `launch COMPLETE tcsh` ; cd -

@@ -1,0 +1,33 @@
+# THIS CONFIG IS HOST-SPECIFIC
+
+VCtoolsDir=/var/local/VCtools
+<<include /var/local/VCtools/share/conf/git.conf>>
+<<include $CEROOT/etc/ceflow/CE.conf>>
+<Project CE>
+    ProjectDir=/var/local/CE-src
+</Project>
+<Project archer-boot>
+    ProjectDir=/var/local/archer-boot
+</Project>
+<Project cheops>
+    ProjectDir=/var/local/cheops
+</Project>
+
+<Project common>
+    ProjectDir=$HOME/common
+</Project>
+
+DefaultVC=git
+<<include ~/.vctools/custom.conf>>
+<<include ~/.vctools/CE-custom.conf>>
+
+
+
+# overrides for CE
+<Policy CE>
+	<CustomInfo cur_branch_remote>
+		action <<---
+			{ (grep /^\*/, `git branch --no-color -vv`)[0] =~ s{\e\[\d+m}{}gr =~ m{\[(\w+)/} and $1 }
+		---
+	</CustomInfo>
+</Policy>

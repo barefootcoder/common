@@ -1,0 +1,169 @@
+#!/bin/bash
+# Sandbox Setup Script
+# Sets up necessary connections and services for working with EC2 sandboxes
+# Usage: sandbox-setup <instance-id>
+#
+# This script is idempotent - safe to run multiple times
+
+set -e
+
+ME=$(basename "$0")
+
+# Configuration
+SYNCTHING_LOCAL_PORT=8388
+SYNCTHING_REMOTE_PORT=8384
+cessh="${CEROOT:-/home/buddy/workproj/CE-mounted}/devtools/cessh"
+
+# Parse arguments
+if [ $# -eq 0 ]; then
+    echo "Usage: $ME <instance-id>"
+    echo "  Example: $ME <INSTANCE_ID>"
+    echo ""
+    echo "Sets up tunnels and connections for EC2 sandbox development"
+    exit 1
+fi
+
+INSTANCE_ID="$1"
+# Add quin- prefix if not already present
+if [[ ! "$INSTANCE_ID" =~ ^quin- ]]; then
+    INSTANCE_NAME="quin-${INSTANCE_ID}"
+else
+    INSTANCE_NAME="${INSTANCE_ID}"
+fi
+
+echo "=== EC2 Sandbox Setup ==="
+echo "Instance: $INSTANCE_NAME"
+echo ""
+
+# Function to check if tunnel is running
+check_tunnel_status() {
+    local port=$1
+    local instance=$2
+    
+    # Check if any SSH process is listening on the port
+    if netstat -tlnp 2>/dev/null | grep -q "127.0.0.1:${port}.*ssh"; then
+        # Get PID of the SSH tunnel
+        local pid=$(netstat -tlnp 2>/dev/null | grep "127.0.0.1:${port}" | awk '{print $7}' | cut -d'/' -f1)
+        
+        if [ -n "$pid" ]; then
+            # Check if this tunnel is for the right instance
+            if ps -p "$pid" -o args= | grep -q "$instance"; then
+                echo "active-correct"
+                return 0
+            else
+                echo "active-wrong"
+                return 0
+            fi
+        fi
+    fi
+    
+    echo "inactive"
+    return 0
+}
+
+# Function to stop tunnel
+stop_tunnel() {
+    local port=$1
+    local instance=$2
+    
+    echo "  Stopping existing tunnel on port $port..."
+    "$cessh" --tunnel "${port}:localhost:${SYNCTHING_REMOTE_PORT}" --stop "$instance" 2>/dev/null || true
+    
+    # Double-check it's really stopped
+    sleep 1
+    if netstat -tlnp 2>/dev/null | grep -q "127.0.0.1:${port}.*ssh"; then
+        # Force kill if still running
+        local pid=$(netstat -tlnp 2>/dev/null | grep "127.0.0.1:${port}" | awk '{print $7}' | cut -d'/' -f1)
+        if [ -n "$pid" ]; then
+            echo "  Force stopping tunnel (PID: $pid)..."
+            kill "$pid" 2>/dev/null || true
+            sleep 1
+        fi
+    fi
+}
+
+# Step 1: Verify AWS credentials
+echo "1. Checking AWS access..."
+if ! aws ec2 describe-regions --output text >/dev/null 2>&1; then
+    echo "  ✗ AWS credentials not valid. Please refresh your credentials."
+    exit 1
+fi
+echo "  ✓ AWS credentials valid"
+
+# Step 2: Verify instance exists and is running
+echo ""
+echo "2. Checking instance status..."
+INSTANCE_STATE=$("$cessh" --connect-only "$INSTANCE_NAME" 2>&1)
+if [ $? -ne 0 ]; then
+    echo "  ✗ Cannot connect to instance $INSTANCE_NAME"
+    echo "  Error: $INSTANCE_STATE"
+    exit 1
+fi
+echo "  ✓ Instance is accessible"
+
+# Step 3: Setup Syncthing tunnel
+echo ""
+echo "3. Setting up Syncthing tunnel..."
+
+TUNNEL_STATUS=$(check_tunnel_status "$SYNCTHING_LOCAL_PORT" "$INSTANCE_NAME")
+
+case "$TUNNEL_STATUS" in
+    "active-correct")
+        echo "  ✓ Syncthing tunnel already running on port $SYNCTHING_LOCAL_PORT"
+        ;;
+    "active-wrong")
+        echo "  ⚠ Tunnel on port $SYNCTHING_LOCAL_PORT connected to different instance"
+        stop_tunnel "$SYNCTHING_LOCAL_PORT" "$INSTANCE_NAME"
+        
+        echo "  Starting new tunnel..."
+        "$cessh" --quiet --tunnel "${SYNCTHING_LOCAL_PORT}:localhost:${SYNCTHING_REMOTE_PORT}" "$INSTANCE_NAME"
+        
+        if [ $? -eq 0 ]; then
+            echo "  ✓ Syncthing tunnel started on port $SYNCTHING_LOCAL_PORT"
+        else
+            echo "  ✗ Failed to start tunnel"
+            exit 1
+        fi
+        ;;
+    "inactive")
+        echo "  Starting Syncthing tunnel..."
+        "$cessh" --quiet --tunnel "${SYNCTHING_LOCAL_PORT}:localhost:${SYNCTHING_REMOTE_PORT}" "$INSTANCE_NAME"
+        
+        if [ $? -eq 0 ]; then
+            echo "  ✓ Syncthing tunnel started on port $SYNCTHING_LOCAL_PORT"
+        else
+            echo "  ✗ Failed to start tunnel"
+            exit 1
+        fi
+        ;;
+esac
+
+# Step 4: Verify Syncthing is accessible
+echo ""
+echo "4. Verifying Syncthing access..."
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:${SYNCTHING_LOCAL_PORT} | grep -q "200"; then
+    echo "  ✓ Syncthing UI accessible at: http://localhost:${SYNCTHING_LOCAL_PORT}"
+else
+    echo "  ⚠ Syncthing UI not responding (might still be starting)"
+fi
+
+# Step 5: Display useful information
+echo ""
+echo "=== Setup Complete ==="
+echo ""
+echo "Access points:"
+echo "  • Syncthing UI: http://localhost:${SYNCTHING_LOCAL_PORT}"
+echo "  • SSH to instance: $cessh $INSTANCE_NAME"
+echo ""
+echo "Useful commands:"
+echo "  • Check sync status: $cessh $INSTANCE_NAME 'ls -la ~/common/'"
+echo "  • Monitor Syncthing: $cessh $INSTANCE_NAME 'systemctl --user status syncthing'"
+echo "  • Stop tunnel: $cessh --tunnel ${SYNCTHING_LOCAL_PORT}:localhost:${SYNCTHING_REMOTE_PORT} --stop $INSTANCE_NAME"
+echo ""
+
+# Future expansion points (commented out for now):
+# TODO: Setup additional tunnels (database, web server, etc.)
+# TODO: Mount remote filesystems
+# TODO: Start local development servers
+# TODO: Open relevant browser tabs
+# TODO: Set environment variables for scripts

@@ -5,3 +5,7 @@
 
 # Private project data (sensitive network info, credentials, etc.)
 aidoc/projects/**/private/
+
+# Syncthing stuff
+.stignore
+.stfolder

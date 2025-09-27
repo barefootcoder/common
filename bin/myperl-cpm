@@ -1,7 +1,43 @@
 #! /usr/bin/env perl
 
+use Path::Tiny qw< tempdir >;
+
+our @CPM_INSTALL;
+sub find_cpm
+{
+	# for bootstrapping purposes, I don't want to assume we have Find::Which
+	# so this the poor man's way to do it
+	my $path = `bash -c "type -p cpm"`; chomp $path;
+	unless ($path)
+	{
+		# if we're on a machine where archer-boot is installed,
+		# we can cheat by using *its* `cpm`
+		my $launch = '/usr/local/bin/launch';
+		if (-x $launch)
+		{
+			my $ABOOTROOT = `$launch SHOW root`; chomp $ABOOTROOT;
+			my $aboot_cpm = "$ABOOTROOT/bin/cpm";
+			$path = $aboot_cpm if -x $aboot_cpm;
+		}
+		# otherwise, we're just boned
+		die("can't run cpm (not installed?)") unless $path;
+	}
+	if ( $path =~ /perlbrew/ )
+	{
+		die("unexpected Perl version") unless $ENV{PERLBREW_PERL} eq 'perl-5.14.4';
+		return ($path, install => '-g');
+	}
+	else
+	{
+		my ($localperl) = glob("~/perl5");
+		die("no perlbrew and $localperl is missing") unless -d $localperl;
+		return ($path, install => -L => $localperl);
+	}
+}
+
 BEGIN
 {
+	@CPM_INSTALL = find_cpm();								# this will die if it can't find it
 	if ( $ARGV[0] ne 'NOLOOP' )
 	{
 		my $err = `$0 NOLOOP 2>&1`;
@@ -11,9 +47,8 @@ BEGIN
 		   )
 		{
 			-e 'cpanfile' or die("must run from ~/common for bootstrapping");
-			my $err = system("cpm --version >/dev/null") and die("can't run cpm (not installed? [$!]");
 			print "bootstrapping [for: $1], then exiting (rerun once successful)\n";
-			system("cpm install -g --feature bootstrap");
+			system("@CPM_INSTALL --feature bootstrap");
 			exit;
 		}
 	}
@@ -22,8 +57,6 @@ exit if $ARGV[0] eq 'NOLOOP';
 
 use myperl::Pxb;
 use autodie ':all';
-
-use Path::Tiny qw< tempdir >;
 
 
 my @DEFAULT_WHAT = qw< build myperl support >;
@@ -42,12 +75,6 @@ $OPT{v} = 1 if $OPT{D} or $OPT{n};
 
 my @features = @ARGV; @features = @DEFAULT_WHAT unless @features;
 
-fatal("not running under perlbrew") unless $ENV{PERLBREW_ROOT};
-fatal("unexpected Perl version")    unless $ENV{PERLBREW_PERL} eq 'perl-5.14.4';
-
-my $cpm = path($ENV{PERLBREW_ROOT}, bin => 'cpm');
--x $cpm or fatal("no cpm detected; try `perlbrew install-cpm`");
-
 
 my $cpanfile = path("~/common/cpanfile");
 if ( $OPT{l} )
@@ -63,13 +90,15 @@ if ( $OPT{l} )
 
 my $count   = 0;
 my $whence  =            "--cpanfile=$cpanfile";
-my $where   = $OPT{n}  ? join(' ', '-L', tempdir())         : '-g';
-my $howmuch = $OPT{B}  ? '--without-test --without-runtime' : '';
-my $how     = $OPT{v}  ? sub { print }                      : sub { print '.' if ++$count % 5 == 0 };
-my @what    = $OPT{M}  ? ($OPT{M}, @ARGV)                   : map { ('--feature', $_) } @features;
+my @howmuch = $OPT{B}  ? qw< --without-test --without-runtime > : '';
+my $how     = $OPT{v}  ? sub { print }                          : sub { print '.' if ++$count % 5 == 0 };
+my @what    = $OPT{M}  ? ( $OPT{M}, @ARGV )                     : map { ('--feature', $_) } @features;
+$CPM_INSTALL[-1] = tempdir() if $OPT{n};
 
-my @opts; push @opts, '-x' if $OPT{D};
+my @opts; #push @opts, '-x' if $OPT{D};
 chdir path("~/common");
-sh(@opts => "$cpm", install => '--color' => $whence, $where, $howmuch, @what, '|' => $how);
+sh(@opts => @CPM_INSTALL, => '--color' => $whence, @howmuch, @what, '|' => $how);
 print ' ' unless $OPT{v};
 say "done";
+
+sh(ls => -lRF => $CPM_INSTALL[-1], '|' => split(' ', $ENV{PAGER})) if $OPT{n} and $OPT{D};

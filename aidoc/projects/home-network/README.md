@@ -58,6 +58,29 @@ The following files contain summaries from previous AI collaboration sessions. T
 - `summary:intermittent-shutdowns-diagnosis.md` - Analysis of system shutdown problems
 - `summary:intermittent-shutdowns.html` - HTML version of shutdown diagnostics
 
+## EC2 Sandbox Sync Integration
+
+**⚠️ IMPORTANT FOR AI AGENTS**: Only read this section if the user specifically mentions EC2 sandboxes, syncing with EC2, or working with "quin" instances. Otherwise, skip this section.
+
+### Overview
+EC2 sandboxes ("quin" instances) can be configured for bidirectional file sync with Avalir (desktop) using Tailscale VPN and Syncthing. This allows seamless development with automatic sync of `~/common`, `~/work`, and `~/CE` directories.
+
+### Key Documentation Files (When Working on EC2 Sync)
+- **[EC2-sync-proof-of-concept.md](EC2-sync-proof-of-concept.md)**: Complete test results and current setup
+- **[EC2-sync-automation-roadmap.md](EC2-sync-automation-roadmap.md)**: Detailed automation implementation guide
+- **[ec2-sync-bootstrap.sh](ec2-sync-bootstrap.sh)**: Bootstrap script for new EC2 instances
+- **[/export/proj/common/bin/sandbox-setup](/export/proj/common/bin/sandbox-setup)**: Local script to setup tunnels
+
+### Private Files (When Needed)
+- **[private/ec2-sync-credentials.md](private/ec2-sync-credentials.md)**: Current EC2 instance ID, Tailscale auth key, device IDs
+
+### Quick Start for AI Agents
+If user asks about EC2 sandbox sync:
+1. Read `EC2-sync-proof-of-concept.md` for current state
+2. Check `private/ec2-sync-credentials.md` for instance ID
+3. Run `sandbox-setup <instance-id>` to establish connections
+4. Access Syncthing UI at http://localhost:8388
+
 ## Current Status
 
 - **NAS Migration Complete**: QNAP Nakama (TS-364) deployed and operational (August 2025)
@@ -65,9 +88,11 @@ The following files contain summaries from previous AI collaboration sessions. T
   - SSH/rsync access configured with key-based authentication
   - Backup directories created at `/share/backup`, `/share/archive`, `/share/personal`, `/share/proj`, `/share/work`
   - Daily IHM (IronWolf Health Management) scans running at 03:29 AM
+- **EC2 Sandbox Sync**: Operational with Tailscale + Syncthing (September 2025)
+  - Proof-of-concept complete, semi-automated setup available
+  - See EC2 Sandbox Sync Integration section if working on this
 - **Ongoing Issues**: Haven experiencing intermittent shutdowns (thermal-related, under monitoring)
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
-- **Planned Improvements**: EC2 Tailscale integration, Zadash hardwired connection fixes
 
 ## Tools and Scripts
 
