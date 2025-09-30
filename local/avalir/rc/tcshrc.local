@@ -17,6 +17,9 @@ alias vagrant-explore-test 'setenv CE_VAGRANT_BOX `vagrant-latest-test` ; \
 							setenv CE_VAGRANT_PORT_WEB 3030 ; setenv CE_VAGRANT_PORT_ES 9292'
 alias vagrant-env-clear    'unsetenv CE_VAGRANT_*'
 
+# EC2 sandbox stuff
+if (! $?SANDBOX) setenv SANDBOX `bash -c 'source bash_funcs ; set_sandbox ; echo $SANDBOX'`
+
 # music player stuff
 alias mpup 'music-player-volume up'
 alias mpdn 'music-player-volume down'

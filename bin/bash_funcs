@@ -113,3 +113,13 @@ function get_location
 		echo "home"
 	fi
 }
+
+
+################
+## WORK FUNCS ##
+################
+
+function set_sandbox
+{
+	SANDBOX=${SANDBOX:-$($MYDIR/local/vagrant-sandbox/bin/push-machine)}
+}

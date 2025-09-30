@@ -1,5 +1,5 @@
 #!/bin/bash
-. ~/bin/bash_funcs
+source bash_funcs
 
 ssh-add-if-necessary
 ssh-add -l
