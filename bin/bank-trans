@@ -123,6 +123,7 @@ my %DESCRIPTIONS =
 	Health			=>	[
 							qr|CVS/Pharmacy|i,
 							qr/CVS\.com/i,
+							qr/Walgreens/i,
 							qr/Ocean Park Pharmacy/i,
 							qr/WW INT(ERNATIONA|')L?/i,
 							qr/Lume deodorant/i,
@@ -296,6 +297,7 @@ my %DESCRIPTIONS =
 							qr/NobleKnight/i,
 							qr/Game Nerdz/i,
 							qr/AtomicEmpire/i,
+							qr/CoolStuffInc/i,
 							qr/Adventure Together/i,
 							qr/ONEBOOKSHEL(F.COM)?/i,
 							qr/Elderbrain/i,
@@ -610,6 +612,10 @@ foreach (@transactions)
 		{
 			$category = "TV/Internet";
 		}
+		when ( 'Walgreens' )
+		{
+			$category = '';							# force manual categorization
+		}
 
 		when ( [ qr/THOUSAND OAKS 14/i, qr/AMC ONLINE/i, ] )
 		{
@@ -646,6 +652,7 @@ foreach (@transactions)
 						NobleKnight				=>	'Buddy',
 						'Game Nerdz'			=>	'Buddy',
 						AtomicEmpire			=>	'Buddy',
+						CoolStuffInc			=>	'Buddy',
 						'Adventure Together'	=>	'Buddy',
 						'WFP membership'		=>	'Buddy',
 						'Android Game'			=>	'Merrick',
