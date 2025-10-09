@@ -1,0 +1,59 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+const my $CONST => 'Some Constant';
+
+
+opts <<'-';
+	[-avD] [-n <num>] <basename>
+	-a : do a thing (default: don't do that thing)
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	-n : do a thing <num> times
+	-e : next arg is the <pattern>, even if it starts with -
+	<pattern> : Perl-style regex
+	<file>    : one or more files to process
+-
+$OPT{v} = 1 if $OPT{D};
+$OPT{n} //= 1;
+
+my $base = shift;
+
+
+my $day = date( cwd->basename );
+my $tomorrow = $day + 1;
+my $yesterday = $day - 1;
+my $old = "$base-hold.buf";
+my $new = "$base.buf";
+-r $old or die("no hold file for $base!");
+
+if (-r $new)
+{
+	my $old_diffs =()= sh(diff => $old, join('/', '..', $yesterday->as("-Ymd"), $new));
+	my $new_diffs =()= sh(diff => $new, join('/', '..', $tomorrow->as("-Ymd"), $new));
+	say "## old has $old_diffs diffs w/ previous day; new has $new_diffs diffs w/ next day" if $OPT{D};
+	if ($new_diffs == 0)
+	{
+		say "# new buf is identical to following day; removing that and renaming hold file";
+		unlink $new;
+		rename $old, $new;
+	}
+	elsif ($old_diffs == 0)
+	{
+		say "# hold file is identical to previous day; just ditching it";
+		unlink $old;
+	}
+	else
+	{
+		say "# all files are different; dunno what to do (therefore doing nothing)";
+	}
+}
+else
+{
+	say "# no conflict; renaming hold file";
+	rename $old, $new;
+}

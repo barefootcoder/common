@@ -1,16 +1,76 @@
 #! /usr/bin/env perl
 
-use myperl::Pxb;
+use myperl::Pxb DEBUG => 2;
 use autodie ':all';
+
+use Date::Easy;
 
 $| = 1;
 
 const my $SCREENBUF_DIR => path("~/local/data/screen-buflog");
 
 
+# Compare two buffer files and determine if later should be trimmed.
+# Uses two-step matching: first tries full match, then N-1 match (removing last line).
+# Returns: (trimmed_content, bytes_saved) if trimming is appropriate
+#          Empty list otherwise (indicating files don't match, keep both)
+sub should_trim_file
+{
+	my ($earlier, $later) = @_;
+	debuggit(3 => "comparing", $earlier, "vs", $later);
+
+	# Load and strip leading blank lines from both files
+	my $earlier_raw = path($earlier)->slurp;
+	my $later_raw = path($later)->slurp;
+	debuggit(4 => "earlier raw length:", length($earlier_raw));
+	debuggit(4 => "later raw length:", length($later_raw));
+
+	my $earlier_contents = $earlier_raw =~ s/\A\n+//r;
+	my $later_contents = $later_raw =~ s/\A\n+//r;
+
+	debuggit(3 => "earlier length after strip leading blanks:", length($earlier_contents));
+	debuggit(3 => "later length after strip leading blanks:", length($later_contents));
+	debuggit(4 => "first 100 chars of earlier:", substr($earlier_contents, 0, 100));
+
+	# Two-step matching approach:
+	# Step 1: Try matching the full earlier file to later's prefix
+	my $match_len = length($earlier_contents);
+	my $later_prefix = substr($later_contents, 0, $match_len);
+
+	if ($earlier_contents eq $later_prefix)
+	{
+		debuggit(3 => "full file match! bytes to save:", $match_len);
+		my $trimmed = substr($later_contents, $match_len);
+		return ($trimmed, $match_len);
+	}
+
+	# Step 2: Remove last line from earlier (if it ends with \n) and try again
+	my $earlier_minus_last = $earlier_contents;
+	my $removed = $earlier_minus_last =~ s/\n.+\n\Z/\n/;
+	debuggit(3 => "removed last line?", $removed);
+
+	return unless $removed;  # Can't remove last line, give up
+
+	$match_len = length($earlier_minus_last);
+	$later_prefix = substr($later_contents, 0, $match_len);
+
+	if ($earlier_minus_last eq $later_prefix)
+	{
+		debuggit(3 => "match after removing last line! bytes to save:", $match_len);
+		my $trimmed = substr($later_contents, $match_len);
+		return ($trimmed, $match_len);
+	}
+
+	debuggit(3 => "no match found");
+	return;  # No match
+}
+
+
 opts <<'-';
-	[-qD] [-B <dir>] { -f | -H <base> | -A | <oldfile> <newfile> }
+	[-qnDb] [-B <dir>] { -f | -H <base> | -A | <oldfile> <newfile> }
 	-q : quieter than usual
+	-n : dry-run mode (don't actually modify files)
+	-b : create backup (.bak) before trimming files
 	-f : find all bases
 	-H : analyze complete history of <base> buf files
 	-A : analyze complete history of all bases
@@ -28,96 +88,120 @@ if ($OPT{f})
 }
 elsif ($OPT{A})
 {
-	my @du = (du => -sB => '1k', $screenbuf_dir);
-	my ($usage_before) = sh(@du) =~ /(\d+)/;
-	my ($l, @to_rm);
-	foreach (sh($0 => -f =>))
+	my @bases = sh($0 => -f =>);
+	my @opts = map { "-$_" } grep { $OPT{$_} } qw< n q b D >;
+	push @opts, (-B => $OPT{B}) if $OPT{B};
+
+	foreach my $base (@bases)
 	{
-		say "checking base: $_" unless $OPT{q};
-		foreach (sh($0 => -H => $_))
-		{
-			push @to_rm, s/^ +//r if $l = /^recommend removing/.../^[^ ]/ and $l > 1 and $l !~ /E0/;
-			say "# value of line check is: $l" if $OPT{D};
-		}
-	}
-	if (@to_rm)
-	{
-		say "recommend removing:"; say "  $_" foreach @to_rm;
-		my $saved = sum map { -s $_ } @to_rm;
-		my $disp_saved = int($saved / 1024) + 1;
-		   $disp_saved = $disp_saved >= 10_000 ? int($disp_saved / 1024 + .5) . "mb" : $disp_saved . "kb";
-		say "would save: ~$disp_saved";
-		if (confirm "remove all recommended files?")
-		{
-			unlink @to_rm;
-		}
-	}
-	else
-	{
-		say "couldn't find any candidates for removal :-("
+		say "checking base: $base" unless $OPT{q};
+		sh($0 => @opts => -H => $base);
 	}
 }
 elsif ($OPT{H})
 {
 	my $fpat = $screenbuf_dir->child("*/$OPT{H}.buf");					say "# looking for: $fpat" if $OPT{D};
-	my @bufs = glob($fpat);
+	my @bufs = reverse sort glob($fpat);  # process in REVERSE chronological order
 	@bufs or usage_error("cannot find any `$OPT{H}.buf' files in $screenbuf_dir");
 
-	my $most_complete;
-	my (@to_remove, @to_keep);
-	foreach (reverse @bufs)
+	# Skip today's file - it will be rewritten by screen-bufsave in ~10 minutes anyway
+	my $today = today->as("-Ymd");
+	@bufs = grep { $_ !~ m{(^|/)\Q$today\E/} } @bufs;
+	say "# skipping today's file ($today), processing " . @bufs . " files" unless $OPT{q};
+
+	my ($total_bytes_saved, @trimmed_files, @deleted_files) = (0);
+	for (my $i = 0; $i < $#bufs; $i++)
 	{
-		if ($most_complete)
+		my ($later, $earlier) = @bufs[$i, $i+1];  # reversed order
+		my ($trimmed_content, $bytes_saved) = should_trim_file($earlier, $later);
+
+		if (defined $trimmed_content)
 		{
-			my $out = sh($0 => $_, $most_complete, '2>&1');
-			if ($out eq "recommend delete $_")
+			$total_bytes_saved += $bytes_saved;
+
+			# Check if result is empty or trivial (just whitespace/newlines)
+			my $is_empty = $trimmed_content =~ /\A\s*\Z/;
+
+			if ($is_empty)
 			{
-				unshift @to_remove, $_;
-			}
-			elsif ($out =~ m{Files .*? and .*? differ\nmust keep both})
-			{
-				unshift @to_keep, $most_complete;
-				$most_complete = $_;
+				push @deleted_files, $later;
+				if ($OPT{n})
+				{
+					say "would delete $later (empty after trim)" unless $OPT{q};
+				}
+				else
+				{
+					if ($OPT{b})
+					{
+						my $backup = "$later.bak";
+						fatal("backup file $backup already exists") if -e $backup;
+						path($later)->copy_to($backup);
+					}
+					unlink $later;
+					say "deleted $later (empty after trim)" unless $OPT{q};
+				}
 			}
 			else
 			{
-				fatal("cannot parse output: $out");
+				push @trimmed_files, $later;
+				if ($OPT{n})
+				{
+					say "would trim $later (saving $bytes_saved bytes)" unless $OPT{q};
+				}
+				else
+				{
+					if ($OPT{b})
+					{
+						my $backup = "$later.bak";
+						fatal("backup file $backup already exists") if -e $backup;
+						path($later)->copy_to($backup);
+					}
+					path($later)->spew($trimmed_content);
+					say "trimmed $later (saved $bytes_saved bytes)" unless $OPT{q};
+				}
 			}
 		}
-		else
-		{
-			$most_complete = $_;
-		}
 	}
-	unshift @to_keep, $most_complete;				# don't forget the last one ...
-	say "recommend removing:"; say "  $_" foreach @to_remove;
-	say "leaving:";            say "  $_" foreach @to_keep;
+
+	if (@trimmed_files || @deleted_files)
+	{
+		my $disp_saved = int($total_bytes_saved / 1024) + 1;
+		   $disp_saved = $disp_saved >= 10_000 ? int($disp_saved / 1024 + .5) . "mb" : $disp_saved . "kb";
+		my $summary = "total for $OPT{H}: ";
+		$summary .= scalar(@trimmed_files) . " files trimmed" if @trimmed_files;
+		$summary .= ", " if @trimmed_files && @deleted_files;
+		$summary .= scalar(@deleted_files) . " files deleted" if @deleted_files;
+		$summary .= ", ~$disp_saved saved";
+		say $summary;
+	}
+	else
+	{
+		say "no files needed trimming" unless $OPT{q};
+	}
 }
 else
 {
 	my ($before, $after) = @ARGV;
 	-r $before and -r $after or usage_error("must supply two files to compare");
 
-	# sed command to ditch blank lines at both top and bottom
-	my $trim_blank_lines = '/./,$!d; :a; /^$/{ $d; N; ba; }';
-
-	my $trimmed_before = tempfile;
-	sh(sed => $trim_blank_lines, $before, '>', $trimmed_before);
-	my $num_lines = sh(wc => -l => '<', $trimmed_before);
-	my $last_line_len = length(sh(tail => -n1 => $trimmed_before));
-
-	my $trimmed_after  = tempfile;
-	# perl command to grab the first X lines and truncate the last one
-	my $head_and_trunc = 'print substr($_, 0, ' . $last_line_len . ') and exit if $. == ' . $num_lines;
-	sh(sed => $trim_blank_lines, $after, '|', $^X => -lpe => $head_and_trunc, '>', $trimmed_after);
-	if ($OPT{D})
+	my ($trimmed_content, $bytes_saved) = should_trim_file($before, $after);
+	if (defined $trimmed_content)
 	{
-		sh(wc => -l => $trimmed_before, $trimmed_after);
-		sh(diff => $trimmed_before, $trimmed_after);
-	}
-	if (bash(diff => -q => $trimmed_before, $trimmed_after))
-	{
-		say "recommend delete $before";
+		if ($OPT{n})
+		{
+			say "would trim $after (saving $bytes_saved bytes)";
+		}
+		else
+		{
+			if ($OPT{b})
+			{
+				my $backup = "$after.bak";
+				fatal("backup file $backup already exists") if -e $backup;
+				path($after)->copy_to($backup);
+			}
+			path($after)->spew($trimmed_content);
+			say "trimmed $after (saved $bytes_saved bytes)" unless $OPT{q};
+		}
 	}
 	else
 	{
