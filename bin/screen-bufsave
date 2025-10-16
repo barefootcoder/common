@@ -53,7 +53,7 @@ sh(screen => -p => $name, -Q => 'title') eq $name or usage_error("cannot locate 
 
 my $today = today->as("-Ymd");
 my $dir = path("~/local/data/screen-buflog/$today");
--d $dir or mkdir $dir;
+-d $dir or $dir->mkdir ;
 
 my $file = $dir->child("$name.buf");
 if (-e $file)

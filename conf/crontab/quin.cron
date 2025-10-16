@@ -22,7 +22,7 @@
 # m h  dom mon dow   command
 
 SHELL=/bin/bash
-USER=buddy
-HOME=/home/buddy
-DISPLAY=:0.0
+USER=bburden
+HOME=/home/bburden
 
+10    * * * * $HOME/bin/launch-perl screen-bufsave -Aq
