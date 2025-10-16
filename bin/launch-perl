@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -e
 
 ME=${0##*/}
 if [[ ${1:-} == "LOGGING" ]]
@@ -7,8 +7,54 @@ then
 	set -x
 else
 	mkdir -p /tmp/$ME
-	set -x
 	exec $0 LOGGING "$@" >/tmp/$ME/$$.error 2>&1
 fi
 
-PERL5LIB=/home/buddy/common/perl /home/buddy/perl5/perlbrew/bin/perlbrew exec "$@"
+# keep logfiles from accumulating forever
+# if it's more than a week old, the chances that we need to look at it are slim to none
+find "/tmp/$ME" -type f -mtime +7 -delete
+
+# stolen from archer-boot
+function first-bin-that-exists
+{
+    for bin in "$@"
+    do
+        [[ -f $bin && -x $bin ]] && echo $bin && break
+    done
+}
+# ditto
+function addpath
+{
+    local var=$1 ; shift
+    # the `for` loop goes through our args in reverse order
+    # this makes sure our dirs show up in the path var in the proper order
+    for (( i=$# ; i > 0; --i ))
+    do
+        local dir=${!i}
+        if [[ ${!var:+set} ]]
+        then
+            if [[ ":${!var}:" != *:$dir:* && -d $dir ]]
+            then
+                export $var="$dir:${!var}"
+            fi
+        else
+            # It wasn't set, so it will just equal the directory.  This avoids
+            # issues under `set -u` as well as not leaving a stray colon at the
+            # end of the path.
+            export $var="$dir"
+        fi
+    done
+}
+
+# We seem to need all this:
+# 	* Assume nothing is set except `$HOME`; should be true in both cronjobs and X launchers.
+# 	* We need to find the right Perl.  Try Perlbrew first, then look in standard places.
+# 	* Our script might call other scripts, so make sure our personal `bin/` is in the `$PATH`.
+# 	* The thing we're running might also be in our personal `bin/`.
+# 	* We need our personal Perl modules.
+# 	* We need locally installed Perl modules (either Perlbrew ones or just in `~/perl5` for EC2 servers).
+PERL=$(first-bin-that-exists $(find $HOME/perl5/perlbrew/ -path "*/bin/perl") /bin/perl /usr/bin/perl /usr/local/bin/perl)
+addpath PATH $HOME/bin
+TARGET=$1 ; shift
+TARGET=$(first-bin-that-exists $TARGET $HOME/bin/$TARGET)
+PERL5LIB=$HOME/common/perl $PERL -Mlocal::lib "$TARGET" "$@"
