@@ -1,1 +1,2 @@
+stuff "source ~/.tcshrc.local\015"
 source ~/.screenrc.vagrant

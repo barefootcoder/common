@@ -1,5 +1,5 @@
 setenv CE_REMOTE_USERNAME bburden
-setenv CEROOT ~/workproj/CE-mounted
+setenv CEROOT ~/workproj/CE
 setenv CHEOPSROOT ~/workproj/cheops
 
 alias cessh $CEROOT/devtools/cessh
@@ -8,6 +8,7 @@ alias cescp $CEROOT/devtools/cescp
 alias abc-go 'vcd abc ; eval `addpath -e $HOME/.local/bin` ; source ~/.local/bin/abc.tcsh'
 
 # Vagrant environment stuff
+setenv CE_VAGRANT_VBOXSF_MOUNTPOINT $CEROOT
 alias vscp vagrant-scp
 
 # Vagrant testing stuff
