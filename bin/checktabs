@@ -43,7 +43,7 @@ then
 	fi
 fi
 
-out=$(fgrep $count -srHI $'\t' -- $files | grep -v ':0$')
+out=$(grep -P $count -srHI '\t|\s+$' -- $files | grep -v ':0$')
 for pattern in '^Makefile(\..*)?$' '\.tsv$'
 do
 	[[ $count != -l ]] && pattern=${pattern/$/:}
