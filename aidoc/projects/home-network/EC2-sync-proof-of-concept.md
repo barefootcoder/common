@@ -197,3 +197,4 @@ ping <tailscale-ip>
 4. **Use localhost binding for security** - Remote access via SSH tunnel only
 5. **cessh is required** - Standard SSH won't work through the proxy
 6. **Manual approval currently required** - See roadmap for automation options
+7. **Claude Code MCP servers must be project-scoped** - Use `.mcp.json` files in repo roots, not user-scoped configs

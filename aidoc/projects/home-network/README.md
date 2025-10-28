@@ -80,6 +80,9 @@ If user asks about EC2 sandbox sync:
 2. Check `private/ec2-sync-credentials.md` for instance ID
 3. Run `sandbox-setup <instance-id>` to establish connections
 4. Access Syncthing UI at http://localhost:8388
+5. For Claude Code: MCP servers are configured via project-scoped `.mcp.json` files
+   - After initial sync, restart Claude Code to load the configuration
+   - Authenticate with `/mcp` command if using OAuth services
 
 ## Current Status
 
