@@ -1,6 +1,7 @@
 
 # Personal developer AI tool configurations
 .aider*
+.mcp.json
 **/.claude/settings.local.json
 
 # Private project data (sensitive network info, credentials, etc.)
