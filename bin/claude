@@ -20,4 +20,16 @@ $CLAUDE_PATH or die "$ME: cannot locate claude script\n";
 # Add AI helper scripts directory to path
 $ENV{PATH} = bash \string => (addpath => glob("addpath ~/common/conf/ai/devtools"));
 
+# Verify local memory; create if necessary and possible
+my $localmem = 'CLAUDE.local.md';
+if (not -e $localmem)
+{
+	# doesn't exist; can we find something to symlink to?
+	if ( $ENV{CE_REMOTE_USERNAME} )					# for work repos, this is how we find personal files
+	{
+		my $personal_mem = "aidoc/CLAUDE-$ENV{CE_REMOTE_USERNAME}.md";
+		symlink $personal_mem, $localmem if -f $personal_mem;
+	}
+}
+
 exec $CLAUDE_PATH, @ARGV;
