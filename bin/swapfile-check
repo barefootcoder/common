@@ -36,6 +36,9 @@ sub check_swapfiles
     my $abs_path = $file->absolute;
     my $dirname =  $abs_path->parent;
     my $basename = $abs_path->basename;
+	# if the basename starts with a dot, and we're gong to add a dot, that won't work
+	# so just remove any leading `.` to avoid missing swapfiles
+	$basename =~ s/^\.//;
 
     # Check for various conflict file patterns
     my @patterns = (
