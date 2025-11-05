@@ -8,7 +8,7 @@ This document describes the complete automated process for onboarding new work t
 
 **DO NOT perform any technical work during onboarding:**
 - ❌ No code analysis or file reading
-- ❌ No implementation work or code modifications  
+- ❌ No implementation work or code modifications
 - ❌ No technical investigation or research
 - ❌ No testing or deployment activities
 
@@ -24,12 +24,15 @@ This document describes the complete automated process for onboarding new work t
 ## Overview
 
 When taking on a new ticket, the following systems must be updated:
-1. **Jira**: Assign ticket and set development owner
-2. **Google Sheets**: Create job entry and optional tasks
-3. **Subtasks**: Break down work and add to both Jira and sheets (optional)
-4. **Triage file**: Add ticket to meeting reports
-5. **Timer file**: Initialize time tracking
-6. **Checklist API**: Add Jira checklist items (known issue - see troubleshooting)
+1. **Pre-flight**: Run validation script to check system readiness and get work date
+2. **Jira**: Assign ticket and set development owner (via MCP server only)
+3. **Google Sheets**: Create job entry and optional tasks
+4. **Subtasks**: Break down work and add to both Jira and sheets (optional)
+5. **Triage file**: Add ticket to meeting reports
+6. **Timer file**: Initialize time tracking
+7. **Checklist API**: Add Jira checklist items (known issue - see troubleshooting)
+
+**Note**: The pre-flight script calculates the correct work date (with 6 AM time-shift logic). Use this date throughout the workflow instead of recalculating it.
 
 ## Pre-Flight Validation
 
@@ -46,46 +49,58 @@ ticket-preflight
    - **RE-RUN `ticket-preflight` to verify** (don't assume fixes are complete)
    - Repeat until validation passes
 3. If only warnings, note them but proceed
-4. Only continue to Step 1 after validation passes
+4. **Record the work date** from the output (look for "For ticket onboarding, use date: MM/DD/YYYY")
+5. Only continue to Step 1 after validation passes
 
-This ensures all systems are ready before starting the administrative workflow.
+This ensures all systems are ready before starting the administrative workflow, and provides the correct work date to use throughout the onboarding process.
 
 ## Complete Workflow Process
 
 ### Step 1: Jira Assignment and Status Update
 **Purpose**: Assign ticket to user, set development owner field, and update status to "On Deck"
 
+**⚠️ CRITICAL PREREQUISITE**: Before starting, verify `atlassian-remote` MCP server is connected. See "MCP Server Requirements" section below. **DO NOT** use CLI commands - MCP server is the ONLY way to access Jira.
+
 **Process**:
-1. Get ticket details: `jira_get_issue` with fields `assignee,summary,customfield_10157,status`
-2. Check current status and available transitions:
+1. **Get Cloud ID**: Call `mcp__atlassian-remote__getAccessibleAtlassianResources` to retrieve the cloud ID
+   - Use the `id` field from the response (a UUID string)
+   - **IMPORTANT**: The cloud ID is a UUID that must be obtained from the accessible resources endpoint
+   - For reference, the expected cloud ID is stored in `private/user-config.md`
+2. Get ticket details using MCP server with fields `assignee,summary,customfield_10157,status`
+3. Check current status and available transitions:
    - If status is not already "On Deck", get transitions: `jira_get_transitions`
    - Find transition ID for "On Deck" status
    - Update status using `jira_transition_issue` (if needed)
-3. Check if already assigned - if not, update assignee (see `private/user-config.md`)
-4. Always set Development Owner field (`customfield_10157`) to user's account ID
-5. Extract ticket number and summary for later steps
+4. Check if already assigned - if not, update assignee (see `private/user-config.md`)
+5. Always set Development Owner field (`customfield_10157`) to user's account ID
+6. Extract ticket number and summary for later steps
 
 **Sanity Checks**:
 - Verify both Assignee and Development Owner are set correctly
 - Verify status is "On Deck" (or similar active status)
 
-### Step 1.5: Calculate Time-Shifted Date
-**CRITICAL: Determine the correct date based on current time**
+### Step 1.5: Get Work Date from Pre-flight Output
+**CRITICAL: Use the date calculated by the pre-flight script**
 
-```bash
-# Get current hour
-HOUR=$(date '+%H')
-if [ $HOUR -lt 6 ]; then
-    # Before 6 AM: use yesterday
-    WORK_DATE=$(date -d "yesterday" '+%m/%d/%Y')
-else
-    # After 6 AM: use today
-    WORK_DATE=$(date '+%m/%d/%Y')
-fi
-echo "Using work date: $WORK_DATE"
+The `ticket-preflight` script already calculated the correct work date using 6 AM boundary logic. This date was displayed in the "Work Date Calculation" section of the pre-flight output.
+
+**Process**:
+1. Look back at the preflight output for the line: `For ticket onboarding, use date: MM/DD/YYYY`
+2. Use that date as `$WORK_DATE` for all subsequent steps
+
+**DO NOT recalculate the date with bash commands - always use the date from preflight output.**
+
+**Example from preflight output**:
+```
+=== Work Date Calculation (6 AM boundary) ===
+  Current time: 13:07 Wednesday (after 6 AM cutoff)
+  Actual date: 11/05/2025
+  → Work date: 11/05/2025 (Wednesday)
+
+  For ticket onboarding, use date: 11/05/2025
 ```
 
-**Use `$WORK_DATE` for all Added and Due dates in subsequent steps.**
+**Use this date for all Added and Due dates in subsequent steps.**
 
 ### Step 2: Google Sheets Job Creation
 **Purpose**: Create job entry in Todo spreadsheet
@@ -98,7 +113,7 @@ echo "Using work date: $WORK_DATE"
    - **B (Context)**: "Work"
    - **C (Added)**: Use $WORK_DATE from Step 1.5
    - **D (Due)**: [blank]
-   - **E (Completed)**: [blank] 
+   - **E (Completed)**: [blank]
    - **F (Project)**: [blank]
    - **G (Description)**: Ticket summary
 4. **Template**: `[["TICKET-NUM", "Work", "YYYY-MM-DD", "", "", "", "Summary text"]]`
@@ -206,7 +221,7 @@ echo "Using work date: $WORK_DATE"
    [timer-name]:\t[ticket summary]\t[ticket-number]
    ```
 
-**Timer Naming Guidelines**: 
+**Timer Naming Guidelines**:
 - Use kebab-case
 - Be descriptive but concise
 - Example: `clickout-data-cols-fix` for "Fix empty columns in clickout data report"
@@ -220,7 +235,7 @@ echo "Using work date: $WORK_DATE"
 4. **Interactive Fallback**: Ask user directly about file safety when automated checks fail
 
 **If files have unsaved changes:**
-1. **Ask user to save**: Request `:w` in vim (no need to exit entirely)  
+1. **Ask user to save**: Request `:w` in vim (no need to exit entirely)
 2. **Re-verify**: Check that swap file no longer shows "modified"
 3. **Proceed safely**: Edit file knowing changes are saved
 4. **Post-edit reminder**: "Please reload the file in vim (`:e!`) to see the changes"
@@ -245,6 +260,26 @@ See `private/user-config.md` for:
 - Jira custom field IDs
 - File path configurations
 - User account details
+
+## MCP Server Requirements
+
+### ⚠️ CRITICAL: Jira Access via MCP Server ONLY ⚠️
+
+**This workflow REQUIRES the `atlassian-remote` MCP server for ALL Jira operations.**
+
+**ABSOLUTE RULES**:
+1. **NEVER** attempt to use the `jira` CLI command - it is NOT installed on this system
+2. **NEVER** try any CLI-based Jira access as a fallback or alternative
+3. **ONLY** use MCP server functions: `mcp__atlassian-remote__*`
+4. **If MCP server is not connected**: STOP immediately and ask the user to connect it
+
+**Before starting Step 1**:
+- Verify MCP server connectivity by calling `mcp__atlassian-remote__getAccessibleAtlassianResources`
+- If this fails with "not authorized" or similar errors, STOP and inform the user:
+  > "The atlassian-remote MCP server is not connected or authorized. Please reconnect it before proceeding with ticket onboarding."
+- Wait for user confirmation before retrying
+
+**There is NO alternative method for Jira access. MCP server is the ONLY way.**
 
 ## Troubleshooting
 
