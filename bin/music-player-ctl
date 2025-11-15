@@ -229,6 +229,20 @@ sub handle_pos_subcommand
 		{
 			my $plist = shift or die("must specify playlist to start");
 			my $tracklists = read_playlist_posfile();
+
+			# Capture current state BEFORE loading
+			my $old_state     = eval { get_playlist_info() } // {};
+			my $old_track_num = $old_state->{list_pos} // -1;			# -1 if nothing playing
+			my $old_seconds   = $old_state->{seconds}   // 0;
+
+			# If currently playing, pause so new playlist loads cleanly
+			if (PlaybackMode eq 'play')
+			{
+				say "pausing current playback..." if $OPT{v};
+				run($CLEMENTINE, '--pause');
+				usleep(100_000);  # brief pause to let it settle
+			}
+
 			# `set_playlist` may expand an abbreviated or alias arg
 			$plist = set_playlist($plist);
 			my $info = $tracklists->{$plist};
@@ -246,10 +260,55 @@ sub handle_pos_subcommand
 				{
 					my $count = 0;
 					print "waiting for playlist to load ." if $OPT{v};
-					while ( get_playlist_info()->{playlist} ne $plist )
+					debuggit(4 => "DEBUG: old_track_num", $old_track_num, "old_seconds", $old_seconds);
+					while (1)
 					{
+						# Check playback status first - might be stopped during transition
+						my $status = player_api(Player => 'PlaybackStatus');
+						debuggit(4 => "DEBUG[$count]: status", $status);
+
+						# If playing or paused, check if new playlist loaded
+						if ($status ne 'Stopped')
+						{
+							my $current = eval { get_playlist_info() } // {};
+							debuggit(4 => "DEBUG[$count]: got playlist info:", $current->{playlist} // 'NONE');
+
+							# Successfully got playlist info - check if it's the new one
+							if ($current->{playlist})
+							{
+								my $new_track_num = $current->{list_pos};
+								my $new_seconds   = $current->{seconds};
+								debuggit(4 => "DEBUG[$count]: new_track_num", $new_track_num,
+										"new_seconds", $new_seconds, "playlist", $current->{playlist});
+
+								# Playlist loaded if:
+								#   - track became 0 (list_pos is 0-indexed, first track) when it wasn't already, OR
+								#   - we were on track 0 and position decreased
+								if (   $old_track_num != 0 and $new_track_num == 0
+									or $old_track_num == 0 and $new_seconds < $old_seconds)
+								{
+									debuggit(4 =>	"DEBUG[$count]:",
+													$old_track_num == 0
+														? "track became 0 (first track)" : "position decreased"
+											);
+									last;
+								}
+							}
+							else
+							{
+								debuggit(4 => "DEBUG[$count]: eval failed or no playlist info");
+							}
+						}
+						else
+						{
+							debuggit(4 => "DEBUG[$count]: stopped, waiting...");
+						}
+
 						usleep(100_000);
 						print "." if $OPT{v} and ++$count % 10 == 0;
+
+						# Safety timeout (10 seconds)
+						last if $count > 100;
 					}
 					say " done" if $OPT{v};
 					sh( clementine => -k          => $trackpos        );
