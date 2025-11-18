@@ -89,7 +89,20 @@ then
     echo "setenv SSH_AUTH_SOCK $socket;"
     exit 0
 else
-    # Check if agent is running but no working sockets found
+    # No working socket found - provide context-specific guidance
+
+    # If we're in an SSH session, agent forwarding might be the issue
+    if [[ -n "$SSH_CONNECTION" ]]
+    then
+        echo "# WARNING: You're in an SSH session but no working SSH agent found" >&2
+        echo "# If you intended to use agent forwarding:" >&2
+        echo "#   1. Run on your LOCAL machine: ssh-sock-reset (or eval \`ssh-agent-env\`)" >&2
+        echo "#   2. Reconnect with: ssh -A <hostname>" >&2
+        echo "# Otherwise, start a local agent with: eval \$(ssh-agent)" >&2
+        exit 1
+    fi
+
+    # Not in SSH session - check for local agents
     agents=$(find_ssh_agents)
     if [[ "$agents" ]]
     then
