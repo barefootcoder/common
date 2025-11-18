@@ -2,7 +2,8 @@
 
 me=${0##*/}
 monitor=false
-while getopts ":p:g:Mdh" opt
+showall=false
+while getopts ":p:g:Madh" opt
 do
 	case $opt in
 		p)	pid=$OPTARG
@@ -11,14 +12,18 @@ do
 			;;
 		M)	monitor=true
 			;;
+		a)	showall=true
+			;;
 		d)	debug=1
 			;;
-		h)	echo "usage: $me [-h] [ { -p pid | -g procname | tty } ]" >&2
-			echo "   tty : display process of this tty instead of the current one" >&2
-			echo "    -p : display complete parentage of pid instead of a tty" >&2
-			echo '    -g : display complete parentage of `pgrep -f procname` instead of a tty' >&2
-			echo "         (error if pgrep -f procname returns more than one process)" >&2
-			echo "    -h : this help message" >&2
+		h)	echo "usage: $me [-h] [ { -p <pid> | -g <procname> | [-a] [<tty>] } ]" >&2
+			echo "         -a : include all descendant processes, even those with different ttys" >&2
+			echo "         -p : display complete parentage of <pid> instead of a tty" >&2
+			echo '         -g : display complete parentage of `pgrep -f <procname>` instead of a tty' >&2
+			echo "         -h : this help message" >&2
+			echo "      <pid> : PID to display parentage of" >&2
+			echo " <procname> : procname to search for (must be unique)" >&2
+			echo "      <tty> : display processes for given tty (default: current tty)" >&2
 			exit
 			;;
 		:)	echo "$me: $OPTARG requires an argument ($me -h for help)" >&2
@@ -39,17 +44,38 @@ function get_ppid
 
 function get_childpids
 {
-	children=$(/bin/ps h -o pid --ppid ${*// /,})
-	echo ${children// /,}
+	local pid=$1
+	local depth=${2:-0}
+	local max_depth=${3:-50}
+
+	# Stop if we've gone too deep
+	if [[ $depth -ge $max_depth ]]
+	then
+		return
+	fi
+
+	[[ $debug == 1 ]] && echo "DEBUG: get_childpids($pid) depth=$depth" >&2
+	local children=$(/bin/ps h -o pid --ppid $pid 2>/dev/null)
+	[[ $debug == 1 ]] && echo "DEBUG:   children of $pid: $children" >&2
+	local all_descendants=""
+
+	for child in $children
+	do
+		all_descendants="$all_descendants,$child"
+		local grandchildren=$(get_childpids $child $(( depth + 1 )) $max_depth)
+		if [[ -n $grandchildren ]]
+		then
+			all_descendants="$all_descendants,$grandchildren"
+		fi
+	done
+
+	echo ${all_descendants#,}
 }
 
 
 if [[ -n $grep ]]
 then
 	pid="$(pgrep -f $grep | grep -v "^$$"'$' )"
-echo "pid is $pid, me is $$"
-psf -p $$
-ps -p $(get_childpids $$)
 	if [[ $(echo "$pid" | wc -l) != 1 ]]
 	then
 		echo "$me: more than one process matches: "$pid >&2
@@ -72,7 +98,35 @@ then
 		$monitor || echo TTY is $tty
 	fi
 
-	exec /bin/ps ft$tty $ps_out
+	if $showall
+	then
+		# Get all processes on this TTY and their descendants
+		# Only start from top-level processes (whose parent is not also on this TTY)
+		all_pids=""
+		tty_pids=$(ps -t $tty -o pid= 2>/dev/null | tr '\n' ' ')
+		for tty_pid in $tty_pids
+		do
+			ppid=$(get_ppid $tty_pid | tr -d ' ')
+			# Skip if parent is also on this TTY (not a root process)
+			if [[ " $tty_pids " == *" $ppid "* ]]
+			then
+				[[ $debug == 1 ]] && echo "DEBUG: skipping tty_pid=$tty_pid (parent $ppid also on TTY)" >&2
+				continue
+			fi
+			[[ $debug == 1 ]] && echo "DEBUG: processing tty_pid=$tty_pid (top-level)" >&2
+			all_pids="$all_pids,$tty_pid"
+			children=$(get_childpids $tty_pid)
+			[[ $debug == 1 ]] && echo "DEBUG: children=$children" >&2
+			if [[ -n $children ]]
+			then
+				all_pids="$all_pids,$children"
+			fi
+		done
+		all_pids=${all_pids#,}
+		exec /bin/ps f -p $all_pids $ps_out
+	else
+		exec /bin/ps ft$tty $ps_out
+	fi
 else
 	orig_pid=$pid
 	all_pids=$pid
@@ -87,7 +141,7 @@ else
 		all_pids="$all_pids,$ppid"
 		pid=$ppid
 	done
-	#all_pids="$all_pids,$(get_childpids $orig_pid)"
+	all_pids="$all_pids,$(get_childpids $orig_pid)"
 	all_pids=${all_pids// /}
 
 	[[ $debug == 1 ]] && echo DEBUG: /bin/ps f -p $all_pids -g $orig_pid $ps_out >&2
