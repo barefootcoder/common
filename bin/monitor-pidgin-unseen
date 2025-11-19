@@ -19,7 +19,7 @@ if ($remote_host)
 	if ( bash \string => ssh => $remote_host, $ME => '-q' )
 	{
 		my $title = 'URGENT';
-		my $message = 'IMs are awaiting your attention on ' . ucfirst $remote_host . '.';
+		my $message = 'Your attention is needed on ' . ucfirst $remote_host . '.';
 		bash zenity => '--warning', '--title', $title, '--width', 250,
 				'--text', shq(qq|<span foreground="red" size="x-large"><b>$message</b></span>|), '&';
 		sleep 1;
@@ -34,6 +34,8 @@ else
 	const my $OFF => "\e[0m";
 
 	my $found = 0;
+
+	# Check for Pidgin urgency hints
 	foreach (sh(wmctrl => -l =>))
 	{
 		my ($wid) = split(' ');
@@ -44,5 +46,32 @@ else
 			$found = 1;
 		}
 	}
+
+	# Check for Claude Code notification markers
+	my $hostname = sh(hostname => '-s');
+	chomp $hostname;
+	my @marker_files = glob("/tmp/claude-code-notification-${hostname}-*.json");
+	foreach my $marker_file (@marker_files)
+	{
+		# Read and parse JSON marker file
+		open my $fh, '<', $marker_file;
+		my $json = do { local $/; <$fh> };
+		close $fh;
+
+		# Extract message using basic regex (avoiding JSON module dependency)
+		if ( $json =~ /"message":\s*"([^"]+)"/ )
+		{
+			my $message = $1;
+
+			# Abbreviate common patterns for compact display
+			$message =~ s/^Claude needs your permission to use /Approve /;
+			$message =~ s/is waiting for your input/Waiting for input/;
+			$message =~ s/^Claude //;  # Strip leading "Claude " if still present
+
+			say "${ON}Claude: $message$OFF";
+			$found = 1;
+		}
+	}
+
 	print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
 }

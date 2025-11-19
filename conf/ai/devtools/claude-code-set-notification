@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Claude Code notification setter hook
+# Called when Claude Code needs attention (permission or idle 60+ seconds)
+# Writes a marker file that monitor-pidgin-unseen will detect
+
+set -euo pipefail
+
+ME=$(basename "$0")
+
+# Read JSON input from Claude Code hook
+input=$(cat)
+
+# Extract fields using jq
+session_id=$(echo "$input" | jq -r '.session_id // "unknown"')
+message=$(echo "$input" | jq -r '.message // "Claude Code is waiting for input"')
+cwd=$(echo "$input" | jq -r '.cwd // ""')
+hook_event=$(echo "$input" | jq -r '.hook_event_name // "unknown"')
+
+# Create marker filename with hostname and session_id
+hostname=$(hostname -s)
+marker_file="/tmp/claude-code-notification-${hostname}-${session_id}.json"
+
+# Write marker file with timestamp
+cat > "$marker_file" <<EOF
+{
+  "message": "$message",
+  "timestamp": $(date +%s),
+  "session_id": "$session_id",
+  "cwd": "$cwd",
+  "hook_event": "$hook_event",
+  "hostname": "$hostname"
+}
+EOF
+
+# Exit successfully
+exit 0
+
+# [Created and submitted by AI: Claude]

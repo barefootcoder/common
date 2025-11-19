@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Claude Code notification clearer hook
+# Called when user submits input or session ends
+# Removes marker file so blinking stops
+
+set -euo pipefail
+
+ME=$(basename "$0")
+
+# Read JSON input from Claude Code hook
+input=$(cat)
+
+# Extract session_id
+session_id=$(echo "$input" | jq -r '.session_id // "unknown"')
+hostname=$(hostname -s)
+
+# Remove marker file for this session
+marker_file="/tmp/claude-code-notification-${hostname}-${session_id}.json"
+if [[ -f "$marker_file" ]]
+then
+	rm -f "$marker_file"
+fi
+
+# Clean up any stale marker files (older than 5 minutes)
+# This handles cases where sessions crashed without cleanup
+find /tmp -name "claude-code-notification-${hostname}-*.json" -type f -mmin +5 -delete 2>/dev/null || true
+
+# Exit successfully
+exit 0
+
+# [Created and submitted by AI: Claude]
