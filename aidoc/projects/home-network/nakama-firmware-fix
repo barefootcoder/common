@@ -1,0 +1,23 @@
+#!/bin/bash
+# Run these commands after QNAP firmware updates
+# See private/network-details.md for NAS hostname and SSH port
+
+NAS_HOST=$(sed -n 's/^- \*\*NAS Hostname\*\*: //p' "$(dirname "$0")/private/network-details.md")
+: ${NAS_HOST:?'Cannot determine NAS hostname from private/network-details.md'}
+
+function nas-run
+{
+	ssh -t "$NAS_HOST" "$@"
+}
+
+echo "Fixing /share/homes symlink..."
+nas-run 'set -x && test -d /share/homes || cd /share && sudo ln -s CACHEDEV1_DATA/homes homes'
+
+echo "Fixing passwordless sudo..."
+admin=administrators
+sudoers=/usr/etc/sudoers
+nas-run "grep -q '$admin.*NOPASSWD' $sudoers || sudo cp -p $sudoers $sudoers.backup &&
+	sudo sed -i 's/%$admin ALL=(ALL) ALL/%$admin ALL=(ALL) NOPASSWD: ALL/' $sudoers"
+
+echo "Done! Testing SSH access..."
+nas-run 'echo "SSH works!" && sudo echo "Passwordless sudo works!"'
