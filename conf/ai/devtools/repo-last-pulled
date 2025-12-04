@@ -1,0 +1,87 @@
+#!/bin/bash
+# check-repo-age - Returns the age in days since a git repo was last refreshed
+# Usage: check-repo-age <path>
+# Returns: Number of days since the repo was last fetched from remote
+# Exit code 0 if successful, 1 if error
+
+ME=$(basename "$0")
+
+usage()
+{
+    echo "Usage: $ME <path>"
+    echo "  Returns the age in days since the git repo was last fetched from remote"
+    echo "  Path can be a directory or file within the repository"
+    echo "  Exit code 0 if successful, 1 if error"
+}
+
+if [ $# -ne 1 ]
+then
+    usage
+    exit 1
+fi
+
+PATH_ARG="$1"
+
+if [ ! -e "$PATH_ARG" ]
+then
+    echo "Error: Path '$PATH_ARG' does not exist" >&2
+    exit 1
+fi
+
+# Determine directory to use for git commands
+# git -C requires a directory, so use parent dir if PATH_ARG is a file
+if [ -d "$PATH_ARG" ]
+then
+    GIT_WORK_DIR="$PATH_ARG"
+else
+    GIT_WORK_DIR=$(dirname "$PATH_ARG")
+fi
+
+# Check if path is in a git repository
+GIT_DIR=$(git -C "$GIT_WORK_DIR" rev-parse --git-dir 2>/dev/null)
+if [ $? -ne 0 ] || [ -z "$GIT_DIR" ]
+then
+    echo "Error: Path '$PATH_ARG' is not in a git repository" >&2
+    exit 1
+fi
+
+# Make GIT_DIR absolute if it's relative
+if [[ "$GIT_DIR" != /* ]]
+then
+    REPO_ROOT=$(git -C "$GIT_WORK_DIR" rev-parse --show-toplevel 2>/dev/null)
+    GIT_DIR="$REPO_ROOT/$GIT_DIR"
+fi
+
+# Check if repo has any remotes
+REMOTES=$(git -C "$GIT_WORK_DIR" remote 2>/dev/null)
+if [ -z "$REMOTES" ]
+then
+    echo "Error: Repository has no remotes configured" >&2
+    exit 1
+fi
+
+# Check if FETCH_HEAD exists (indicates at least one fetch has occurred)
+FETCH_HEAD="$GIT_DIR/FETCH_HEAD"
+if [ ! -f "$FETCH_HEAD" ]
+then
+    echo "Error: Repository has never been fetched from remote" >&2
+    exit 1
+fi
+
+# Get the modification time of FETCH_HEAD
+FETCH_TIMESTAMP=$(stat -c %Y "$FETCH_HEAD" 2>/dev/null)
+if [ -z "$FETCH_TIMESTAMP" ]
+then
+    echo "Error: Could not read modification time of FETCH_HEAD" >&2
+    exit 1
+fi
+
+# Current timestamp
+CURRENT_TIMESTAMP=$(date +%s)
+
+# Calculate age in days
+AGE_SECONDS=$((CURRENT_TIMESTAMP - FETCH_TIMESTAMP))
+AGE_DAYS=$(echo "scale=1; $AGE_SECONDS / 86400" | bc)
+
+# Output just the number of days
+echo "$AGE_DAYS"
