@@ -1,3 +1,4 @@
-*/30  * * * * tcsh -c "$HOME/bin/proc-mem -k 33 'thunderbird$'"
+*/30  * * * * tcsh -c "$HOME/bin/proc-mem -k 60 '/opt/thunderbird.*-profile'"
 *     * * * * $HOME/local/bin/unfocus-alarms
 */10  * * * * tcsh -c "$HOME/bin/screen-bufsave -ACq"
+0     8 * * * bash -c "sudo journalctl -p err --since '24 hours ago' | grep -v UFW >> $HOME/.logs/hw-errors-\$(date +\%Y-\%m).log 2>&1"
