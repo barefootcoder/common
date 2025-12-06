@@ -4,6 +4,8 @@ source bash_funcs
 ssh-add-if-necessary
 ssh-add -l
 
+screen-buflog-hold-files
+
 cd $CHEOPSROOT
 vagrant up
 

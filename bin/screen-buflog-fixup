@@ -5,23 +5,14 @@ use autodie ':all';
 
 use Date::Easy;
 
-const my $CONST => 'Some Constant';
-
 
 opts <<'-';
-	[-avD] [-n <num>] <basename>
-	-a : do a thing (default: don't do that thing)
-	-v : be more verbose
-	-D : debug mode (implies -v)
-	-n : do a thing <num> times
-	-e : next arg is the <pattern>, even if it starts with -
-	<pattern> : Perl-style regex
-	<file>    : one or more files to process
+	[-D] <basename>
+	-D : debug mode
+	<basename> : base name of buflog to operate on
 -
-$OPT{v} = 1 if $OPT{D};
-$OPT{n} //= 1;
 
-my $base = shift;
+my $base = shift || usage_error("must specify base");
 
 
 my $day = date( cwd->basename );
@@ -49,7 +40,10 @@ if (-r $new)
 	}
 	else
 	{
-		say "# all files are different; dunno what to do (therefore doing nothing)";
+		say "# all files are different; combining them into one, retaining all contents";
+		rename $new, "$new-bak";
+		sh(cat => $old, "$new-bak", ">$new");
+		unlink $old, "$new-bak";
 	}
 }
 else

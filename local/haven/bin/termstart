@@ -4,6 +4,8 @@
 ssh-add-if-necessary
 ssh-add -l
 
+screen-buflog-hold-files
+
 if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"

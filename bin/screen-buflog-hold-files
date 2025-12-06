@@ -1,0 +1,5 @@
+#! /bin/bash
+
+today_dir=~/local/data/screen-buflog/$(date +%Y-%m-%d)
+[[ -d $today_dir ]] || exit 2
+[[ $(date -d "$(uptime -s)" +%s) -gt $(stat -c %Y $today_dir) ]] && rename 's/\./-hold./' $today_dir/*
