@@ -48,6 +48,7 @@ my %DESCRIPTIONS =
 							qr/GOOGLE \*FI\b/i,
 						],
 	'TV/Internet'	=>	[
+							qr/Flume \(?Internet/i,
 							qr/DirecTv\b/i,
 							qr/Uverse Online/i,
 							qr/Time Warner/i,
@@ -411,6 +412,7 @@ my %WHAT_LOOKUP =
 	'ADVICEPAYCOM'						=>	'Money Illustrated (CFP Jen)',
 	'CHWYINC'							=>	'Chewy',
 	'ACTBLUE*'							=>	'WFP membership',
+	'Flume (Internet'					=>	'Flume Internet',
 );
 
 
