@@ -2,7 +2,7 @@
 
 # Claude Code notification setter hook
 # Called when Claude Code needs attention (permission or idle 60+ seconds)
-# Writes a marker file that monitor-pidgin-unseen will detect
+# Writes a marker file that monitor-notifications will detect
 
 set -euo pipefail
 

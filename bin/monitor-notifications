@@ -73,5 +73,23 @@ else
 		}
 	}
 
+	# Check for webcapture notification marker
+	my $webcapture_marker = "/tmp/webcapture-notification-${hostname}.json";
+	if ( -e $webcapture_marker )
+	{
+		# Read and parse JSON marker file
+		open my $fh, '<', $webcapture_marker;
+		my $json = do { local $/; <$fh> };
+		close $fh;
+
+		# Extract message using basic regex (avoiding JSON module dependency)
+		if ( $json =~ /"message":\s*"([^"]+)"/ )
+		{
+			my $message = $1;
+			say "${ON}$message$OFF";
+			$found = 1;
+		}
+	}
+
 	print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
 }

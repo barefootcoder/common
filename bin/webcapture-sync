@@ -1,0 +1,168 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb DEBUG => 3;
+use autodie ':all';
+use JSON::PP;
+
+const my $HOSTNAME          => $ENV{LOCALHOSTNAME} // sh(hostname => '-s');
+const my $WATCH_DIR			=> path("$ENV{HOME}/Downloads/webcapture");
+const my $DEST_DIR			=> path("$ENV{HOME}/docs/ai/screenshots/");
+const my $NOTIFY_FILE		=> path("/tmp/webcapture-notification-${HOSTNAME}.json");
+const my $CACHE_FILE		=> path("$ENV{HOME}/.cache/ec2-sandbox");
+const my $CACHE_EXPIRY_DAYS	=> 14;
+
+
+# Ensure directories exist
+die("Watch directory doesn't exist: $WATCH_DIR\n")      unless -d $WATCH_DIR;
+die("Destination directory doesn't exist: $DEST_DIR\n") unless -d $DEST_DIR;
+
+
+# MAIN()
+
+debuggit(2 => "Watching for files in:", $WATCH_DIR);
+debuggit(2 => "Cache file:",            $CACHE_FILE);
+debuggit(2 => "Notification file:",     $NOTIFY_FILE);
+
+# Use inotifywait to monitor for new files
+open my $inotify, '-|', 'inotifywait', '-m', '-e', 'create', '-e', 'moved_to', '--format', '%w%f', $WATCH_DIR;
+
+while (my $file = <$inotify>)
+{
+	chomp $file;
+	next unless -f $file and $file =~ /\.png$/;		# only handle `*.png` files
+	$file = file($file);							# convert to object
+
+	eval { process_file($file) };
+	if ($@)
+	{
+		warn "Error processing $file: $@";
+		write_notification("Webcapture sync failed");
+	}
+}
+
+
+sub write_notification
+{
+	my ($message) = @_;
+	my $data = encode_json
+	({
+		message   => $message,
+		timestamp => time(),
+	});
+	$NOTIFY_FILE->spew( $data );
+}
+
+sub clear_notification
+{
+	unlink $NOTIFY_FILE if -e $NOTIFY_FILE;
+}
+
+sub get_cached_sandbox
+{
+	return undef unless -e $CACHE_FILE;
+
+	my $line = $CACHE_FILE->slurp;
+	debuggit(3 => "read line from sandbox cache file:", $line);
+	my ($sandbox, $timestamp) = split(':', $line);
+
+	# Validate sandbox value (no spaces => likely valid)
+	return undef if $sandbox =~ /\s/;
+	die("invalid format(s): $sandbox, $timestamp") unless $timestamp =~ /^\d+$/;
+
+	# Check expiry
+	my $age_days = (time - $timestamp) / 86400;
+	return undef if $age_days > $CACHE_EXPIRY_DAYS;
+
+	return $sandbox;
+}
+
+sub get_sandbox
+{
+	# Check $SANDBOX env var first
+	my $sandbox = $ENV{SANDBOX} // '';
+	if ($sandbox && $sandbox !~ /\s/)
+	{
+		cache_sandbox($sandbox);
+		return $sandbox;
+	}
+
+	# Try cache next
+	$sandbox = get_cached_sandbox();
+	return $sandbox if $sandbox;
+
+	# No luck; run `push-machine` to get sandbox
+	say "Determining sandbox via push-machine...";
+	$sandbox = sh("$ENV{HOME}/common/local/vagrant-sandbox/bin/push-machine");
+
+	if ($sandbox && $sandbox !~ /\s/)
+	{
+		cache_sandbox($sandbox);
+		return $sandbox;
+	}
+
+	die "Failed to determine sandbox [$sandbox]\n";
+}
+
+sub cache_sandbox
+{
+	my ($sandbox) = @_;
+	$CACHE_FILE->dirname->mkdir;					# no-op if it already exists
+
+	$CACHE_FILE->spew( join(":", $sandbox, time) );
+}
+
+sub rename_webcapture
+{
+	my ($file) = @_;
+	my $name = $file->basename;
+
+	# Apply the rename pattern
+	$name =~ s/^screencapture-//;
+	$name =~ s/(\d+)-(\d+)-(\d+)-(\d+)_(\d+)_(\d+)\./$1$2$3-$4$5$6./g;
+
+	return $name;
+}
+
+sub process_file
+{
+	my ($file) = @_;
+	say "Processing: $file";
+
+	# Write initial notification
+	write_notification("Webcapture in transit");
+
+	# Rename the file
+	my $new_name = rename_webcapture($file);
+	my $dest_path = "$DEST_DIR/$new_name";
+
+	# Move to destination
+	$file->move_to($dest_path);
+	say "Moved to: $dest_path";
+
+	# Get sandbox
+	my $sandbox = eval { get_sandbox() };
+	if ($@)
+	{
+		warn "Error getting sandbox: $@";
+		write_notification("Webcapture can't get sandbox");
+		return;
+	}
+	say "Using sandbox: $sandbox";
+
+	# Sync to sandbox
+	my $username = $ENV{CE_REMOTE_USERNAME} or die "CE_REMOTE_USERNAME not set\n";
+	say "Syncing to sandbox...";
+	my $exit_code = bash( launch => LOCAL => 'archer-rsync' => "user=$username",
+			"$DEST_DIR/", "$sandbox:local/data/screenshots-copy/" );
+
+	if ($exit_code == 0)
+	{
+		say "Sync successful!";
+		clear_notification();
+	}
+	else
+	{
+		warn "Sync failed with exit code: $exit_code\n";
+		write_notification("Webcapture sync failed");
+	}
+}
