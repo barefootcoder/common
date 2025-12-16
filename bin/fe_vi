@@ -19,6 +19,11 @@ if ($ARGV[0])
 	}
 }
 
+
+if ($ARGV[0] =~ m|^/tmp/claude|)
+{
+	exec 'vim', '+', '-c', 'set paste', '-c', 'startinsert!', @ARGV;
+}
 if (not @lines)
 {
 	exec "vim", @ARGV;
