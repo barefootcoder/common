@@ -16,6 +16,14 @@ model_id=$(echo "$input" | jq -r '.model.id // "unknown"')
 model_display=$(echo "$input" | jq -r '.model.display_name // "Claude AI"')
 transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
 current_dir=$(echo "$input" | jq -r '.workspace.current_dir // ""')
+context_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // 0')
+
+# Check if sandbox mode is enabled (from settings.local.json)
+sandbox_enabled="false"
+settings_file="$current_dir/.claude/settings.local.json"
+if [ -f "$settings_file" ]; then
+    sandbox_enabled=$(jq -r '.sandbox.enabled // "false"' "$settings_file" 2>/dev/null)
+fi
 
 # Get project name from current directory
 if [ -n "$current_dir" ]; then
@@ -139,15 +147,48 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
     # Sum total cost across all models
     total_cost=$(echo "scale=6; $opus4_cost + $sonnet4_cost + $sonnet35_cost + $haiku_cost" | bc -l 2>/dev/null || echo "0")
 
-    # Format token display (K for thousands, M for millions)
-    total_tokens=$((total_input_tokens + total_output_tokens))
-    if [ $total_tokens -ge 1000000 ]; then
-        token_display=$(echo "scale=1; $total_tokens / 1000000" | bc -l 2>/dev/null || echo "0")M
-    elif [ $total_tokens -ge 1000 ]; then
-        token_display=$(echo "scale=1; $total_tokens / 1000" | bc -l 2>/dev/null || echo "0")K
+    # Format token display using current context window usage (not cumulative totals)
+    # Get current usage from JSON (reflects actual context window state)
+    current_usage=$(echo "$input" | jq '.context_window.current_usage')
+
+    if [ "$current_usage" != "null" ]; then
+        # Calculate current context window usage (input + output tokens)
+        current_input=$(echo "$current_usage" | jq -r '.input_tokens // 0')
+        current_output=$(echo "$current_usage" | jq -r '.output_tokens // 0')
+        current_cache_creation=$(echo "$current_usage" | jq -r '.cache_creation_input_tokens // 0')
+        current_cache_read=$(echo "$current_usage" | jq -r '.cache_read_input_tokens // 0')
+        context_tokens=$((current_input + current_output + current_cache_creation + current_cache_read))
     else
-        token_display="$total_tokens"
+        # Fallback to cumulative if current_usage not available
+        context_tokens=$((total_input_tokens + total_output_tokens))
     fi
+
+    # Format for display (K for thousands, M for millions)
+    if [ $context_tokens -ge 1000000 ]; then
+        token_display=$(echo "scale=0; $context_tokens / 1000000" | bc -l 2>/dev/null || echo "0")M
+    elif [ $context_tokens -ge 1000 ]; then
+        token_display=$(echo "scale=0; $context_tokens / 1000" | bc -l 2>/dev/null || echo "0")K
+    else
+        token_display="$context_tokens"
+    fi
+
+    # Calculate percentage of context window used and color-code
+    if [ $context_window_size -gt 0 ]; then
+        context_percent=$((context_tokens * 100 / context_window_size))
+        if [ $context_percent -ge 75 ]; then
+            # Red for 75%+
+            token_color="\e[1;31m"
+        elif [ $context_percent -ge 60 ]; then
+            # Yellow for 60-74%
+            token_color="\e[1;33m"
+        else
+            # Default (no color) for <60%
+            token_color=""
+        fi
+    else
+        token_color=""
+    fi
+    token_display="${token_color}${token_display}\e[0m"
 
     # Format cost display
     if (( $(echo "$total_cost >= 0.01" | bc -l 2>/dev/null || echo 0) )); then
@@ -162,6 +203,15 @@ case "$model_id" in
     *"opus-4"*|*"opusplan"*|*"claude-4-opus"*)
         cost_warning="\e[1;31mEXPENSIVE\e[0m"
         model_short="Opus 4"
+        ;;
+    *"sonnet-4-5"*|*"claude-sonnet-4-5"*)
+        cost_warning="\e[1;36mMEDIUM\e[0m"
+        # Distinguish between 200K and 1M context windows
+        if [ "$context_window_size" = "1000000" ]; then
+            model_short="Sonnet 4.5 (1M)"
+        else
+            model_short="Sonnet 4.5"
+        fi
         ;;
     *"sonnet-4"*|*"claude-sonnet-4"*)
         cost_warning="\e[1;36mMEDIUM\e[0m"
@@ -181,5 +231,11 @@ case "$model_id" in
         ;;
 esac
 
+# Add sandbox indicator if enabled
+sandbox_indicator=""
+if [ "$sandbox_enabled" = "true" ]; then
+    sandbox_indicator="\e[1;33m[SANDBOX]\e[0m "
+fi
+
 # Output compact status line with cost and token usage
-printf "%b %s | %s | %s | %s tokens\n" "$cost_warning" "$model_short" "$project_name" "$cost_display" "$token_display"
+printf "%b%b %s | %s | %s | %b tokens\n" "$sandbox_indicator" "$cost_warning" "$model_short" "$project_name" "$cost_display" "$token_display"
