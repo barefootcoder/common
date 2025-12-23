@@ -6,48 +6,67 @@ use autodie ':all';
 use Date::Easy;
 
 
+const my $HOLD_PATTERN => '-hold.buf';
+
+
 opts <<'-';
-	[-D] <basename>
+	[-D] { <basename> | -A }
+	-A : do all (relevant) bases
 	-D : debug mode
 	<basename> : base name of buflog to operate on
 -
 
-my $base = shift || usage_error("must specify base");
-
-
-my $day = date( cwd->basename );
-my $tomorrow = $day + 1;
-my $yesterday = $day - 1;
-my $old = "$base-hold.buf";
-my $new = "$base.buf";
--r $old or die("no hold file for $base!");
-
-if (-r $new)
+my @bases;
+if ($OPT{A})
 {
-	my $old_diffs =()= sh(diff => $old, join('/', '..', $yesterday->as("-Ymd"), $new));
-	my $new_diffs =()= sh(diff => $new, join('/', '..', $tomorrow->as("-Ymd"), $new));
-	say "## old has $old_diffs diffs w/ previous day; new has $new_diffs diffs w/ next day" if $OPT{D};
-	if ($new_diffs == 0)
-	{
-		say "# new buf is identical to following day; removing that and renaming hold file";
-		unlink $new;
-		rename $old, $new;
-	}
-	elsif ($old_diffs == 0)
-	{
-		say "# hold file is identical to previous day; just ditching it";
-		unlink $old;
-	}
-	else
-	{
-		say "# all files are different; combining them into one, retaining all contents";
-		rename $new, "$new-bak";
-		sh(cat => $old, "$new-bak", ">$new");
-		unlink $old, "$new-bak";
-	}
+	@bases = map { s/$HOLD_PATTERN//r } glob("*$HOLD_PATTERN");
+	fatal("no hold files to fix!") unless @bases;
+	say "## buflogs with hold files: @bases" if $OPT{D};
 }
 else
 {
-	say "# no conflict; renaming hold file";
-	rename $old, $new;
+	@bases = (shift) || usage_error("must specify base");
+}
+
+
+foreach my $base (@bases)
+{
+	say "fixing buflog: $base" if $OPT{A};
+
+	my $day = date( cwd->basename );
+	my $tomorrow = $day + 1;
+	my $yesterday = $day - 1;
+	my $old = "$base$HOLD_PATTERN";
+	my $new = "$base.buf";
+	-r $old or die("no hold file for $base!");
+
+	if (-r $new)
+	{
+		my $old_diffs =()= sh(diff => $old, join('/', '..', $yesterday->as("-Ymd"), $new));
+		my $new_diffs =()= sh(diff => $new, join('/', '..', $tomorrow->as("-Ymd"), $new));
+		say "## old has $old_diffs diffs w/ previous day; new has $new_diffs diffs w/ next day" if $OPT{D};
+		if ($new_diffs == 0)
+		{
+			say "# new buf is identical to following day; removing that and renaming hold file";
+			unlink $new;
+			rename $old, $new;
+		}
+		elsif ($old_diffs == 0)
+		{
+			say "# hold file is identical to previous day; just ditching it";
+			unlink $old;
+		}
+		else
+		{
+			say "# all files are different; combining them into one, retaining all contents";
+			rename $new, "$new-bak";
+			sh(cat => $old, "$new-bak", ">$new");
+			unlink $old, "$new-bak";
+		}
+	}
+	else
+	{
+		say "# no conflict; renaming hold file";
+		rename $old, $new;
+	}
 }
