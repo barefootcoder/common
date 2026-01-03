@@ -277,6 +277,9 @@ alias fix '	switch ($PWD)																						\
 					echo "dunno how to fix $PWD"																\
 				endsw'
 
+# fix-ceroot alias: safely cd to home before running the fix-ceroot script
+alias fix-ceroot 'cd ; ~/bin/fix-ceroot \!* ; cd -'
+
 source ~/bin/tcshrc-DEBUG "set vars and aliases"
 
 # perlbrew setup
