@@ -1,0 +1,13 @@
+#!/bin/bash
+source bash_funcs
+
+if [[ ! $SANDBOX ]]
+then
+	die '$SANDBOX not set; try `resrc`'
+elif [[ $SANDBOX == *" "* ]]
+then
+	die '$SANDBOX set to error string (check AWS creds)'
+fi
+
+quincmd="$CEROOT/devtools/cessh $SANDBOX"
+myterm -D Main -s -M Quin cityofgold 125x50-40+107 $quincmd

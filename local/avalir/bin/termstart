@@ -28,20 +28,11 @@ myterm -D Main  -s    Avalir avalir-on-fire  125x50+7+30   $cmd
 myterm -D Main  -s -S Haven  haven-fortress  125x50+378-34 ssh haven
 myterm -D Comms -s -S Zadash night-in-zadash 125x50+578-34 ssh zadash
 
-if xdotool search --name Quin >/dev/null
-then
-	quincmd=
-else
-	quin=$($MYDIR/local/vagrant-sandbox/bin/push-machine)
-	[[ $quin == *" "* ]] && die "can't retrieve EC2 ID for the Quin window (check AWS creds)"
-	quincmd="$CEROOT/devtools/cessh $quin"
-fi
-
-myterm -D Main -s -M Quin cityofgold 125x50-40+107 $quincmd
+term-quin
 myterm -D Main -s -S Dirk AAHS-Award_black_background 125x50-0-24 $CEROOT/devtools/cessh dirk
 
 # stupid hack for not being able to see when Pidgin windows are blinking
-msg_window=PidginMsgs
+msg_window=Notifications
 myterm -s $msg_window Jade-Agate-Texture 30x3-17+68 watch -tc monitor-notifications
 while ! xprop -name $msg_window >/dev/null 2>&1
 do
