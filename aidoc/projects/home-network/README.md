@@ -68,6 +68,7 @@ EC2 sandboxes ("quin" instances) can be configured for bidirectional file sync w
 ### Key Documentation Files (When Working on EC2 Sync)
 - **[EC2-sync-proof-of-concept.md](EC2-sync-proof-of-concept.md)**: Complete test results and current setup
 - **[EC2-sync-automation-roadmap.md](EC2-sync-automation-roadmap.md)**: Detailed automation implementation guide
+- **[syncthing-troubleshooting.md](syncthing-troubleshooting.md)**: Troubleshooting guide for Syncthing sync issues
 - **[ec2-sync-bootstrap.sh](ec2-sync-bootstrap.sh)**: Bootstrap script for new EC2 instances
 - **[/export/proj/common/bin/sandbox-setup](/export/proj/common/bin/sandbox-setup)**: Local script to setup tunnels
 
@@ -80,7 +81,8 @@ If user asks about EC2 sandbox sync:
 2. Check `private/ec2-sync-credentials.md` for instance ID
 3. Run `sandbox-setup <instance-id>` to establish connections
 4. Access Syncthing UI at http://localhost:8388
-5. For Claude Code: MCP servers are configured via project-scoped `.mcp.json` files
+5. If sync issues occur, consult `syncthing-troubleshooting.md` for diagnosis and solutions
+6. For Claude Code: MCP servers are configured via project-scoped `.mcp.json` files
    - After initial sync, restart Claude Code to load the configuration
    - Authenticate with `/mcp` command if using OAuth services
 
