@@ -9,5 +9,17 @@ then
 	die '$SANDBOX set to error string (check AWS creds)'
 fi
 
-quincmd="$CEROOT/devtools/cessh $SANDBOX"
-myterm -D Main -s -M Quin cityofgold 125x50-40+107 $quincmd
+wrapper=$(mktemp)
+cat > $wrapper <<'WRAPPER'
+#!/bin/bash
+logfile=/tmp/term-quin.log
+echo "[$(date)] Starting cessh to $SANDBOX" >> $logfile
+$CEROOT/devtools/cessh -v $SANDBOX
+exitcode=$?
+echo "[$(date)] Connection ended with exit code: $exitcode" >> $logfile
+echo "Press any key to close..."
+read -n1
+rm -f $0
+WRAPPER
+chmod +x $wrapper
+myterm -D Main -s -M Quin cityofgold 125x50-40+107 $wrapper
