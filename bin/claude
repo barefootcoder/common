@@ -32,4 +32,5 @@ if (not -e $localmem)
 	}
 }
 
+$ENV{TERM} = 'screen-256color';
 exec $CLAUDE_PATH, @ARGV;
