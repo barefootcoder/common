@@ -18,7 +18,10 @@ foreach (qw< /var/npm/bin/claude /usr/local/bin/claude >)
 $CLAUDE_PATH or die "$ME: cannot locate claude script\n";
 
 # Add AI helper scripts directory to path
-$ENV{PATH} = bash \string => (addpath => glob("addpath ~/common/conf/ai/devtools"));
+$ENV{PATH} = bash \string => (addpath => glob("~/common/conf/ai/devtools"));
+
+# Add Go binaries to path (for jira-cli, etc.)
+$ENV{PATH} = bash \string => (addpath => glob("~/go/bin"));
 
 # Verify local memory; create if necessary and possible
 my $localmem = 'CLAUDE.local.md';
