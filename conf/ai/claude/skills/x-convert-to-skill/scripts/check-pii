@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Check files for potential PII/secrets that shouldn't be committed
+# Usage: check-pii <file-or-directory>
+
+ME=$(basename "$0")
+
+target="${1:-.}"
+
+if [[ ! -e "$target" ]]; then
+    echo "$ME: target not found: $target" >&2
+    exit 1
+fi
+
+echo "Scanning for potential PII/secrets in: $target"
+echo "=============================================="
+echo
+
+found=0
+
+# Helper function: run grep, capture output, check if non-empty
+check_pattern() {
+    local label="$1"
+    shift
+    local output
+    output=$("$@" 2>/dev/null)
+    echo "=== $label ==="
+    if [[ -n "$output" ]]; then
+        echo "$output"
+        ((found++))
+    else
+        echo "  (none found)"
+    fi
+    echo
+}
+
+# Email addresses
+check_pattern "Email addresses" \
+    grep -rEn '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|org|net|edu|io|co)' "$target"
+
+# UUIDs (potential cloud IDs, account IDs)
+check_pattern "UUIDs" \
+    grep -rEn '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' "$target"
+
+# Long hex strings (potential API keys, tokens) - exclude .git
+check_pattern "Long hex strings (potential tokens)" \
+    bash -c "grep -rEn '[0-9a-f]{32,}' '$target' 2>/dev/null | grep -v '\\.git'"
+
+# Atlassian account IDs (24 char alphanumeric) - exclude customfield refs
+check_pattern "Atlassian-style account IDs" \
+    bash -c "grep -rEn '[0-9a-f]{24}' '$target' 2>/dev/null | grep -v 'customfield_'"
+
+# AWS-style IDs
+check_pattern "AWS-style IDs" \
+    grep -rEn 'AKIA[0-9A-Z]{16}' "$target"
+
+# Private/secret keywords in context - filter out comments and examples
+check_pattern "Suspicious keywords" \
+    bash -c "grep -rEin '(password|secret|token|api[_-]?key|private[_-]?key|credential)' '$target' 2>/dev/null | grep -v '^[^:]*:#' | grep -v -i 'example' | head -20"
+
+# Summary
+echo "=============================================="
+if [[ $found -gt 0 ]]; then
+    echo "⚠️  Found $found category(ies) with potential issues. Review above matches carefully."
+    exit 1
+else
+    echo "✓ No obvious PII/secrets detected."
+    echo "  (Manual review still recommended before committing)"
+    exit 0
+fi
