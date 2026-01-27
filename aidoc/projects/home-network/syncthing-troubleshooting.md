@@ -109,8 +109,27 @@ chmod 755 /var/local/CE-src/path/to/file  # for executable files
 
 **Common Causes:**
 - Rescans only happen every 1 hour by default
-- File watching may not be working
+- File watching may not be working (inotify missed the change)
 - Files may be ignored by `.stignore` patterns
+
+#### Case Study: "Up to Date" But File Missing (January 2026)
+
+**Problem:** A new file (`summary:20260126-investigate-remaining-discrepancies.md`) existed on Avalir but not on quin. Both sides showed "Up to Date".
+
+**Investigation:**
+1. Colons in filenames are NOT the issue - other `summary:*.md` files sync fine
+2. inotify watch limit was fine (500,000 - checked via `cat /proc/sys/fs/inotify/max_user_watches`)
+3. File was not in `.stignore`
+4. Manual rescan on Avalir immediately fixed the issue
+
+**Root Cause:** inotify occasionally misses file creation events. This can happen due to:
+- Brief network disconnects during file creation
+- Timing issues with how editors write files (vim writes to temp then renames)
+- Random kernel/inotify glitches
+
+**Prevention:** Enable periodic rescans as a safety net:
+- In Syncthing folder settings, set "Full Rescan Interval" to 3600 seconds (1 hour)
+- This catches anything inotify misses with minimal overhead
 
 **Solutions:**
 
