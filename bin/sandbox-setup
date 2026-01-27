@@ -15,7 +15,8 @@ SYNCTHING_REMOTE_PORT=8384
 cessh="${CEROOT:-/home/buddy/workproj/CE-mounted}/devtools/cessh"
 
 # Parse arguments
-if [ $# -eq 0 ]; then
+if [[ $1 == "-h" || $1 == "--help" || $1 == "-?" ]]
+then
     echo "Usage: $ME <instance-id>"
     echo "  Example: $ME <INSTANCE_ID>"
     echo ""
@@ -23,7 +24,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-INSTANCE_ID="$1"
+INSTANCE_ID="$1" ; [[ $INSTANCE_ID ]] || INSTANCE_ID=$SANDBOX
 # Add quin- prefix if not already present
 if [[ ! "$INSTANCE_ID" =~ ^quin- ]]; then
     INSTANCE_NAME="quin-${INSTANCE_ID}"
@@ -93,7 +94,7 @@ echo "  ✓ AWS credentials valid"
 # Step 2: Verify instance exists and is running
 echo ""
 echo "2. Checking instance status..."
-INSTANCE_STATE=$("$cessh" --connect-only "$INSTANCE_NAME" 2>&1)
+INSTANCE_STATE=$("$cessh" --connect-only "$INSTANCE_NAME" 2>&1 ||:)
 if [ $? -ne 0 ]; then
     echo "  ✗ Cannot connect to instance $INSTANCE_NAME"
     echo "  Error: $INSTANCE_STATE"
