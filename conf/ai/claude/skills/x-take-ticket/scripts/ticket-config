@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Retrieve configuration values from private credentials
+# Usage: ticket-config <key>
+# Keys: account-id, cloud-id, email, triage-file, timer-file, sheets-id
+
+ME=$(basename "$0")
+CONFIG_FILE="$HOME/common/aidoc/projects/home-network/private/credentials.md"
+
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "$ME: config file not found: $CONFIG_FILE" >&2
+    exit 1
+fi
+
+key="$1"
+if [[ -z "$key" ]]; then
+    echo "Usage: $ME <key>" >&2
+    echo "Keys: account-id, cloud-id, email, triage-file, timer-file, sheets-id" >&2
+    exit 1
+fi
+
+case "$key" in
+    account-id)
+        grep -oP '^\- \*\*Account ID\*\*: \K.*' "$CONFIG_FILE"
+        ;;
+    cloud-id)
+        grep -oP '^\- \*\*Cloud ID\*\*: \K[^\s]+' "$CONFIG_FILE"
+        ;;
+    email)
+        # Get work email from Jira section
+        sed -n '/### Jira/,/###/p' "$CONFIG_FILE" | grep -oP '^\- \*\*Email\*\*: \K.*'
+        ;;
+    triage-file)
+        grep -oP '^\- \*\*Triage File\*\*: `\K[^`]+' "$CONFIG_FILE" || echo "/export/work/ce/triage.md"
+        ;;
+    timer-file)
+        grep -oP '^\- \*\*Timer File\*\*: `\K[^`]+' "$CONFIG_FILE" || echo "/export/work/timer/timer-new"
+        ;;
+    sheets-id)
+        grep -oP '^\- \*\*Spreadsheet ID\*\*: \K[^\s]+' "$CONFIG_FILE"
+        ;;
+    *)
+        echo "$ME: unknown key: $key" >&2
+        echo "Keys: account-id, cloud-id, email, triage-file, timer-file, sheets-id" >&2
+        exit 1
+        ;;
+esac

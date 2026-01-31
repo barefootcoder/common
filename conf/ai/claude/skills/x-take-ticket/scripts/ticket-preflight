@@ -81,11 +81,11 @@ echo "========================================="
 # 1. Check configuration files
 print_header "Configuration Check"
 
-if [ -f "$HOME/common/aidoc/projects/todo-management/private/user-config.md" ]
+if [ -f "$HOME/common/aidoc/projects/home-network/private/credentials.md" ]
 then
     print_success "User configuration found"
 else
-    print_error "User configuration missing at ~/common/aidoc/projects/todo-management/private/user-config.md" $EXIT_CONFIG_MISSING
+    print_error "User configuration missing at ~/common/aidoc/projects/home-network/private/credentials.md" $EXIT_CONFIG_MISSING
 fi
 
 # 2. Check Google Sheets accessibility (requires manual verification for now)
@@ -242,7 +242,7 @@ print_header "Directory Access Check"
 directories=(
     "/export/work/ce"
     "/export/work/timer"
-    "$HOME/common/aidoc/projects/todo-management"
+    "$HOME/common/aidoc/projects/home-network/private"
 )
 
 for dir in "${directories[@]}"

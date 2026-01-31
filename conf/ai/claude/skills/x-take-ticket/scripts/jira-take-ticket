@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Take ownership of a Jira ticket: assign to self, set dev owner, transition to "On Deck"
+# Usage: jira-take-ticket <TICKET>
+
+ME=$(basename "$0")
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+ticket="$1"
+if [[ -z "$ticket" ]]; then
+    echo "Usage: $ME <TICKET>" >&2
+    exit 1
+fi
+
+# Normalize ticket number
+if [[ "$ticket" =~ ^[0-9]+$ ]]; then
+    ticket="CLASS-$ticket"
+fi
+
+# Get config values
+account_id=$("$SCRIPT_DIR/ticket-config" account-id)
+my_email=$("$SCRIPT_DIR/ticket-config" email)
+
+if [[ -z "$account_id" || -z "$my_email" ]]; then
+    echo "$ME: failed to get config values" >&2
+    exit 1
+fi
+
+echo "Taking ownership of $ticket..."
+
+# 1. Assign to self
+echo -n "  Assigning to $my_email... "
+assign_result=$(jira issue assign "$ticket" "$my_email" 2>&1)
+if [[ $? -eq 0 ]]; then
+    echo "done"
+else
+    echo "failed: $assign_result"
+fi
+
+# 2. Set Development Owner (customfield_10157)
+# The jira CLI --custom flag expects format: key=value
+# For user fields, we need to pass the account ID in a specific format
+echo -n "  Setting Development Owner... "
+edit_result=$(jira issue edit "$ticket" --custom "customfield_10157=$account_id" --no-input 2>&1)
+if [[ $? -eq 0 ]]; then
+    echo "done"
+else
+    # Try alternative format with accountId wrapper
+    edit_result=$(jira issue edit "$ticket" --custom "customfield_10157={\"accountId\":\"$account_id\"}" --no-input 2>&1)
+    if [[ $? -eq 0 ]]; then
+        echo "done"
+    else
+        echo "failed: $edit_result"
+        echo "  Note: You may need to set Development Owner manually in Jira"
+    fi
+fi
+
+# 3. Transition to "On Deck"
+echo -n "  Transitioning to 'On Deck'... "
+move_result=$(jira issue move "$ticket" "On Deck" 2>&1)
+if [[ $? -eq 0 ]]; then
+    echo "done"
+else
+    # Check if already in that state
+    if echo "$move_result" | grep -qi "already"; then
+        echo "already in that state"
+    else
+        echo "failed: $move_result"
+        echo "  Note: Ticket may already be in progress or in a state that can't transition to 'On Deck'"
+    fi
+fi
+
+echo
+echo "Ticket ownership complete. Run 'jira-ticket-info $ticket' to verify."

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Display clean summary of a Jira ticket
+# Usage: jira-ticket-info <TICKET>
+
+ME=$(basename "$0")
+
+ticket="$1"
+if [[ -z "$ticket" ]]; then
+    echo "Usage: $ME <TICKET>" >&2
+    exit 1
+fi
+
+# Normalize ticket number (add CLASS- prefix if just a number)
+if [[ "$ticket" =~ ^[0-9]+$ ]]; then
+    ticket="CLASS-$ticket"
+fi
+
+# Get raw JSON
+raw=$(jira issue view "$ticket" --raw 2>&1)
+if [[ $? -ne 0 ]]; then
+    echo "$ME: failed to fetch ticket: $raw" >&2
+    exit 1
+fi
+
+# Extract fields using jq
+summary=$(echo "$raw" | jq -r '.fields.summary // "N/A"')
+status=$(echo "$raw" | jq -r '.fields.status.name // "N/A"')
+assignee=$(echo "$raw" | jq -r '.fields.assignee.displayName // "Unassigned"')
+assignee_email=$(echo "$raw" | jq -r '.fields.assignee.emailAddress // ""')
+dev_owner=$(echo "$raw" | jq -r '.fields.customfield_10157.displayName // "Not set"')
+dev_owner_email=$(echo "$raw" | jq -r '.fields.customfield_10157.emailAddress // ""')
+issue_type=$(echo "$raw" | jq -r '.fields.issuetype.name // "N/A"')
+priority=$(echo "$raw" | jq -r '.fields.priority.name // "N/A"')
+created=$(echo "$raw" | jq -r '.fields.created // ""' | cut -dT -f1)
+attachment_count=$(echo "$raw" | jq '.fields.attachment | length')
+
+echo "Ticket:      $ticket"
+echo "Summary:     $summary"
+echo "Type:        $issue_type"
+echo "Status:      $status"
+echo "Priority:    $priority"
+echo "Assignee:    $assignee${assignee_email:+ <$assignee_email>}"
+echo "Dev Owner:   $dev_owner${dev_owner_email:+ <$dev_owner_email>}"
+echo "Created:     $created"
+echo "Attachments: $attachment_count"

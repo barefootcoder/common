@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Download all attachments from a Jira ticket
+# Usage: jira-download-attachments <TICKET> [OUTPUT_DIR]
+
+ME=$(basename "$0")
+
+ticket="$1"
+output_dir="${2:-.}"
+
+if [[ -z "$ticket" ]]; then
+    echo "Usage: $ME <TICKET> [OUTPUT_DIR]" >&2
+    exit 1
+fi
+
+# Normalize ticket number
+if [[ "$ticket" =~ ^[0-9]+$ ]]; then
+    ticket="CLASS-$ticket"
+fi
+
+# Create output directory if specified and doesn't exist
+if [[ "$output_dir" != "." ]]; then
+    mkdir -p "$output_dir"
+fi
+
+# Get attachment info from ticket
+raw=$(jira issue view "$ticket" --raw 2>&1)
+if [[ $? -ne 0 ]]; then
+    echo "$ME: failed to fetch ticket: $raw" >&2
+    exit 1
+fi
+
+# Extract attachments
+attachments=$(echo "$raw" | jq -c '.fields.attachment[]?' 2>/dev/null)
+
+if [[ -z "$attachments" ]]; then
+    echo "No attachments found on $ticket"
+    exit 0
+fi
+
+count=0
+failed=0
+
+echo "Downloading attachments from $ticket to $output_dir/"
+echo
+
+echo "$attachments" | while read -r att; do
+    filename=$(echo "$att" | jq -r '.filename')
+    content_url=$(echo "$att" | jq -r '.content')
+    size=$(echo "$att" | jq -r '.size')
+
+    # Sanitize filename (replace spaces with underscores)
+    safe_filename=$(echo "$filename" | tr ' ' '_')
+    output_path="$output_dir/$safe_filename"
+
+    echo -n "  $filename ($size bytes)... "
+
+    # Download using curl with .netrc auth
+    if curl -n -L -s -o "$output_path" "$content_url"; then
+        echo "done"
+        ((count++))
+    else
+        echo "FAILED"
+        ((failed++))
+    fi
+done
+
+echo
+echo "Downloaded: $count, Failed: $failed"
