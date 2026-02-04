@@ -3,9 +3,8 @@ name: x-take-ticket
 description: Claim a Jira ticket and set up tracking (administrative only - NO technical work)
 argument-hint: [ticket-number]
 model: opus
-context: fork
 disable-model-invocation: true
-allowed-tools: Bash(ticket-*), Bash(jira-*), mcp__google-sheets__*, Read, Edit
+allowed-tools: Bash(ticket-*), Bash(jira-*), Bash(sed *), Bash(head *), Bash(TIMER_FILE=*), mcp__google-sheets__*, Read, Edit, AskUserQuestion
 ---
 
 # Ticket Onboarding Workflow
@@ -88,36 +87,21 @@ ticket-config sheets-id
 
 ---
 
-## IMPORTANT: Workflow Continuity
-
-After completing Steps 1-3, you will ask the user questions in Steps 4 and 6.
-
-**Before asking any question**, output a context summary to preserve gathered values:
-```
-Context gathered:
-- Work date: [DATE]
-- Ticket: [TICKET]
-- Summary: [SUMMARY]
-- Sheets ID: [ID]
-```
-
-**After user responds:**
-- Continue directly to the remaining steps
-- Do NOT attempt to re-invoke this skill
-- The skill context remains active throughout the entire workflow
-- Use the values from the context summary above
-
----
-
 ## Step 4: Subtask Decision and Task Creation
 
-**First**, output the context summary (see above).
+**Use the AskUserQuestion tool** with these parameters:
+- question: "Do you want to break this ticket down into subtasks now?"
+- header: "Subtasks"
+- options:
+  - label: "No", description: "Create a single 'Survey the damage' task"
+  - label: "Yes", description: "I'll provide subtask descriptions"
 
-**Then ASK THE USER:** "Do you want to break this ticket down into subtasks now?"
+**When the user answers, continue IMMEDIATELY. Do NOT:**
+- Output any preamble or acknowledgment
+- Ask if they need help with anything else
+- Interpret their response as a new task
 
-Wait for their response, then continue directly to the appropriate section below.
-
-### If NO (or user declines):
+**If user says NO (or selects "No"):**
 
 Create a single "survey" task in RawData:
 
@@ -128,11 +112,15 @@ Create a single "survey" task in RawData:
    - Range: `RawData!A{row}:J{row}`
    - Values: `[["ID", "", "Task", "Work", "WORK_DATE", "WORK_DATE", "", "", "TICKET", "Survey the damage and come up with a plan"]]`
 
-### If YES:
+**Then proceed IMMEDIATELY to Step 5.**
 
-1. Collect all subtask descriptions from user (batch approach)
+**If user says YES (or selects "Yes"):**
+
+1. Ask user to provide all subtask descriptions (they can list them all at once)
 2. Find empty row and last ID as above
 3. Write each subtask with sequential IDs, same format but with their descriptions
+
+**Then proceed IMMEDIATELY to Step 5.**
 
 **RawData Columns (10 total, A-J):**
 | A | B | C | D | E | F | G | H | I | J |
@@ -169,9 +157,13 @@ ticket-config triage-file
 
 **Use the Edit tool** to insert at the correct location.
 
+**Then proceed IMMEDIATELY to Step 6.**
+
 ---
 
 ## Step 6: Timer File Update
+
+### 6a. Get File Path and Read File
 
 **Get file path:**
 ```bash
@@ -184,38 +176,65 @@ The timer file may exceed read limits. Use the line numbers from preflight outpu
 - Read chunk section: `offset=1, limit=X+10`
 - Read comment section: `offset=Y-5, limit=30`
 
-**Process:**
-1. Read the timer file (using offset/limit as needed)
-2. Locate the `utests` anchor lines (there are two sections - chunks and comments)
-3. **Ask user for timer name** - suggest one based on ticket content (user can type "+" to accept)
-4. Insert in BOTH sections, after the `utests` entries
+### 6b. Ask for Timer Name
 
-**CRITICAL: TAB Character Handling**
+Generate a suggested timer name in kebab-case based on the ticket content (e.g., `clickout-data-cols-fix`), then **use the AskUserQuestion tool** with these parameters:
+- question: "What timer name should I use? (Type '+' to accept the suggestion above, or enter your own)"
+- header: "Timer"
+- options:
+  - label: "+", description: "Accept the suggested timer name"
+  - label: "Custom", description: "I'll type my own timer name"
 
-Timer lines use TAB separators. When editing:
-- Empty timer chunks still need a trailing TAB: `utests\t` not `utests`
-- Chunk entries have format: `name\t` (name + TAB, no timestamps for new entries)
-- Comment entries have format: `name:\tSUMMARY\tTICKET` (TABs between fields)
+### 6c. Process the Answer and Complete
 
-**Chunk section** (first paragraph) - add line after `utests<TAB>` line:
+**When the user answers, continue IMMEDIATELY to finish the skill.**
+
+- If user types "+" or selects "+": Use your suggested timer name
+- Otherwise: Use what they provided as the timer name
+
+**Locate the `utests` anchor lines** (there are two sections - chunks and comments)
+
+**Insert in BOTH sections**, after the `utests` entries.
+
+#### WARNING: Do NOT Use the Edit Tool for Timer File
+
+The Edit tool strips trailing whitespace, but the timer file has lines with **trailing TAB characters** that MUST be preserved. Using Edit will corrupt these lines, causing repeated failed attempts.
+
+**Use `sed` instead** to insert lines while preserving all whitespace:
+
+```bash
+# Get the timer file path
+TIMER_FILE="$(ticket-config timer-file)"
+
+# Insert chunk entry (after the line matching "^utests<TAB>")
+# Format: name<TAB> (trailing tab, no timestamps for new entries)
+sed -i '/^utests\t/a [timer-name]\t' "$TIMER_FILE"
+
+# Insert comment entry (after the line matching "^utests:<TAB>")
+# Format: name:<TAB>summary<TAB>ticket
+sed -i '/^utests:\t/a [timer-name]:\t[summary]\t[ticket]' "$TIMER_FILE"
 ```
-[timer-name]<TAB>
-```
 
-**Comment section** (second paragraph) - add line after `utests:<TAB>...` line:
-```
-[timer-name]:<TAB>[summary]<TAB>[ticket]
-```
+**Important sed notes:**
+- Use `\t` for TAB characters in the pattern and replacement
+- The `/a` command appends a line after the match
+- Replace `[timer-name]`, `[summary]`, and `[ticket]` with actual values
+- Escape any special characters in the summary (especially `/` and `&`)
 
-**Timer naming:** Use kebab-case based on ticket content (e.g., `clickout-data-cols-fix`)
-
-**Use the Edit tool** to insert in both locations.
+**Example with real values:**
+```bash
+TIMER_FILE="$(ticket-config timer-file)"
+sed -i '/^utests\t/a clickout-fix\t' "$TIMER_FILE"
+sed -i '/^utests:\t/a clickout-fix:\tFix clickout data columns\tCLASS-897' "$TIMER_FILE"
+```
 
 **Verification after editing:**
 ```bash
 head -20 "$(ticket-config timer-file)" | cat -A
 ```
-Lines should show `^I` for each TAB character. If TABs are missing, the edit corrupted the file.
+Lines should show `^I` for each TAB character. New lines should appear immediately after the `utests` lines.
+
+**Then proceed IMMEDIATELY to Completion.**
 
 ---
 
