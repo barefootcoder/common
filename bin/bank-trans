@@ -349,6 +349,8 @@ my %DESCRIPTIONS =
 							qr/Family Psych/i,
 							qr/Joyce Weckl/i,
 							qr/Mojgan Makhsoosi?/i,
+							qr/Scott Lindsay Johnson/i,
+							qr/HELLOWISP.COM/i,
 						],
 	
 );
@@ -411,8 +413,11 @@ my %WHAT_LOOKUP =
 	'Money Illustrate'					=>	'Money Illustrated (CFP Jen)',
 	'ADVICEPAYCOM'						=>	'Money Illustrated (CFP Jen)',
 	'CHWYINC'							=>	'Chewy',
+	'HELLOWISPCOM'						=>	"Christy's Meds",
 	'ACTBLUE*'							=>	'WFP membership',
 	'Flume (Internet'					=>	'Flume Internet',
+	'SCOTT LINDSAY JOHNSON  .'			=>	'Harry Dreyfuss',
+	'Scott Lindsay Johnson'				=>	'Harry Dreyfuss',
 );
 
 
@@ -502,6 +507,7 @@ foreach (@transactions)
 		{
 			$source = 'Zelle';
 			$what = $descr =~ s/^Zelle payment from .*? to //r;
+			$what = $WHAT_LOOKUP{$what} // $what;
 		}
 
 		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
