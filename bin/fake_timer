@@ -69,7 +69,18 @@ while ( <> )
 				if ($set_avail eq 'new week')							# we need to start $AVAIL timer
 				{
 					pop @week_timers if $week_timers[-1] eq $AVAIL;
-					say foreach @week_timers;
+					foreach (@week_timers)
+					{
+						if ($_ eq $tname and !$timer_found)
+						{
+							say "$_\t", time(), '-';
+							$timer_found = 1;
+						}
+						else
+						{
+							say;
+						}
+					}
 					say "$AVAIL\t", time(), '-';
 					$avail_found = 1;
 				}
@@ -162,7 +173,7 @@ while ( <> )
 	{
 		$chunks .= time() . ',' unless $name eq $AVAIL and $tname ne $AVAIL;
 	}
-	if ( $cmd ~~ [qw< start half new-week >] )
+	if ( $cmd ~~ [qw< start half >] )
 	{
 		if ($name eq $tname and !$timer_found)
 		{
