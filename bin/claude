@@ -11,9 +11,9 @@ my $ME = 'claude';
 
 # find `claude`
 my $CLAUDE_PATH;
-foreach (qw< /var/npm/bin/claude /usr/local/bin/claude >)
+foreach (map { "$_/claude" } glob("~/.claude/local/bin"), qw< /var/npm/bin /usr/local/bin >, glob("~/.local/bin"))
 {
-	$CLAUDE_PATH = $_ if -x;
+	if (-x) { $CLAUDE_PATH = $_; last; }
 }
 $CLAUDE_PATH or die "$ME: cannot locate claude script\n";
 
