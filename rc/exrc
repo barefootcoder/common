@@ -44,6 +44,10 @@ map <C-P> <C-A>
 map q :s/^/\/\* /<CR>:s/$/ \*\//<CR>
 " easy uncomment
 map Q :s/^\/\* //<CR>:s/ \*\/$//<CR>
+" the "surround"s:
+map q_ viWc_<C-R>"_<Esc>
+map q* viWc*<C-R>"*<Esc>
+map q` viWc`<C-R>"`<Esc>
 " remove any ^R remap
 "try | unmap <C-R> | catch /E31/ | endtry
 " show buffers
