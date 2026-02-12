@@ -5,5 +5,5 @@ then
 	push-quin
 else
 	cd $CHEOPSROOT
-	vagrant ssh -c "push-quin -q" | tail -n+4 | dos2unix -f
+	vagrant ssh -c "env CE_AWS_CRED_TIMEOUT=2 push-quin -q" | tail -n+4 | dos2unix -f
 fi
