@@ -35,5 +35,15 @@ if (not -e $localmem)
 	}
 }
 
+# Ensure terminal size is correctly propagated through screen
+# screen -Q info format: (cursor_col,cursor_row)/(width,height)+scrollback
+chomp(my $screen_info = `screen -Q info 2>/dev/null`);
+if ($screen_info =~ m{/\((\d+),(\d+)\)})
+{
+	$ENV{COLUMNS} = $1;
+	$ENV{LINES} = $2;
+}
+
 $ENV{TERM} = 'screen-256color';
+$ENV{CLAUDE_CODE_DISABLE_TERMINAL_TITLE} = 1;
 exec $CLAUDE_PATH, @ARGV;
