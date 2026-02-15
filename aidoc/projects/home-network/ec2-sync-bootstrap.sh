@@ -9,6 +9,7 @@
 set -e  # Exit on error
 
 ME=$(basename "$0")
+# NOTE: See private/ec2-sync-credentials.md for Avalir's device ID and Tailscale IP
 DESKTOP_DEVICE_ID="<AVALIR_DEVICE_ID>"  # Avalir
 DESKTOP_TAILSCALE_IP="<TAILSCALE_IP>"  # Avalir's Tailscale IP
 

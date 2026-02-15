@@ -1,5 +1,9 @@
 # Nakama NAS Rsync Configuration Guide
 
+**Note**: IP addresses and usernames are stored in private files:
+- See `private/network-details.md` for Nakama's IP address
+- See `private/credentials.md` for NAS username
+
 ## Current Setup Status ✅ (Updated: August 16, 2025)
 - **SSH Access**: Working with key-based authentication on port 2322
 - **Rsync**: Available and working over SSH

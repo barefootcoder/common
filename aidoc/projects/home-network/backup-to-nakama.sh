@@ -2,6 +2,8 @@
 
 # Backup script for Nakama NAS
 # Configure these variables for your setup
+# Note: See private/credentials.md for NAS username
+# Note: See private/network-details.md for NAS IP address
 
 # Configuration
 NAS_USER="nami"

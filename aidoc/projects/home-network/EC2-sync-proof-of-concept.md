@@ -172,6 +172,7 @@ systemctl --user start syncthing
 ```bash
 # Setup sandbox connections (run on Avalir)
 sandbox-setup <INSTANCE_ID>
+# See private/ec2-sync-credentials.md for current instance ID
 
 # Check Tailscale status
 tailscale status

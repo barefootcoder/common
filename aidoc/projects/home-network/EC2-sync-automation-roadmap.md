@@ -4,6 +4,11 @@
 **Current State**: Semi-automated (manual device approval required)  
 **Goal**: Fully automated bidirectional sync on EC2 launch
 
+**Note**: Device IDs, IP addresses, and credentials are stored in `private/` directory. See:
+- `private/ec2-sync-credentials.md` for Syncthing device IDs and Tailscale IPs
+- `private/api-keys.md` for Syncthing API keys
+- `private/network-details.md` for network configuration
+
 ## Current Semi-Automated Process
 
 1. EC2 runs bootstrap script with Tailscale auth key
