@@ -1,16 +1,18 @@
 #! /bin/bash
 
 me=${0##*/}
-termprog=urxvt
+termprog=kitty
 force=0
 set_echo=0
 smaller=0
-while getopts ":sMSfD:xh" opt
+while getopts ":sMSfD:A:xh" opt
 do
 	case $opt in
 		s)	scaled=1
 			;;
 		D)	desktop=$OPTARG
+			;;
+		A)	termprog=$OPTARG
 			;;
 		M)	smaller=1
 			;;
@@ -20,12 +22,14 @@ do
 			;;
 		x)	set_echo=1
 			;;
-		h)	echo "usage: $me -h | [-sSf] [-D <name>] <title> <pixmap> <geometry> [<cmd> [<arg> ...]]" >&2
+		h)	echo "usage: $me -h | [-sSfx] [-D <name>] <title> <pixmap> <geometry> [<cmd> [<arg> ...]]" >&2
 			echo "    -s : scaled image (default: tiled)" >&2
 			echo "    -S : smaller font (default: based on screen size)" >&2
 			echo "    -M : minor (slightly smaller) font (default: based on screen size)" >&2
 			echo "    -f : force (create even if exists)" >&2
+			echo '    -x : show commands (like `set -x` in bash)' >&2
 			echo "    -D : start term on desktop <name> (default: current)" >&2
+			echo "    -A : use alternate term program <prog> (default: $termprog)" >&2
 			echo "    -h : this help message" >&2
 			echo "  <title>    : title for term (will not create if exists unless -f)" >&2
 			echo "  <pixmap>   : background image for term" >&2
@@ -153,6 +157,20 @@ then
 					font="xft:Inconsolata:antialias=true:pixelsize=$fontsize"
 					args="-title $title -name $title $image $icon -fg white -bg black -geometry $geometry -mod alt +sb"
 					;;
+		kitty)
+					[[ $pixmap == "-" ]] || image="-o background_image=$pixmap -o background_image_layout=scaled"
+					# convert pixel size to approximate point size (at 96 DPI)
+					fontsize_pt=$(perl -e "printf '%.1f', $fontsize * 0.75")
+					font_switch=-o
+					font="font_size=$fontsize_pt"
+					# parse geometry for width/height (position handled by xrestore)
+					geom_wh=${geometry%%[+-]*}
+					geom_w=${geom_wh%x*}
+					geom_h=${geom_wh#*x}
+					args="--title $title --class $title -o font_family=Inconsolata -o remember_window_size=no -o adjust_column_width=1"
+					args="$args -o foreground=white -o background=black"
+					args="$args -o initial_window_width=${geom_w}c -o initial_window_height=${geom_h}c $image"
+					;;
 		Eterm)
 					if [[ $pixmap != "-" ]]
 					then
@@ -179,6 +197,7 @@ then
 					;;
 		*)
 					echo "myterm: don't know how to start term $termprog" >&2
+					exit 2
 					;;
 	esac
 
@@ -192,12 +211,12 @@ then
 
 	if [[ $# -ge 1 ]]
 	then
-		faux_term=
+		faux_cmd=
 		if [[ $1 == *ssh* ]]		# immediately launching to a new server
 		then
-			faux_term="-tn vt100"	# see e.g. https://superuser.com/a/792701
+			faux_cmd="env TERM=vt100"	# see e.g. https://superuser.com/a/792701
 		fi
-		run-term $faux_term -e "$@"
+		run-term -e $faux_cmd "$@"
 	else
 		run-term
 	fi

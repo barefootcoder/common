@@ -217,6 +217,21 @@ then
 	fi
 fi
 
+# Kitty terminal configuration
+if [[ $MACHINE_TYPE != "vagrant" && $MACHINE_TYPE != "ec2"* ]]
+then
+	kitty_src=$mydir/conf/kitty
+	if [[ -d $kitty_src ]]
+	then
+		[[ -d ~/.config/kitty ]] || mkdir -p ~/.config/kitty
+		cd $kitty_src
+		for file in *
+		do
+			make_link $kitty_src/$file $HOME/.config/kitty/$file
+		done
+	fi
+fi
+
 [[ $TCSHRC_DEBUG ]] && echo "mklnDEBUG: constructed special rc's"
 
 # for bin, what we really want is for the whole directory to be symlinked
