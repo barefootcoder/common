@@ -21,7 +21,9 @@ kill_all_the('windowlist');
 kill_all_the('screen-bufsave');
 kill_all_the('msgwait');
 kill_all_the('screen.*-Q');
-sh(screen => -wipe =>);
+sleep 1;
+# screen -wipe talks to the socket, which may be the very thing that's wedged
+sh(timeout => 5, screen => -wipe =>);
 
 =for example
 
