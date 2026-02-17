@@ -9,17 +9,28 @@ then
 	die '$SANDBOX set to error string (check AWS creds)'
 fi
 
-wrapper=$(mktemp)
+wrapper=$(mktemp -t ssh-quin-XXXXXX)
 cat > $wrapper <<'WRAPPER'
 #!/bin/bash
 logfile=/tmp/term-quin.log
-echo "[$(date)] Starting cessh to $SANDBOX" >> $logfile
-$CEROOT/devtools/cessh -v $SANDBOX
+
+# Prefer Tailscale direct SSH (avoids SSM data corruption issues)
+quin_ip=$(tailscale status 2>/dev/null | awk '/quin-/{print $1}')
+declare -a ssh_opts=( -v )
+if [[ $quin_ip ]]
+then
+	echo "[$(date)] Connecting via Tailscale ($quin_ip)" >> $logfile
+	ssh_opts=( "${ssh_opts[@]}" -A -p 8822 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 )
+	ssh "${ssh_opts[@]}" $CE_REMOTE_USERNAME@$quin_ip 2>> $logfile
+else
+	echo "[$(date)] Tailscale unavailable, falling back to SSM" >> $logfile
+	$CEROOT/devtools/cessh -D "${ssh_opts[@]}" $SANDBOX 2>> $logfile
+fi
+
 exitcode=$?
 echo "[$(date)] Connection ended with exit code: $exitcode" >> $logfile
-echo "Press any key to close..."
-read -n1
 rm -f $0
 WRAPPER
 chmod +x $wrapper
+
 myterm -D Main -s -M Quin cityofgold 125x50-40+107 $wrapper
