@@ -18,9 +18,11 @@
     - Static IP: [see private/network-details.md]
     - UFW firewall active (SSH, mDNS, and application ports)
     - Tailscale VPN configured and running
-    - Experiencing intermittent shutdown issues (under monitoring)
+    - Kernel: 6.8.0-100-generic (HWE), upgraded from 6.1-oem in Feb 2026
+    - GPU: Intel Raptor Lake-P Iris Xe (modesetting + iris + glamor)
     - Interactive shell: tcsh; scripts use bash
     - Filesystem: UsrMerge implemented (/bin → /usr/bin, etc.)
+    - Note: Clevo laptop with DKMS keyboard backlight module
   - **Avalir**: Linux Mint 21.1 (Vera) running Mate, based on Ubuntu Jammy
     - Desktop machine hardwired through office hub
     - Static IP: [see private/network-details.md]

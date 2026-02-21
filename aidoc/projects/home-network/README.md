@@ -52,11 +52,12 @@ The `private/` directory contains sensitive information that is excluded from ve
 
 The following files contain summaries from previous AI collaboration sessions. These provide context for ongoing issues but should only be referenced when specifically relevant:
 
+- `summary:haven-kernel-upgrade-and-gpu-fix.md` - **[START HERE for Haven GPU/crash issues]** Kernel upgrade that resolved all Haven crash/GPU issues (February 2026)
 - `summary:ec2-syncthing.html` - Syncthing configuration for EC2 servers
-- `summary:haven-crash-diagnosis-summary.md` - Diagnosis of Haven system crashes
-- `summary:haven-thermal-diagnosis-and-resolution.md` - Haven thermal issue resolution
-- `summary:intermittent-shutdowns-diagnosis.md` - Analysis of system shutdown problems
-- `summary:intermittent-shutdowns.html` - HTML version of shutdown diagnostics
+- `summary:haven-crash-diagnosis-summary.md` - *(Superseded)* Earlier diagnosis of Haven system crashes
+- `summary:haven-thermal-diagnosis-and-resolution.md` - *(Partially superseded)* Haven thermal issue resolution
+- `summary:intermittent-shutdowns-diagnosis.md` - *(Historical)* Analysis of system shutdown problems
+- `summary:intermittent-shutdowns.html` - *(Historical)* HTML version of shutdown diagnostics
 
 ## EC2 Sandbox Sync Integration
 
@@ -96,7 +97,7 @@ If user asks about EC2 sandbox sync:
 - **EC2 Sandbox Sync**: Operational with Tailscale + Syncthing (September 2025)
   - Proof-of-concept complete, semi-automated setup available
   - See EC2 Sandbox Sync Integration section if working on this
-- **Ongoing Issues**: Haven experiencing intermittent shutdowns (thermal-related, under monitoring)
+- **Haven GPU/Crash Issues Resolved** (February 2026): Kernel upgrade from 6.1-oem to 6.8-generic fixed the i915 GPU driver bugs causing crashes. Haven now runs modesetting + iris + glamor with proper hardware acceleration. See `summary:haven-kernel-upgrade-and-gpu-fix.md` for details.
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
 
 ## Tools and Scripts

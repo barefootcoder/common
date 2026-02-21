@@ -1,5 +1,7 @@
 # Haven Thermal Diagnosis and Resolution Summary
 
+> **PARTIALLY SUPERSEDED (2026-02-20)**: The Vivaldi GPU issues described below were caused by a buggy i915 kernel driver in kernel 6.1. A kernel upgrade to 6.8 resolved the GPU crashes. The NoMachine resource limits remain in place as good practice. See `summary:haven-kernel-upgrade-and-gpu-fix.md` for the full resolution.
+
 ## Problem Description
 Haven (Linux Mint 21.1 laptop) was experiencing a new pattern of cyclic shutdowns during boot. After an unexpected shutdown, the system would:
 1. Boot successfully

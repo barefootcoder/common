@@ -1,22 +1,65 @@
 #! /bin/bash
 
-# http://askubuntu.com/questions/15223/how-can-i-restart-pulseaudio-without-logout
+# Fix audio when the system has picked the wrong output or PulseAudio
+# is otherwise confused.
+#
+# Works with:
+#   - Modern systemd-managed PulseAudio (Ubuntu 22.04+)
+#   - Older standalone PulseAudio (pre-systemd user services)
+#   - Systems with PipeWire running alongside PulseAudio
+
+ME=${0##*/}
 
 if [[ $(id -u) == 0 ]]
 then
-	echo "must not run as root" >&2
+	echo "$ME: must not run as root" >&2
 	exit 1
 fi
 
-player=$(/usr/bin/pgrep -f decibel-audio-player)
+# kill the music player (handles both old and new)
+player=$(pgrep -f 'decibel-audio-player|clementine')
 [[ $player ]] && kill $player
 
-pulseaudio --check && pulseaudio -k
-pulseaudio -D
+# restart audio subsystem
+if systemctl --user is-active pulseaudio.service &>/dev/null
+then
+	echo "$ME: restarting PulseAudio via systemd ..."
+	systemctl --user restart pulseaudio.socket pulseaudio.service
+else
+	echo "$ME: restarting PulseAudio directly ..."
+	pulseaudio --check && pulseaudio -k
+	pulseaudio -D
+fi
+
+# wait for PulseAudio to come back
+for i in 1 2 3 4 5
+do
+	pactl info &>/dev/null && break
+	sleep 1
+done
+
+# try to set the card profile to analog stereo (the most common fix)
+card=$(pactl list cards short 2>/dev/null | awk '{print $2; exit}')
+if [[ $card ]]
+then
+	if pactl list cards 2>/dev/null | grep -q 'output:analog-stereo+input:analog-stereo'
+	then
+		echo "$ME: setting $card to analog stereo duplex ..."
+		pactl set-card-profile "$card" output:analog-stereo+input:analog-stereo
+	elif pactl list cards 2>/dev/null | grep -q 'output:analog-stereo'
+	then
+		echo "$ME: setting $card to analog stereo output ..."
+		pactl set-card-profile "$card" output:analog-stereo
+	else
+		echo "$ME: no analog stereo profile found; leaving profile unchanged"
+	fi
+fi
+
+# unmute and set a reasonable volume, just in case
+pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null
+pactl set-sink-volume @DEFAULT_SINK@ 60% 2>/dev/null
+
+echo "$ME: audio reset complete"
 
 # try to restore the music player, if we can
 music-player
-
-# If this doesn't work, you can also try:
-#	sudo alsa force-reload
-# see: http://forums.bodhilinux.com/index.php?/topic/3800-solved-how-does-a-user-restart-alsa-without-rebooting/

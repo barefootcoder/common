@@ -1,5 +1,7 @@
 # Haven Laptop Crash Diagnosis Summary
 
+> **SUPERSEDED (2026-02-20)**: The workarounds described below (xorg config, kernel parameters) are no longer needed. The root cause was a buggy i915 kernel driver in kernel 6.1 for Raptor Lake GPUs. A kernel upgrade to 6.8 resolved the issue completely. See `summary:haven-kernel-upgrade-and-gpu-fix.md` for the full resolution.
+
 ## Problem Description
 Haven (a Linux Mint 21.1 laptop) was experiencing sudden crashes, particularly during:
 - Remote access sessions using NoMachine
