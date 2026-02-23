@@ -1,0 +1,302 @@
+#!/bin/bash
+
+. ~/bin/bash_funcs
+
+: ${YTU_SECRETS:=$HOME/.g-api/secret-upload-video.json}
+: ${YTU_TOKEN:=$HOME/.g-api/request.token}
+
+
+usage ()
+{
+	cat <<-EOF
+	usage: $me [options] <music-file> <image-file> [description]
+
+	Combine a music file and a static image into a video and upload it to YouTube.
+
+	Accepts any audio format (mp3, wav, flac, ogg, etc.) and any image format
+	(jpg, png, webp, etc.) that ffmpeg supports.
+
+	The description arg is optional.  If omitted, a description is built from
+	metadata extracted from MP3 tags and/or the filename.
+
+	If description starts with '=', it's parsed as key=value pairs separated
+	by '::':
+	  t=TITLE   a=ARTIST   f=ALBUM   y=YEAR   c=COPYRIGHT_HOLDER
+	Example: '=t=My Song::a=The Band::f=Great Album::y=2024::c=Some Label'
+
+	Missing values are filled from MP3 tags (if available) and filename
+	(files named 'Artist - Title.ext' are parsed automatically).
+
+	Otherwise, description is used as literal text.  Backslash escapes (e.g.
+	\\n for newline) are interpreted in all cases.
+
+	Options:
+	  -t TITLE     Video title (default: Artist - Song Title)
+	  -T TAGS      Comma-separated tags (default: "music")
+	  -p PRIVACY   public, unlisted, or private (default: unlisted)
+	  -P PLAYLIST  YouTube playlist ID to add the video to
+	  -n           Dry run: build the video but don't upload
+	  -h           This help
+
+	Environment:
+	  YTU_SECRETS  Path to client secrets JSON (default: ~/.g-api/secret-upload-video.json)
+	  YTU_TOKEN    Path to cached OAuth token (default: ~/.g-api/request.token)
+	EOF
+}
+
+
+##############################
+## metadata extraction      ##
+##############################
+
+song_title=
+artist=
+album=
+year=
+copyright_holder=
+description_mode=template
+
+parse_metadata_vars ()
+{
+	local input="$1" pair
+
+	while [[ -n $input ]]
+	do
+		pair="${input%%::*}"
+		case $pair in
+			t=*)	song_title="${pair#t=}"			;;
+			a=*)	artist="${pair#a=}"				;;
+			f=*)	album="${pair#f=}"				;;
+			y=*)	year="${pair#y=}"				;;
+			c=*)	copyright_holder="${pair#c=}"	;;
+			*)		warn "unknown metadata key: $pair"	;;
+		esac
+		if [[ $input == *::* ]]
+		then
+			input="${input#*::}"
+		else
+			input=
+		fi
+	done
+}
+
+fill_from_mp3_tags ()
+{
+	local file="$1"
+	command -v ffprobe >/dev/null 2>&1 || return 0
+
+	local tag_output line
+	tag_output=$(ffprobe -v quiet \
+		-show_entries format_tags=title,artist,album,date,copyright \
+		-of default=noprint_wrappers=1:nokey=0 \
+		"$file" 2>/dev/null) || return 0
+
+	while IFS= read -r line
+	do
+		case $line in
+			TAG:title=*)		[[ -z $song_title ]]		&& song_title="${line#TAG:title=}"			;;
+			TAG:artist=*)		[[ -z $artist ]]			&& artist="${line#TAG:artist=}"				;;
+			TAG:album=*)		[[ -z $album ]]				&& album="${line#TAG:album=}"				;;
+			TAG:date=*)			[[ -z $year ]]				&& year="${line#TAG:date=}"					;;
+			TAG:copyright=*)	[[ -z $copyright_holder ]]	&& copyright_holder="${line#TAG:copyright=}"	;;
+		esac
+	done <<< "$tag_output"
+}
+
+fill_from_filename ()
+{
+	local base
+	base=$(basename "${1%.*}")
+
+	if [[ -z $song_title || -z $artist ]]
+	then
+		if [[ $base == *" - "* ]]
+		then
+			[[ -z $artist ]]     && artist="${base%% - *}"
+			[[ -z $song_title ]] && song_title="${base#* - }"
+		else
+			[[ -z $song_title ]] && song_title="$base"
+		fi
+	fi
+}
+
+build_description ()
+{
+	local line1 line2
+
+	# line 1: "Title" by Artist[, from _Album_].
+	line1="\"$song_title\" by $artist"
+	[[ -n $album ]] && line1="$line1, from _${album}_"
+	line1="$line1."
+
+	# copyright line (only if year or copyright_holder present)
+	if [[ -n $year && -n $copyright_holder ]]
+	then
+		line2="Copyright $year by $copyright_holder."
+	elif [[ -n $year ]]
+	then
+		line2="Copyright $year."
+	elif [[ -n $copyright_holder ]]
+	then
+		line2="Copyright by $copyright_holder."
+	fi
+
+	description="$line1"
+	[[ -n $line2 ]] && description="$description
+
+$line2"
+}
+
+show_metadata ()
+{
+	echo ">> Metadata:"
+	echo "   Title:       $title"
+	echo "   Privacy:     $privacy"
+	echo "   Tags:        $tags"
+	[[ -n $playlist ]] && echo "   Playlist:    $playlist"
+	echo "   Description:"
+	printf '%s\n' "$description" | sed 's/^/      /'
+}
+
+
+##############################
+## option parsing            ##
+##############################
+
+title=
+tags=music
+privacy=unlisted
+playlist=
+dry_run=false
+
+while getopts "t:T:p:P:nh" opt
+do
+	case $opt in
+		t)	title="$OPTARG"		;;
+		T)	tags="$OPTARG"		;;
+		p)	privacy="$OPTARG"	;;
+		P)	playlist="$OPTARG"	;;
+		n)	dry_run=true		;;
+		h)	usage; exit 0		;;
+		*)	usage_error "unknown option: -$OPTARG"	;;
+	esac
+done
+shift $((OPTIND - 1))
+
+
+##############################
+## validate inputs           ##
+##############################
+
+[[ $# -ge 2 ]] || usage_error "need at least a music file and an image file"
+
+music="$1"
+image="$2"
+description_arg="${3:-}"
+
+[[ -f $music ]] || die "music file not found: $music"
+[[ -f $image ]] || die "image file not found: $image"
+[[ -f $YTU_SECRETS ]] || die "secrets file not found: $YTU_SECRETS"
+[[ -f $YTU_TOKEN ]] || die "token file not found: $YTU_TOKEN"
+command -v ffmpeg >/dev/null 2>&1 || die "ffmpeg not found in PATH"
+command -v youtubeuploader >/dev/null 2>&1 || die "youtubeuploader not found in PATH"
+
+case $privacy in
+	public|unlisted|private)	;;
+	*)	usage_error "privacy must be public, unlisted, or private (got: $privacy)"	;;
+esac
+
+
+##############################
+## process metadata          ##
+##############################
+
+# parse the description arg (if any)
+if [[ -n $description_arg ]]
+then
+	if [[ $description_arg == =* ]]
+	then
+		parse_metadata_vars "${description_arg#=}"
+	else
+		description_mode=literal
+		description="$description_arg"
+	fi
+fi
+
+# fill gaps from MP3 tags if the input is an mp3
+case $(tr '[:upper:]' '[:lower:]' <<< "${music##*.}") in
+	mp3)	fill_from_mp3_tags "$music"	;;
+esac
+
+# fill remaining gaps from filename
+fill_from_filename "$music"
+
+# title and artist are required for the template (and for the video title)
+[[ -n $song_title ]] || die "cannot determine song title; supply via =t=... or name file as 'Artist - Title.ext'"
+[[ -n $artist ]]     || die "cannot determine artist; supply via =a=... or name file as 'Artist - Title.ext'"
+
+# video title: use -t flag if provided, otherwise "Artist - Song Title"
+: ${title:=$artist - $song_title}
+
+# build description from template if not a literal string
+if [[ $description_mode == template ]]
+then
+	build_description
+fi
+
+# interpret backslash escapes (\n, \t, etc.)
+description=$(printf '%b' "$description")
+
+
+##############################
+## build video               ##
+##############################
+
+tmp_video=$(mktemp --suffix=.mp4)
+cleanup ()
+{
+	rm -f "$tmp_video"
+}
+trap cleanup EXIT
+
+echo ">> Building video: '$music' + '$image'"
+ffmpeg -y -loglevel error -loop 1 -framerate 1 \
+	-i "$image" \
+	-i "$music" \
+	-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+	-c:v libx264 -tune stillimage \
+	-c:a aac -b:a 192k \
+	-shortest -pix_fmt yuv420p \
+	"$tmp_video" \
+|| die "ffmpeg failed"
+
+
+##############################
+## dry run or upload         ##
+##############################
+
+if $dry_run
+then
+	echo ">> Dry run: video built at $tmp_video (not uploading)"
+	show_metadata
+	echo ""
+	echo ">> Inspect the video before cleanup: mpv $tmp_video"
+	read -p ">> Press Enter to clean up and exit..."
+	exit 0
+fi
+
+show_metadata
+echo ""
+echo ">> Uploading to YouTube..."
+youtubeuploader \
+	-secrets "$YTU_SECRETS" \
+	-cache "$YTU_TOKEN" \
+	-filename "$tmp_video" \
+	-title "$title" \
+	-description "$description" \
+	-tags "$tags" \
+	-privacy "$privacy" \
+	${playlist:+-playlistID "$playlist"} \
+|| die "youtubeuploader failed"
+
+echo ">> Done."
