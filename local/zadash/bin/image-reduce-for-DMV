@@ -3,8 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
-
 const my $TARGET_SIZE => 128 * 1024;				# 128Kb
 
 

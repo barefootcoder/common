@@ -3,8 +3,6 @@
 use myperl::Script;
 use autodie ':all';
 
-use Date::Easy;
-
 const my $AVAIL => ':AVAILABILITY';
 
 

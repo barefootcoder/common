@@ -71,23 +71,43 @@ sub import
 	# function had been exported.
 	my %autoload_funcs =
 	(
-		'Perl6::Form'		=>	'form',
-		'Date::Parse'		=>	'str2time',
-		'Date::Format'		=>	'time2str',
-		'File::Basename'	=>	'basename',
-		'myperl::Menu'		=>	'menu',
+		'Perl6::Form'			=>	'form',
+		'Date::Parse'			=>	'str2time',
+		'Date::Format'			=>	'time2str',
+		'File::Basename'		=>	'basename',
+		'myperl::Menu'			=>	'menu',
+		'Date::Easy::Date'		=>	[qw< date today >],
+		'Date::Easy::Datetime'	=>	[qw< datetime now >],
+		'Date::Easy::Units'		=>	[qw< seconds minutes hours days weeks months years >],
 	);
+	# Prototypes that our stubs must match.  Without these, an explicit `use Date::Easy` after
+	# myperl would trigger "Prototype mismatch" warnings from Exporter.  The prototype must be
+	# baked into the sub at creation time (via eval); set_prototype() after the fact doesn't set
+	# the right internal flags and causes "Not enough arguments" errors at compile time.
+	my %autoload_protos = map { $_ => '()' }
+			qw< today now seconds minutes hours days weeks months years >;
 	foreach (keys %autoload_funcs)
 	{
 		my $module = $_;
 		next if $calling_package eq $module;							# don't export things to themselves
 
-		my $function = $autoload_funcs{$module};
-		next if $ONLY and not $function ~~ $ONLY;						# don't export things if we're told not to
+		my @functions = ref $autoload_funcs{$module} ? @{$autoload_funcs{$module}} : ($autoload_funcs{$module});
+		foreach my $function (@functions)
+		{
+			next if $ONLY and not $function ~~ $ONLY;					# don't export things if we're told not to
 
-		my $loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
-		Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
-				unless $calling_package->can($function);
+			my $loader;
+			if (my $proto = $autoload_protos{$function})
+			{
+				$loader = eval "sub $proto { use_module(\$module); goto \\&{ join('::', \$module, \$function) }; }";
+			}
+			else
+			{
+				$loader = sub { use_module($module); goto \&{ join('::', $module, $function) }; };
+			}
+			Sub::Install::install_sub({ code => $loader, into => $calling_package, as => $function })
+					unless $calling_package->can($function);
+		}
 	}
 	# glob() is a CORE function, so must be handled separately
 	unless ( $ONLY and not 'glob' ~~ $ONLY )
@@ -124,7 +144,7 @@ sub import
 		'Scalar::Util'					=>					[ qw< blessed > ],
 		'List::Util'					=>					[ qw< first max min reduce shuffle sum > ],
 		'List::MoreUtils'				=>					[ qw< apply zip uniq > ],
-		'open'							=>					[ qw< :encoding(UTF-8) > ],
+		'open'							=>					[ qw< :encoding(UTF-8) :std > ],
 
 	);
 
@@ -133,7 +153,6 @@ sub import
 
 		CLASS							=>	1.00		=>
 		'Syntax::Keyword::Try'			=>	0.26		=>
-		'Date::Easy'					=>	0.03		=>
 		'Path::Class::Tiny'				=>
 		'Perl6::Gather'					=>	0.42		=>
 		'myperl::Declare'				=>
@@ -317,7 +336,6 @@ is pretty much the same thing as:
 	use experimental 'smartmatch';
 
 	use CLASS;
-	use Date::Easy;
 	use Perl6::Gather;
 	use Path::Class::Tiny;
 	use Method::Signatures;
@@ -437,7 +455,6 @@ into a package's namespace.  Results in lots of messages to C<STDERR> that look 
 	:: importing List::MoreUtils into main [args: apply zip uniq] ::
 	:: importing CLASS into main ::
 	:: importing Syntax::Keyword::Try into main ::
-	:: importing Date::Easy into main ::
 	:: importing Path::Class::Tiny into main ::
 	:: importing Perl6::Gather into main ::
 	:: importing myperl::Declare into main ::
@@ -462,6 +479,12 @@ themselves are called.  See their respective modules for more info on them:
 =item B<basename> (from L<File::Basename>)
 
 =item B<menu> (from L<myperl::Menu>)
+
+=item B<date>, B<today> (from L<Date::Easy::Date>)
+
+=item B<datetime>, B<now> (from L<Date::Easy::Datetime>)
+
+=item B<seconds>, B<minutes>, B<hours>, B<days>, B<weeks>, B<months>, B<years> (from L<Date::Easy::Units>)
 
 =back
 

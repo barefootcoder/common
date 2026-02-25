@@ -1,146 +1,70 @@
 # myperl Framework
 
 ## Overview
-The myperl framework is a comprehensive Perl utility library that provides a modern, enhanced Perl environment with automatic imports of common modules, utility functions, and an advanced class system. It serves as the foundation for creating robust Perl scripts and modules with minimal boilerplate.
 
-## Repository Files
+The myperl framework is a personal Perl utility library that provides a modern, batteries-included environment for writing scripts and modules. It handles boilerplate (strict, warnings, utf8, common imports) so scripts can focus on their actual logic.
 
-### Core Module
-- `perl/myperl.pm` - Main framework module providing enhanced Perl environment
+## Task Guides
 
-### Framework Extensions
-- `perl/myperl/Script.pm` - Base class for command-line scripts with option parsing
-- `perl/myperl/Pxb.pm` - Process execution builder for safe command execution
-- `perl/myperl/Classlet.pm` - Enhanced class system with keywords like `rw`, `via`, `by`
-- `perl/myperl/Declare.pm` - Declarative syntax extensions
-- `perl/myperl/Template.pm` - Template processing utilities
-- `perl/myperl/Menu.pm` - Interactive menu system
-- `perl/myperl/Google.pm` - Google API integration utilities
+Pick the guide that matches what you're doing:
 
-### Tests
-- `perl/myperl/t/*.t` - Comprehensive test suite for all myperl functionality
-- `perl/myperl/t/Test/myperl.pm` - Test helper module
-- `perl/myperl/t/Test/redefine.pm` - Test module for redefine functionality
+### [Writing a Pxb Script](writing-pxb-scripts.md)
+The most common task. Covers creating scripts that run external commands using `sh()`. Includes the template workflow, `opts` reference, `sh()` reference, and all available functions.
 
-### Support Scripts
-- `bin/t` - Test runner (use `t myperl` to run all myperl tests)
-- `bin/myperl-cpm` - Dependency installer using App::cpm
+**Start here if**: you need to write a new script in `bin/`, or understand how existing Pxb scripts work.
 
-## Key Concepts
+### [Modifying myperl Itself](modifying-myperl.md)
+For adding features, fixing bugs, or extending the myperl framework modules. Covers the module architecture, testing workflow (TDD required), where different types of changes go, and the test helper API.
 
-### Core Features Provided by `use myperl`
-- Automatic imports: strict, warnings, autodie, utf8, feature bundle
-- Common modules: List::Util, Scalar::Util, Time::HiRes, Data::Dumper, etc.
-- Utility functions: `title_case()`, `round()`, `expand()`, `prompt()`, `confirm()`
-- Enhanced debugging with `debuggit()` at multiple verbosity levels
-- Path manipulation utilities
-- Date/time utilities via Date::Easy integration
+**Start here if**: you need to add a utility function, change how imports work, extend Script/Pxb/Classlet, or fix a bug in the framework.
 
-### myperl::Script Framework
-For creating command-line scripts:
-- Automatic option parsing via Getopt::Long
-- Built-in help/usage support
-- Version handling
-- Debug level management
-- Proper exit code handling
+### Writing a Pure-Perl Script (myperl::Script)
+For scripts that don't shell out to external commands. Use `myperl::Script` instead of `myperl::Pxb`:
 
-### myperl::Pxb (Process Execution Builder)
-Safe external command execution:
-- Fluent interface for building commands
-- Automatic shell escaping
-- Output capture and streaming
-- Error handling
-
-### myperl::Classlet System
-Enhanced OOP features:
-- `rw` keyword for read/write attributes
-- `via` for type coercion
-- `by` for validation
-- Integrates with Moose/CLASS
-
-## Development Patterns
-
-### Creating a New Script
 ```perl
-#!/usr/bin/env perl
-use myperl;
+#! /usr/bin/env perl
+
 use myperl::Script;
-
-# Script automatically gets:
-# - All myperl utilities
-# - Option parsing
-# - Help system
-# - Debug levels
+use autodie ':all';
 ```
 
-### Creating a Script with Options
-```perl
-use myperl::Script {
-    options => [
-        'verbose|v' => 'Be more verbose',
-        'input=s'   => 'Input file',
-        'count=i'   => 'Number of iterations',
-    ],
-};
-```
+This gives you `$ME`, `%OPT`, `opts`, `fatal`, `usage_error`, `color_msg`, and the full myperl import set — but not `sh()`, `path()`, `file()`, etc. See the [Pxb script guide](writing-pxb-scripts.md) for `opts` syntax and common patterns, which are identical.
 
-### Using myperl::Pxb for Safe Command Execution
-```perl
-my $output = Pxb->new($command)->args(@args)->capture->run;
-```
+## Quick Reference
 
-### Extending myperl
-New functionality should be added as modules under `perl/myperl/` with corresponding tests in `perl/myperl/t/`.
-
-## Testing Approach
+### Repository Layout
+- `perl/myperl.pm` — core framework module
+- `perl/myperl/Script.pm` — command-line script base (`$ME`, `%OPT`, `opts`, `fatal`)
+- `perl/myperl/Pxb.pm` — command execution layer (`sh()`, `shw()`, path utilities)
+- `perl/myperl/Classlet.pm` — enhanced class system (`rw`, `via`, `by`)
+- `perl/myperl/Declare.pm` — declarative syntax extensions (MooseX::Declare integration)
+- `perl/myperl/Template.pm` — template processing utilities
+- `perl/myperl/Menu.pm` — interactive `menu()` function
+- `perl/myperl/Google.pm` — Google API integration utilities
+- `perl/myperl/t/` — test suite
+- `perl/myperl/t/Test/myperl.pm` — test helper module
+- `templates/pxb-script` — **start here** when creating any Pxb script
+- `bin/t` — test runner (`t myperl` runs all tests)
+- `bin/myperl-cpm` — dependency installer
 
 ### Running Tests
-- **All myperl tests**: `t myperl` (from any directory)
-- **Specific test**: `t perl/myperl/t/specific.t`
-- **With coverage**: `t --cover myperl`
-- **Parallel execution**: `t -j4 myperl`
+```
+t myperl                          # run all myperl tests (~4 seconds)
+t perl/myperl/t/specific.t       # run one test file
+t -v myperl                       # verbose output
+t -h                              # all testing options
+```
 
-### Test Organization
-- Each module has corresponding test file(s)
-- Test files use `perl/myperl/t/Test/myperl.pm` for common test utilities
-- Tests should cover both positive and negative cases
-- Use Test::More, Test::Fatal, and other standard test modules
+### Installing Dependencies
+```
+bin/myperl-cpm myperl             # install core dependencies
+bin/myperl-cpm <feature>          # install optional feature group (see cpanfile)
+```
 
-## Dependencies
-
-### Core Dependencies (always installed)
-- Moose/CLASS for OOP
-- Try::Tiny for exception handling
-- Path::Class for path manipulation
-- Date::Easy for date operations
-- Method::Signatures for function signatures
-
-### Optional Features (via cpanfile)
-Install with: `bin/myperl-cpm <feature>`
-- Various feature groups defined in `/cpanfile`
-- Check cpanfile for available feature groups
-
-## Troubleshooting
-
-### Common Issues
-- **Module not found**: Run `bin/myperl-cpm myperl` to install dependencies
-- **Test failures**: Check Perl version (requires 5.14+)
-- **Encoding issues**: myperl automatically enables utf8, ensure files are UTF-8
-- **autodie conflicts**: myperl uses autodie; avoid manual error checking on file operations
-
-### Debug Levels
-Use `debuggit()` with appropriate levels:
-- 0: Fatal errors only
-- 1: Warnings
-- 2: Info messages
-- 3: Debug output
-- 4+: Verbose debug
-
-### Best Practices
-- Always `use myperl` instead of individual pragmas
-- Use myperl::Script for command-line tools
-- Leverage myperl::Pxb for external commands
-- Write tests for new functionality
-- Follow existing code style (Allman bracing, snake_case functions)
-
-[Created and submitted by AI: Claude]
+### Code Style
+- **Allman style bracing** (opening brace on its own line)
+- **snake_case** for functions and variables
+- **CamelCase** for class/package names
+- **ALL_CAPS** for constants
+- Helper subs at the bottom of the script
+- Group imports: `myperl::Pxb` + `autodie` first, then additional modules

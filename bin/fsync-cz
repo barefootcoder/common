@@ -4,7 +4,6 @@ use myperl::Pxb;
 use autodie ':all';
 
 use Fcntl				qw< :mode >;
-use Date::Easy;
 use Perl6::Form;
 use Lingua::EN::Inflect	qw< PL    >;
 

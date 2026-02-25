@@ -3,8 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
-
 
 opts <<'-';
 	[-v] [-D <dir>] { -e <pattern> | <pattern> }

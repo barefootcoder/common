@@ -3,8 +3,6 @@
 use myperl::Pxb DEBUG => 2;
 use autodie ':all';
 
-use Date::Easy;
-
 $| = 1;
 
 const my $SCREENBUF_DIR => path("~/local/data/screen-buflog");

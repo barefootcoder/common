@@ -3,8 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
-
 const my $BASEDIR => glob("~/local/data/screen-buflog");				# `glob` to expand the `~`
 
 

@@ -3,9 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
-use Date::Easy;
-
 const my $CEROOT => $ENV{CEROOT};
 
 

@@ -3,7 +3,6 @@
 use myperl::Script;
 use autodie ':all';
 
-use Date::Easy;
 use Path::Class::Tiny;
 use List::AllUtils qw< pairfirst >;
 

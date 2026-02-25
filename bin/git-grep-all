@@ -25,7 +25,6 @@ use myperl::Pxb;
 use autodie ':all';
 
 use MCE::Map;
-use Date::Easy;
 use MCE::Shared;
 use Data::Printer;
 use Path::Class::Tiny;

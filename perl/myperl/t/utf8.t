@@ -3,6 +3,10 @@ use myperl NoFatalWarns => 1;
 use Test::Most;
 use File::Temp qw< tempfile >;
 
+use File::Basename;
+use lib dirname($0);
+use Test::myperl;
+
 
 # Test UTF-8 file I/O
 my ($fh, $filename) = tempfile();
@@ -41,6 +45,15 @@ is $content, $test_string, 'UTF-8 content preserved with explicit encoding';
 
 # TODO: Moops parser doesn't support UTF-8 class/method names yet
 # This is a known limitation of the Moops parser, not myperl::Classlet
+
+
+# Test that wide characters in test names don't produce warnings
+perl_no_error("no wide char warning from UTF-8 snippet in test name", <<'END');
+	use myperl;
+	use Test::More;
+	is 1, 1, "test with π in name";
+	done_testing;
+END
 
 
 done_testing;

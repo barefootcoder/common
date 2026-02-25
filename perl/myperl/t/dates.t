@@ -1,4 +1,4 @@
-use myperl;
+use myperl NO_SYNTAX => 1;
 
 use Test::Most 0.25;
 

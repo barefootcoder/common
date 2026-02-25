@@ -4,7 +4,6 @@ use myperl;
 use autodie ':all';
 
 use List::Util				qw< pairs unpairs pairmap pairgrep >;
-use Date::Easy;
 use PerlX::Maybe;
 
 const my $FIRST_MON_OF_PANDEMIC    => date("3/16/2020");

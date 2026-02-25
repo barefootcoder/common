@@ -3,7 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
 use PerlX::Maybe;
 use Path::Class::Tiny;
 use Time::HiRes qw< usleep >;

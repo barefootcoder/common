@@ -3,8 +3,6 @@
 use myperl::Pxb DEBUG => 1;
 use autodie ':all';
 
-use Date::Easy;
-
 
 opts <<'-';
 	[-fDv] <file> [...]

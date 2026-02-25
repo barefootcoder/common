@@ -5,7 +5,6 @@ use autodie ':all';
 use charnames ':full';
 
 use Try::Tiny;
-use Date::Easy;
 use Path::Tiny;
 use List::AllUtils qw< first apply >;
 

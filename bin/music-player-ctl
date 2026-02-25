@@ -3,7 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
 use Sys::RunAlone;
 use Time::HiRes qw< usleep >;
 use List::AllUtils qw< firstidx >;

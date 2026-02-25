@@ -3,7 +3,6 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use Date::Easy;
 use List::AllUtils qw< pairkeys pairgrep >;
 
 const my $CONNECT  => '/usr/NX/bin/nxplayer';
