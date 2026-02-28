@@ -137,7 +137,6 @@ sub import
 		utf8							=>
 		warnings						=>					@{$mod_args{warnings}},,
 		feature							=>					[	':5.14'			],
-		experimental					=>					[	'smartmatch'	],
 		#autodie						=>					[	':all'			],
 		Debuggit						=>	2.03_01		=>	@{$mod_args{Debuggit}},
 		'Const::Fast'					=>
@@ -159,6 +158,12 @@ sub import
 		'Method::Signatures'			=>	20111125	=>
 
 	) unless $NO_SYNTAX;
+
+	# `experimental` is a lexical pragma — Import::Into by package name doesn't propagate %^H
+	# changes to the caller's scope.  Calling it directly from import() works because `use myperl`
+	# invokes import() inside the caller's BEGIN block, preserving lexical hint propagation.
+	# Must come AFTER warnings import, or `FATAL => 'all'` would override our suppression.
+	experimental->import('smartmatch');
 }
 
 

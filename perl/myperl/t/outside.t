@@ -16,4 +16,12 @@ foreach (keys %ALL_SNIPPETS)
 }
 
 
+# Subprocess test: given/when must not produce warnings
+# (catches missing `experimental 'smartmatch'` on Perl 5.18+)
+perl_no_error("no 'given is experimental' warning from myperl", <<'END');
+	use myperl;
+	given (1) { when (1) {} }
+END
+
+
 done_testing;

@@ -16,6 +16,13 @@ foreach (keys %CLASSLET_SNIPPETS)
 	test_snippet($_);
 }
 
+# Subprocess test: given/when in a Classlet class body must not produce warnings
+# (catches missing `experimental 'smartmatch'` in Moops imports on Perl 5.18+)
+perl_no_error("no 'given is experimental' warning in Classlet class body", <<'END');
+	use myperl::Classlet;
+	class Foo { given (1) { when (1) {} } }
+END
+
 
 # Test common cases for attributes:
 class AttrTest

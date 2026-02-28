@@ -173,6 +173,7 @@ package myperl::Classlet
 		(
 			warnings						=>	[ FATAL => 'all' ],
 			utf8							=>	[],
+			experimental					=>	[ 'smartmatch' ],
 			Kavorka							=>	[ qw< classmethod >],
 			'myperl::Classlet::keywords'	=>	[ @myperl::Classlet::keywords::EXPORT ],
 		);
