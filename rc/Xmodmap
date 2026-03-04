@@ -1,0 +1,5 @@
+! Keypad remapping
+! Make Shift+KP_Decimal produce colon (with NumLock on)
+! Column order: normal, Shift, Mode_switch, Mode_switch+Shift
+! NumLock flips columns 1/2 for keypad keys, so colon goes in column 1
+keycode 91 = colon KP_Decimal KP_Decimal colon
