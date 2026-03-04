@@ -17,15 +17,7 @@ fatal("Can't locate stash: $stashid") unless $stashid and $stash_name;
 
 
 my %status = map { /^(.). (.*)( -> .*)?$/ ? ($2,$1) : badparse() } sh(git => status => -u => '--porcelain=v1');
-my @mod_files       = sh(git => show => '--format=', '--name-only', -r => $stashid                      );
-my @untracked_files = sh(git => show => '--format=', '--name-only', -r => $stashid . '^3', '2>/dev/null');
-
-if (my @files_in_the_way = grep { exists $status{$_} } @untracked_files)
-{
-	say "These files are blocking restoration of your untracked files:";
-	say "[$status{$_}] $_" foreach @files_in_the_way;
-	fatal("Cannot continue until this is corrected.");
-}
+my @mod_files = sh(git => show => '--format=', '--name-only', -r => $stashid);
 
 if (my @files_not_unstashed = grep { not exists $status{$_} } @mod_files)
 {
@@ -35,24 +27,17 @@ if (my @files_not_unstashed = grep { not exists $status{$_} } @mod_files)
 }
 
 # look for files with conflicts
-foreach (grep { ($status{$_} // '') eq 'U' } @mod_files)
+my @conflict_files = grep { ($status{$_} // '') eq 'U' } @mod_files;
+if (my @unresolved = grep { has_unresolved_conflicts($_) } @conflict_files)
 {
-	if (has_unresolved_conflicts($_))
-	{
-		fatal("Looks like `$_' has active conflicts; please resolve those first.");
-	}
+	say "These files still have active conflicts; please resolve them first:";
+	say "  $_" foreach @unresolved;
+	fatal("Cannot continue until all conflicts are resolved.");
+}
+foreach (@conflict_files)
+{
 	sh(git => 'rerere');
 	sh(git => add => path($_));
-}
-
-# now re-unstash just to be safe, and, if that works, unstash the untracked files, if any
-sh(git => stash => pop => $stashid);
-if (@untracked_files)
-{
-	# oblig SO ref: https://stackoverflow.com/a/70237953/1383177
-	my $sha1 = sh(git => 'write-tree');
-	sh(git => 'read-tree' => -u => '--prefix=', $stashid . '^3');
-	sh(git => 'read-tree' => $sha1);
 }
 
 # cleanup: unstage everything, restore the timestamps, then advise the user how to drop the stash
@@ -76,6 +61,7 @@ sub savetimes_restore
 {
 	my ($stash) = @_;
 
+	$stash = $1 if $stash =~ /^On \S+: (.+)$/;
 	my $name;
 	   $name = 'stg-amend' if $stash =~ /changes for stg-amend$/;
 	   $name = $stash      if $stash !~ /\s/;
