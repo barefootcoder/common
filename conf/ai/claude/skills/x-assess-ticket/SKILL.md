@@ -80,7 +80,7 @@ Analyze all gathered information to determine what needs to happen:
 - **QA feedback**: List specific changes requested
 
 ### 8. Write Summary File
-Create: `aidoc/ticket-docs/$TICKET/summary:YYYYMMDD-<next-step>.md`
+Create: `aidoc/ticket-docs/$TICKET/summary=YYYYMMDD-<next-step>.md`
 
 Where `<next-step>` is a kebab-case description of the primary action (e.g., `fix-totals`, `implement-sorting`, `address-qa-feedback`).
 
