@@ -11,7 +11,7 @@
 #echo "9:$9"
 
 # prepare environment
-eval `ssh-agent-env`
+source ~/bin/ssh-agent-env
 setenv VCTOOLS_SHELL vc								# to guarantee we get VCtools aliases
 source ~/.tcshrc
 

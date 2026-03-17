@@ -153,7 +153,7 @@ alias rm rm -v
 alias cp cp -piv
 alias mv mv -iv
 alias scp scp -pC
-alias ssh-sock-reset 'eval `ssh-agent-env`'
+alias ssh-sock-reset 'source ~/bin/ssh-agent-env \!*'
 alias ps 'ps -wwwo user,group,pid,ppid,pgid,stime,tty8,ni,stat,time,cmd'
 alias time '/usr/bin/time -f "\nWallclock: %e (%UU, %SS)"'
 alias psg '/usr/bin/pgrep -f \!* >/dev/null && ps -p `/usr/bin/pgrep -f \!*`'
@@ -370,7 +370,7 @@ if ( $?tcsh_reset ) then
 	endif
 
 	# refresh or create ssh-agent vars
-	eval `ssh-agent-env`
+	source ~/bin/ssh-agent-env
 endif
 
 # allow local overrides to shared .tcshrc
