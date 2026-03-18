@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Create a new Jira ticket in a given project
+# Usage: jira-create-ticket <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION]
+#
+# Arguments:
+#   PROJECT     - Jira project key (e.g., CLASS)
+#   TYPE        - Issue type (e.g., Task, Bug, Story)
+#   SUMMARY     - Ticket summary/title
+#   DESCRIPTION - Ticket description (optional; if omitted, created with no body)
+#
+# Outputs the new ticket key (e.g., CLASS-938) on success.
+
+ME=$(basename "$0")
+
+project="$1"
+type="$2"
+summary="$3"
+description="$4"
+
+if [[ -z "$project" || -z "$type" || -z "$summary" ]]; then
+    echo "Usage: $ME <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION]" >&2
+    exit 1
+fi
+
+# Build the command
+# NOTE: -p is required to avoid the jira CLI hanging on project selection
+cmd=(jira issue create -p "$project" -t "$type" -s "$summary" --no-input)
+if [[ -n "$description" ]]; then
+    cmd+=(-b "$description")
+fi
+
+output=$("${cmd[@]}" 2>&1)
+rc=$?
+
+if [[ $rc -ne 0 ]]; then
+    echo "$ME: failed to create ticket: $output" >&2
+    exit 1
+fi
+
+# Extract ticket URL and key from output
+# Output format: "✓ Issue created\nhttps://archeredu.atlassian.net/browse/CLASS-938"
+url=$(echo "$output" | grep -oP 'https://\S+/browse/\K\S+')
+if [[ -n "$url" ]]; then
+    echo "$url"
+else
+    # Fallback: print whatever we got
+    echo "$output"
+fi
