@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Wrapper script for ccusage (Claude Code usage reporting)
+# Finds the most recent NVM-installed npx so this keeps working after Node upgrades.
+#
+
+npx=$( ls -t /opt/nvm/versions/node/*/bin/npx 2>/dev/null | head -1 ||: )
+if [[ ! $npx ]]
+then
+    echo "error: cannot find npx in /opt/nvm/versions/node/*/bin/" >&2
+    exit 1
+fi
+
+exec $npx ccusage "$@"
