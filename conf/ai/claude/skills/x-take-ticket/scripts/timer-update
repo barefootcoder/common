@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Insert a new timer entry into the timer file (both chunk and comment sections)
+# Usage: timer-update <timer-name> <summary> <ticket>
+#
+# Inserts after the "utests" anchor line in both sections.
+# Preserves trailing TAB characters on existing lines.
+
+ME=$(basename "$0")
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [[ $# -ne 3 ]]; then
+    echo "Usage: $ME <timer-name> <summary> <ticket>" >&2
+    echo "  timer-name: kebab-case timer name (e.g., ftp-twoonefour-quiet)" >&2
+    echo "  summary:    short description for comment section" >&2
+    echo "  ticket:     Jira ticket (e.g., CLASS-743)" >&2
+    exit 1
+fi
+
+timer_name="$1"
+summary="$2"
+ticket="$3"
+
+TIMER_FILE="$("$SCRIPT_DIR/ticket-config" timer-file)"
+if [[ -z "$TIMER_FILE" ]]; then
+    echo "$ME: could not determine timer file path" >&2
+    exit 1
+fi
+if [[ ! -f "$TIMER_FILE" ]]; then
+    echo "$ME: timer file not found: $TIMER_FILE" >&2
+    exit 1
+fi
+
+# Escape sed special characters in summary
+escaped_summary=$(printf '%s\n' "$summary" | sed 's/[&/\]/\\&/g')
+
+# Insert chunk entry (after line matching "^utests<TAB>")
+# Format: name<TAB> (trailing tab, no timestamps for new entries)
+if ! sed -i "/^utests\t/a ${timer_name}\t" "$TIMER_FILE"
+then
+    echo "$ME: failed to insert chunk entry" >&2
+    exit 1
+fi
+
+# Insert comment entry (after line matching "^utests:<TAB>")
+# Format: name:<TAB>summary<TAB>ticket
+if ! sed -i "/^utests:\t/a ${timer_name}:\t${escaped_summary}\t${ticket}" "$TIMER_FILE"
+then
+    echo "$ME: failed to insert comment entry" >&2
+    exit 1
+fi
+
+# Verify both entries exist
+chunk_ok=false
+comment_ok=false
+
+if grep -qP "^${timer_name}\t" "$TIMER_FILE"
+then
+    chunk_ok=true
+fi
+
+if grep -qP "^${timer_name}:\t" "$TIMER_FILE"
+then
+    comment_ok=true
+fi
+
+if $chunk_ok && $comment_ok
+then
+    echo "Timer entries added successfully for '${timer_name}':"
+    echo "  Chunk:   $(grep -P "^${timer_name}\t" "$TIMER_FILE" | cat -A)"
+    echo "  Comment: $(grep -P "^${timer_name}:\t" "$TIMER_FILE" | cat -A)"
+else
+    echo "$ME: verification failed!" >&2
+    $chunk_ok   || echo "  Missing chunk entry for '${timer_name}'" >&2
+    $comment_ok || echo "  Missing comment entry for '${timer_name}'" >&2
+    exit 1
+fi

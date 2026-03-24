@@ -4,7 +4,7 @@ description: Claim a Jira ticket and set up tracking (administrative only - NO t
 argument-hint: [ticket-number]
 model: opus
 disable-model-invocation: true
-allowed-tools: Bash(ticket-*), Bash(jira-*), Bash(sed *), Bash(head *), Bash(TIMER_FILE=*), mcp__google-sheets__*, Read, Edit, AskUserQuestion
+allowed-tools: Bash(ticket-*), Bash(jira-*), Bash(timer-update *), mcp__google-sheets__*, Read, Edit, AskUserQuestion
 ---
 
 # Ticket Onboarding Workflow
@@ -38,6 +38,7 @@ Run these from the skill's `scripts/` directory:
 - `ticket-config <key>` - Retrieves: account-id, cloud-id, email, triage-file, timer-file, sheets-id
 - `jira-ticket-info <TICKET>` - Shows ticket summary
 - `jira-take-ticket <TICKET>` - Assigns ticket, sets dev owner, transitions to "On Deck"
+- `timer-update <name> <summary> <ticket>` - Inserts timer entries into both sections of the timer file
 
 ---
 
@@ -163,20 +164,7 @@ ticket-config triage-file
 
 ## Step 6: Timer File Update
 
-### 6a. Get File Path and Read File
-
-**Get file path:**
-```bash
-ticket-config timer-file
-```
-
-**Reading the timer file:**
-The timer file may exceed read limits. Use the line numbers from preflight output:
-- Preflight shows: `Timer structure located (utests at lines X/Y)`
-- Read chunk section: `offset=1, limit=X+10`
-- Read comment section: `offset=Y-5, limit=30`
-
-### 6b. Ask for Timer Name
+### 6a. Ask for Timer Name
 
 Generate a suggested timer name in kebab-case based on the ticket content (e.g., `clickout-data-cols-fix`), then **use the AskUserQuestion tool** with these parameters:
 - question: "What timer name should I use? (Type '+' to accept the suggestion above, or enter your own)"
@@ -185,54 +173,30 @@ Generate a suggested timer name in kebab-case based on the ticket content (e.g.,
   - label: "+", description: "Accept the suggested timer name"
   - label: "Custom", description: "I'll type my own timer name"
 
-### 6c. Process the Answer and Complete
+### 6b. Process the Answer and Run Script
 
 **When the user answers, continue IMMEDIATELY to finish the skill.**
 
 - If user types "+" or selects "+": Use your suggested timer name
 - Otherwise: Use what they provided as the timer name
 
-**Locate the `utests` anchor lines** (there are two sections - chunks and comments)
-
-**Insert in BOTH sections**, after the `utests` entries.
-
-#### WARNING: Do NOT Use the Edit Tool for Timer File
-
-The Edit tool strips trailing whitespace, but the timer file has lines with **trailing TAB characters** that MUST be preserved. Using Edit will corrupt these lines, causing repeated failed attempts.
-
-**Use `sed` instead** to insert lines while preserving all whitespace:
+**Run the `timer-update` script** with the timer name, summary, and ticket:
 
 ```bash
-# Get the timer file path
-TIMER_FILE="$(ticket-config timer-file)"
-
-# Insert chunk entry (after the line matching "^utests<TAB>")
-# Format: name<TAB> (trailing tab, no timestamps for new entries)
-sed -i '/^utests\t/a [timer-name]\t' "$TIMER_FILE"
-
-# Insert comment entry (after the line matching "^utests:<TAB>")
-# Format: name:<TAB>summary<TAB>ticket
-sed -i '/^utests:\t/a [timer-name]:\t[summary]\t[ticket]' "$TIMER_FILE"
+timer-update <timer-name> '<summary>' <ticket>
 ```
 
-**Important sed notes:**
-- Use `\t` for TAB characters in the pattern and replacement
-- The `/a` command appends a line after the match
-- Replace `[timer-name]`, `[summary]`, and `[ticket]` with actual values
-- Escape any special characters in the summary (especially `/` and `&`)
-
-**Example with real values:**
+**Example:**
 ```bash
-TIMER_FILE="$(ticket-config timer-file)"
-sed -i '/^utests\t/a clickout-fix\t' "$TIMER_FILE"
-sed -i '/^utests:\t/a clickout-fix:\tFix clickout data columns\tCLASS-897' "$TIMER_FILE"
+timer-update clickout-fix 'Fix clickout data columns' CLASS-897
 ```
 
-**Verification after editing:**
-```bash
-head -20 "$(ticket-config timer-file)" | cat -A
-```
-Lines should show `^I` for each TAB character. New lines should appear immediately after the `utests` lines.
+The script handles:
+- Finding the timer file path
+- Inserting the chunk entry after `utests`
+- Inserting the comment entry after `utests:`
+- Escaping special characters in the summary
+- Verifying both entries were added correctly
 
 **Then proceed IMMEDIATELY to Completion.**
 
