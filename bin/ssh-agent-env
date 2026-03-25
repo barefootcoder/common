@@ -1,7 +1,7 @@
 # Source this to update `$SSH_AUTH_SOCK` from a current ssh-agent.
 # Typically invoked via: `alias ssh-sock-reset 'source ~/bin/ssh-agent-env'`
 
-set _sae_socket = `$CHEOPSROOT/launch-ec2/control-instance/bin/ssh-agent-find $argv`
+set _sae_socket = `~/bin/ssh-agent-find $argv`
 if ( $status == 0 ) then
     setenv SSH_AUTH_SOCK $_sae_socket
     unsetenv SSH_AGENT_PID

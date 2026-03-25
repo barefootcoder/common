@@ -1,0 +1,97 @@
+#! /bin/bash
+set -euo pipefail
+
+# Find a working SSH agent socket.
+# Outputs the socket path to stdout; diagnostics to stderr.
+# Exit 0 on success, 1 on failure.
+
+ME=$(basename "$0")
+
+verbose=false
+[[ ${1:-} == -v || ${1:-} == --verbose ]] && verbose=true
+
+# Test if a socket actually works (not just exists)
+function test-socket
+{
+    local socket=$1
+
+    if [[ ! -S $socket ]]
+    then
+        $verbose && echo "# $socket: not a socket" >&2
+        return 1
+    fi
+
+    # ssh-add -l exit codes: 0 = has keys, 1 = no keys, 2 = can't connect, 124 = timeout
+    timeout 2 env SSH_AUTH_SOCK="$socket" /bin/ssh-add -l >/dev/null 2>&1
+    local result=$?
+
+    if $verbose
+    then
+        case $result in
+            0)   echo "# $socket: working (has keys)" >&2
+				 ;;
+            1)   echo "# $socket: working (no keys)" >&2
+				 ;;
+            2)   echo "# $socket: connection failed" >&2
+				 ;;
+            124) echo "# $socket: timeout (likely stale)" >&2
+				 ;;
+            *)   echo "# $socket: error ($result)" >&2
+				 ;;
+        esac
+    fi
+
+    [[ $result -lt 2 ]]
+}
+
+# Find all SSH agent sockets, newest first
+function find-ssh-sockets
+{
+    find /tmp /run/user/$(id -u) \( -path "*/ssh*" -o -path "*/.ssh*" \) -type s -printf '%T@ %p\n' 2>/dev/null \
+        | sort -rn | cut -d' ' -f2-
+}
+
+
+########
+# MAIN #
+########
+
+# Early out: if current SSH_AUTH_SOCK already works, just report it
+if [[ ${SSH_AUTH_SOCK:-} ]] && test-socket "$SSH_AUTH_SOCK"
+then
+    $verbose && echo "# Current SSH_AUTH_SOCK is already working" >&2
+    echo "$SSH_AUTH_SOCK"
+    exit 0
+fi
+
+# Search for a working socket, trying newest first
+for socket in $(find-ssh-sockets)
+do
+    if test-socket "$socket"
+    then
+        echo "$socket"
+        exit 0
+    fi
+done
+
+# Nothing found — provide diagnostics
+if [[ ${SSH_CONNECTION:-} ]]
+then
+    echo "# WARNING: In an SSH session but no working SSH agent found" >&2
+    echo "# If you intended to use agent forwarding:" >&2
+    echo "#   1. Run on your LOCAL machine: ssh-sock-reset (or source ssh-agent-env)" >&2
+    echo "#   2. Reconnect with: ssh -A <hostname>" >&2
+    echo "# Otherwise, start a local agent with: eval \$(ssh-agent)" >&2
+else
+    agents=$( pgrep -u $(id -u) ssh-agent ||: )
+    if [[ $agents ]]
+    then
+        echo "# $ME: SSH agent running (PIDs: $(echo $agents | tr '\n' ' ')) but no working sockets" >&2
+        echo "# Suggestion: pkill ssh-agent && eval \$(ssh-agent)" >&2
+    else
+        echo "# $ME: no SSH agent found" >&2
+        echo "# Suggestion: eval \$(ssh-agent)" >&2
+    fi
+fi
+
+exit 1
