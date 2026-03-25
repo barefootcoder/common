@@ -1,0 +1,59 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+opts <<'-';
+	[-D] <name> from <source> with <file> [...]
+	-D : debug mode
+	<name>   : name for the new session
+	<source> : existing session (locates directory; inherits maps)
+	<file>   : initial file(s) for the session
+-
+
+# parse: <name> from <source> [with <file> ...]
+my $name    = shift // usage_error("must supply session name");
+my $keyword = shift // usage_error("expected 'from' keyword");
+usage_error("expected 'from', got '$keyword'") unless $keyword eq 'from';
+my $source  = shift // usage_error("must supply source session name");
+
+my $with_kw = shift // usage_error("expected 'with' keyword");
+usage_error("expected 'with', got '$with_kw'") unless $with_kw eq 'with';
+usage_error("'with' requires at least one file") unless @ARGV;
+my @files = @ARGV;
+
+# locate source .V file via vim-session
+my $source_path = eval { sh('vim-session', -P => $source, '2>/dev/null') };
+fatal "can't find session file: $source" unless $source_path;
+$source_path = path($source_path);
+
+my $target_dir = $source_path->parent;
+my $target = $target_dir->child("$name.V");
+fatal "session file already exists: $target" if -e $target;
+say "# dir: $target_dir; target: $target" if $OPT{D};
+
+# extract =MAPS from source
+my @maps;
+my $in_maps = 0;
+foreach ($source_path->slurp)
+{
+	if ($in_maps)
+	{
+		last if /^=/;
+		push @maps, $_;
+	}
+	elsif (/^=MAPS$/)
+	{
+		$in_maps = 1;
+	}
+}
+
+# build new file
+sh('vim-session' => -N => $target_dir, $name, @files);
+
+my ($last_line) = tail -1 => $target->slurp(chomp=>1);
+say "# last line: $last_line" if $OPT{D};
+if (@maps and $last_line eq '=MAPS')
+{
+	$target->append(@maps);
+}
