@@ -4,7 +4,7 @@
 # Keys: account-id, cloud-id, email, triage-file, timer-file, sheets-id
 
 ME=$(basename "$0")
-CONFIG_FILE="$HOME/common/aidoc/projects/home-network/private/credentials.md"
+CONFIG_FILE="$HOME/common/aidoc/projects/todo-sheet/private/work-credentials.md"
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "$ME: config file not found: $CONFIG_FILE" >&2
@@ -27,7 +27,7 @@ case "$key" in
         ;;
     email)
         # Get work email from Jira section
-        sed -n '/### Jira/,/###/p' "$CONFIG_FILE" | grep -oP '^\- \*\*Email\*\*: \K.*'
+        sed -n '/## Jira/,/^##[^#]/p' "$CONFIG_FILE" | grep -oP '^\- \*\*Email\*\*: \K.*'
         ;;
     triage-file)
         grep -oP '^\- \*\*Triage File\*\*: `\K[^`]+' "$CONFIG_FILE" || echo "/export/work/ce/triage.md"

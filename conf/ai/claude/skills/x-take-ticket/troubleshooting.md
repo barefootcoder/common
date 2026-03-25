@@ -126,7 +126,7 @@ rm /export/work/timer/.timer-new.swp
 **Cause**: Config file format changed or file missing
 **Solution**: Verify config file exists and format matches expected patterns:
 ```bash
-cat ~/common/aidoc/projects/home-network/private/credentials.md
+cat ~/common/aidoc/projects/todo-sheet/private/work-credentials.md
 ```
 
 ### jira CLI Not Working
