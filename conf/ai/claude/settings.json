@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Grep",
+      "Glob",
+      "Read",
+      "Skill(x-commit)",
+      "Bash(/home/buddy/.claude/skills/x-take-ticket/scripts/ticket-preflight)",
+      "Bash(/home/bburden/.claude/skills/x-take-ticket/scripts/ticket-preflight)",
+      "Bash(/home/buddy/.claude/skills/x-take-ticket/scripts/ticket-config *)",
+      "Bash(/home/bburden/.claude/skills/x-take-ticket/scripts/ticket-config *)",
+      "Bash(/home/buddy/.claude/skills/x-take-ticket/scripts/jira-ticket-info *)",
+      "Bash(/home/bburden/.claude/skills/x-take-ticket/scripts/jira-ticket-info *)",
+      "Bash(/home/buddy/.claude/skills/x-take-ticket/scripts/jira-take-ticket *)",
+      "Bash(/home/bburden/.claude/skills/x-take-ticket/scripts/jira-take-ticket *)",
+      "Bash(/home/buddy/.claude/skills/x-take-ticket/scripts/timer-update *)",
+      "Bash(/home/bburden/.claude/skills/x-take-ticket/scripts/timer-update *)",
+      "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-ticket-info *)",
+      "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-ticket-info *)",
+      "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-ticket-detail *)",
+      "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-ticket-detail *)",
+      "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-download-attachments *)",
+      "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-download-attachments *)",
+      "Bash(jira view *)",
+      "Bash(jira issue list *)",
+      "Bash(jira issue view *)",
+      "Bash(jira --help *)",
+      "Bash(jira --help 2>&1 | head *)",
+      "Bash(jira me *)",
+      "Bash(gh issue list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue status *)",
+      "mcp__google-sheets__get_spreadsheet_info",
+      "mcp__google-sheets__read_range",
+      "mcp__google-sheets__write_range",
+      "mcp__google-sheets__append_row",
+      "mcp__google-sheets__find_empty_row",
+      "mcp__atlassian-remote__getAccessibleAtlassianResources",
+      "mcp__atlassian-remote__atlassianUserInfo",
+      "mcp__atlassian-remote__search",
+      "mcp__atlassian-remote__fetch",
+      "mcp__atlassian-remote__getJiraIssue",
+      "mcp__atlassian-remote__getTransitionsForJiraIssue",
+      "mcp__atlassian-remote__editJiraIssue",
+      "mcp__atlassian-remote__transitionJiraIssue",
+      "mcp__atlassian-remote__getConfluencePage",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_evaluate",
+      "WebSearch",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:metacpan.org)",
+      "WebFetch(domain:fastapi.metacpan.org)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:support.atlassian.com)",
+      "WebFetch(domain:api.atlassian.com)",
+      "WebFetch(domain:railsware.atlassian.net)",
+      "WebFetch(domain:repost.aws)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(wc *)",
+      "Bash(test *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(ps *)",
+      "Bash(pgrep *)",
+      "Bash(ping *)",
+      "Bash(env)",
+      "Bash(cd *)",
+      "Bash(head *)",
+      "Bash(jq *)",
+      "Bash(md5sum *)",
+      "Bash(dig *)",
+      "Bash(host *)",
+      "Bash(getent *)",
+      "Bash(find *)",
+      "Bash(curl *)",
+      "Bash(perl --version)",
+      "Bash(perl -v)",
+      "Bash(perldoc *)",
+      "Bash(perlbrew list *)",
+      "Bash(perlbrew available *)",
+      "Bash(perlbrew info *)",
+      "Bash(perlbrew version *)",
+      "Bash(perlbrew self-info *)",
+      "Bash(perlbrew env *)",
+      "Bash(perlbrew lib list *)",
+      "Bash(perlbrew which *)",
+      "Bash(git --version)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git blame *)",
+      "Bash(git shortlog *)",
+      "Bash(git describe *)",
+      "Bash(git grep *)",
+      "Bash(git rev-parse *)",
+      "Bash(git rev-list *)",
+      "Bash(git ls-files *)",
+      "Bash(git ls-tree *)",
+      "Bash(git ls-remote *)",
+      "Bash(git cat-file *)",
+      "Bash(git whatchanged *)",
+      "Bash(git count-objects *)",
+      "Bash(git for-each-ref *)",
+      "Bash(git name-rev *)",
+      "Bash(git reflog show *)",
+      "Bash(git stash list *)",
+      "Bash(git remote)",
+      "Bash(git remote -v)",
+      "Bash(git remote show *)",
+      "Bash(git config --list *)",
+      "Bash(git config --get *)",
+      "Bash(git config --get-all *)",
+      "Bash(git branch --list *)",
+      "Bash(git tag --list *)",
+      "Bash(git tag -l *)",
+      "Bash(git -C * status *)",
+      "Bash(git -C * log *)",
+      "Bash(git -C * diff *)",
+      "Bash(git -C * show *)",
+      "Bash(git -C * blame *)",
+      "Bash(git -C * shortlog *)",
+      "Bash(git -C * describe *)",
+      "Bash(git -C * grep *)",
+      "Bash(git -C * rev-parse *)",
+      "Bash(git -C * rev-list *)",
+      "Bash(git -C * ls-files *)",
+      "Bash(git -C * ls-tree *)",
+      "Bash(git -C * ls-remote *)",
+      "Bash(git -C * cat-file *)",
+      "Bash(git -C * whatchanged *)",
+      "Bash(git -C * count-objects *)",
+      "Bash(git -C * for-each-ref *)",
+      "Bash(git -C * name-rev *)",
+      "Bash(git -C * reflog show *)",
+      "Bash(git -C * stash list *)",
+      "Bash(git -C * remote)",
+      "Bash(git -C * remote -v)",
+      "Bash(git -C * remote show *)",
+      "Bash(git -C * config --list *)",
+      "Bash(git -C * config --get *)",
+      "Bash(git -C * config --get-all *)",
+      "Bash(git -C * branch --list *)",
+      "Bash(git -C * tag --list *)",
+      "Bash(git -C * tag -l *)",
+      "Bash(t *)",
+      "Bash(bin/t *)",
+      "Bash(sed *)",
+      "Bash(claude mcp *)",
+      "Bash(aidoc-locate *)",
+      "Bash(go version *)",
+      "Bash(check-dir-age *)",
+      "Bash(repo-last-pulled *)",
+      "Bash(journalctl *)",
+      "Bash(dmesg *)",
+      "Bash(sensors *)",
+      "Bash(systemctl status *)",
+      "Bash(last *)",
+      "Bash(aws ssm get-document *)",
+      "Bash(aws ssm list-documents *)",
+      "Bash(aws ssm describe-document *)",
+      "Bash(aws ssm describe-sessions *)",
+      "Bash(aws ssm get-parameter *)",
+      "Bash(aws ec2 describe-tags *)",
+      "Bash(aws ec2 describe-images *)",
+      "Bash(aws ec2 describe-instances *)",
+      "Bash(aws ec2 describe-instance-status *)",
+      "Bash(aws ec2 describe-security-groups *)",
+      "Bash(aws sts get-caller-identity *)",
+      "Bash(aws rds describe-db-clusters *)",
+      "Bash(aws secretsmanager describe-secret *)",
+      "Bash(aws cloudfront list-distributions *)",
+      "Bash(aws cloudformation describe-stacks *)"
+    ],
+    "deny": [
+      "Bash(find * -exec *)",
+      "Bash(find * -execdir *)",
+      "Bash(find * -ok *)",
+      "Bash(find * -okdir *)",
+      "Bash(find * -delete)",
+      "Bash(curl * -X POST *)",
+      "Bash(curl * -X PUT *)",
+      "Bash(curl * -X DELETE *)",
+      "Bash(curl * -X PATCH *)",
+      "Bash(curl * -d *)",
+      "Bash(curl * --data *)",
+      "Bash(curl * --data-raw *)",
+      "Bash(curl * --data-binary *)",
+      "Bash(curl * --upload-file *)",
+      "Bash(curl * -T *)",
+      "Bash(curl * -o *)",
+      "Bash(curl * --output *)",
+      "Bash(curl * -O *)",
+      "Bash(curl * --remote-name *)"
+    ],
+    "additionalDirectories": [
+      "~/common/aidoc",
+      "~/common",
+      "~/docs/ai/screenshots"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/common/conf/ai/devtools/claude-code-set-notification"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/common/conf/ai/devtools/claude-code-clear-notification"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/common/conf/ai/devtools/claude-code-clear-notification"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/common/conf/ai/devtools/claude-code-clear-notification"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "feature-dev@claude-plugins-official": true
+  },
+  "alwaysThinkingEnabled": true,
+  "mcpServers": {
+    "google-sheets": {
+      "command": "node",
+      "args": [
+        "/home/buddy/proj/claude-code-gsheets-mcp-server/google_sheets_mcp_server.js"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "atlassian-remote": {
+      "type": "sse",
+      "url": "https://mcp.atlassian.com/v1/sse"
+    }
+  }
+}

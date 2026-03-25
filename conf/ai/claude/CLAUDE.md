@@ -31,7 +31,12 @@ Examples:
 Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `--check`
 
 ## Git Commands
-- Do NOT use `git -C <path>` when `<path>` is the current working directory. Run git commands directly (e.g. `git log`, not `git -C /home/buddy/workproj/CE log`). The `-C` flag is redundant when pointing to cwd and triggers unnecessary permission prompts.
+- **Never use `git -C`** to point at the current working directory — just
+  run `git` directly.  The `-C` flag causes every command to require a
+  separate permission prompt, which is disruptive and annoying.  If you
+  catch yourself writing something like `git -C /export/proj/common ...`
+  or `git -C /home/buddy/workproj/CE ...` and that path is your cwd,
+  drop the `-C <path>` part entirely.
 
 ## Jira Ticket References
 - **Default Project**: CLASS
