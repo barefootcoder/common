@@ -169,6 +169,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 	s{ - }{&nbsp;$blog{$blog_type}->{ndash} }g;										# en dash
 	s{$LIST_REGEX}{list($2 => $1)}meg;												# un/ordered lists (incl embedded)
 	s{(^|>)h(\d+)\.\s*(.*?)\n}{$1<h$2>$3</h$2>}mg;									# headers
+	s{^(#+)\s*(.*?)\n}{"<h" . length($1) . ">$2</h" . length($1) . ">"}meg;			# headers (Markdown-style)
 	if (bbstyle)
 	{
 		s{\[\*\]}{\cL}g;															# tuck these away so they don't get
@@ -185,7 +186,7 @@ $footnote_style = '1' if s/\^\^/^^/g > 3;								# switch to numbers if a lot of
 		no warnings 'uninitialized';
 		s{([^ ])\.\.\. }{$1...&nbsp;}g;												# front ellipsis (rare, but it happens)
 		s{ \.\.\.}{&nbsp;...}g;														# normal ellipsis
-		s{([.?!:]([])]|\&rdquo;|</a>)*?[*_]?)  }{$1&nbsp; }g;						# proper end-of-sentence
+		s{([.?!:>]([])]|\&r[sd]quo;|</.*?>)*)  }{$1&nbsp; }g;						# proper end-of-sentence
 		s{(\cQ\d+)  }{$1&nbsp; }g;													# proper end-of-sentence after link
 		s{^( +)}{'&nbsp;' x length($1)}meg;											# indent
 		s{\^\@(.*?)\@}{fmt(smallcap => $1)}seg;										# small caps (very rare)
@@ -456,6 +457,7 @@ func diacritic_fixup ($string is alias)
 		'mon frere'		=>  { 7 => 'grave', },
 		'deja vu'		=>	{ 2 => 'acute', 4 => 'grave', },
 		'raison detre'	=>	{ 9 => 'circ',  8 => q|'|,    },
+		'coup de grace'	=>	{11 => 'circ',	},
 		'piece de resistance'
 						=>	{ 3 => 'grave', 11 => 'acute', },
 		'Beyonce'		=>	{ 7 => 'acute', },
