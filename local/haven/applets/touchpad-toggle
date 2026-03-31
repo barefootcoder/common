@@ -7,7 +7,8 @@ use Proc::Pidfile;
 use File::Basename;
 
 my $my_dir = dirname($0);
-my $touchpad_device = 13;
+my @touchpad_devices = find_touchpad_devices();
+die("no touchpad devices found!\n") unless @touchpad_devices;
 my $pidfile_path = "/var/tmp/run/touchpad-toggle.pid";
 my $toggle_prev_run = (@ARGV and $ARGV[0] eq "toggle");
 
@@ -64,9 +65,19 @@ my $button = $frame->Button(
     -command => \&toggle_touchpad
 )->pack();
 
+sub find_touchpad_devices
+{
+	my @ids;
+	for (`xinput list`)
+	{
+		push @ids, $1 if /[Tt]ouchpad\b.*\bid=(\d+)/;
+	}
+	return @ids;
+}
+
 sub read_touchpad_state
 {
-	my ($state) = grep /Enabled/, `xinput list-props 13`;
+	my ($state) = grep /Device Enabled/, `xinput list-props $touchpad_devices[0]`;
 	$state =~ /:\s+(\d)/;
 	my $on_off = $1;
 	die("cannot determine touchpad state!") unless defined $on_off and ($on_off == 0 or $on_off == 1);
@@ -76,7 +87,7 @@ sub read_touchpad_state
 sub toggle_touchpad
 {
 	$is_touchpad_enabled ^= 1;
-	system("xinput --set-prop $touchpad_device 'Device Enabled' $is_touchpad_enabled");
+	system("xinput --set-prop $_ 'Device Enabled' $is_touchpad_enabled") for @touchpad_devices;
 	$button->configure(-text => "Touchpad $text[$is_touchpad_enabled]", -image => $image[$is_touchpad_enabled]);
 }
 
