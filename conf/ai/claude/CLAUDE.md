@@ -45,3 +45,21 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
 - Only use different project prefixes when explicitly specified (e.g., "PROJ-123")
 - **"My tickets" interpretation**: When user says "my tickets", this means "any ticket with a development owner of me" (not just assignee)
 
+## EC2 Instance Tracking
+
+A tracking file at `~/work/ec2-instances/instances.yaml` records all EC2
+instances currently launched by this user.  See the `README.md` in that
+directory for full format details.
+
+**When you launch an EC2 instance** (via `ec2-launch-instance`, `preqa-launch`,
+the quin launch process, etc.), add an entry to `instances.yaml` with at minimum
+the `id`, `host_class`, and `launched` date.  Include `ticket` and `purpose`
+when known.
+
+**When you terminate an EC2 instance** (via `ec2-kill-instance`), remove its
+entry from `instances.yaml`.
+
+**When choosing an instance for testing**, consult `instances.yaml` to find an
+existing instance that matches the needed host class and purpose, rather than
+launching a new one unnecessarily.
+
