@@ -31,6 +31,7 @@
       "Bash(gh issue list *)",
       "Bash(gh issue view *)",
       "Bash(gh issue status *)",
+      "Edit(//export/work/ce/triage.md)",
       "mcp__google-sheets__get_spreadsheet_info",
       "mcp__google-sheets__read_range",
       "mcp__google-sheets__write_range",
@@ -286,5 +287,6 @@
       "type": "sse",
       "url": "https://mcp.atlassian.com/v1/sse"
     }
-  }
+  },
+  "effortLevel": "high"
 }

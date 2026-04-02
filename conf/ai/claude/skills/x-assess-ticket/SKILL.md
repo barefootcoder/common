@@ -5,7 +5,7 @@ argument-hint: [ticket-number]
 model: opus
 context: fork
 disable-model-invocation: true
-allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(git log*), Bash(ls*), Bash(mkdir*), Read, Glob, Grep, Write
+allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(git log*), Bash(ls*), Bash(mkdir*), Bash(date*), Read, Glob, Grep, Write, mcp__google-sheets__*
 ---
 
 # Ticket Assessment Workflow
@@ -136,6 +136,71 @@ Use this template:
 ---
 [Created and submitted by AI: Claude]
 ```
+
+## 9. Update Todo Sheet (Split Open Item)
+
+After writing the summary file, update the Google Sheets todo list to close the assessment task and create the next task.
+
+**Get configuration:**
+```bash
+ticket-config sheets-id
+```
+
+**Calculate work date (sheet's "today"):**
+The sheet's concept of "today" is shifted by -6 hours (times before 6 AM count as the previous day):
+```bash
+date -d "6 hours ago" '+%-m/%-d/%Y'
+```
+
+### 9a. Find the Assessment Task
+
+**Primary method (search from bottom of RawData):**
+1. Call `mcp__google-sheets__find_empty_row` with `sheetName: "RawData"` → row N
+2. Call `mcp__google-sheets__read_range` with range `RawData!A{N-20}:J{N}` (last 20 rows)
+3. Look for the row whose Job column (I) matches the ticket number
+
+**Fallback (if not found in last 20 rows):**
+1. Call `mcp__google-sheets__read_range` with range `OpenItems!A2:J500`
+2. Find the row whose Job column (I) matches the ticket number — note the ID from column A
+3. Read `RawData!A{N-100}:A{N}` and search for that ID to get the actual RawData row number
+4. Read that row's full data from RawData
+
+### 9b. Close the Existing Task
+
+Update the found row on **RawData** (not OpenItems):
+- Set **Completed** (column G) to the work date
+- Set **Priority** (column B) to empty string
+
+Use `mcp__google-sheets__write_range` to write just those two cells.
+
+### 9c. Create the Follow-up Task
+
+1. The first empty row N (from step 9a) is where the new task goes
+2. Get the last ID: call `mcp__google-sheets__read_range` with range `RawData!A{N-1}:A{N-1}`
+3. New ID = last ID + 1
+4. Determine due date: if the original task's Due (column F) is in the future, keep it; otherwise use the work date
+5. Write the new row using `mcp__google-sheets__write_range`:
+   - Range: `RawData!A{N}:J{N}`
+   - Values: `[["ID", "", "Task", "Work", "WORK_DATE", "DUE_DATE", "", "", "TICKET", "Implement Claude's plan and review results"]]`
+
+**RawData Columns (10 total, A-J):**
+| A | B | C | D | E | F | G | H | I | J |
+|---|---|---|---|---|---|---|---|---|---|
+| ID | Priority | List | Context | Added | Due | Completed | Project | Job | Description |
+
+**Then proceed to Completion.**
+
+---
+
+## Completion
+
+After ALL steps are complete (including the sheet update), report:
+- The summary file path
+- That the assessment task was closed and the implementation task was created
+
+**Then STOP.**
+
+---
 
 ## Guidelines
 

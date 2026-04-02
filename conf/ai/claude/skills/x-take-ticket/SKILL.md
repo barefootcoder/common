@@ -22,10 +22,11 @@ You are onboarding a Jira ticket into the user's task management systems.
 - Offering help with the ticket after setup
 
 ### REQUIRED (you MUST do ALL of these):
+0. Get ticket info and ask for timer name (only user prompt — do this FIRST)
 1. Pre-flight validation
 2. Jira setup (assign, set dev owner, transition)
 3. Google Sheets job creation (RawJobs)
-4. Google Sheets task creation (RawData) - ask about subtasks first
+4. Google Sheets task creation (RawData)
 5. Triage file update
 6. Timer file update
 
@@ -39,6 +40,28 @@ Run these from the skill's `scripts/` directory:
 - `jira-ticket-info <TICKET>` - Shows ticket summary
 - `jira-take-ticket <TICKET>` - Assigns ticket, sets dev owner, transitions to "On Deck"
 - `timer-update <name> <summary> <ticket>` - Inserts timer entries into both sections of the timer file
+
+---
+
+## Step 0: Get Ticket Info and Timer Name
+
+This is the ONLY user interaction in the entire workflow. Do it first so everything else runs autonomously.
+
+1. Run `jira-ticket-info <TICKET>` to get the ticket summary
+2. Generate a suggested timer name in kebab-case based on the ticket content (e.g., `clickout-data-cols-fix`)
+3. **Use the AskUserQuestion tool** with these parameters:
+   - question: "What timer name should I use? (Type '+' to accept the suggestion above, or enter your own)"
+   - header: "Timer"
+   - options:
+     - label: "+", description: "Accept the suggested timer name"
+     - label: "Custom", description: "I'll type my own timer name"
+
+**When the user answers, continue IMMEDIATELY. Do NOT ask anything else.**
+
+- If user types "+" or selects "+": Use your suggested timer name
+- Otherwise: Use what they provided as the timer name
+
+**Save the timer name and ticket summary for later steps.**
 
 ---
 
@@ -59,9 +82,7 @@ Run `ticket-preflight` and wait for it to pass.
 ## Step 2: Jira Setup
 
 1. Run `jira-take-ticket <TICKET>` to assign, set dev owner, and transition
-2. Run `jira-ticket-info <TICKET>` to verify and get the summary
-
-**Save the ticket summary for later steps.**
+2. Run `jira-ticket-info <TICKET>` to verify (summary was already saved from Step 0)
 
 ---
 
@@ -88,38 +109,16 @@ ticket-config sheets-id
 
 ---
 
-## Step 4: Subtask Decision and Task Creation
+## Step 4: Task Creation
 
-**Use the AskUserQuestion tool** with these parameters:
-- question: "Do you want to break this ticket down into subtasks now?"
-- header: "Subtasks"
-- options:
-  - label: "No", description: "Create a single 'Survey the damage' task"
-  - label: "Yes", description: "I'll provide subtask descriptions"
-
-**When the user answers, continue IMMEDIATELY. Do NOT:**
-- Output any preamble or acknowledgment
-- Ask if they need help with anything else
-- Interpret their response as a new task
-
-**If user says NO (or selects "No"):**
-
-Create a single "survey" task in RawData:
+Create a single "assess" task in RawData:
 
 1. Call `mcp__google-sheets__find_empty_row` with `sheetName: "RawData"`
 2. Get last ID: Call `mcp__google-sheets__read_range` with range `RawData!A{row-1}:A{row-1}`
 3. Calculate new ID = last ID + 1
 4. Write task using `mcp__google-sheets__write_range`:
    - Range: `RawData!A{row}:J{row}`
-   - Values: `[["ID", "", "Task", "Work", "WORK_DATE", "WORK_DATE", "", "", "TICKET", "Survey the damage and come up with a plan"]]`
-
-**Then proceed IMMEDIATELY to Step 5.**
-
-**If user says YES (or selects "Yes"):**
-
-1. Ask user to provide all subtask descriptions (they can list them all at once)
-2. Find empty row and last ID as above
-3. Write each subtask with sequential IDs, same format but with their descriptions
+   - Values: `[["ID", "", "Task", "Work", "WORK_DATE", "WORK_DATE", "", "", "TICKET", "Have Claude assess the ticket"]]`
 
 **Then proceed IMMEDIATELY to Step 5.**
 
@@ -164,23 +163,7 @@ ticket-config triage-file
 
 ## Step 6: Timer File Update
 
-### 6a. Ask for Timer Name
-
-Generate a suggested timer name in kebab-case based on the ticket content (e.g., `clickout-data-cols-fix`), then **use the AskUserQuestion tool** with these parameters:
-- question: "What timer name should I use? (Type '+' to accept the suggestion above, or enter your own)"
-- header: "Timer"
-- options:
-  - label: "+", description: "Accept the suggested timer name"
-  - label: "Custom", description: "I'll type my own timer name"
-
-### 6b. Process the Answer and Run Script
-
-**When the user answers, continue IMMEDIATELY to finish the skill.**
-
-- If user types "+" or selects "+": Use your suggested timer name
-- Otherwise: Use what they provided as the timer name
-
-**Run the `timer-update` script** with the timer name, summary, and ticket:
+**Run the `timer-update` script** with the timer name (from Step 0), summary, and ticket:
 
 ```bash
 timer-update <timer-name> '<summary>' <ticket>
