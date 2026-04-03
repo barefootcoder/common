@@ -1,16 +1,18 @@
 ---
-disable-model-invocation: true
+description: "Git commit with proper message formatting. MUST be invoked any time you are about to run `git commit` — whether the user explicitly requests a commit, you are wrapping up a task, or committing is part of a larger workflow. Never run `git commit` without loading this skill first."
 ---
 
 # Git Commit Skill
 
 Create or amend git commits with proper message formatting.
 
+**This skill is mandatory for all git commits.** Do not run `git commit` directly — always invoke this skill first so that commit message formatting, attribution, and constraints are applied correctly.
+
 ## Scope Determination
 
-Invoked as: `/x-commit {{ARGS}}`
+Invoked as: `/x-commit {{ARGS}}` — or auto-invoked when a commit is needed.
 
-- **No args**: Commit files modified during this conversation
+- **No args / auto-invoked**: Commit files modified during this conversation
 - **With args**: Specific files, or instructions like "amend", or both
 
 ## Commit Message Format
