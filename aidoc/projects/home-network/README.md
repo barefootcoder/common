@@ -59,6 +59,32 @@ The following files contain summaries from previous AI collaboration sessions. T
 - `summary:intermittent-shutdowns-diagnosis.md` - *(Historical)* Analysis of system shutdown problems
 - `summary:intermittent-shutdowns.html` - *(Historical)* HTML version of shutdown diagnostics
 
+## EC2 Sandbox ("Quin") Connection Details
+
+**⚠️ IMPORTANT FOR AI AGENTS**: Read this section whenever the user mentions their "quin", "quin terminal", or EC2 sandbox — including connectivity issues, terminal lockups, or debugging remote sessions.
+
+### How the User Connects to the Quin
+
+The quin is an **EC2 instance** (not a local Vagrant VM — do not confuse with the local Vagrant sandbox on 127.0.0.1:2222). Connection details:
+
+- **Script**: `local/avalir/bin/term-quin` launches the terminal window
+- **Method**: SSH over **Tailscale VPN on port 8822** (not port 22)
+- **Username**: `$CE_REMOTE_USERNAME` (currently `bburden`) — NOT `vagrant`, NOT `buddy`
+- **Tailscale hostname**: Check `tailscale status` output for `quin-*` entry
+- **Connection log**: `/tmp/term-quin.log` (verbose SSH debug output, check tail for recent events)
+- **Session multiplexing**: GNU Screen runs inside the SSH session with many windows (tcsh shells)
+- **Keepalive**: `ServerAliveInterval=60`, `ServerAliveCountMax=3`
+
+To SSH to the quin from Avalir:
+```bash
+ssh -p 8822 bburden@<tailscale-hostname-or-ip>
+```
+
+### Known Connectivity Issues
+
+- The Tailscale connection may go through a **DERP relay** (check `tailscale status` for "relay" in the output). Relay connections can cause intermittent freezes/lockups.
+- Previous incidents show `tcsetattr: Input/output error` in the connection log when the connection path degrades.
+
 ## EC2 Sandbox Sync Integration
 
 **⚠️ IMPORTANT FOR AI AGENTS**: Only read this section if the user specifically mentions EC2 sandboxes, syncing with EC2, or working with "quin" instances. Otherwise, skip this section.
