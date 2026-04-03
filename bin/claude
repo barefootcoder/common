@@ -11,7 +11,7 @@ my $ME = 'claude';
 
 # find `claude`
 my $CLAUDE_PATH;
-foreach (map { "$_/claude" } glob("~/.claude/local/bin"), qw< /var/npm/bin /usr/local/bin >, glob("~/.local/bin"))
+foreach (map { "$_/claude" } glob("~/.claude/local/bin"), glob("~/.local/bin"), qw< /var/npm/bin /usr/local/bin >)
 {
 	if (-x) { $CLAUDE_PATH = $_; last; }
 }

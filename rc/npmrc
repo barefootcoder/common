@@ -1,0 +1,2 @@
+prefix=/var/npm
+ignore-scripts=true
