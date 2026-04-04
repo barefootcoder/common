@@ -67,6 +67,7 @@ token overflow.
 | NewTask       | Quick-entry form for adding tasks from the sheet UI      |
 | Today         | Daily schedule / calendar day view                       |
 | Diary         | End-of-day archival of completed daily items             |
+| RecentItems   | FILTER view of RawData items recently added, due, or completed (controlled by `RecentItemsDaysLookback` named range) |
 
 Several additional helper tabs (ItemId, Job, JumpTab, PushToday, PushJob) serve
 as lookup tables consumed by the Google Apps Script macros.
