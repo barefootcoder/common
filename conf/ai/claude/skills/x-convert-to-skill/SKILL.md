@@ -5,7 +5,7 @@ argument-hint: <path-to-instruction-file>
 model: opus
 context: fork
 disable-model-invocation: true
-allowed-tools: Bash(*), Read, Write, Edit, Glob, Grep, mcp__google-sheets__*
+allowed-tools: AskUserQuestion, Bash(*), Read, Write, Edit, Glob, Grep, mcp__google-sheets__*
 ---
 
 # Convert Instruction File to Skill
