@@ -51,15 +51,29 @@ if ($screen_info =~ m{/\((\d+),(\d+)\)})
 $ENV{TERM} = 'screen-256color';
 $ENV{CLAUDE_CODE_DISABLE_TERMINAL_TITLE} = 1;
 
+# Clean up stale tmux sockets from previous launches.
+# Per-PID sockets accumulate as dead files when servers exit.
+my $tmux_dir = "/tmp/tmux-$>/";
+if (-d $tmux_dir)
+{
+	for my $sock (glob("${tmux_dir}claude-*"))
+	{
+		(my $name = $sock) =~ s{.*/}{};
+		# if no server is listening, the socket is stale
+		`tmux -L \Q$name\E has-session 2>/dev/null`;
+		unlink $sock if $?;
+	}
+}
+
 # Wrap Claude in tmux to absorb TUI redraws.
 # tmux maintains an internal screen grid and only forwards diffs to the outer
 # terminal (screen), which dramatically reduces the visible repaint churn
 # when Claude Code redraws its entire viewport over ssh.
-my $tmux_session = "claude-$$";
+my $tmux_socket = "claude-$$";
 my $tmux_conf = glob("~/common/conf/tmux-claude.conf");
 exec 'tmux',
 	'-u',									# force UTF-8 (remote machines may not advertise it via locale)
-	'-L', 'claude',							# separate socket so we don't collide with user tmux sessions
+	'-L', $tmux_socket,						# per-PID socket so each launch gets a fresh server (reads current config)
 	'-f', $tmux_conf,
-	'new-session', '-s', $tmux_session,
+	'new-session',
 	$CLAUDE_PATH, @ARGV;

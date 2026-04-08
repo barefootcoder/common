@@ -41,14 +41,15 @@ Each layer strips or mangles something. The key missing technology is **DEC mode
 
 ## Solutions Investigated
 
-### 1. claude-chill (PTY proxy) -- RECOMMENDED TO TRY
+### 1. claude-chill (PTY proxy) -- REJECTED
 
 - **What**: A Rust-based PTY proxy ([github.com/davidbeesley/claude-chill](https://github.com/davidbeesley/claude-chill)) that sits between Claude Code and the terminal, performing differential rendering
 - **How it helps**: Intercepts Claude Code's massive redraws and sends only changed lines to screen, reducing the escape sequence storm by ~85%
 - **Install**: `cargo install --git https://github.com/davidbeesley/claude-chill`
-- **Concern**: Differential rendering could affect what `screen -X hardcopy -h` captures. However, saved buffers are already degraded (mangled Unicode, null bytes, repeated blocks), so the risk is manageable
-- **Testing approach**: Run claude-chill in one screen window, regular claude in another, do the same task, compare buffers with `screen-bufsave` + `screen-bufcmp`
-- **Status**: Not yet tested
+- **Problem**: Bypasses GNU screen's scrollback buffer entirely. This has two serious consequences:
+  1. Previous output that scrolls off-screen is nearly impossible to review (claude-chill's own internal scrollback has severe limitations)
+  2. Defeats the `screen-bufsave` system, which provides searchable archives of terminal output including AI sessions
+- **Status**: Tested and rejected due to scrollback incompatibility
 
 ### 2. Terminal emulator replacement -- RECOMMENDED
 
@@ -104,14 +105,29 @@ To activate: change line 4 of `myterm` from `termprog=urxvt` to `termprog=kitty`
 
 - **Font size conversion**: The `pixels * 0.75` conversion assumes 96 DPI. May need adjustment depending on display. Kitty also does its own DPI scaling.
 - **SSH faux_term**: Resolved. Changed from urxvt-specific `-tn vt100` to terminal-agnostic `env TERM=vt100` command prefix. This works with any terminal emulator and is actually an improvement: the local terminal retains full rendering capabilities while only the remote host sees `vt100`.
-- **Background tint**: May need `-o background_tint=0.3` or similar added to the Kitty args if text readability suffers over the background image.
-- **claude-chill + screen buffer interaction**: Needs empirical testing before committing to regular use.
+- **Kitty colors/tinting**: Handled via `conf/kitty/kitty.conf` (cursor blink, bell, blue→cyan remap, bold-as-bright).
+- **tmux bold degradation**: tmux provably sends `\e[1m` (bold) to screen (confirmed via `script` byte capture), but GNU screen loses the bold font weight when the source is tmux's pty. Bold works correctly in kitty+screen (no tmux) and kitty+tmux (no screen), but NOT in the full kitty+screen+tmux chain. Root cause unknown — possibly a GNU screen 4.09 bug in attribute handling for alternate-screen-mode ptys. **Workaround**: `bold_is_bright yes` in `conf/kitty/kitty.conf` makes bold use bright color variant, which survives the full chain.
 - **GNU screen DEC 2026 passthrough**: Watch for future screen patches that add support. This would be the most impactful single fix if it ever lands.
+
+## Current Solution: tmux Rendering Buffer (April 2026)
+
+The winning approach wraps Claude Code in tmux, which acts as a differential rendering buffer between Claude Code and screen. See `bin/claude` and `conf/tmux-claude.conf`.
+
+- tmux maintains its own screen grid and only forwards diffs to screen
+- Dramatically reduces visible repaint churn during Claude Code's full-screen TUI redraws
+- Preserves screen's scrollback buffer (unlike claude-chill)
+- Per-PID sockets (`-L claude-$$`) so each launch gets a fresh tmux server that reads the current config
+- Minimal config: no status bar, no scrollback (screen handles it), `remain-on-exit` for post-exit visibility
+- Dead pane dismiss via Enter/q keybindings
+- `exit-unattached on` ensures server auto-exits if screen window is closed without dismissing
+- `default-terminal "tmux-256color"` + `terminal-overrides` with `Tc` for proper terminal capabilities
 
 ## Next Steps
 
 1. ~~Install Kitty, test with `myterm` by changing `termprog=kitty`~~ Done
-2. Tweak font size and background tint as needed
-3. Install and test `claude-chill` with the side-by-side buffer comparison approach
-4. If Kitty + claude-chill together resolve the worst corruption, consider making Kitty the default in `myterm`
-5. Verify `env TERM=vt100` SSH title suppression works on remote terminals
+2. ~~Test `claude-chill`~~ Rejected (bypasses screen scrollback)
+3. ~~Wrap Claude Code in tmux as rendering buffer~~ Done, working well
+4. ~~Fix tmux bold degradation~~ Workaround: `bold_is_bright yes` in kitty.conf
+5. Clean up stale tmux socket files (`/tmp/tmux-1000/claude-*`) — add cleanup to wrapper
+6. Verify `env TERM=vt100` SSH title suppression works on remote terminals
+7. Investigate GNU screen 4.09 bold attribute bug with tmux ptys (low priority — workaround in place)
