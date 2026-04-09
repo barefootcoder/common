@@ -9,7 +9,16 @@
   - Client steering enabled for better device connectivity
 - **Network Switches**:
   - TP-Link gigabit switch connected directly to the modem
-  - Small 4-port hub located in office area
+  - Netgear switch in office area (5 ports: 3 in use, 2 free as of April 2026)
+    - Current: Avalir, Zadash, uplink to router
+    - Planned: Graymoor + IP-KVM will use the 2 free ports (Zadash port frees up after decommission)
+- **IP-KVM**: Sipeed NanoKVM Lite (E variant) for out-of-band console access to Graymoor
+  - Hardware: LicheeRV Nano E (RISC-V SG2002, 256MB DDR3) + HDMItoCSI board
+  - Connections: HDMI + USB-C to Graymoor (USB provides both HID and power), Ethernet to office hub
+  - 100Mbps Ethernet, 1080P@60fps capture, open-source software
+  - 3D-printed case (STL from Printables) for dust protection
+  - Provides browser-based console access independent of Graymoor's network state
+  - Status: purchased April 2026, pending assembly and deployment
 
 ## Machines
 - **Linux Systems**:
@@ -38,6 +47,12 @@
     - Has mounted (via `sshfs`) copies of shares from Avalir
     - Interactive shell: tcsh; scripts use bash
     - Filesystem: Likely has UsrMerge (to be verified)
+    - Being replaced by Graymoor (see below)
+  - **Graymoor**: Debian 13.2 (Trixie) — headless server, replacing Zadash
+    - Currently not yet connected to network; OS installed, pending initial setup
+    - Planned: hardwired Ethernet to office hub
+    - Planned: SSH, Tailscale, Syncthing, sshfs shares (mirroring Zadash's role)
+    - Console access via IP-KVM device (see Network Hardware section)
   - **Caemlyn**: 
     - Static IP: [see private/network-details.md]
     - Being decommissioned; contains backups pending transfer to new NAS
@@ -62,6 +77,10 @@
   - Various shares configured between machines
   - Versioning setup on Zadash
   - Planned integration with NAS and EC2 servers
+
+## Other Hardware
+- **3D Printer**: Bambu Lab A1
+  - Used for printing equipment enclosures (e.g., NanoKVM case)
 
 ## Smart Home Infrastructure
 - Amazon Alexa ecosystem with multiple Echo Dots
@@ -96,9 +115,10 @@
   - Connected to Tailscale network
 
 ## Planned Upgrades
+- **Graymoor setup**: Connect to network, configure SSH, Tailscale, Syncthing; replace Zadash's role
 - Complete Tailscale access for EC2 servers
-- Fix hardwired connection for Zadash
 - Implement automated backup schedules using rsync scripts
 - Configure Syncthing on Nakama NAS
 - Decommission Caemlyn after remaining data migration
+- Decommission Zadash after Graymoor is fully operational
 - Consider adding second drive to Nakama for RAID-1 redundancy

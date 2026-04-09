@@ -124,6 +124,11 @@ If user asks about EC2 sandbox sync:
   - Proof-of-concept complete, semi-automated setup available
   - See EC2 Sandbox Sync Integration section if working on this
 - **Haven GPU/Crash Issues Resolved** (February 2026): Kernel upgrade from 6.1-oem to 6.8-generic fixed the i915 GPU driver bugs causing crashes. Haven now runs modesetting + iris + glamor with proper hardware acceleration. See `summary:haven-kernel-upgrade-and-gpu-fix.md` for details.
+- **Graymoor Setup In Progress** (April 2026): New headless server (Debian 13.2) to replace Zadash
+  - OS installed; not yet connected to network
+  - IP-KVM purchased: Sipeed NanoKVM Lite (E variant), pending assembly
+    - 3D-printed case planned (Bambu Lab A1 printer available)
+  - Next steps: assemble NanoKVM, flash SD, connect to office hub, configure SSH/Tailscale/Syncthing
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
 
 ## Tools and Scripts
