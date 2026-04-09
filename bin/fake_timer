@@ -103,7 +103,7 @@ while ( <> )
 				{
 					if ($cmd eq 'daybreak')
 					{
-						breakdown(sort @daybreak);
+						breakdown(sort { my ($x,$y) = map { /^(?:2\/)?(\d+)/; $1 } $a, $b; $x <=> $y } @daybreak);
 					}
 					else
 					{
