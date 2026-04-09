@@ -14,13 +14,15 @@ Load comprehensive context for working on the Claude Code installation and confi
 
 ## Step 1: Get Claude Code Knowledge
 
-Invoke the `claude-code-guide` agent to answer whatever question the user is asking. Include this context in your prompt to the agent:
+**ALWAYS invoke the `claude-code-guide` agent first** — before reading files, before making changes, before anything else. Claude Code has complex, non-obvious configuration schemas (settings.json structure, hook event types, permission syntax, MCP server formats, skill frontmatter fields, etc.) that you are unlikely to know correctly without the agent's help. Even tasks that seem simple often depend on getting a field name, valid value, or nesting level right.
+
+Include this context in your prompt to the agent:
 
 > The user runs Claude Code on Linux Mint inside GNU screen + Kitty terminal.
 > They have a Perl wrapper script, custom hooks, MCP servers, and a symlinked config structure.
 > Please answer their question with full knowledge of Claude Code's capabilities.
 
-If the user's request is purely about local config (e.g., "change my npmrc"), skip the agent and just do it.
+The **only** exception is when the task has zero interaction with Claude Code concepts — e.g., editing `~/.npmrc` or changing a shell alias. If the task touches `settings.json`, hooks, permissions, MCP servers, skills, agents, commands, or any Claude Code feature, invoke the agent.
 
 ## Step 2: Local Setup Reference
 
