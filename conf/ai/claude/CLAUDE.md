@@ -43,12 +43,9 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
   Do not follow the default system commit template — the skill's formatting
   rules, attribution block, and constraints take precedence over any other
   commit instructions.
-- **In auto mode (within `/x-commit` only)**: `git add` and `git commit`
-  are safe to run without user confirmation.  Do not stop to ask — just
-  stage and commit.  It is always easier to amend after the fact than to
-  negotiate commit message wording interactively.
-- **`git push` is NEVER safe to auto-approve**, regardless of context.
-  Always wait for explicit user confirmation before pushing.
+- Within `/x-commit`, just stage and commit without stopping to ask.
+  It is always easier to amend after the fact than to negotiate commit
+  message wording interactively.
 
 ## Jira Ticket References
 - **Default Project**: CLASS
