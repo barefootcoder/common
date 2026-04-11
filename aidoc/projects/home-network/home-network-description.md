@@ -32,6 +32,7 @@
     - Interactive shell: tcsh; scripts use bash
     - Filesystem: UsrMerge implemented (/bin → /usr/bin, etc.)
     - Note: Clevo laptop with DKMS keyboard backlight module
+    - Note: Keyboard generates non-standard keycodes for numpad keys (e.g., keypad decimal is keycode 129 `<KPPT>` instead of standard 91 `<KPDL>`)
   - **Avalir**: Linux Mint 21.1 (Vera) running Mate, based on Ubuntu Jammy
     - Desktop machine hardwired through office hub
     - Static IP: [see private/network-details.md]
