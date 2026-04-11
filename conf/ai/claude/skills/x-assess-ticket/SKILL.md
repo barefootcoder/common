@@ -3,7 +3,6 @@ name: x-assess-ticket
 description: Assess the current state of a Jira ticket and produce a summary for development work
 argument-hint: [ticket-number]
 model: opus
-context: fork
 disable-model-invocation: true
 allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(git log*), Bash(ls*), Bash(mkdir*), Bash(date*), Read, Glob, Grep, Write, mcp__google-sheets__*
 ---

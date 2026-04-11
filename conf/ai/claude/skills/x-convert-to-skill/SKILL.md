@@ -3,7 +3,6 @@ name: x-convert-to-skill
 description: Convert an existing instruction file (scenario, agent, command) into a proper Claude Code skill
 argument-hint: <path-to-instruction-file>
 model: opus
-context: fork
 disable-model-invocation: true
 allowed-tools: AskUserQuestion, Bash(*), Read, Write, Edit, Glob, Grep, mcp__google-sheets__*
 ---
@@ -46,9 +45,14 @@ Ask the user these questions (use AskUserQuestion tool):
    - Explicit only (`disable-model-invocation: true`): For commands like `/commit`, `/deploy`
    - Auto-trigger allowed: For contextual skills Claude might invoke when relevant
 
-4. **Model preference**: Default is Opus in forked context. Ask if they want different.
+4. **Model preference**: Default is Opus. Ask if they want different.
 
-5. **Private config handling**: If private data detected, confirm approach:
+5. **Forked context**: Should it run in an isolated subagent (`context: fork`)?
+   - **Fork when**: The skill does heavy exploration (many file reads/greps) that would bloat context, OR conversation isolation is actively desirable, OR the user plans to keep working for many turns after invoking it and doesn't need the skill's detailed output
+   - **Don't fork when**: The user might want to ask follow-up questions about the results, OR the skill benefits from seeing prior conversation context (e.g., stacking with other skills), OR the user typically exits the session after running it (context savings go unused)
+   - **Default recommendation: don't fork** — most skills benefit more from conversation awareness and result persistence than from context savings
+
+6. **Private config handling**: If private data detected, confirm approach:
    - Create config-retrieval scripts that read from external private file
    - Reference private config location in instructions (user provides path)
 
@@ -72,7 +76,7 @@ name: <skill-name>
 description: <one-line description>
 argument-hint: <hint for arguments, if any>
 model: opus
-context: fork
+# context: fork         # only if user opted for isolated subagent
 disable-model-invocation: true  # or false
 allowed-tools: <tool patterns>
 ---

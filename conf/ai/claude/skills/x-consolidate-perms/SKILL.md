@@ -2,7 +2,6 @@
 name: x-consolidate-perms
 description: Audit project-local Claude Code permissions and migrate appropriate ones to user scope
 model: opus
-context: fork
 disable-model-invocation: true
 allowed-tools: Bash(*), Read, Write, Edit, Glob, Grep
 ---
