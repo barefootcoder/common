@@ -335,7 +335,8 @@
       "git add and git commit are allowed when the user has explicitly requested a commit (e.g. via /x-commit or 'commit this')"
     ],
     "soft_deny": [
-      "Do not run git add or git commit spontaneously — only when the user has asked to commit"
+      "Do not run git add or git commit spontaneously — only when the user has asked to commit",
+      "ln -sf is never safe — always confirm before creating or overwriting symlinks (ln -sf into an existing directory silently creates a link inside it rather than replacing it)"
     ]
   },
   "skipAutoPermissionPrompt": true,
