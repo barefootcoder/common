@@ -27,6 +27,7 @@ my %DESCRIPTIONS =
 							qr/Bank of America/i,
 							qr/Nationstar dba/i,
 							qr/NSM DBAMR.COOPER/i,
+							qr/Rocket Mortgage/i,
 						],
 	'Power/Heat'	=>	[
 							qr/S CA Edison/i,
