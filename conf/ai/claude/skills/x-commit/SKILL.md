@@ -37,7 +37,8 @@ Generated, partially or fully, using [Claude Code](https://claude.ai/code)
 
 ### Body
 
-- Word-wrap body text at ~100 characters.  Do not leave lines unwrapped — GitHub does not always handle long lines gracefully in commit messages.
+- Word-wrap body text at 95 characters.  Do not leave lines unwrapped — GitHub does not always handle long lines gracefully in commit messages.  For reference, this ruler is exactly 95 characters:
+  `xxxxx----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9`
 - Complete sentences are preferred for describing the overall picture of what was done.  Use two spaces between sentences when the next sentence starts on the same line.
 - Do not exhaustively enumerate every change — summarize instead.  If you must list individual changes, use `-` bullet points.
 - Use backticks liberally for inline code formatting (GitHub renders these in commit messages).  Backtick the following:
