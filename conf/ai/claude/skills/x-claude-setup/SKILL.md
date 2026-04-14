@@ -12,9 +12,9 @@ Load comprehensive context for working on the Claude Code installation and confi
 
 **Input**: $ARGUMENTS (optional: specific area to focus on, e.g. "hooks", "mcp", "permissions", "npm")
 
-## Step 1: Get Claude Code Knowledge
+## Step 1: Invoke the `claude-code-guide` Agent
 
-**ALWAYS invoke the `claude-code-guide` agent first** — before reading files, before making changes, before anything else. Claude Code has complex, non-obvious configuration schemas (settings.json structure, hook event types, permission syntax, MCP server formats, skill frontmatter fields, etc.) that you are unlikely to know correctly without the agent's help. Even tasks that seem simple often depend on getting a field name, valid value, or nesting level right.
+**This is not optional.**  Before you read any files, before you make any changes, before you do anything else: invoke the `claude-code-guide` agent.  Every single time this skill is loaded, no exceptions.  The user has repeatedly found that skipping this step leads to incorrect assumptions about Claude Code's configuration schemas, field names, valid values, and nesting levels.  You will get things wrong without it.
 
 Include this context in your prompt to the agent:
 
@@ -22,7 +22,7 @@ Include this context in your prompt to the agent:
 > They have a Perl wrapper script, custom hooks, MCP servers, and a symlinked config structure.
 > Please answer their question with full knowledge of Claude Code's capabilities.
 
-The **only** exception is when the task has zero interaction with Claude Code concepts — e.g., editing `~/.npmrc` or changing a shell alias. If the task touches `settings.json`, hooks, permissions, MCP servers, skills, agents, commands, or any Claude Code feature, invoke the agent.
+Pass the user's specific question or task to the agent so it can provide targeted guidance.
 
 ## Step 2: Local Setup Reference
 

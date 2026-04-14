@@ -98,6 +98,8 @@ allowed-tools: <tool patterns>
 
 5. **Remove redundant warnings**: Don't repeat "DO NOT do X" multiple times. State it once clearly.
 
+6. **Overshoot numeric formatting targets**: Claude consistently undershoots character-count targets (like line-wrapping width) by ~20-25 characters.  When writing a skill that specifies a wrapping width or similar numeric target, use a definitive number (not `~N`) and aim ~20 chars higher than the desired result.  Adding a concrete visual ruler as a reference line also helps anchor the model.
+
 ### Structural Goals
 
 - Use headers to organize, not to pad
