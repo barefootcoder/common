@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
-    "defaultMode": "auto",
     "allow": [
       "Grep",
       "Glob",
@@ -251,6 +250,7 @@
       "Bash(curl * -O *)",
       "Bash(curl * --remote-name *)"
     ],
+    "defaultMode": "auto",
     "additionalDirectories": [
       "~/common/aidoc",
       "~/common",
@@ -312,6 +312,18 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "prefersReducedMotion": true,
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "allow": [
+      "git add and git commit are allowed when the user has explicitly requested a commit (e.g. via /x-commit or 'commit this')"
+    ],
+    "soft_deny": [
+      "Do not run git add or git commit spontaneously — only when the user has asked to commit",
+      "ln -sf is never safe — always confirm before creating or overwriting symlinks (ln -sf into an existing directory silently creates a link inside it rather than replacing it)",
+      "Do not auto-approve deletion of code files (scripts, programs, modules, config files) even if they were written during the current session — the user often wants to keep 'temporary' code for future reuse or as evidence of how a fix was performed. Deleting data files, build artifacts, and temporary output is fine."
+    ]
+  },
   "mcpServers": {
     "google-sheets": {
       "command": "node",
@@ -329,16 +341,5 @@
       "type": "sse",
       "url": "https://mcp.atlassian.com/v1/sse"
     }
-  },
-  "autoMode": {
-    "allow": [
-      "git add and git commit are allowed when the user has explicitly requested a commit (e.g. via /x-commit or 'commit this')"
-    ],
-    "soft_deny": [
-      "Do not run git add or git commit spontaneously — only when the user has asked to commit",
-      "ln -sf is never safe — always confirm before creating or overwriting symlinks (ln -sf into an existing directory silently creates a link inside it rather than replacing it)"
-    ]
-  },
-  "skipAutoPermissionPrompt": true,
-  "prefersReducedMotion": true
+  }
 }
