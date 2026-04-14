@@ -17,6 +17,7 @@ You are assessing the current state of a Jira ticket to determine what's been do
 - `jira-ticket-info <TICKET>` - Quick summary (status, assignee, etc.)
 - `jira-ticket-detail <TICKET>` - Full details (description, comments, links, attachments)
 - `jira-download-attachments <TICKET> [DIR]` - Downloads all attachments to directory
+- `jira-set-user-field <TICKET> <FIELD-ID> <ACCOUNT-ID>` - Set a user-type custom field via REST API
 
 ## Workflow
 
@@ -34,7 +35,7 @@ jira issue move $TICKET "In Progress"
 ```
 ```bash
 account_id=$(ticket-config account-id)
-jira issue edit $TICKET --custom "customfield_10157=$account_id" --no-input
+jira-set-user-field $TICKET customfield_10157 "$account_id"
 ```
 If the move or edit fails, warn the user but continue with the assessment — these are non-blocking.
 

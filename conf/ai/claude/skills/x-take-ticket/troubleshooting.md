@@ -60,11 +60,15 @@ jira issue view TICKET --raw | jq '.fields | keys'
 - Product Owner: `customfield_10072`
 
 ### Development Owner Update Fails
-The `jira-take-ticket` script tries two formats:
-1. Direct account ID: `customfield_10157=ACCOUNT_ID`
-2. JSON wrapper: `customfield_10157={"accountId":"ACCOUNT_ID"}`
+The `jira` CLI `--custom` flag does not support user-type fields
+([jira-cli#758](https://github.com/ankitpokhrel/jira-cli/issues/758)).
+The `jira-set-user-field` script works around this by calling the Jira
+REST API directly via `curl -n` (authenticating with `~/.netrc`).
 
-If both fail, set Development Owner manually in Jira UI.
+If the REST call fails, check:
+- `~/.netrc` has valid credentials for `archeredu.atlassian.net`
+- The account ID from `ticket-config account-id` is correct
+- The field ID (`customfield_10157`) hasn't changed
 
 ---
 

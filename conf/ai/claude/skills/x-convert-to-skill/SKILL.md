@@ -108,7 +108,7 @@ allowed-tools: <tool patterns>
 
 **Replace MCP with CLI**: If using `atlassian-remote` MCP, convert to `jira` CLI:
    - `mcp__atlassian-remote__getJiraIssue` → `jira issue view --raw | jq`
-   - `mcp__atlassian-remote__editJiraIssue` → `jira issue edit --custom`
+   - `mcp__atlassian-remote__editJiraIssue` → `jira issue edit --custom` (note: user-type fields need `jira-set-user-field` via REST API instead)
    - `mcp__atlassian-remote__transitionJiraIssue` → `jira issue move`
    - Attachments: `curl -n -L` with `.netrc` auth
 5. **Extract scripts**: Create standalone scripts for complex operations
@@ -181,7 +181,8 @@ For each identified script:
 | Get issue | `jira issue view TICKET --raw` |
 | Get field | `jira issue view TICKET --raw \| jq '.fields.FIELD'` |
 | Assign | `jira issue assign TICKET EMAIL` |
-| Edit custom field | `jira issue edit TICKET --custom "field=value" --no-input` |
+| Edit custom field | `jira issue edit TICKET --custom "field=value" --no-input` (not user-type fields) |
+| Set user field | `jira-set-user-field TICKET FIELD-ID ACCOUNT-ID` (REST API workaround) |
 | Transition | `jira issue move TICKET "Status Name"` |
 | List transitions | `jira issue move TICKET --help` (no direct equivalent, check API) |
 | Download attachment | `curl -n -L -o FILE "ATTACHMENT_URL"` |

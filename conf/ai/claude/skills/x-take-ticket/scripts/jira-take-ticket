@@ -37,21 +37,17 @@ else
 fi
 
 # 2. Set Development Owner (customfield_10157)
-# The jira CLI --custom flag expects format: key=value
-# For user fields, we need to pass the account ID in a specific format
+# The jira CLI --custom flag does not support user-type fields
+# (see https://github.com/ankitpokhrel/jira-cli/issues/758).
+# Use jira-set-user-field which calls the REST API directly via curl.
 echo -n "  Setting Development Owner... "
-edit_result=$(jira issue edit "$ticket" --custom "customfield_10157=$account_id" --no-input 2>&1)
-if [[ $? -eq 0 ]]; then
+edit_result=$("$SCRIPT_DIR/jira-set-user-field" "$ticket" customfield_10157 "$account_id" 2>&1)
+if [[ $? -eq 0 ]]
+then
     echo "done"
 else
-    # Try alternative format with accountId wrapper
-    edit_result=$(jira issue edit "$ticket" --custom "customfield_10157={\"accountId\":\"$account_id\"}" --no-input 2>&1)
-    if [[ $? -eq 0 ]]; then
-        echo "done"
-    else
-        echo "failed: $edit_result"
-        echo "  Note: You may need to set Development Owner manually in Jira"
-    fi
+    echo "failed: $edit_result"
+    echo "  Note: You may need to set Development Owner manually in Jira"
 fi
 
 # 3. Transition to "On Deck"
