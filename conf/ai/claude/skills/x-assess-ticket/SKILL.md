@@ -4,7 +4,7 @@ description: Assess the current state of a Jira ticket and produce a summary for
 argument-hint: [ticket-number]
 model: opus
 disable-model-invocation: true
-allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(git log*), Bash(ls*), Bash(mkdir*), Bash(date*), Read, Glob, Grep, Write, mcp__google-sheets__*
+allowed-tools: Bash(jira-*), Bash(jira issue *), Bash(ticket-*), Bash(git log*), Bash(ls*), Bash(mkdir*), Bash(date*), Read, Glob, Grep, Write, mcp__google-sheets__*
 ---
 
 # Ticket Assessment Workflow
@@ -26,6 +26,19 @@ Test jira CLI access:
 jira-ticket-info $TICKET
 ```
 If this fails with authentication errors, inform user to check their Jira credentials and stop.
+
+### 1b. Begin Development (transition ticket)
+If the ticket status from step 1 is **"On Deck"**, transition it to "In Progress" and set Development Owner — replicating the "Begin Development" Jira automation:
+```bash
+jira issue move $TICKET "In Progress"
+```
+```bash
+account_id=$(ticket-config account-id)
+jira issue edit $TICKET --custom "customfield_10157=$account_id" --no-input
+```
+If the move or edit fails, warn the user but continue with the assessment — these are non-blocking.
+
+If the ticket is already "In Progress" or any other status, skip this step.
 
 ### 2. Gather Ticket Information
 Run `jira-ticket-detail $TICKET` to get the full picture: description, comments, linked issues, and attachments.

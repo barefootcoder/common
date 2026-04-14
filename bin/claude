@@ -48,6 +48,10 @@ if ($screen_info =~ m{/\((\d+),(\d+)\)})
 	$ENV{LINES} = $2;
 }
 
+# Prevent tmux from running its command through tcsh, which sources .tcshrc
+# and rebuilds PATH from scratch, discarding our additions above.
+$ENV{SHELL} = '/bin/bash';
+
 $ENV{TERM} = 'screen-256color';
 $ENV{CLAUDE_CODE_DISABLE_TERMINAL_TITLE} = 1;
 
