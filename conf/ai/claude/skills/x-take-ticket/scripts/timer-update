@@ -33,17 +33,19 @@ fi
 # Escape sed special characters in summary
 escaped_summary=$(printf '%s\n' "$summary" | sed 's/[&/\]/\\&/g')
 
-# Insert chunk entry (after line matching "^utests<TAB>")
+# Insert chunk entry (after FIRST line matching "^utests<TAB>")
 # Format: name<TAB> (trailing tab, no timestamps for new entries)
-if ! sed -i "/^utests\t/a ${timer_name}\t" "$TIMER_FILE"
+# Use 0,/pattern/ to limit to the first match (current week only)
+if ! sed -i "0,/^utests\t/s/^utests\t.*/&\n${timer_name}\t/" "$TIMER_FILE"
 then
     echo "$ME: failed to insert chunk entry" >&2
     exit 1
 fi
 
-# Insert comment entry (after line matching "^utests:<TAB>")
+# Insert comment entry (after FIRST line matching "^utests:<TAB>")
 # Format: name:<TAB>summary<TAB>ticket
-if ! sed -i "/^utests:\t/a ${timer_name}:\t${escaped_summary}\t${ticket}" "$TIMER_FILE"
+# Use 0,/pattern/ to limit to the first match (current week only)
+if ! sed -i "0,/^utests:\t/s/^utests:\t.*/&\n${timer_name}:\t${escaped_summary}\t${ticket}/" "$TIMER_FILE"
 then
     echo "$ME: failed to insert comment entry" >&2
     exit 1
