@@ -17,6 +17,9 @@ foreach (map { "$_/claude" } glob("~/.claude/local/bin"), glob("~/.local/bin"), 
 }
 $CLAUDE_PATH or die "$ME: cannot locate claude script\n";
 
+# Ensure ~/.local/bin is in PATH (suppresses "not in your PATH" nag from native install)
+$ENV{PATH} = bash \string => (addpath => glob("~/.local/bin"));
+
 # Add AI helper scripts directory to path
 $ENV{PATH} = bash \string => (addpath => glob("~/common/conf/ai/devtools"));
 
@@ -68,6 +71,10 @@ if (-d $tmux_dir)
 		unlink $sock if $?;
 	}
 }
+
+# Auto-update is unreliable; check for updates before every launch.
+my $update_out = `\Q$CLAUDE_PATH\E update 2>&1`;
+say $1 if $update_out =~ /^(Successfully .+)$/m;
 
 # Wrap Claude in tmux to absorb TUI redraws.
 # tmux maintains an internal screen grid and only forwards diffs to the outer
