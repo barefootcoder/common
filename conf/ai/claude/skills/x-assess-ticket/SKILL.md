@@ -13,18 +13,25 @@ You are assessing the current state of a Jira ticket to determine what's been do
 
 **Ticket argument**: $ARGUMENTS (if just a number, prepend "CLASS-")
 
-**Scripts available** in this skill's `scripts/` directory:
-- `jira-ticket-info <TICKET>` - Quick summary (status, assignee, etc.)
-- `jira-ticket-detail <TICKET>` - Full details (description, comments, links, attachments)
-- `jira-download-attachments <TICKET> [DIR]` - Downloads all attachments to directory
-- `jira-set-user-field <TICKET> <FIELD-ID> <ACCOUNT-ID>` - Set a user-type custom field via REST API
+**Scripts available** — all live in this skill's `scripts/` directory.  Because
+that directory is **not on `$PATH`**, every script below must be called with its
+full absolute path:
+`/home/buddy/.claude/skills/x-assess-ticket/scripts/<script-name>`
+
+| Script | Purpose |
+|--------|---------|
+| `jira-ticket-info <TICKET>` | Quick summary (status, assignee, etc.) |
+| `jira-ticket-detail <TICKET>` | Full details (description, comments, links, attachments) |
+| `jira-download-attachments <TICKET> [DIR]` | Downloads all attachments to directory |
+| `jira-set-user-field <TICKET> <FIELD-ID> <ACCOUNT-ID>` | Set a user-type custom field via REST API |
+| `ticket-config <KEY>` | Read local config values (e.g. `account-id`, `sheets-id`) |
 
 ## Workflow
 
 ### 1. Pre-flight
 Test jira CLI access:
 ```bash
-jira-ticket-info $TICKET
+/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-ticket-info $TICKET
 ```
 If this fails with authentication errors, inform user to check their Jira credentials and stop.
 
@@ -34,15 +41,15 @@ If the ticket status from step 1 is **"On Deck"**, transition it to "In Progress
 jira issue move $TICKET "In Progress"
 ```
 ```bash
-account_id=$(ticket-config account-id)
-jira-set-user-field $TICKET customfield_10157 "$account_id"
+account_id=$(/home/buddy/.claude/skills/x-assess-ticket/scripts/ticket-config account-id)
+/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-set-user-field $TICKET customfield_10157 "$account_id"
 ```
 If the move or edit fails, warn the user but continue with the assessment — these are non-blocking.
 
 If the ticket is already "In Progress" or any other status, skip this step.
 
 ### 2. Gather Ticket Information
-Run `jira-ticket-detail $TICKET` to get the full picture: description, comments, linked issues, and attachments.
+Run `/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-ticket-detail $TICKET` to get the full picture: description, comments, linked issues, and attachments.
 
 **Pay special attention to comments** - they often contain:
 - Requirement updates that supersede the original description
@@ -74,7 +81,7 @@ Note any commits, especially:
 ### 5. Handle Attachments
 If attachments exist and appear relevant (especially images, mockups, CSVs):
 ```bash
-jira-download-attachments $TICKET aidoc/ticket-docs/$TICKET/
+/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-download-attachments $TICKET aidoc/ticket-docs/$TICKET/
 ```
 
 Images and mockups are high priority - they often contain essential context for UI work or bug reproduction.
@@ -156,7 +163,7 @@ After writing the summary file, update the Google Sheets todo list to close the 
 
 **Get configuration:**
 ```bash
-ticket-config sheets-id
+/home/buddy/.claude/skills/x-assess-ticket/scripts/ticket-config sheets-id
 ```
 
 **Calculate work date (sheet's "today"):**

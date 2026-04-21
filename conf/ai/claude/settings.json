@@ -22,6 +22,8 @@
       "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-ticket-detail *)",
       "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-download-attachments *)",
       "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-download-attachments *)",
+      "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-set-user-field *)",
+      "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-set-user-field *)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/ticket-preflight)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/jira-ticket-info *)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/ticket-config *)",
