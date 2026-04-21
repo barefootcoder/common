@@ -14,7 +14,7 @@ opts <<'-';
 my $cur_branch = sh(git => 'rev-parse', '--abbrev-ref', 'HEAD');
 my $mainline   = sh('git-helper-mainline');
 
-my $stat    = sh(git => status =>         );
+my $stat    = sh(git => status => -u   => );
 my $stash   = sh(git => stash  => list => );
 my $commits = sh('git-helper-log -LNs'    );
    $commits = "Unpushed commits:\n$commits" if $commits;
