@@ -52,7 +52,8 @@ The `private/` directory contains sensitive information that is excluded from ve
 
 The following files contain summaries from previous AI collaboration sessions. These provide context for ongoing issues but should only be referenced when specifically relevant:
 
-- `summary:haven-kernel-upgrade-and-gpu-fix.md` - **[START HERE for Haven GPU/crash issues]** Kernel upgrade that resolved all Haven crash/GPU issues (February 2026)
+- `summary:haven-kernel-upgrade-and-gpu-fix.md` - **[START HERE for Haven GPU/crash issues]** Kernel upgrade that resolved the i915 driver bugs causing Haven crashes (February 2026)
+- `summary:haven-fstab-uuid-and-vivaldi-guard.md` - **[READ SECOND]** April 2026 follow-up: NVMe enumeration flip broke `/export` mount (fixed with UUID in fstab); Vivaldi + NoMachine combo still crashes Haven post-kernel-fix (guarded by `~/common/bin/vivaldi-guard` wrapper)
 - `summary:ec2-syncthing.html` - Syncthing configuration for EC2 servers
 - `summary:haven-crash-diagnosis-summary.md` - *(Superseded)* Earlier diagnosis of Haven system crashes
 - `summary:haven-thermal-diagnosis-and-resolution.md` - *(Partially superseded)* Haven thermal issue resolution
@@ -124,6 +125,7 @@ If user asks about EC2 sandbox sync:
   - Proof-of-concept complete, semi-automated setup available
   - See EC2 Sandbox Sync Integration section if working on this
 - **Haven GPU/Crash Issues Resolved** (February 2026): Kernel upgrade from 6.1-oem to 6.8-generic fixed the i915 GPU driver bugs causing crashes. Haven now runs modesetting + iris + glamor with proper hardware acceleration. See `summary:haven-kernel-upgrade-and-gpu-fix.md` for details.
+- **Haven NoMachine + Vivaldi Combo Still Crashes** (April 2026): Kernel fix raised the crash threshold but didn't eliminate it — running Vivaldi's heavy GPU load while NoMachine streams the display is still beyond this hardware's margin. Mitigated by `~/common/bin/vivaldi-guard` wrapper on Haven's Vivaldi panel launchers, which refuses to launch Vivaldi when a NoMachine session is active. Same session fixed an unrelated `/export` mount failure caused by NVMe probe-order flip vs. hardcoded device paths in fstab. See `summary:haven-fstab-uuid-and-vivaldi-guard.md`.
 - **Graymoor Setup In Progress** (April 2026): New headless server (Debian 13.2) to replace Zadash
   - OS installed; not yet connected to network
   - IP-KVM purchased: Sipeed NanoKVM Lite (E variant), pending assembly

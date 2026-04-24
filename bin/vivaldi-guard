@@ -1,0 +1,32 @@
+#! /bin/bash
+#
+# vivaldi-guard — launch Vivaldi only when no NoMachine session is active.
+#
+# Haven's Raptor Lake Iris Xe GPU has hard-crashed the laptop when Vivaldi's
+# heavy profile is loaded while NoMachine is streaming/capturing the display.
+# The Feb 2026 kernel upgrade (6.1-oem → 6.8) fixed the i915 driver bugs but
+# didn't leave enough GPU headroom for that combined load; the crash pattern
+# recurred on 2026-04-23.  This wrapper refuses to launch Vivaldi while a
+# NoMachine session is active (either direction) and explains why.
+#
+# See ~/common/aidoc/projects/home-network/summary:haven-fstab-uuid-and-vivaldi-guard.md
+
+: ${ME:=${0##*/}}
+
+# nxagent      — server-side X server spawned per incoming NoMachine session
+# nxplayer.bin — client-side viewer running when connected to a remote host
+if pgrep -f 'nxagent|nxplayer\.bin' >/dev/null 2>&1
+then
+	title='Vivaldi launch blocked'
+	msg='<span foreground="red" size="x-large"><b>NoMachine is active.</b></span>'$'\n\n'
+	msg+='Launching Vivaldi while a NoMachine session is running has caused hard crashes on Haven (hardware-off, no graceful shutdown).'$'\n\n'
+	msg+='Disconnect NoMachine first and try again, or use Chrome Ungoogled instead.'
+
+	zenity --error --title="$title" --width=450 --text="$msg" &
+	sleep 1
+	xdotool search --name "$title" windowmove 1550 50 2>/dev/null || true
+	wmctrl -r "$title" -b add,above,sticky 2>/dev/null || true
+	exit 1
+fi
+
+exec /usr/bin/vivaldi-stable "$@"
