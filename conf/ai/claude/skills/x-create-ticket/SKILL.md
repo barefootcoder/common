@@ -3,7 +3,7 @@ name: x-create-ticket
 description: Create a new Jira ticket with user-approved summary and description
 argument-hint: [context or instructions]
 disable-model-invocation: true
-allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(jira issue view *), Read, Grep, Glob, AskUserQuestion
+allowed-tools: Bash(jira-*), Bash(ticket-*), Bash(jira issue view *), Bash(jira issue move *), Read, Grep, Glob, AskUserQuestion
 ---
 
 # Create Jira Ticket Workflow
@@ -95,7 +95,19 @@ Once the user approves, create the ticket:
 
 ---
 
-## Step 5: Verify and Report
+## Step 5: Transition to "Ready for Refinement"
+
+Move the new ticket out of its default "New" status so it gets picked up during prioritization:
+
+```bash
+jira issue move <NEW-TICKET> "Ready for Refinement"
+```
+
+If the transition fails (e.g., the status name doesn't match), note the error but continue — the ticket was still created successfully.
+
+---
+
+## Step 6: Verify and Report
 
 After creation:
 
