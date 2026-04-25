@@ -4,10 +4,18 @@ use 5.14.0;
 use warnings;
 use autodie ':all';
 
-use PerlX::bash;
+use Cwd ();
 
 
 my $ME = 'claude';
+
+# Versions known to be broken; the wrapper will refuse to execute these and
+# re-pin the claude symlink to the newest known-good version available on disk.
+# Only add a version here when a regression actually bites us; remove it once
+# we're past it (or once we've cleaned the binary off disk).
+#   2.1.120 -- crashes with `UKH is not a function` when resuming a session
+#              via `claude -c` (and likely other resume paths)
+my @BAD_VERSIONS = ('2.1.120');
 
 # find `claude`
 my $CLAUDE_PATH;
@@ -17,14 +25,17 @@ foreach (map { "$_/claude" } glob("~/.claude/local/bin"), glob("~/.local/bin"), 
 }
 $CLAUDE_PATH or die "$ME: cannot locate claude script\n";
 
-# Ensure ~/.local/bin is in PATH (suppresses "not in your PATH" nag from native install)
-$ENV{PATH} = bash \string => (addpath => glob("~/.local/bin"));
-
-# Add AI helper scripts directory to path
-$ENV{PATH} = bash \string => (addpath => glob("~/common/conf/ai/devtools"));
-
-# Add Go binaries to path (for jira-cli, etc.)
-$ENV{PATH} = bash \string => (addpath => glob("~/go/bin"));
+# Add directories to PATH:
+#   ~/.local/bin                    (suppresses "not in your PATH" nag from native install)
+#   ~/common/conf/ai/devtools       (AI helper scripts)
+#   ~/go/bin                        (jira-cli, etc.)
+# Done in pure Perl to avoid spawning bash for each; mirrors semantics of `addpath`:
+# append, dedup, skip non-existent.
+$ENV{PATH} .= ":$_" foreach												# as always, read from the bottom up
+	grep { not ":$ENV{PATH}:" =~ /:\Q$_\E:/                }
+	grep { -d                                              }
+	map  { glob($_)                                        }
+	   qw< ~/.local/bin ~/common/conf/ai/devtools ~/go/bin >;
 
 # Verify local memory; create if necessary and possible
 my $localmem = 'CLAUDE.local.md';
@@ -72,9 +83,44 @@ if (-d $tmux_dir)
 	}
 }
 
-# Auto-update is unreliable; check for updates before every launch.
-my $update_out = `\Q$CLAUDE_PATH\E update 2>&1`;
-say $1 if $update_out =~ /^(Successfully .+)$/m;
+# Auto-update is unreliable; check for updates ourselves, but cache the check
+# to avoid paying the network round-trip on every launch.  Once per day is plenty.
+my $update_stamp = "/tmp/claude-update-stamp-$>";
+if (!-e $update_stamp || -M $update_stamp > 1)				# -M is age in days
+{
+	my $update_out = `\Q$CLAUDE_PATH\E update 2>&1`;
+	say $1 if $update_out =~ /^(Successfully .+)$/m;
+	open my $fh, '>', $update_stamp;						# touch stamp file
+}
+
+# Reject any version on the blocklist: re-pin the symlink to the newest good
+# version on disk.  Runs every launch, so it catches both fresh updates that
+# just activated a bad version and prior runs that left the symlink in a bad
+# state.
+my $real_path = Cwd::abs_path($CLAUDE_PATH);
+if ($real_path && $real_path =~ m{^(.*/versions)/([0-9]+\.[0-9]+\.[0-9]+)$})
+{
+	my ($versions_dir, $current) = ($1, $2);
+	if (grep { $_ eq $current } @BAD_VERSIONS)
+	{
+		my %bad = map { $_ => 1 } @BAD_VERSIONS;
+		my @good = sort { _vkey($b) cmp _vkey($a) }		# newest first
+		           grep { !$bad{$_} }
+		           map  { m{/([^/]+)$} ? $1 : () }
+		           glob("$versions_dir/*");
+		@good or die "$ME: $current is blocklisted and no good fallback in $versions_dir\n";
+		warn "$ME: $current is blocklisted; re-pinning to $good[0]\n";
+		-l $CLAUDE_PATH or die "$ME: cannot re-pin: $CLAUDE_PATH is not a symlink\n";
+		unlink $CLAUDE_PATH;
+		symlink "$versions_dir/$good[0]", $CLAUDE_PATH;
+	}
+}
+
+sub _vkey
+{
+	my @p = (split /\./, $_[0], 3);
+	sprintf '%05d.%05d.%05d', $p[0]||0, $p[1]||0, $p[2]||0;
+}
 
 # Wrap Claude in tmux to absorb TUI redraws.
 # tmux maintains an internal screen grid and only forwards diffs to the outer
