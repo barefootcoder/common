@@ -85,6 +85,50 @@ ssh -p 8822 bburden@<tailscale-hostname-or-ip>
 
 - The Tailscale connection may go through a **DERP relay** (check `tailscale status` for "relay" in the output). Relay connections can cause intermittent freezes/lockups.
 - Previous incidents show `tcsetattr: Input/output error` in the connection log when the connection path degrades.
+- **Recurring "wedge" failure mode**: the SSH session can lock up entirely (no Ctrl-C, no Ctrl-A, no keystroke gets through) while TCP keepalives continue to round-trip normally — `ServerAliveInterval`/`CountMax` won't catch it because the keepalives *are* succeeding. Diagnostic signature: `ss -tnpi` shows `lastsnd`/`lastrcv` cycling at the keepalive interval, ssh sleeping in `do_poll`, `/tmp/term-quin.log` (the `-v` output) silent for hours. Suspected cause: WireGuard/Tailscale state desync that black-holes data-channel traffic but lets SSH-level keepalive control messages through. Tightening keepalive timing **does not** fix this; the keepalives are working.
+
+### Agent Forwarding Constraints (CRITICAL for any reconnect-based fix)
+
+The user's quin workflow has hard constraints around SSH agent forwarding that rule out several "obvious" solutions. Any AI agent proposing transport-level fixes must respect these:
+
+- **Agent forwarding is non-negotiable.** The user uses a forwarded ssh-agent on quin for (a) GitHub access via `git`/`gh` and (b) SSH'ing from quin to other work machines. Removing agent forwarding stops development cold.
+- **Keys cannot live on quin.** Don't suggest "just put the keys on the EC2 instance and run a local agent there" as a general solution. Treat it as off-limits unless the user explicitly raises it.
+- **20–30 screen windows hold cached `SSH_AUTH_SOCK` values.** Each tcsh shell inside the remote screen session captured the agent socket path at the moment the SSH session was first established. A naïve reconnect with `ssh -A` allocates a *new* socket path, instantly invalidating every cached value. Schemes like plain `autossh` are non-starters in that form.
+- **Solutions must use a stable agent socket path.** The right pattern is `RemoteForward /home/bburden/.ssh/agent.sock $SSH_AUTH_SOCK` on the client + `StreamLocalBindUnlink yes` in sshd + `setenv SSH_AUTH_SOCK /home/bburden/.ssh/agent.sock` in `~/.tcshrc`. Reconnects re-bind the same path, existing shells continue to work.
+- **`mosh` does not forward ssh-agent.** Plain mosh is therefore a non-starter. Mosh-based solutions need a separate, dedicated ssh side-channel (with the stable socket-path setup above) whose only job is agent forwarding.
+
+### Companion Failure: Screen IPC Wedge ("`sr` hangs on reattach")
+
+The user has a *separate* recurring quin issue that often shows up at the same time as the SSH wedge: after relaunching `term-quin`, the `sr` alias (`screen -x`) hangs. The user's standard fix is `screen-cleanup`, then `sr` works.
+
+What's actually going on (verified, not speculation):
+
+- A long-running screen master on quin (uptime measured in *months* — last seen at 226 days) is the parent SCREEN session. There is **only ever one** screen session; the user's 20–30 "windows" are all inside it.
+- Cron has `10 * * * * $HOME/bin/launch-perl screen-bufsave -Aq` — an hourly buffer save that calls `screen-windowlist`, which calls `screen -X msgwait 0` and `screen -p N -Q title` for windows 0..50.
+- When something wedges screen's IPC (the master ends up blocked in `unix_stream_data_wait` reading a partial request from a previous client), every subsequent `screen -X` / `screen -Q` hangs forever. The hourly cron then **stacks one new zombie per hour** indefinitely.
+- New `screen -x` attaches block in `unix_wait_for_peer` — they're trying to connect to a master whose accept loop isn't running.
+- `screen-cleanup` (`~/common/bin/screen-cleanup`) `kill TERM`s all the zombie `screen-windowlist` / `screen-bufsave` / `msgwait` / `screen ... -Q` processes; the master then drains its queue and starts accepting again.
+
+Diagnostic shortcut: `ps -eo pid,stat,etime,cmd | grep -E 'screen -X msgwait|screen -p .*-Q'` — if you see a clean arithmetic progression of `etime` values one hour apart, you're looking at this.
+
+The `screen-bufsave` script already has a `-C` flag that runs `screen-cleanup` when ≥20 stale screen procs exist. **The cron line does not pass it** — that's the easy fix. A second cron entry running `screen-cleanup` unconditionally on a tighter cadence is even more robust.
+
+**Identified trigger (Apr 2026):** the screen IPC wedge correlates strongly with `claude` usage because the user's `claude` wrapper at `bin/claude` runs `screen -X msgwait 0`, `screen -Q info`, `screen -X msgwait 3` on every invocation (to capture terminal size). Under load, that `screen -Q info` occasionally leaves the screen master stuck in `recvmsg()` on the client connection, which deadlocks IPC for everything downstream (including the hourly `screen-bufsave` cron). This explains the Avalir+quin (heavy claude usage) vs Haven (rare claude usage) asymmetry.
+
+**Mitigation:** wrap the IPC call with `timeout 2 screen -Q info` so a wedged query self-clears (kill closes the socket → master gets EOF → master proceeds). Better long-term: replace with `tput cols` / `tput lines` / `$COLUMNS` / `stty size` and stop using screen IPC for terminal sizing.
+
+Possible (but unproven) link to the SSH wedge: a stuck `claude` output stream inside screen could fill the per-window buffer, blocking screen's main select loop, which then doesn't service IPC; meanwhile the same backpressure could contribute to the SSH data-channel collapse. Treat this as a hypothesis, not established fact. What *is* established: both wedges are aggravated by very-long-uptime sessions accumulating exotic state.
+
+### Possible Causes Worth Investigating Before Transport-Level Fixes
+
+The wedge correlates with `claude` activity, but the actual mechanism appears to be **heavy ssh-agent-forwarding traffic** — the connection log routinely shows thousands of `auth-agent@openssh.com` channel opens (~1 per 100 seconds, sustained for days). That polling pattern is suspicious; it suggests *something* on quin is hammering the agent unnecessarily. Candidates to investigate before papering over the symptom:
+
+- A tmux/screen status bar or shell prompt running `git` on every refresh
+- A backgrounded watcher / language server / IDE plugin doing periodic git operations
+- An MCP server (configured via project-scoped `.mcp.json`) polling git or gh
+- A cron job using forwarded keys
+
+Diagnostic approach (when the session is healthy): `lsof -U +c0 | grep "$SSH_AUTH_SOCK"` sampled a few times, or interpose a logging `socat` in front of the agent socket and watch what connects.
 
 ## EC2 Sandbox Sync Integration
 

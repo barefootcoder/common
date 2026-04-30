@@ -54,7 +54,7 @@ if (not -e $localmem)
 # Suppress the message line flash by temporarily setting msgwait to 0
 # (same technique used in screen-windowlist and screen-bufsave)
 system 'screen', '-X', 'msgwait', '0';
-chomp(my $screen_info = `screen -Q info 2>/dev/null`);
+chomp(my $screen_info = `timeout 2 screen -Q info 2>/dev/null`);
 system 'screen', '-X', 'msgwait', '3';
 if ($screen_info =~ m{/\((\d+),(\d+)\)})
 {

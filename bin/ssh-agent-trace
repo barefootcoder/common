@@ -1,0 +1,131 @@
+#!/usr/bin/env perl
+#
+# ssh-agent-trace - log who connects to ssh-agent, then forward to real agent
+#
+# Diagnostic proxy: listens on a Unix socket, accepts agent-protocol
+# connections, identifies the calling process via SO_PEERCRED, walks the
+# parent chain, logs the connection, and forwards bytes bidirectionally to
+# the real agent at $SSH_AUTH_SOCK.
+#
+# Usage:
+#   ssh-agent-trace                        # proxy at /tmp/agent-trace.sock
+#   ssh-agent-trace /custom/path.sock      # proxy at custom path
+#
+# In another shell, point clients at the proxy:
+#   export SSH_AUTH_SOCK=/tmp/agent-trace.sock
+#   <run the tool you want to observe>
+#
+# Watch /tmp/agent-trace.log for the per-connection records.
+
+use 5.014;
+use strict;
+use warnings;
+use autodie;
+
+use Socket;
+use IO::Socket::UNIX;
+use IO::Select;
+use POSIX qw(strftime :sys_wait_h);
+
+my $real = $ENV{SSH_AUTH_SOCK} or die "SSH_AUTH_SOCK is not set; nothing to forward to\n";
+my $sock = $ARGV[0] // '/tmp/agent-trace.sock';
+my $log  = $ARGV[1] // '/tmp/agent-trace.log';
+
+unlink $sock if -S $sock;
+
+my $listen = IO::Socket::UNIX->new
+(
+    Type   => SOCK_STREAM,
+    Local  => $sock,
+    Listen => 16,
+) or die "listen $sock: $!\n";
+chmod 0600, $sock;
+
+open my $LOG, '>>', $log;
+$LOG->autoflush(1);
+
+$SIG{CHLD} = sub { 1 while waitpid(-1, WNOHANG) > 0 };
+$SIG{INT}  = $SIG{TERM} = sub { unlink $sock; exit 0 };
+
+sub now { strftime('%Y-%m-%dT%H:%M:%S', localtime) }
+
+sub proc_cmd
+{
+    my ($pid) = @_;
+    open my $f, '<', "/proc/$pid/cmdline" or return '?';
+    local $/;
+    my $c = <$f> // '';
+    $c =~ s/\0/ /g;
+    $c =~ s/\s+$//;
+    return length($c) ? $c : '?';
+}
+
+sub proc_ppid
+{
+    my ($pid) = @_;
+    open my $f, '<', "/proc/$pid/status" or return 0;
+    while (<$f>)
+    {
+        return $1 if /^PPid:\s+(\d+)/;
+    }
+    return 0;
+}
+
+sub ancestry
+{
+    my ($pid, $depth) = @_;
+    my @chain;
+    while ($pid > 1 && $depth-- > 0)
+    {
+        push @chain, sprintf('%d:[%s]', $pid, proc_cmd($pid));
+        $pid = proc_ppid($pid);
+    }
+    return join(' -> ', @chain);
+}
+
+print $LOG '[' . now() . "] tracer up: proxy=$sock real=$real pid=$$\n";
+say STDERR "ssh-agent-trace: proxy=$sock real=$real";
+say STDERR "  point clients at:  export SSH_AUTH_SOCK=$sock";
+say STDERR "  log:               $log";
+say STDERR "  Ctrl-C to stop.";
+
+while (my $client = $listen->accept)
+{
+    my $cred = getsockopt($client, SOL_SOCKET, SO_PEERCRED) // '';
+    my ($pid, $uid, $gid) = unpack('III', $cred);
+    my $chain = $pid ? ancestry($pid, 6) : '(no peercred)';
+    print $LOG '[' . now() . "] connect uid=$uid $chain\n";
+
+    my $kid = fork;
+    if ($kid == 0)
+    {
+        $listen->close;
+        my $up = IO::Socket::UNIX->new(Type => SOCK_STREAM, Peer => $real);
+        unless ($up)
+        {
+            print $LOG '[' . now() . "] forward to $real failed: $!\n";
+            exit 1;
+        }
+        my $sel = IO::Select->new($client, $up);
+        OUTER:
+        while (my @ready = $sel->can_read)
+        {
+            for my $h (@ready)
+            {
+                my $w = ($h == $client) ? $up : $client;
+                my $buf;
+                my $n = sysread($h, $buf, 8192);
+                last OUTER unless $n;
+                my $off = 0;
+                while ($off < $n)
+                {
+                    my $w2 = syswrite($w, $buf, $n - $off, $off);
+                    last OUTER unless $w2;
+                    $off += $w2;
+                }
+            }
+        }
+        exit 0;
+    }
+    $client->close;
+}
