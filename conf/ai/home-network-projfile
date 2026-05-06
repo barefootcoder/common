@@ -55,7 +55,6 @@ bin_files="
 	bin/inf
 	bin/kill_compiz
 	bin/latest-files
-	bin/middle-click
 	bin/monitor-notifications
 	bin/myperl-cpm
 	bin/myterm

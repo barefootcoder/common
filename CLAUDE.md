@@ -46,10 +46,32 @@ The `myperl` module (perl/myperl.pm) provides:
 ## Key Files and Directories
 - `/bin/t`: Comprehensive test runner with coverage, profiling, and parallel execution
 - `/bin/myperl-cpm`: Dependency installer using App::cpm with cpanfile features
+- `/bin/launch-perl`: Wrapper for invoking Perl scripts from environments that don't inherit the interactive `$PATH` (see "Launching Perl from constrained environments" below)
 - `/perl/myperl.pm`: Core framework providing enhanced Perl environment
 - `/perl/myperl/`: Framework modules (Classlet, Script, Pxb, etc.)
 - `/cpanfile`: Dependency specifications with feature groups
 - `/local/*/`: Host-specific configurations and scripts
+
+## Launching Perl from constrained environments
+When a Perl script will be invoked from somewhere that does *not* inherit
+the user's interactive shell environment — cron jobs, MATE/X keybindings,
+desktop launchers, systemd units, `.desktop` files, etc. — invoke it
+through `~/bin/launch-perl` rather than relying on the script's own
+shebang. A bare `#! /usr/bin/env perl` (or `/usr/bin/perl`) will pick up
+system Perl, which is missing perlbrew-installed CPAN modules and will
+fail in confusing ways (or silently, since these contexts usually
+discard stderr).
+
+`launch-perl` locates perlbrew's perl, sets up `PATH`, `PERL5LIB`, and
+`local::lib`, and redirects stderr to `/tmp/launch-perl/<pid>.error` so
+silent failures are still diagnosable.
+
+Usage: `~/bin/launch-perl <script-name> [args...]` — the script name is
+resolved via `$PATH` and `~/bin/`, so just pass the bare name.
+
+Example: a MATE custom keybinding action should be
+`/home/buddy/bin/launch-perl my-script arg1` rather than
+`/home/buddy/bin/my-script arg1`.
 
 ## Development Workflow
 When working with myperl code:

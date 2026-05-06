@@ -1,0 +1,87 @@
+#! /usr/bin/env perl
+#
+# safe-click - synthesize a mouse-button click without leaving X11 modifiers
+#              "stuck" if the user releases the modifier mid-operation.
+#
+# Equivalent in spirit to `xdotool click --clearmodifiers BUTTON`, but with
+# one key difference: after the click we re-query the *physical* keyboard
+# and re-press only the modifiers that are still actually held.  xdotool
+# always re-presses what it released, so if the user happens to lift the
+# modifier between xdotool's release and re-press, X11 ends up thinking
+# the modifier is still held with nothing physical holding it down -- and
+# subsequent typing comes out wrong until the user taps the key to clear
+# it.
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use Getopt::Long qw(:config bundling no_ignore_case);
+use X11::Protocol;
+
+# Modifier slots to KEEP held during the click, so e.g. with --shift the
+# click is seen by X as a shift+click.  The numbers are the slot indices
+# returned by GetModifierMapping (Shift=0, Lock=1, Control=2, Mod1..Mod5=3..7).
+my %keep_slot;
+GetOptions(
+	'shift'   => sub { $keep_slot{0} = 1 },
+	'control|ctrl' => sub { $keep_slot{2} = 1 },
+	'alt|mod1' => sub { $keep_slot{3} = 1 },
+	'super|meta|mod4' => sub { $keep_slot{6} = 1 },
+) or die("usage: $0 [--shift] [--ctrl] [--alt] [--super] [BUTTON]\n");
+
+my $button = shift // 1;
+$button =~ /\A[1-9]\z/ or die("usage: $0 [--shift] [--ctrl] [--alt] [--super] [BUTTON]\n");
+
+my $X = X11::Protocol->new;
+$X->init_extension('XTEST') or die("XTEST extension unavailable\n");
+
+# Every keycode that is wired to a real modifier slot, except Lock
+# (CapsLock/NumLock).  Those toggle rather than modify, and a synthetic
+# press/release on a latching key would flip the lock state -- which is
+# almost never what the user wanted.
+my @groups = $X->GetModifierMapping;
+my @mod_keys;
+for my $i (0..$#groups)
+{
+	next if $i == 1;			# Lock slot
+	next if $keep_slot{$i};		# user wants this one held during the click
+	push @mod_keys, grep { $_ } @{ $groups[$i] };
+}
+
+sub key_held
+{
+	my ($keymap, $kc) = @_;
+	return ord(substr($keymap, $kc >> 3, 1)) & (1 << ($kc & 7));
+}
+
+# Phase 1: snapshot the physical keyboard, release any modifier held.
+my $keymap = $X->QueryKeymap;
+my @released;
+for my $kc (@mod_keys)
+{
+	if (key_held($keymap, $kc))
+	{
+		$X->XTestFakeInput(name => 'KeyRelease', detail => $kc);
+		push @released, $kc;
+	}
+}
+
+# Phase 2: the click itself.
+$X->XTestFakeInput(name => 'ButtonPress',   detail => $button);
+$X->XTestFakeInput(name => 'ButtonRelease', detail => $button);
+
+# Phase 3: re-query and re-press only what is still physically held.
+# QueryKeymap is a round-trip, so it also flushes phases 1 and 2 and gives
+# us a fresh snapshot of physical state to base the re-press decision on.
+$keymap = $X->QueryKeymap;
+for my $kc (@released)
+{
+	if (key_held($keymap, $kc))
+	{
+		$X->XTestFakeInput(name => 'KeyPress', detail => $kc);
+	}
+}
+
+# Force a flush of the final keypress requests before we exit.
+$X->GetInputFocus;
