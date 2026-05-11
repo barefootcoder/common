@@ -94,7 +94,7 @@ else
 	if ($host eq $me)
 	{
 		my $cur_window = sh( xdotool => getactivewindow => getwindowname => );
-		if ($cur_window =~ /NoMachine - (\w+)/)
+		if ($cur_window =~ /(\w+) - NoMachine/)
 		{
 			notify(ERROR => "This should not be possible!");
 		}
@@ -108,7 +108,7 @@ else
 	$PREVIOUS->spew($host);
 }
 
-my $rdesktop = "NoMachine - $host";
+my $rdesktop = "\u$host - NoMachine";			# NoMachine 9.x flipped the title order from "NoMachine - haven" to "Haven - NoMachine"
 my $win = sh(xdotool => search => '--name' => $rdesktop);
 if ($win)
 {

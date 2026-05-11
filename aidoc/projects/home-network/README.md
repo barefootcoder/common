@@ -41,6 +41,9 @@ This is a mixed-platform home network with Linux systems, NAS storage, and smart
   - Service setup priorities (Syncthing, Backblaze B2 backup)
   - Security and future expansion planning
 
+### Desktop Workflow
+- **[desktop-switching-shortcuts.md](desktop-switching-shortcuts.md)**: Interlocking `Ctrl+Alt+Up` / `Ctrl+Alt+Down` MATE shortcuts that switch between paired desktops (Haven↔Avalir, Zadash↔Caemlyn) via NoMachine. Documents the `show-desktop` script, the `WORK`/`HOME` symbolic targets, and the full behavior matrix.
+
 ## Private Data (Local Only)
 
 The `private/` directory contains sensitive information that is excluded from version control:
