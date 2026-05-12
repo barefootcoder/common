@@ -55,7 +55,13 @@ Generated, partially or fully, using [Claude Code](https://claude.ai/code)
 ### AI Attribution (Last Lines)
 
 - You MUST include the attribution block exactly as shown in the template above.
-- Before composing the message, look up the exact model you are running as.  Do NOT guess — confirm the model family name, version, and full model ID.  For example: "Claude Opus 4.6 - claude-opus-4-6" or "Claude Sonnet 4.5 - claude-sonnet-4-5-20250929".
+- Before composing the message, look up the exact model you are running as.  Do NOT guess, and do NOT trust the "You are powered by..." line in the system prompt — it is templated at session start and goes stale across `/model` switches.  Instead, read the current model directly from the session transcript:
+  ```bash
+  tac ~/.claude/projects/$(pwd | sed 's|/|-|g')/$CLAUDE_CODE_SESSION_ID.jsonl \
+    | jq -r 'select(.type=="assistant") | .message.model' | head -1
+  ```
+  This emits the model ID of your most recent assistant turn (e.g. `claude-opus-4-7`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-7` → "Claude Opus 4.7", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.7 - claude-opus-4-7`.
+- If the transcript probe returns nothing (e.g. very first turn of a new session, transcript file not yet flushed), fall back to the system-prompt line, but flag the uncertainty to the user before committing.
 - Do NOT add any additional AI attribution beyond the template (no extra "Co-Authored-By", "[Created by AI]", or similar lines).
 
 ## Amending Commits
