@@ -10,7 +10,15 @@ my $my_dir = dirname($0);
 my @touchpad_devices = find_touchpad_devices();
 die("no touchpad devices found!\n") unless @touchpad_devices;
 my $pidfile_path = "/var/tmp/run/touchpad-toggle.pid";
-my $toggle_prev_run = (@ARGV and $ARGV[0] eq "toggle");
+my $toggle_prev_run = 0;
+my $initial_state_arg;	# undef, 0 (off), or 1 (on)
+if (@ARGV)
+{
+	if    ($ARGV[0] eq "toggle") { $toggle_prev_run = 1     }
+	elsif ($ARGV[0] eq "off")    { $initial_state_arg = 0   }
+	elsif ($ARGV[0] eq "on")     { $initial_state_arg = 1   }
+	else { die("unknown arg: $ARGV[0] (expected: toggle|off|on)\n") }
+}
 
 my $is_touchpad_enabled = read_touchpad_state();
 
@@ -40,6 +48,13 @@ if ($@)
     }
 }
 die("no previous process found to communicate with!\n") if $toggle_prev_run;
+
+# If caller passed `off` or `on`, apply that state before opening the window.
+if (defined $initial_state_arg and $is_touchpad_enabled != $initial_state_arg)
+{
+	$is_touchpad_enabled = $initial_state_arg;
+	system("xinput --set-prop $_ 'Device Enabled' $is_touchpad_enabled") for @touchpad_devices;
+}
 
 $SIG{USR1} = sub
 {

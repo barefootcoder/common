@@ -6,6 +6,15 @@ ssh-add -l
 
 screen-buflog-hold-files
 
+# Haven hardware instability: lock CPU governor to powersave (cheap to redo)
+# and bring up the forensic monitor before anything else can crash the box.
+# See aidoc/projects/home-network/summary:vivaldi-7.9-upgrade-and-haven-instability.md
+sudo cpupower frequency-set -g powersave >/dev/null
+if ! kill -0 "$(cat ~/.viv-mon.pid 2>/dev/null)" 2>/dev/null
+then
+	nohup ~/local/bin/viv-mon >/dev/null 2>&1 &
+fi
+
 if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"
@@ -13,7 +22,7 @@ else
 	cmd="screen -S base"
 fi
 
-~/common/local/haven/applets/touchpad-toggle &
+~/common/local/haven/applets/touchpad-toggle off &
 xrestore -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet"
 
 myterm -D Main -s Haven haven-fortress 125x50+7+30 $cmd

@@ -10,6 +10,13 @@
 # NoMachine session is active (either direction) and explains why.
 #
 # See ~/common/aidoc/projects/home-network/summary:haven-fstab-uuid-and-vivaldi-guard.md
+#
+# On Haven, hardware instability has dropped the crash threshold below Vivaldi's
+# default GPU-accelerated load even without NoMachine (see
+# summary:vivaldi-7.9-upgrade-and-haven-instability.md). Until the battery
+# replacement / repaste / cap inspection is done, Vivaldi must launch with
+# --disable-gpu on Haven. This wrapper injects that flag automatically so panel
+# launchers (which go through this script) stop crashing the box.
 
 : ${ME:=${0##*/}}
 
@@ -29,4 +36,21 @@ then
 	exit 1
 fi
 
-exec /usr/bin/vivaldi-stable "$@"
+# Haven-specific: prepend --disable-gpu unless caller (or this script's earlier
+# self-invocation) has already supplied it.
+extra_args=()
+if [[ "$(hostname -s)" == "haven" ]]
+then
+	has_disable_gpu=0
+	for arg in "$@"
+	do
+		if [[ "$arg" == "--disable-gpu" || "$arg" == "--disable-gpu="* ]]
+		then
+			has_disable_gpu=1
+			break
+		fi
+	done
+	(( has_disable_gpu )) || extra_args+=(--disable-gpu)
+fi
+
+exec /usr/bin/vivaldi-stable "${extra_args[@]}" "$@"

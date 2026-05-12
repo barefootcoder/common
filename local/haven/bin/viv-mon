@@ -1,0 +1,86 @@
+#!/bin/bash
+# Power/thermal monitor for Haven hardware-instability forensics.
+# Polls 5Hz, syncs after every line so a hard power-off preserves data.
+#
+# Origin: relocated from /tmp/viv-mon2.sh (which was lost at reboot) per
+# aidoc/projects/home-network/summary:vivaldi-7.9-upgrade-and-haven-instability.md.
+
+LOG="${1:-$HOME/viv-mon.log}"
+PIDFILE="$HOME/.viv-mon.pid"
+ROTATE_BYTES=$((50 * 1024 * 1024))
+echo $$ > "$PIDFILE"
+
+exec >>"$LOG" 2>&1
+
+ts() { date +%FT%T.%3N; }
+rd() { cat "$1" 2>/dev/null || echo 0; }
+
+# Cap log growth: when active log exceeds ROTATE_BYTES, rotate to .prev.
+# Total on-disk footprint is bounded by 2 * ROTATE_BYTES regardless of uptime.
+rotate_if_big()
+{
+    local sz
+    sz=$(stat -c '%s' "$LOG" 2>/dev/null || echo 0)
+    if (( sz > ROTATE_BYTES ))
+    then
+        mv -f "$LOG" "$LOG.prev"
+        exec >>"$LOG" 2>&1
+        echo "=== Rotated at $(ts) (prev size $sz bytes) ==="
+    fi
+}
+
+{
+echo "=== Monitor PID=$$ log=$LOG started $(ts) ==="
+echo "=== Initial state ==="
+sensors -A
+echo
+echo "BAT0 uevent:"
+cat /sys/class/power_supply/BAT0/uevent
+echo "AC online: $(rd /sys/class/power_supply/AC/online)"
+echo
+echo "vivaldi procs before launch:"
+pgrep -af vivaldi
+echo
+echo "=== Polling 5Hz ==="
+}
+
+PKG=/sys/class/powercap/intel-rapl:0/energy_uj
+GPU=$(ls /sys/class/powercap/intel-rapl:0:*/energy_uj 2>/dev/null | head -1)
+[ -z "$GPU" ] && GPU=/dev/null
+
+prev_pkg=$(rd "$PKG"); prev_gpu=$(rd "$GPU"); prev_t=$(date +%s.%N)
+
+iter=0
+while true; do
+    now_t=$(date +%s.%N)
+    pkg=$(rd "$PKG"); gpu=$(rd "$GPU")
+    bat_a=$(rd /sys/class/power_supply/BAT0/current_now)
+    bat_v=$(rd /sys/class/power_supply/BAT0/voltage_now)
+    bat_p=$(rd /sys/class/power_supply/BAT0/capacity)
+    bat_s=$(rd /sys/class/power_supply/BAT0/status)
+    tz=$(awk '{printf "%.0f ",$1/1000}' /sys/class/thermal/thermal_zone0/temp \
+                                            /sys/class/thermal/thermal_zone1/temp \
+                                            /sys/class/thermal/thermal_zone2/temp \
+                                            /sys/class/thermal/thermal_zone3/temp 2>/dev/null)
+    load=$(cut -d' ' -f1 /proc/loadavg)
+
+    awk -v t="$(ts)" -v p="$pkg" -v pp="$prev_pkg" -v g="$gpu" -v pg="$prev_gpu" \
+        -v dt="$now_t" -v pdt="$prev_t" -v bv="$bat_v" -v ba="$bat_a" \
+        -v bp="$bat_p" -v bs="$bat_s" -v tz="$tz" -v ld="$load" '
+    BEGIN {
+        d = dt - pdt; if (d <= 0) d = 0.0001
+        pkw = (p - pp) / d / 1e6
+        gpw = (g - pg) / d / 1e6
+        bw  = bv / 1e6 * ba / 1e6
+        printf "%s pkg=%.2fW gpu=%.2fW bat=%.2fV/%.3fA/%.2fW/%s%%/%s tz=%s load=%s\n", t, pkw, gpw, bv/1e6, ba/1e6, bw, bp, bs, tz, ld
+    }'
+    sync
+    prev_pkg=$pkg; prev_gpu=$gpu; prev_t=$now_t
+    iter=$((iter + 1))
+    # check log size every ~100s (500 iterations * 0.2s) to amortize stat() cost
+    if (( iter % 500 == 0 ))
+    then
+        rotate_if_big
+    fi
+    sleep 0.2
+done
