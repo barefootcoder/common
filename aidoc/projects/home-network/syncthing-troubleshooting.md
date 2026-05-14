@@ -35,9 +35,22 @@ cessh --tunnel 8388:localhost:8384 <INSTANCE_ID>
 # Check if Syncthing is running
 ps aux | grep syncthing | grep -v grep
 
-# Check status via API (no auth needed on quin)
+# Check status via API (no API key required while quin is on the v1.x series)
 curl -s http://127.0.0.1:8384/rest/db/status?folder=workproj-ce | python3 -m json.tool
 ```
+
+> **Cluster version baseline (post 2026-05-13):** the entire Syncthing
+> cluster — Avalir, Haven, quin (and Zadash once it's powered back on) —
+> is aligned on `v1.30.0`. Quin's `~/.local/bin/syncthing` had
+> auto-upgraded itself to `v2.1.0` on 2026-05-12, producing a v1↔v2 split
+> that was resolved by downgrading quin and disabling its auto-upgrade
+> (`autoUpgradeIntervalH=0`). See
+> [quin-syncthing-downgrade.md](quin-syncthing-downgrade.md) for the
+> runbook and the May 2026 case studies below for the diagnosed
+> symptoms.
+>
+> If quin ever shows `v2.x` again, the REST API on quin will require an
+> `X-API-Key` header — v1.x doesn't.
 
 ## Common Sync Issues
 
@@ -130,6 +143,104 @@ chmod 755 /var/local/CE-src/path/to/file  # for executable files
 **Prevention:** Enable periodic rescans as a safety net:
 - In Syncthing folder settings, set "Full Rescan Interval" to 3600 seconds (1 hour)
 - This catches anything inotify misses with minimal overhead
+- For the highest-churn quin-shared folders (`workproj-ce`, `proj-common`),
+  this is currently set to **600 seconds** — see the May 2026 case study below
+  for the reasoning.
+
+#### Case Study: Modified File Not Propagating (April 2026)
+
+**Problem:** `aidoc/projects/devops-scripts/README.md` had a newer mtime and larger size
+on Avalir than on quin (Avalir: 02:59/37,727 bytes; quin: 02:28/37,527 bytes). Folder
+status on Avalir was `idle` with `needFiles: 0` — Syncthing thought everything was synced.
+
+**Diagnosis — compare Syncthing's DB record against the actual file on disk:**
+```bash
+# What Syncthing thinks the file looks like (local + global views)
+API_KEY=$(grep '<apikey>' ~/.config/syncthing/config.xml | sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/')
+curl -s -H "X-API-Key: $API_KEY" \
+  "http://127.0.0.1:8384/rest/db/file?folder=workproj-ce&file=aidoc/projects/devops-scripts/README.md" \
+  | python3 -m json.tool
+
+# Compare with what's actually on disk
+ls -la $CEROOT/aidoc/projects/devops-scripts/README.md
+```
+
+In this case `local.size` / `local.modified` in the DB matched quin's stale version,
+not the newer on-disk file — proving Syncthing's index was out of date. `inodeChange`
+in the DB also predated the actual mtime, confirming inotify never saw the write.
+
+**Fix — targeted rescan of just that file** (faster than scanning the whole folder):
+```bash
+curl -X POST -H "X-API-Key: $API_KEY" \
+  "http://127.0.0.1:8384/rest/db/scan?folder=workproj-ce&sub=aidoc/projects/devops-scripts/README.md"
+```
+
+After the rescan, the `global` version gained a new entry stamped with Avalir's short
+device ID, and quin pulled the new version within seconds.
+
+**Lesson:** Same root cause as the January case — inotify drops events — but for a
+*modification* rather than a *creation*. Periodic full rescans remain the recommended
+safety net; see Prevention note above.
+
+#### Case Study: New File Not Propagating to quin (May 2026)
+
+**Problem:** A new file `aidoc/ticket-docs/CLASS-990/plan=mece-migration.txt` was
+created on quin at 17:56 PDT and was confirmed missing on Avalir minutes later.
+Both sides showed `state=idle` with `needFiles=0` and `errors=0`. The file did
+*not* appear via passive observation; a manual `GET /rest/db/file?folder=workproj-ce&file=<path>`
+metadata query from Avalir, executed during diagnosis, appears to have nudged
+Syncthing into noticing the file, which then propagated within seconds.
+
+**What was different from the Jan/Apr cases:**
+- The lag was longer than usual (minutes, not the typical seconds).
+- Quin had auto-upgraded to Syncthing `v2.1.0` the previous day, so this was
+  the first observed instance of the inotify-drop pattern under the mixed-version
+  cluster (see "Cluster version note" near the top of this doc).
+
+**Mitigations applied:**
+- `rescanIntervalS` lowered from `3600` → `600` on the two highest-churn folders
+  shared with quin (`workproj-ce`, `proj-common`). The hourly safety net felt too
+  loose given the version mismatch. *Once the cluster is re-aligned and stable,
+  these can be relaxed back to `3600`.*
+- New helper script `bin/synudge` — takes a directory or a file (parent dir
+  is used) and POSTs the corresponding `/rest/db/scan?folder=...&sub=...`
+  request, auto-detecting the enclosing Syncthing folder. Use this as a
+  faster, name-stable replacement for the curl recipe in case #2 above.
+
+#### Case Study: Cluster Realignment via quin Downgrade (May 2026)
+
+**Problem:** Quin's `~/.local/bin/syncthing` auto-upgraded itself to `v2.1.0`
+on 2026-05-12 while Avalir, Haven, and Zadash remained on the apt-managed
+v1.x series. Syncthing's `apt stable` channel did not yet ship v2, so the
+realistic realignment was to drag quin back to v1.
+
+**Resolution:** Followed the runbook at
+[quin-syncthing-downgrade.md](quin-syncthing-downgrade.md):
+
+1. Avalir and Haven were apt-upgraded to `v1.30.0` (Haven was already at
+   1.30.0 by accident; Avalir matched it via `apt install syncthing`). Both
+   restarted via the apt postinst trigger; no manual systemctl needed.
+2. Quin was stopped, its v2 binary stashed, and v1.30.0 installed in
+   `~/.local/bin/syncthing`.
+3. Quin's `~/.config/syncthing/index-v2/` directory was moved aside;
+   Syncthing rebuilt a fresh leveldb on first start (re-indexing took
+   tens of minutes for `workproj-ce` and `work-ce`).
+4. `autoUpgradeIntervalH` was set to `0` in quin's `config.xml` to prevent
+   recurrence.
+5. v2 binary, `_v2-stash/`, and a preflight tarball were retained on quin
+   as rollback insurance.
+
+**Gotcha worth knowing for future runs:** v2.x writes `config.xml` schema
+`v52`; v1.x supports up to `v37`. A plain v1 start refuses with
+`config file version (52) is newer than supported version (37)`. Resolved
+by adding `--allow-newer-config` to the v1 first-start command — v1
+migrates and archives the v52 form as `config.xml.v52`. The runbook now
+documents this.
+
+**Lesson:** Watch for binary self-upgrade on the EC2 sandboxes — they're
+the only nodes in this cluster outside apt's pinning. Disabling
+`autoUpgradeIntervalH` on every quin-style instance at provisioning time
+would prevent a repeat.
 
 **Solutions:**
 
@@ -145,14 +256,18 @@ chmod 755 /var/local/CE-src/path/to/file  # for executable files
    - Look for `.stignore` files in the synced directory
    - Check for patterns that might match your file
 
-4. **Force rescan via API:**
+4. **Force rescan via API** (preferred path: use `synudge`):
    ```bash
-   # On Avalir
+   # Easiest — auto-detects the enclosing folder and the sub-path
+   synudge ~/workproj/CE/aidoc/ticket-docs/CLASS-990/plan=mece-migration.txt
+   synudge ~/workproj/CE/aidoc/ticket-docs/CLASS-990    # whole subdir works too
+
+   # Manual equivalent on Avalir
    API_KEY=$(grep '<apikey>' ~/.config/syncthing/config.xml | sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/')
    curl -X POST -H "X-API-Key: $API_KEY" http://127.0.0.1:8384/rest/db/scan?folder=workproj-ce
 
-   # On quin (no API key needed)
-   curl -X POST http://127.0.0.1:8384/rest/db/scan?folder=workproj-ce
+   # Manual on quin — v2 now requires the API key (v1.x did not)
+   curl -X POST -H "X-API-Key: $API_KEY" http://127.0.0.1:8384/rest/db/scan?folder=workproj-ce
    ```
 
 ### 3. Connection Issues Between Devices

@@ -44,6 +44,10 @@ This is a mixed-platform home network with Linux systems, NAS storage, and smart
 ### Desktop Workflow
 - **[desktop-switching-shortcuts.md](desktop-switching-shortcuts.md)**: Interlocking `Ctrl+Alt+Up` / `Ctrl+Alt+Down` MATE shortcuts that switch between paired desktops (Haven↔Avalir, Zadash↔Caemlyn) via NoMachine. Documents the `show-desktop` script, the `WORK`/`HOME` symbolic targets, and the full behavior matrix.
 
+### Sync Maintenance
+- **[syncthing-troubleshooting.md](syncthing-troubleshooting.md)**: Symptom→fix guide for the Syncthing cluster (out-of-sync states, inotify-drop case studies, connectivity, `synudge` helper).
+- **[quin-syncthing-downgrade.md](quin-syncthing-downgrade.md)**: Standalone agent-runnable brief for rolling quin back from Syncthing v2.1.0 to v1.30.0 and disabling auto-upgrade. Hand this to a quin-side session when it's time to realign the cluster.
+
 ## Private Data (Local Only)
 
 The `private/` directory contains sensitive information that is excluded from version control:

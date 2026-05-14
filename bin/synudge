@@ -1,0 +1,103 @@
+#! /bin/bash
+
+. ~/bin/bash_funcs
+
+
+function usage
+{
+	echo "usage: $me <path>" >&2
+	echo "       Nudge the local sync daemon into rescanning the directory containing <path>." >&2
+	echo "       <path> may be either a directory or a file (parent dir is used)." >&2
+}
+
+
+if [[ $# != 1 || $1 == -h || $1 == --help ]]
+then
+	usage
+	exit 2
+fi
+
+
+target=$1
+[[ -e $target ]] || die "no such path: $target"
+
+abs=$(realpath -e "$target")
+if [[ -d $abs ]]
+then
+	dir=$abs
+else
+	dir=$(dirname -- "$abs")
+fi
+
+
+api_key=$(grep '<apikey>' ~/.config/syncthing/config.xml 2>/dev/null \
+	| sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/')
+[[ -n $api_key ]] || die "could not read API key from ~/.config/syncthing/config.xml"
+
+
+# Map $dir to a (folder-id, sub-path) pair against the daemon's configured folders,
+# preferring the longest matching folder root in case of nesting.
+folders=$(curl -s --max-time 5 -H "X-API-Key: $api_key" http://127.0.0.1:8384/rest/config/folders)
+[[ -n $folders ]] || die "config query failed (is the daemon running on :8384?)"
+
+mapping=$(TARGET=$dir FOLDERS=$folders perl <<'PERL'
+use strict;
+use warnings;
+use JSON::PP;
+use Cwd qw< realpath >;
+
+my $target  = $ENV{TARGET};
+my $folders = decode_json($ENV{FOLDERS});
+
+my ($best_len, $best_id, $best_sub) = (-1);
+foreach my $f (@$folders)
+{
+	(my $root = $f->{path}) =~ s{^~([^/]*)}{$1 ? (getpwnam($1))[7] // "~$1" : $ENV{HOME}}e;
+	$root = realpath($root) // $root;
+	$root =~ s{/+$}{} unless $root eq "/";
+
+	my $sub;
+	if ($target eq $root)
+	{
+		$sub = "";
+	}
+	elsif (index($target, "$root/") == 0)
+	{
+		$sub = substr $target, length($root) + 1;
+	}
+	else
+	{
+		next;
+	}
+
+	if (length $root > $best_len)
+	{
+		($best_len, $best_id, $best_sub) = (length $root, $f->{id}, $sub);
+	}
+}
+
+print "$best_id\n$best_sub\n" if defined $best_id;
+PERL
+) || die "could not parse the daemon's folder config"
+
+folder_id=$(sed -n '1p' <<<"$mapping")
+sub=$(sed -n '2p' <<<"$mapping")
+[[ -n $folder_id ]] || die "$dir is not inside any configured sync folder"
+
+
+url="http://127.0.0.1:8384/rest/db/scan?folder=$folder_id"
+if [[ -n $sub ]]
+then
+	url="$url&sub=$(SUB=$sub perl -e 'my $s = $ENV{SUB}; $s =~ s{([^A-Za-z0-9._~/-])}{sprintf "%%%02X", ord $1}ge; print $s')"
+fi
+
+http_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "X-API-Key: $api_key" "$url")
+[[ $http_code == 200 ]] || die "scan request returned HTTP $http_code"
+
+
+if [[ -z $sub ]]
+then
+	echo "$me: rescanning folder '$folder_id' (root)"
+else
+	echo "$me: rescanning folder '$folder_id' sub='$sub'"
+fi
