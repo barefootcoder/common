@@ -10,6 +10,10 @@ screen-buflog-hold-files
 # and bring up the forensic monitor before anything else can crash the box.
 # See aidoc/projects/home-network/summary:vivaldi-7.9-upgrade-and-haven-instability.md
 sudo cpupower frequency-set -g powersave >/dev/null
+# Open RAPL energy counters for unprivileged reads. PLATYPUS mitigation
+# (CVE-2020-8694) leaves them 0400 root by default, which silently zeroed
+# viv-mon's pkg= and gpu= columns for the entire May 11–13 window.
+sudo chmod a+r /sys/class/powercap/intel-rapl*/energy_uj 2>/dev/null
 if ! kill -0 "$(cat ~/.viv-mon.pid 2>/dev/null)" 2>/dev/null
 then
 	nohup ~/local/bin/viv-mon >/dev/null 2>&1 &

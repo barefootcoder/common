@@ -195,6 +195,32 @@ The relevant `player.cfg` options:
 These are part of the NoMachine client's `<group name="NXClient">` block in
 `player.cfg` and survive across upgrades.
 
+## NoMachine Client Policy
+
+The switching mechanics above assume a specific NoMachine *client-side*
+configuration. These choices are stable user preferences, not part of the
+switching mechanism itself, but the mechanism only behaves as described
+above when they're in effect:
+
+- **Display: always fullscreen.** The user works *in* one machine at a time;
+  there is no windowed mode and no flipping between local and remote windows
+  on the same screen. (Required for the keyboard-grab → in-client-minimize
+  half of the dance to fire.)
+- **Display: resize-to-fit-fullscreen.** The remote desktop's resolution is
+  matched to the local screen on attach.
+- **Input: capture keyboard and mouse on fullscreen.** This is what lets
+  NoMachine's `Minimize window shortcut` intercept the bound keystroke
+  before MATE sees it.
+- **Audio: always route to Avalir, regardless of which host has the focus.**
+  Avalir has the decent speakers. Sound originating on Haven during a
+  session must redirect to Avalir, never stay local on Haven.
+- **Clipboard: both selections enabled.** Cross-machine copy/paste uses
+  both `Ctrl+C`/`Ctrl+V` (X CLIPBOARD selection) and select / middle-click
+  (X PRIMARY selection); both directions of cut-and-paste are routine.
+
+If a future client upgrade or alternative tool (e.g. `xpra`) is evaluated,
+match these policies — that's the floor on functionality.
+
 ## Files Involved
 
 - `~/common/bin/show-desktop` — main script (Perl, `myperl::Pxb`).

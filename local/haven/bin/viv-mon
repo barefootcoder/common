@@ -15,6 +15,45 @@ exec >>"$LOG" 2>&1
 ts() { date +%FT%T.%3N; }
 rd() { cat "$1" 2>/dev/null || echo 0; }
 
+# Touchpad state via X11. The `tp` toggle floats the touchpad off the master
+# pointer rather than disabling the kernel device, so "floating slave" means
+# OFF and any touchpad listed without that tag means ON. Returns "?" if X
+# isn't reachable (e.g., after the user logged out and back in — viv-mon's
+# DISPLAY/XAUTHORITY then become stale).
+get_tp_state()
+{
+    local out attached
+    out=$(xinput list 2>/dev/null) || { echo "?"; return; }
+    [ -z "$out" ] && { echo "?"; return; }
+    attached=$(echo "$out" | grep -i touchpad | grep -vc 'floating slave')
+    [ "$attached" -gt 0 ] && echo "on" || echo "off"
+}
+
+# Periodic browser-profile snapshot. The user routinely runs multiple Vivaldi
+# and Ungoogled-Chromium instances against different `--user-data-dir`
+# profiles; knowing which were live at crash time matters more than per-poll
+# resolution allows, so emit a separate marker line every N iterations.
+snapshot_browsers()
+{
+    # Limit the cmdline scan to actual browser processes (pgrep excludes its
+    # own PID by default). Going through `ps -eww -o cmd` instead is tempting
+    # but matches any process whose cmdline happens to contain the literal
+    # pattern `--user-data-dir=…` — including this snapshot function's own
+    # grep subprocess while it's running. Stick with pgrep.
+    local profiles
+    profiles=$(pgrep -af 'vivaldi-bin|chromium' 2>/dev/null \
+        | grep -oE -- '--user-data-dir=[^ ]+' \
+        | sort -u \
+        | awk -F= '{
+            path = $2
+            type = (path ~ /vivaldi/) ? "v" : (path ~ /chromium|chrome/) ? "c" : "?"
+            sub(".*/", "", path)
+            printf "%s:%s ", type, path
+        }')
+    profiles="${profiles% }"
+    echo "$(ts) BROWSERS ${profiles:-none}"
+}
+
 # Cap log growth: when active log exceeds ROTATE_BYTES, rotate to .prev.
 # Total on-disk footprint is bounded by 2 * ROTATE_BYTES regardless of uptime.
 rotate_if_big()
@@ -29,6 +68,28 @@ rotate_if_big()
     fi
 }
 
+# RAPL energy counters. Need root or a chmod relaxation (PLATYPUS mitigation,
+# CVE-2020-8694). Haven's termstart runs `sudo chmod a+r ...` at boot; if that
+# hasn't happened, the values stay 0 and we say so in the header so the gap is
+# visible instead of silently logging zeros for 48 hours.
+PKG=/sys/class/powercap/intel-rapl:0/energy_uj
+UNCORE=
+for d in /sys/class/powercap/intel-rapl:0:*; do
+    [ -r "$d/name" ] || continue
+    nm=$(cat "$d/name" 2>/dev/null)
+    # On Raptor Lake the integrated GPU is rolled into the "uncore" subdomain
+    # alongside system-agent and display engine; there is no GPU-only RAPL.
+    [ "$nm" = "uncore" ] && UNCORE="$d/energy_uj" && break
+done
+[ -z "$UNCORE" ] && UNCORE=/dev/null
+
+# Locate i915's DRM card. simpledrm normally grabs card0, so the real GPU is
+# usually card1 on this hardware — but probe rather than hardcode.
+GPU_DIR=
+for c in /sys/class/drm/card*; do
+    [ -e "$c/gt_cur_freq_mhz" ] && GPU_DIR="$c" && break
+done
+
 {
 echo "=== Monitor PID=$$ log=$LOG started $(ts) ==="
 echo "=== Initial state ==="
@@ -38,22 +99,29 @@ echo "BAT0 uevent:"
 cat /sys/class/power_supply/BAT0/uevent
 echo "AC online: $(rd /sys/class/power_supply/AC/online)"
 echo
+echo "RAPL pkg readable: $([ -r "$PKG" ] && echo yes || echo "NO — pkg=/uncore= will be 0")"
+echo "RAPL uncore path: ${UNCORE:-none}"
+echo "GPU DRM dir: ${GPU_DIR:-none}"
+echo
 echo "vivaldi procs before launch:"
 pgrep -af vivaldi
 echo
 echo "=== Polling 5Hz ==="
 }
 
-PKG=/sys/class/powercap/intel-rapl:0/energy_uj
-GPU=$(ls /sys/class/powercap/intel-rapl:0:*/energy_uj 2>/dev/null | head -1)
-[ -z "$GPU" ] && GPU=/dev/null
+GFREQ_CUR="${GPU_DIR:+$GPU_DIR/gt_cur_freq_mhz}"
+GFREQ_ACT="${GPU_DIR:+$GPU_DIR/gt_act_freq_mhz}"
+RC6="${GPU_DIR:+$GPU_DIR/power/rc6_residency_ms}"
 
-prev_pkg=$(rd "$PKG"); prev_gpu=$(rd "$GPU"); prev_t=$(date +%s.%N)
+prev_pkg=$(rd "$PKG"); prev_unc=$(rd "$UNCORE"); prev_rc6=$(rd "$RC6"); prev_t=$(date +%s.%N)
+tp_state=$(get_tp_state)
+snapshot_browsers
 
 iter=0
 while true; do
     now_t=$(date +%s.%N)
-    pkg=$(rd "$PKG"); gpu=$(rd "$GPU")
+    pkg=$(rd "$PKG"); unc=$(rd "$UNCORE")
+    gf_c=$(rd "$GFREQ_CUR"); gf_a=$(rd "$GFREQ_ACT"); rc6=$(rd "$RC6")
     bat_a=$(rd /sys/class/power_supply/BAT0/current_now)
     bat_v=$(rd /sys/class/power_supply/BAT0/voltage_now)
     bat_p=$(rd /sys/class/power_supply/BAT0/capacity)
@@ -64,19 +132,36 @@ while true; do
                                             /sys/class/thermal/thermal_zone3/temp 2>/dev/null)
     load=$(cut -d' ' -f1 /proc/loadavg)
 
-    awk -v t="$(ts)" -v p="$pkg" -v pp="$prev_pkg" -v g="$gpu" -v pg="$prev_gpu" \
+    awk -v t="$(ts)" -v p="$pkg" -v pp="$prev_pkg" -v u="$unc" -v pu="$prev_unc" \
         -v dt="$now_t" -v pdt="$prev_t" -v bv="$bat_v" -v ba="$bat_a" \
-        -v bp="$bat_p" -v bs="$bat_s" -v tz="$tz" -v ld="$load" '
+        -v bp="$bat_p" -v bs="$bat_s" -v tz="$tz" -v ld="$load" \
+        -v gfc="$gf_c" -v gfa="$gf_a" -v rc6="$rc6" -v prc6="$prev_rc6" \
+        -v tp="$tp_state" '
     BEGIN {
         d = dt - pdt; if (d <= 0) d = 0.0001
         pkw = (p - pp) / d / 1e6
-        gpw = (g - pg) / d / 1e6
+        unw = (u - pu) / d / 1e6
         bw  = bv / 1e6 * ba / 1e6
-        printf "%s pkg=%.2fW gpu=%.2fW bat=%.2fV/%.3fA/%.2fW/%s%%/%s tz=%s load=%s\n", t, pkw, gpw, bv/1e6, ba/1e6, bw, bp, bs, tz, ld
+        drc6 = rc6 - prc6
+        printf "%s pkg=%.2fW unc=%.2fW gfreq=%s/%s rc6=%dms bat=%.2fV/%.3fA/%.2fW/%s%%/%s tz=%s load=%s tp=%s\n", \
+               t, pkw, unw, gfc, gfa, drc6, bv/1e6, ba/1e6, bw, bp, bs, tz, ld, tp
     }'
     sync
-    prev_pkg=$pkg; prev_gpu=$gpu; prev_t=$now_t
+    prev_pkg=$pkg; prev_unc=$unc; prev_rc6=$rc6; prev_t=$now_t
     iter=$((iter + 1))
+    # Refresh touchpad state every ~5 s (state changes are user-initiated and
+    # infrequent; no need to shell out to xinput 5x/sec).
+    if (( iter % 25 == 0 ))
+    then
+        tp_state=$(get_tp_state)
+    fi
+    # Snapshot which browser profiles are running every ~30 s. Browser state
+    # changes when the user opens/closes a new window; per-poll resolution is
+    # overkill, but missing this entirely would erase important crash context.
+    if (( iter % 150 == 0 ))
+    then
+        snapshot_browsers
+    fi
     # check log size every ~100s (500 iterations * 0.2s) to amortize stat() cost
     if (( iter % 500 == 0 ))
     then
