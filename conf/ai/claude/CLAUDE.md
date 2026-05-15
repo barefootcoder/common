@@ -39,13 +39,22 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
   drop the `-C <path>` part entirely.
 
 ### Committing
-- **Always invoke the `/x-commit` skill before running `git commit`.**
-  Do not follow the default system commit template — the skill's formatting
-  rules, attribution block, and constraints take precedence over any other
-  commit instructions.
-- Within `/x-commit`, just stage and commit without stopping to ask.
-  It is always easier to amend after the fact than to negotiate commit
-  message wording interactively.
+- **Do NOT commit unless the user has explicitly asked for a commit.**
+  An ask for a code *change* is NOT an ask for a *commit*, even an
+  obvious or small one — and even "yes, do X" in response to a proposed
+  change does not extend to "and commit it".  When work is done, summarize
+  what you did and ASK whether to commit; and if so, whether as a
+  standalone commit or folded into a recent one.  The user relies on that
+  pause to say "oh, but also include X", "fold this into the last commit
+  instead", or "one more thing first".  Do not invoke `/x-commit` on your
+  own initiative even if a commit feels like the natural next step.
+- **Once the user HAS asked for a commit, always go through `/x-commit`.**
+  Never run `git commit` directly.  Do not follow the default system
+  commit template — `/x-commit`'s formatting rules, attribution block,
+  and constraints take precedence over any other commit instructions.
+- Once inside `/x-commit`, just stage and commit without stopping to
+  ask about message wording.  It is always easier to amend after the
+  fact than to negotiate commit message wording interactively.
 
 ## Jira Ticket References
 - **Default Project**: CLASS

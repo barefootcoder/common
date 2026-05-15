@@ -1,5 +1,5 @@
 ---
-description: "Git commit with proper message formatting. MUST be invoked any time you are about to run `git commit` — whether the user explicitly requests a commit, you are wrapping up a task, or committing is part of a larger workflow. Never run `git commit` without loading this skill first."
+description: "Git commit with proper message formatting.  Invoke ONLY when the user has explicitly asked you to commit — NOT proactively because work feels complete, because you are wrapping up a task, or because committing would be the natural next step.  When work feels done, summarize what you did and ASK whether to commit; wait for an explicit go-ahead.  The user values that pause: it is where they say 'oh, but also include X', 'fold this into the last commit instead', or 'one more thing first'.  Once the user HAS asked for a commit, this skill is mandatory: never run `git commit` without loading it first."
 ---
 
 # Git Commit Skill
@@ -17,30 +17,33 @@ Invoked as: `/x-commit {{ARGS}}` — or auto-invoked when a commit is needed.
 
 ## Commit Message Format
 
+Default form — most commits need nothing more than this:
+
 ```
 brief description of changes
-
-Optional detailed explanation when needed.  Complete sentences are fine
-in the body.
-
-- Bullet points for individual changes, only when truly needed.
 
 Generated, partially or fully, using [Claude Code](https://claude.ai/code)
 -   model: Claude <MODEL_FAMILY> <MODEL_VER> - <MODEL_ID>
 ```
+
+A body goes between the subject and the attribution block, but only when warranted (see "Body" below).
 
 ### First Line (Subject)
 
 - Use imperative mood ("add feature" not "added feature")
 - Do NOT capitalize the first letter — this is a short description, not a sentence
 - Do NOT end with a period
+- Prefer an *intent* or *purpose* framing over a flat enumeration of changes.  "tweak X to improve Y" reads better than "do A, do B, do C" even when A, B, and C are all accurate — the body, if any, can enumerate.
 
 ### Body
 
-- Word-wrap body text at 95 characters.  Do not leave lines unwrapped — GitHub does not always handle long lines gracefully in commit messages.  For reference, this ruler is exactly 95 characters:
+**Most commits do not need a body at all.**  Commit messages are written for humans, who have short attention spans and can read the diff if they want detail.  The subject line already identifies the change; the body's only job is to record context the diff cannot convey on its own.
+
+- **The body is for the non-obvious *why*, not the *what*.**  Do not redescribe what changed — the diff does that.  Use the body only for a constraint that forced the approach, a bug being worked around, an alternative tried and abandoned, a non-obvious interaction with other code, or similar.  If the *why* is plain from the subject, omit the body entirely.
+- **Keep it short.**  When a body is warranted, one or two sentences is almost always enough.  A multi-line body for a small diff is a sign you are recapping rather than explaining.  Resist the urge to summarize what you just did; trust the reader.
+- Word-wrap prose at 95 characters; longer lines render poorly on GitHub.  Use two spaces between sentences on the same line.  Ruler for reference:
   `xxxxx----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9`
-- Complete sentences are preferred for describing the overall picture of what was done.  Use two spaces between sentences when the next sentence starts on the same line.
-- Do not exhaustively enumerate every change — summarize instead.  If you must list individual changes, use `-` bullet points.
+- Use `-` bullet points only when genuinely listing distinct items — multiple conceptually-distinct tweaks count, even within one cohesive change set (an intent-framed subject with a few bullets enumerating the pieces is often the right shape for these).  Do not bullet-itemize ordinary work just to add structure — running prose is fine and usually shorter.
 - Use backticks liberally for inline code formatting (GitHub renders these in commit messages).  Backtick the following:
   - Commands: `git`, `npm`, `sed` (even common ones like `bash` when referring to typing/running something)
   - Code snippets and keywords: `@ARGV`, `if`, `while`, `use strict`
@@ -55,13 +58,14 @@ Generated, partially or fully, using [Claude Code](https://claude.ai/code)
 ### AI Attribution (Last Lines)
 
 - You MUST include the attribution block exactly as shown in the template above.
-- Before composing the message, look up the exact model you are running as.  Do NOT guess, and do NOT trust the "You are powered by..." line in the system prompt — it is templated at session start and goes stale across `/model` switches.  Instead, read the current model directly from the session transcript:
+- The attribution must record the model that did the **actual work being committed** — not whatever model happens to be running `/x-commit`.  Those can differ: `/x-commit` itself is unpinned, but it inherits its model from any wrapping skill that pinned one, so a downcycled wrapper can silently downcycle the commit attribution too.  Do NOT guess, and do NOT trust the "You are powered by..." line in the system prompt — it is templated at session start and goes stale across `/model` switches.  Instead, read the work model directly from the session transcript:
   ```bash
-  tac ~/.claude/projects/$(pwd | sed 's|/|-|g')/$CLAUDE_CODE_SESSION_ID.jsonl \
-    | jq -r 'select(.type=="assistant") | .message.model' | head -1
+  tac ~/.claude/projects/$(realpath . 2>/dev/null | sed 's|/|-|g')/$CLAUDE_CODE_SESSION_ID.jsonl 2>/dev/null \
+    | jq -r 'select(.type=="assistant" and .attributionSkill != "x-commit") | .message.model' \
+    | head -1
   ```
-  This emits the model ID of your most recent assistant turn (e.g. `claude-opus-4-7`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-7` → "Claude Opus 4.7", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.7 - claude-opus-4-7`.
-- If the transcript probe returns nothing (e.g. very first turn of a new session, transcript file not yet flushed), fall back to the system-prompt line, but flag the uncertainty to the user before committing.
+  The `attributionSkill != "x-commit"` filter excludes turns spent inside `/x-commit` itself, so the result is the model of the most recent turn that did substantive work (e.g. `claude-opus-4-7`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-7` → "Claude Opus 4.7", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.7 - claude-opus-4-7`.
+- If the transcript probe returns nothing, fall back to the system-prompt line, but flag the uncertainty to the user before committing.  Most common cause: `/x-commit` is the first skill invoked in a brand-new session and there is no prior non-commit turn yet.
 - Do NOT add any additional AI attribution beyond the template (no extra "Co-Authored-By", "[Created by AI]", or similar lines).
 
 ## Amending Commits
