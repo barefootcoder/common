@@ -1,65 +1,344 @@
 #! /bin/bash
 
-# Fix audio when the system has picked the wrong output or PulseAudio
-# is otherwise confused.
+# Fix audio with an escalating series of nudges: try the cheapest thing
+# first, only get more invasive if it didn't help. Each stage re-probes
+# the audio state and exits as soon as we're healthy.
 #
 # Works with:
-#   - Modern systemd-managed PulseAudio (Ubuntu 22.04+)
+#   - Modern systemd-managed PulseAudio (Ubuntu 22.04+ / Mint 21.x)
 #   - Older standalone PulseAudio (pre-systemd user services)
 #   - Systems with PipeWire running alongside PulseAudio
 
-ME=${0##*/}
+
+readonly ME=${0##*/}
+readonly USER_RUNTIME=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+readonly PULSE_DIR=$USER_RUNTIME/pulse
+readonly VOL_FLOOR=5			# any volume below this %, treat as "broken silent"
+readonly VOL_RESTORE=60			# target volume on restore
+readonly BOUNCE_WAIT=2			# seconds to wait after bouncing pulse
+
+
+function usage
+{
+	cat <<EOM
+
+usage: $ME [--check] [--no-player] [--start-at N] [--help]
+
+    --check        : probe only; exit 0 if audio looks healthy, 1 if not
+    --no-player    : skip the music-player restart after a pulse bounce
+    --start-at N   : skip ahead to escalation stage N (1..4)
+    --help         : this message
+
+Escalation stages (each is tried only if the previous didn't restore audio):
+
+    1. unmute the default sink, restore volume if it's dialed near zero,
+       and pick an analog stereo card profile if available
+    2. bounce pulseaudio via systemd (clears stale socket+pid, resets the
+       systemd restart-limit), then re-probe
+    3. nuke pulseaudio manually (kill -9, rm socket+pid, raw 'pulseaudio -D')
+    4. sudo alsa force-reload, then bounce pulseaudio again
+
+After any pulseaudio bounce (stages 2-4), the music player is restarted so
+its detached audio pipeline gets recreated. Use --no-player to opt out.
+If audio looks healthy but the music player has lost its sink-input (e.g.
+because pulse was bounced earlier and the player never reattached), the
+player is restarted on its own without touching pulse.
+EOM
+}
+
+
+function die
+{
+	echo "$ME: $1" >&2
+	exit 1
+}
+
+function usage_error
+{
+	echo "$ME: $1 ($ME --help for usage)" >&2
+	exit 2
+}
+
+function msg
+{
+	echo "$ME: $*"
+}
+
 
 if [[ $(id -u) == 0 ]]
 then
-	echo "$ME: must not run as root" >&2
-	exit 1
+	die "must not run as root"
 fi
 
-# kill the music player (handles both old and new)
-player=$(pgrep -f 'decibel-audio-player|clementine')
-[[ $player ]] && kill $player
 
-# restart audio subsystem
-if systemctl --user is-active pulseaudio.service &>/dev/null
-then
-	echo "$ME: restarting PulseAudio via systemd ..."
-	systemctl --user restart pulseaudio.socket pulseaudio.service
-else
-	echo "$ME: restarting PulseAudio directly ..."
-	pulseaudio --check && pulseaudio -k
-	pulseaudio -D
-fi
+# defaults
+check_only=false
+restart_player=true
+start_at=1
 
-# wait for PulseAudio to come back
-for i in 1 2 3 4 5
+while [[ $# -gt 0 ]]
 do
-	pactl info &>/dev/null && break
-	sleep 1
+	case $1 in
+		--check)		check_only=true ; shift ;;
+		--no-player)	restart_player=false ; shift ;;
+		--start-at)		start_at=$2 ; shift 2 ;;
+		--help|-h|-\?)	usage ; exit 0 ;;
+		*)				usage_error "unrecognized option: $1" ;;
+	esac
 done
 
-# try to set the card profile to analog stereo (the most common fix)
-card=$(pactl list cards short 2>/dev/null | awk '{print $2; exit}')
-if [[ $card ]]
-then
-	if pactl list cards 2>/dev/null | grep -q 'output:analog-stereo+input:analog-stereo'
+[[ $start_at =~ ^[1-4]$ ]] || usage_error "--start-at takes a stage number 1..4"
+
+
+### probes
+
+
+function pulse-up
+{
+	pactl info >/dev/null 2>&1
+}
+
+function sink-volume-pct
+{
+	# integer % volume of the named sink (channel 0)
+	local sink=$1
+	pactl get-sink-volume "$sink" 2>/dev/null \
+		| sed -nE '1 s/.*[[:space:]]([0-9]+)%[[:space:]].*/\1/p'
+}
+
+function audio-up
+{
+	# the system-audio level: pulse responsive, default sink real,
+	# not muted, not dialed to inaudibility
+	pulse-up || return 1
+	local sink
+	sink=$(pactl get-default-sink 2>/dev/null) || return 1
+	[[ $sink && $sink != auto_null* ]] || return 1
+	[[ $(pactl get-sink-mute "$sink" 2>/dev/null) == "Mute: no" ]] || return 1
+	local pct
+	pct=$(sink-volume-pct "$sink")
+	[[ $pct ]] && (( pct >= VOL_FLOOR ))
+}
+
+function running-player
+{
+	# whichever music player is actually running; clementine wins
+	if pgrep -x clementine >/dev/null
 	then
-		echo "$ME: setting $card to analog stereo duplex ..."
-		pactl set-card-profile "$card" output:analog-stereo+input:analog-stereo
-	elif pactl list cards 2>/dev/null | grep -q 'output:analog-stereo'
+		echo clementine
+	elif pgrep -f decibel-audio-player >/dev/null
 	then
-		echo "$ME: setting $card to analog stereo output ..."
-		pactl set-card-profile "$card" output:analog-stereo
-	else
-		echo "$ME: no analog stereo profile found; leaving profile unchanged"
+		echo decibel-audio-player
 	fi
+}
+
+function player-has-stream
+{
+	# does the running player have a sink-input registered with pulse?
+	# (corked-but-present is fine; the user just hasn't pressed Play yet)
+	local player=$1
+	[[ $player ]] || return 1
+	pactl list sink-inputs 2>/dev/null \
+		| grep -q "application.process.binary = \"$player\""
+}
+
+function pulseaudio-systemd-known
+{
+	systemctl --user list-unit-files pulseaudio.service 2>/dev/null \
+		| grep -q '^pulseaudio.service'
+}
+
+
+### actions
+
+
+function unmute-and-floor-volume
+{
+	# unmute, and only bump volume if it's near-silent -- don't blast over
+	# a deliberate low setting
+	local sink
+	sink=$(pactl get-default-sink 2>/dev/null) || return 0
+	[[ $sink ]] || return 0
+
+	if [[ $(pactl get-sink-mute "$sink" 2>/dev/null) != "Mute: no" ]]
+	then
+		msg "unmuting $sink"
+		pactl set-sink-mute "$sink" 0 2>/dev/null
+	fi
+
+	local pct
+	pct=$(sink-volume-pct "$sink")
+	if [[ $pct ]] && (( pct < VOL_FLOOR ))
+	then
+		msg "restoring $sink volume from ${pct}% to ${VOL_RESTORE}%"
+		pactl set-sink-volume "$sink" ${VOL_RESTORE}% 2>/dev/null
+	fi
+}
+
+function set-card-profile-analog
+{
+	# pick analog-stereo if we can; quiet on HDMI-only systems
+	local card
+	card=$(pactl list cards short 2>/dev/null | awk '{print $2; exit}')
+	[[ $card ]] || return 0
+	local profiles
+	profiles=$(pactl list cards 2>/dev/null)
+	if grep -q 'output:analog-stereo+input:analog-stereo' <<< "$profiles"
+	then
+		msg "setting $card -> analog stereo duplex"
+		pactl set-card-profile "$card" output:analog-stereo+input:analog-stereo 2>/dev/null
+	elif grep -q 'output:analog-stereo' <<< "$profiles"
+	then
+		msg "setting $card -> analog stereo output"
+		pactl set-card-profile "$card" output:analog-stereo 2>/dev/null
+	fi
+}
+
+function clean-stale-socket
+{
+	# The failure mode this script keeps tripping on: pulseaudio dies,
+	# leaves its socket and pid file behind, and the next daemon's bind()
+	# fails with EADDRINUSE -- but the new process stays alive, headless.
+	# systemd then auto-restarts five times and hits the rate limit. Wiping
+	# these before relaunch dodges the trap.
+	rm -f "$PULSE_DIR/native" "$PULSE_DIR/pid" 2>/dev/null
+}
+
+function wait-for-pulse
+{
+	local i
+	for i in 1 2 3 4 5
+	do
+		pulse-up && return 0
+		sleep 1
+	done
+	return 1
+}
+
+function bounce-pulse-systemd
+{
+	systemctl --user reset-failed pulseaudio.service pulseaudio.socket 2>/dev/null
+	clean-stale-socket
+	systemctl --user restart pulseaudio.socket pulseaudio.service
+}
+
+function bounce-pulse-manual
+{
+	pkill -KILL -x pulseaudio 2>/dev/null
+	sleep 1
+	clean-stale-socket
+	pulseaudio -D
+}
+
+function restart-music-player
+{
+	$restart_player || return 0
+	local player
+	player=$(running-player)
+	[[ $player ]] || return 0
+
+	msg "restarting music player ($player) to recreate its audio pipeline"
+	pkill -TERM -f "$player" 2>/dev/null
+	local i
+	for i in 1 2 3 4 5
+	do
+		pgrep -f "$player" >/dev/null || break
+		sleep 1
+	done
+	pkill -KILL -f "$player" 2>/dev/null
+
+	# launch via the user's wrapper so it lands on its usual desktop/geometry
+	if [[ -x ~/bin/music-player ]]
+	then
+		~/bin/music-player &
+		disown
+	fi
+}
+
+function done-if-audio-up
+{
+	if audio-up
+	then
+		msg "audio OK (${1:-restored})"
+		# pulse may be healthy while a long-running player's stream is dead
+		local player
+		player=$(running-player)
+		if [[ $player ]] && ! player-has-stream "$player"
+		then
+			restart-music-player
+		fi
+		exit 0
+	fi
+}
+
+
+### probe
+
+
+if audio-up
+then
+	# OS audio is fine, but the player may still be silently disconnected
+	player=$(running-player)
+	if [[ $player ]] && ! player-has-stream "$player"
+	then
+		msg "audio healthy, but $player has no sink-input attached"
+		$check_only && exit 1
+		restart-music-player
+		exit 0
+	fi
+	msg "audio looks healthy; nothing to do"
+	exit 0
 fi
 
-# unmute and set a reasonable volume, just in case
-pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null
-pactl set-sink-volume @DEFAULT_SINK@ 60% 2>/dev/null
+$check_only && exit 1
 
-echo "$ME: audio reset complete"
 
-# try to restore the music player, if we can
-music-player
+### escalation
+
+
+if (( start_at <= 1 )) && pulse-up
+then
+	msg "stage 1: unmute, floor volume, set analog profile"
+	unmute-and-floor-volume
+	set-card-profile-analog
+	done-if-audio-up "stage 1"
+fi
+
+if (( start_at <= 2 )) && pulseaudio-systemd-known
+then
+	msg "stage 2: bounce pulseaudio via systemd"
+	bounce-pulse-systemd
+	wait-for-pulse || msg "  warning: pulse didn't come back within 5s"
+	sleep $BOUNCE_WAIT
+	unmute-and-floor-volume
+	set-card-profile-analog
+	restart-music-player
+	done-if-audio-up "stage 2"
+fi
+
+if (( start_at <= 3 ))
+then
+	msg "stage 3: nuke pulseaudio manually"
+	bounce-pulse-manual
+	wait-for-pulse || msg "  warning: pulse didn't come back within 5s"
+	sleep $BOUNCE_WAIT
+	unmute-and-floor-volume
+	set-card-profile-analog
+	restart-music-player
+	done-if-audio-up "stage 3"
+fi
+
+if (( start_at <= 4 ))
+then
+	msg "stage 4: sudo alsa force-reload + pulse bounce"
+	sudo alsa force-reload || die "alsa force-reload failed"
+	bounce-pulse-manual
+	wait-for-pulse || msg "  warning: pulse didn't come back within 5s"
+	sleep $BOUNCE_WAIT
+	unmute-and-floor-volume
+	set-card-profile-analog
+	restart-music-player
+	done-if-audio-up "stage 4"
+fi
+
+die "audio still broken after all escalations -- check 'dmesg' and 'aplay -l'"
