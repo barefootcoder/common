@@ -1,7 +1,6 @@
 ---
 name: x-claude-setup
 description: Load full context for modifying Claude Code configuration, settings, hooks, MCP servers, skills, or the wrapper script on this machine
-model: sonnet
 disable-model-invocation: true
 allowed-tools: Bash(*), Read, Write, Edit, Glob, Grep, Agent(claude-code-guide)
 ---
