@@ -25,6 +25,32 @@ This is a mixed-platform home network with Linux systems, NAS storage, and smart
 - **Important**: `/bin/foo` and `/usr/bin/foo` are the SAME file - don't compare them
 - **Package queries**: Use `/usr/bin/*` paths (e.g., `dpkg -S /usr/bin/python3`)
 
+### Crontab management via makeln
+**Never edit a user's crontab directly with `crontab -e` / `crontab -`** on
+any home-network machine (Haven, Avalir, Caemlyn, Zadash, Graymoor) — the
+crontab is regenerated from source on every interactive tcsh startup:
+
+- `~/common/makeln` runs from `rc/tcshrc` on every interactive tcsh.
+- It concatenates `~/common/conf/crontab/default.cron` (header / env vars)
+  with `~/common/conf/crontab/<hostname>.cron` (per-machine lines) into a
+  tmp file.
+- If that differs from the live crontab, `crontab <tmpfile>` overwrites it.
+
+So any change made directly to `crontab` will silently vanish at the next
+shell start. **To add / remove / modify a cron line, edit the appropriate
+`conf/crontab/<hostname>.cron` in `~/common`** and let makeln pick it up
+(or run `~/common/makeln refresh` manually to apply immediately).
+
+Same mechanism applies to **quin** (EC2 sandbox) via the ec2 branch of
+makeln, reading `conf/crontab/quin.cron`.
+
+**Exception — Zadash currently:** Zadash's `~/common` symlink points to
+`/export/proj/common`, which depends on `/mnt/avalir/proj` being mounted.
+The user mounts that manually after boot, so until they do, makeln fails
+the `[[ -d $proj_dir ]]` check and never updates the crontab. Direct
+`crontab` edits stick while in that state — but always *also* fix the
+source file in `conf/crontab/`, since the mounts will be there next time.
+
 ## Key Documentation
 
 ### Core Network Documentation
