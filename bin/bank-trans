@@ -219,6 +219,7 @@ my %DESCRIPTIONS =
 							qr/Toppers/i,
 							qr/MOD Pizza/i,
 							qr/Snapper Jack[' ]s/i,
+							qr/Tacos 805/i,
 							qr/El ?Pollo ?Loco/i,
 							qr/Fatte'?s Pizza/i,
 							qr/Burger Express/i,
@@ -510,7 +511,7 @@ foreach (@transactions)
 			$what = $WHAT_LOOKUP{$what} // $what;
 		}
 
-		when ( /^PAYPAL INST XFER/i or /^PAYPAL TRANSFER/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
+		when ( /^PAYPAL (INST XFER|TRANSFER|PURCHASE)/i or /IAT PAYPAL/i or /^PAYPAL$/i or /Withdrawal PAYPAL$/i )
 		{
 			$source = 'PayPal';
 			$what = 'PayPal []' if $what eq $descr;
