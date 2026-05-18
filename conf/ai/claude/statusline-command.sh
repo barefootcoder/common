@@ -17,6 +17,17 @@ model_display=$(echo "$input" | jq -r '.model.display_name // "Claude AI"')
 transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
 current_dir=$(echo "$input" | jq -r '.workspace.current_dir // ""')
 context_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // 0')
+session_name=$(echo "$input" | jq -r '.session_name // ""')
+session_id=$(echo "$input" | jq -r '.session_id // ""')
+
+# Session display: alias if set via /rename or --name, else first 8 chars of UUID
+if [ -n "$session_name" ]; then
+    session_display="$session_name"
+elif [ -n "$session_id" ]; then
+    session_display="${session_id:0:8}"
+else
+    session_display="?"
+fi
 
 # Check if sandbox mode is enabled (from settings.local.json)
 sandbox_enabled="false"
@@ -238,4 +249,4 @@ if [ "$sandbox_enabled" = "true" ]; then
 fi
 
 # Output compact status line with cost and token usage
-printf "%b%b %s | %s | %s | %b tokens\n" "$sandbox_indicator" "$cost_warning" "$model_short" "$project_name" "$cost_display" "$token_display"
+printf "%b%b %s | %s | %s | %b tokens | [%s]\n" "$sandbox_indicator" "$cost_warning" "$model_short" "$project_name" "$cost_display" "$token_display" "$session_display"
