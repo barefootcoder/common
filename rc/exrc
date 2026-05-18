@@ -48,6 +48,8 @@ map Q :s/^\/\* //<CR>:s/ \*\/$//<CR>
 map q_ viWc_<C-R>"_<Esc>
 map q* viWc*<C-R>"*<Esc>
 map q` viWc`<C-R>"`<Esc>
+map q' viWc'<C-R>"'<Esc>
+map q" viWc"<C-R>""<Esc>
 " remove any ^R remap
 "try | unmap <C-R> | catch /E31/ | endtry
 " show buffers
