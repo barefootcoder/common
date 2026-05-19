@@ -19,6 +19,17 @@ then
 	nohup ~/local/bin/viv-mon >/dev/null 2>&1 &
 fi
 
+# Prefer deep S3 over default s2idle: much lower drain in suspend, and less
+# trigger-happy on stray interrupts.  Critical given the 40%-health battery.
+echo deep | sudo tee /sys/power/mem_sleep >/dev/null
+# Disarm lid as a wake source.  Lid-close action is 'blank' (deliberately),
+# so a lid event during suspend wakes the box but nothing puts it back to
+# sleep — see May 18 travel incident.  Toggle only if currently enabled.
+if grep -q '^LID0.*enabled' /proc/acpi/wakeup
+then
+	echo LID0 | sudo tee /proc/acpi/wakeup >/dev/null
+fi
+
 if ( screen -ls ||: ) | grep base
 then
 	cmd="screen -x base"
