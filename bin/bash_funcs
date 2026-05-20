@@ -123,3 +123,21 @@ function set_sandbox
 {
 	SANDBOX=${SANDBOX:-$($MYDIR/local/vagrant-sandbox/bin/push-machine)}
 }
+
+
+#####################
+## TERMSTART FUNCS ##
+#####################
+
+function termstart-common
+{
+	ssh-add-if-necessary
+	ssh-add -l
+
+	screen-buflog-hold-files
+
+	if [[ -f ~/.Xmodmap ]]
+	then
+		xmodmap ~/.Xmodmap
+	fi
+}

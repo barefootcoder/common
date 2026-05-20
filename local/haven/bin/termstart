@@ -1,10 +1,7 @@
 #!/bin/bash
 . ~/bin/bash_funcs
 
-ssh-add-if-necessary
-ssh-add -l
-
-screen-buflog-hold-files
+termstart-common
 
 # Haven hardware instability: lock CPU governor to powersave (cheap to redo)
 # and bring up the forensic monitor before anything else can crash the box.
