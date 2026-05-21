@@ -20,7 +20,7 @@ Example: `scenario:catalyst-server-debugging.md`, `scenario:config-troubleshooti
 
 ### Project Directories (`projects/<project-name>/`)
 
-**What it is:** A comprehensive documentation directory for a specific functional domain or area of the codebase.
+**What it is:** A comprehensive documentation directory for a specific functional domain or area of the codebase. Formally called an **"aidoc project"** to disambiguate from other overloaded uses of the word (GitHub Projects, Claude.ai Projects, the `~/proj/` directory, etc.); informally just "project" when context is clear.
 
 **When to use:** At the beginning of a session when working on a larger, multi-faceted area of the codebase that requires extensive context. Like scenarios but with broader scope and multiple supporting files.
 

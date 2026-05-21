@@ -1,5 +1,7 @@
 # General AI Agent Instructions
 
+You are working in the context of an **aidoc project** — a documentation directory under `aidoc/projects/<name>/` that seeds context for a specific functional domain. The formal name "aidoc project" disambiguates from GitHub Projects, Claude.ai Projects, `~/proj/`, etc.; just "project" is fine when context is clear.
+
 ## Collaboration Modes
 
 The user will specify their preferred interaction style using explicit signals:

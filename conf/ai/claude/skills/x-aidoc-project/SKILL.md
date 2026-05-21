@@ -1,15 +1,15 @@
 ---
-name: x-project
-description: Load project-specific context from aidoc/projects/ directory
+name: x-aidoc-project
+description: Load aidoc project context from aidoc/projects/ directory
 argument-hint: <project-name>
 model: sonnet
 disable-model-invocation: true
 allowed-tools: Bash(*), Read, Glob
 ---
 
-# Load Project Context
+# Load Aidoc Project Context
 
-Load project-specific instructions for a named project area.
+Load aidoc project instructions for a named project area. ("Aidoc project" is the formal name for a directory under `aidoc/projects/`; informally just "project".)
 
 **Input**: $ARGUMENTS (project name)
 
@@ -19,7 +19,7 @@ Load project-specific instructions for a named project area.
 
 ## Workflow
 
-1. **Locate project**: Run `~/.claude/skills/x-project/scripts/aidoc-locate project $ARGUMENTS`
+1. **Locate project**: Run `~/.claude/skills/x-aidoc-project/scripts/aidoc-locate project $ARGUMENTS`
    - If no argument provided, ask user for project name
    - If not found, run without the name arg to list available projects
 
