@@ -1,0 +1,290 @@
+#! /usr/bin/env perl
+
+# ac-mode: track which AC charging method is in use on Haven and correlate
+# with kernel/udev "AC online" transitions, to localize the unexplained ~18
+# AC events/day reported by udev.  See aidoc/projects/home-network/README.md
+# crash log for context (May 22 2026 double crash).
+#
+# Workflow:
+#   ac-mode mark <label>   when you change the charging setup
+#   ac-mode report         see events/hr per mode
+#   ac-mode tail           "what just happened" view
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+use Method::Signatures;
+
+use POSIX qw< strftime >;
+use Time::Local qw< timelocal >;
+use File::Basename;
+
+my $ME     = basename($0);
+my $LOG    = "$ENV{HOME}/local/log/ac-mode.log";
+my @LABELS = qw< office-ac office-usb office-both den-ac >;
+my %VALID  = map { $_ => 1 } @LABELS;
+
+sub usage
+{
+	my $msg = shift;
+	print STDERR "$ME: $msg\n\n" if $msg;
+	print STDERR <<EOF;
+usage: $ME <label> [at <ISO-ts>]        shortcut for 'mark <label>'
+       $ME mark <label> [at <ISO-ts>]   record start of new charging mode
+       $ME tail [N]                     last N AC events with mode (default 20)
+       $ME report [since]               tally AC events per mode
+                                          since: journalctl time spec
+                                          (default: from first mode mark)
+       $ME modes                        show full mode log
+       $ME labels                       list valid labels
+
+Valid labels: @LABELS
+EOF
+	exit($msg ? 2 : 0);
+}
+
+usage("no arguments") unless @ARGV;
+my $cmd = shift;
+my %dispatch = (
+	mark   => \&cmd_mark,
+	tail   => \&cmd_tail,
+	report => \&cmd_report,
+	modes  => \&cmd_modes,
+	labels => \&cmd_labels,
+);
+# shortcut: `ac-mode <label> [...]` ≡ `ac-mode mark <label> [...]` — since
+# mark is the only command run frequently, requiring it would be tedious.
+if (!$dispatch{$cmd} and $VALID{$cmd})
+{
+	unshift @ARGV, $cmd;
+	$cmd = 'mark';
+}
+usage("unknown subcommand or label: $cmd") unless $dispatch{$cmd};
+$dispatch{$cmd}->(@ARGV);
+exit 0;
+
+#########################################################################
+
+func cmd_mark (@args)
+{
+	usage("mark requires <label>") unless @args;
+	my $label = shift @args;
+	usage("unknown label: $label (try '$ME labels')") unless $VALID{$label};
+
+	my $ts;
+	if (@args)
+	{
+		usage("expected 'at <ISO-ts>' after label, got: @args")
+			unless @args == 2 and $args[0] eq 'at';
+		$ts = parse_iso_ts($args[1]);
+	}
+	else
+	{
+		$ts = time;
+	}
+	my $ts_iso = strftime("%Y-%m-%dT%H:%M:%S%z", localtime($ts));
+
+	ensure_log_dir();
+	open my $fh, '>>', $LOG;
+	print $fh "$ts_iso $label\n";
+	close $fh;
+	say "marked: $ts_iso $label";
+}
+
+func cmd_modes ()
+{
+	if (-f $LOG)
+	{
+		open my $fh, '<', $LOG;
+		print while <$fh>;
+		close $fh;
+	}
+	else
+	{
+		say STDERR "no mode log yet at $LOG";
+		exit 1;
+	}
+}
+
+func cmd_labels ()
+{
+	say for @LABELS;
+}
+
+func cmd_tail (@args)
+{
+	my $n = $args[0] // 20;
+	my @intervals = load_modes();
+	my @events    = load_ac_events("3 days ago");
+	@events       = @events[-$n .. -1] if @events > $n;
+	if (!@events)
+	{
+		say "(no AC events in the last 3 days)";
+		return;
+	}
+	for my $e (@events)
+	{
+		my $mode    = mode_at($e->{ts}, \@intervals) // '?';
+		my $dir     = $e->{dir};
+		my $dir_s   = $dir eq 'in'  ? 'AC IN '
+		            : $dir eq 'out' ? 'AC OUT'
+		            :                 'AC ?? ';
+		my $ts_disp = strftime("%Y-%m-%d %H:%M:%S", localtime($e->{ts}));
+		printf "%s  %s  %-15s\n", $ts_disp, $dir_s, $mode;
+	}
+}
+
+func cmd_report (@args)
+{
+	my $since = $args[0];
+	my @intervals = load_modes();
+	unless (@intervals)
+	{
+		say STDERR "no mode log entries — run '$ME mark <label>' first";
+		exit 1;
+	}
+	$since //= strftime("%Y-%m-%d %H:%M:%S", localtime($intervals[0]{ts}));
+
+	my @events = load_ac_events($since);
+
+	# attach end-time to each interval (next interval's start, or now)
+	my $now = time;
+	for my $i (0 .. $#intervals)
+	{
+		$intervals[$i]{end} = $i < $#intervals ? $intervals[$i+1]{ts} : $now;
+		$intervals[$i]{$_} = 0 for qw< n_in n_out n_bounce >;
+	}
+
+	# slot events into intervals
+	for my $e (@events)
+	{
+		for my $iv (@intervals)
+		{
+			next unless $e->{ts} >= $iv->{ts} and $e->{ts} < $iv->{end};
+			my $k = $e->{dir} eq 'in'     ? 'n_in'
+			      : $e->{dir} eq 'out'    ? 'n_out'
+			      :                         'n_bounce';
+			$iv->{$k}++;
+			last;
+		}
+	}
+
+	# render table
+	printf "%-15s  %14s  %5s  %5s  %5s  %5s  %s\n",
+	       'mode', 'duration', 'in', 'out', 'bnc', 'total', 'per-hr';
+	print '-' x 70, "\n";
+	my ($tot_dur, $tot_in, $tot_out, $tot_bnc) = (0)x4;
+	for my $iv (@intervals)
+	{
+		my $dur   = $iv->{end} - $iv->{ts};
+		my $tot   = $iv->{n_in} + $iv->{n_out} + $iv->{n_bounce};
+		my $rate  = $dur > 0 ? $tot / ($dur / 3600) : 0;
+		printf "%-15s  %14s  %5d  %5d  %5d  %5d  %5.2f\n",
+		       $iv->{label}, fmt_duration($dur),
+		       $iv->{n_in}, $iv->{n_out}, $iv->{n_bounce}, $tot, $rate;
+		$tot_dur += $dur;
+		$tot_in  += $iv->{n_in};
+		$tot_out += $iv->{n_out};
+		$tot_bnc += $iv->{n_bounce};
+	}
+	print '-' x 70, "\n";
+	my $tot   = $tot_in + $tot_out + $tot_bnc;
+	my $rate  = $tot_dur > 0 ? $tot / ($tot_dur / 3600) : 0;
+	printf "%-15s  %14s  %5d  %5d  %5d  %5d  %5.2f\n",
+	       'TOTAL', fmt_duration($tot_dur),
+	       $tot_in, $tot_out, $tot_bnc, $tot, $rate;
+}
+
+#########################################################################
+
+func ensure_log_dir ()
+{
+	my $dir = $LOG; $dir =~ s{/[^/]+$}{};
+	return if -d $dir;
+	require File::Path;
+	File::Path::make_path($dir);
+}
+
+func load_modes ()
+{
+	return () unless -f $LOG;
+	my @entries;
+	open my $fh, '<', $LOG;
+	while (<$fh>)
+	{
+		chomp;
+		next unless /^(\S+)\s+(\S+)$/;
+		my ($ts_iso, $label) = ($1, $2);
+		push @entries, { ts => parse_iso_ts($ts_iso), ts_iso => $ts_iso, label => $label };
+	}
+	close $fh;
+	return sort { $a->{ts} <=> $b->{ts} } @entries;
+}
+
+# Each AC online transition fires one udev rule invocation that runs multiple
+# shell commands (powertop, powerprofilesctl set X).  Each command produces
+# its own journal line.  All lines from one transition share the same
+# systemd-udevd[PID], so we group by PID.  Direction is inferred from which
+# powerprofilesctl variant was called:
+#   "set balanced"    → AC online   (plug IN)
+#   "set power-saver" → AC offline  (plug OUT)
+#   both/neither      → bounce      (rapid back-and-forth, can't disambiguate)
+func load_ac_events ($since)
+{
+	my $cmd = "journalctl --since '$since' --output=short-iso --no-pager 2>/dev/null";
+	open my $pipe, '-|', $cmd;
+	my %by_pid;
+	while (<$pipe>)
+	{
+		next unless /^(\S+)\s+\S+\s+systemd-udevd\[(\d+)\]:\s+AC:\s+Process\s+'([^']+)'/;
+		my ($ts_iso, $pid, $process) = ($1, $2, $3);
+		$by_pid{$pid} //= { ts => parse_iso_ts($ts_iso), ts_iso => $ts_iso, procs => [] };
+		push @{ $by_pid{$pid}{procs} }, $process;
+	}
+	close $pipe;
+
+	my @events;
+	for my $pid (sort { $by_pid{$a}{ts} <=> $by_pid{$b}{ts} } keys %by_pid)
+	{
+		my $g = $by_pid{$pid};
+		my $procs = join('|', @{ $g->{procs} });
+		my $has_in  = $procs =~ /set balanced/;
+		my $has_out = $procs =~ /set power-saver/;
+		my $dir     = $has_in && !$has_out ? 'in'
+		            : $has_out && !$has_in ? 'out'
+		            :                        'bounce';
+		push @events, { ts => $g->{ts}, pid => $pid, dir => $dir };
+	}
+	return @events;
+}
+
+func parse_iso_ts ($iso)
+{
+	# accepts 2026-05-22T17:07:21-0700  or  2026-05-22T17:07:21+00:00  or
+	# 2026-05-22 17:07:21  (assumes local tz; the offset, if present, is
+	# accepted but not used — journalctl --output=short-iso emits local tz)
+	my ($y, $mo, $d, $h, $mi, $s) =
+		$iso =~ /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/
+			or die "$ME: can't parse timestamp: $iso\n";
+	return timelocal($s, $mi, $h, $d, $mo-1, $y);
+}
+
+func mode_at ($ts, $intervals_ref)
+{
+	my $current;
+	for my $iv (@$intervals_ref)
+	{
+		last if $iv->{ts} > $ts;
+		$current = $iv->{label};
+	}
+	return $current;
+}
+
+func fmt_duration ($sec)
+{
+	my $d = int($sec / 86400);
+	my $h = int(($sec % 86400) / 3600);
+	my $m = int(($sec %  3600) /   60);
+	return $d > 0 ? sprintf("%dd %02dh %02dm", $d, $h, $m)
+	              : sprintf(   "%02dh %02dm",     $h, $m);
+}

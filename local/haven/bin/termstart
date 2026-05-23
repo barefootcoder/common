@@ -11,6 +11,17 @@ sudo cpupower frequency-set -g powersave >/dev/null
 # (CVE-2020-8694) leaves them 0400 root by default, which silently zeroed
 # viv-mon's pkg= and gpu= columns for the entire May 11–13 window.
 sudo chmod a+r /sys/class/powercap/intel-rapl*/energy_uj 2>/dev/null
+# Clamp the package-power constraints to below the ~30W empirical crash
+# threshold.  Stock values were PL1=200W (long_term, 32s window, effectively
+# unconstrained) and PL2=61W (short_term, ~2.4ms window).  Capping to
+# PL1=20W / PL2=27W on package-0 (constraint_0=long_term, constraint_1=
+# short_term).  Idempotent — writing the same value back is a no-op.
+echo 20000000 | sudo tee /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw >/dev/null
+echo 27000000 | sudo tee /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw >/dev/null
+# Let MATE session restore, juno-pp, TLP, and ssh-agent setup finish their
+# pkg-power burst before adding viv-mon's 5Hz polling on top.  Crash on
+# 2026-05-22 17:21:58 (34s into boot) hit pkg=38W during this window.
+sleep 1
 if ! kill -0 "$(cat ~/.viv-mon.pid 2>/dev/null)" 2>/dev/null
 then
 	nohup ~/local/bin/viv-mon >/dev/null 2>&1 &
@@ -36,10 +47,19 @@ fi
 
 ~/common/local/haven/applets/touchpad-toggle off &
 xrestore -geometry 371x442+1543+602 -desktop Music "alarm-clock-applet"
+sleep 0.5
 
+# Each `myterm` forks a kitty + (often) an SSH handshake + a screen
+# attach.  Starting the three back-to-back regularly peaked pkg power
+# above the ~30W threshold that empirically crashes Haven now.  Let each
+# one's kitty+ssh+screen settle (~700ms) before launching the next.
 myterm -D Main -s Haven haven-fortress 125x50+7+30 $cmd
+sleep 0.7
 myterm -D Main -s Avalir avalir-on-fire 125x50-10-40 ssh avalir
+sleep 0.7
 myterm -D Media -s -S Zadash night-in-zadash 125x50+478-34 ssh zadash
+sleep 0.7
 
 music-player
+sleep 0.5
 xrestore -desktop Music -geometry 1200x798+716+254 kid3

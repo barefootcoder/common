@@ -11,11 +11,18 @@ endif
 # determine run mode
 # (Claude [3.5 Sonnet] helped write this block)
 set bail_early=no
+set _quickstart_file=/tmp/tcshrc-quickstart
 if ( ! $?prompt ) then
-	if ( $?VIM ) then
-		set bail_early=vi
-	else
+	set bail_early=unknown
+	if ( -r $_quickstart_file ) then
 		set bail_early=immediate
+		rm $_quickstart_file
+	else if ( $?TERM ) then
+		if ( $?VIM ) then
+			set bail_early=vi
+		else if ( $TERM == 'dumb' || $TERM == 'unknown' ) then
+			set bail_early=cron
+		endif
 	endif
 endif
 
@@ -142,6 +149,8 @@ setenv CDA_EXCLUDE /usr/src/kernels:/export/arc/laptop/hold
 alias pd pushd
 alias cda 'cd "`$HOME/bin/cda \!*`"'
 alias cdp 'cd "`$HOME/bin/cda -p \!*`"'
+	set expanddirs='print shift =~ s{(..)}{/$1*}gr'
+alias cdt 'cd "`perl -le \"$expanddirs\" \!*`"'
 alias ls ls -CFL
 alias ll ls -lh
 alias lll /bin/ls -lhF
@@ -352,6 +361,7 @@ complete steal-common 'p/1/`friendly-hosts`/'
 complete vims 'n/-N/d/' 'n/-C/f/' 'p/4-/f/' 'C?[^-]*?`vim-session -l`?'
 complete gaming 'p/1/`gaming -C`/'
 complete dz 'C?[^-]*?`dz commands`?' 'c?--?(help pretend)?'
+complete ac-mode 'p/1/(mark tail report modes labels `ac-mode labels`)/' 'n/mark/`ac-mode labels`/'
 
 # many gentoo systems try to be all clever with a huge list of preprogrammed completions for most common commands
 # but for cp/mv/ln, for instance, they define the 2nd arg as having to be a directory
