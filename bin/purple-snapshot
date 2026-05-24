@@ -1,0 +1,58 @@
+#! /bin/bash
+#
+# purple-snapshot — nightly snapshot of ~/.purple/ to Nakama via rsync
+# with --link-dest hardlinks for cheap dated point-in-time backups.
+#
+# Creates /share/incrementals/avalir/purple/YYYY-MM-DD/ on Nakama, with
+# unchanged files hardlinked to yesterday's snapshot. Disk usage on
+# Nakama grows by the daily delta only.
+#
+# Intended for cron; runs idempotently and only logs to ~/.logs/.
+
+ME=${0##*/}
+
+purple=$HOME/.purple
+dest_host=nami@nakama
+dest_port=2322
+dest_base=/share/incrementals/avalir/purple
+
+today=$(date +%F)
+yesterday=$(date -d yesterday +%F)
+log_dir=$HOME/.logs
+log_file=$log_dir/$ME-$(date +%Y-%m).log
+mkdir -p $log_dir
+
+exec >> $log_file 2>&1
+
+echo
+echo "[$(date '+%F %T')] $ME: starting snapshot of $purple to $dest_host:$dest_base/$today"
+
+if [[ ! -d $purple ]]
+then
+    echo "[$(date '+%F %T')] $ME: ERROR — $purple does not exist"
+    exit 1
+fi
+
+ssh -p $dest_port $dest_host "mkdir -p $dest_base"
+
+link_dest=
+if ssh -p $dest_port $dest_host "test -d $dest_base/$yesterday"
+then
+    link_dest="--link-dest=../$yesterday/"
+    echo "[$(date '+%F %T')] $ME: hardlinking unchanged files against $yesterday/"
+else
+    echo "[$(date '+%F %T')] $ME: no $yesterday/ snapshot; doing full copy"
+fi
+
+rsync -aH --delete $link_dest \
+    -e "ssh -p $dest_port" \
+    "$purple/" "$dest_host:$dest_base/$today/"
+rc=$?
+
+if [[ $rc -eq 0 ]]
+then
+    echo "[$(date '+%F %T')] $ME: done"
+else
+    echo "[$(date '+%F %T')] $ME: FAILED rc=$rc"
+fi
+exit $rc

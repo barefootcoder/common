@@ -2,3 +2,4 @@
 *     * * * * $HOME/local/bin/unfocus-alarms
 */10  * * * * tcsh -c "$HOME/bin/screen-bufsave -ACq"
 0     8 * * * bash -c "sudo journalctl -p err --since '24 hours ago' | grep -v UFW >> $HOME/.logs/hw-errors-\$(date +\%Y-\%m).log 2>&1"
+0     3 * * * $HOME/bin/purple-snapshot
