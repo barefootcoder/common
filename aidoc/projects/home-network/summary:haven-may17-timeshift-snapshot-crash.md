@@ -378,6 +378,82 @@ substrate.
   content under ~/ (~ a couple dozen GB after exclusions) is
   currently in no backup at all. See "Including ~/" section below.
 
+## May 23 Follow-Up: Both Live-Config Mitigations Failed Silently
+
+Audit performed during a routine `/x-aidoc-project home-network` reload on
+2026-05-23 (six days after the original session) discovered that **neither
+live-config change actually achieved its stated goal**. Both findings need
+to be on the record before future agents act on this doc.
+
+### Finding 1: the cron `nice/ionice` wrapper was reverted
+
+- Current `/etc/cron.d/timeshift-hourly` content:
+  `0 * * * * root timeshift --check --scripted` — no wrappers.
+- `diff` against `/etc/cron.d/timeshift-hourly.bak.pre-may17` is **empty**;
+  the files are byte-identical.
+- File mtime is **2026-05-17 14:00 PDT** — about 12 minutes after the
+  original edit at 13:48. So whatever reverted it acted very quickly and
+  has not touched the file since.
+- User confirmed (May 23) they did not revert it manually.
+- `apt-history` greps for `timeshift` returned nothing in the relevant
+  window. Suspects (none confirmed): unattended-upgrades conffile restore,
+  timeshift self-reinstall via some other trigger, or another agent
+  session that touched the file. Worth chasing only because future cron
+  edits could be silently lost the same way.
+
+### Finding 2: the exclusion list rework had zero practical effect
+
+Despite removing `/home/buddy/**` from `/etc/timeshift/timeshift.json` and
+adding 26 targeted excludes underneath, the latest snapshot's
+`/home/buddy/` directory is **empty** (4.0 K, just `.` and `..`):
+
+```
+$ sudo ls -la /timeshift/snapshots/2026-05-23_14-00-01/localhost/home/buddy/
+drwxr-x--- 2 buddy users 4096 May 23 03:41 .
+drwxr-xr-x 3 root  root  4096 Jun 30  2023 ..
+```
+
+Same for the boot snapshot. Total snapshot size still ~30 G — unchanged
+from before the May 17 rework.
+
+**Root cause:** Timeshift's RSYNC mode has hardcoded `/home/*` and
+`/root/*` excludes that take precedence over the user-supplied `exclude`
+array. The `/home/buddy/**` entry in the original config was therefore
+*redundant* with Timeshift's internal default, not load-bearing. Removing
+it did nothing because the default exclude was still in effect. The 26
+targeted excludes I added under `/home/buddy/` are all dead patterns —
+they exclude things that were already excluded one level up.
+
+The mechanism for *including* user homes in Timeshift is not the JSON
+`exclude` array. It's the GUI's "Filter → Users → Include/Exclude" panel,
+which writes per-user flags somewhere other than the `exclude` array
+(likely a `user-rules` block or similar — not investigated yet).
+
+So the doc's earlier claim "~10 GB net addition to the snapshot" never
+materialized. The Syncthing-vs-Timeshift gap for `~/local/` (Haven-
+specific termstart, viv-mon, etc.) and `~/.claude/` is still open —
+those directories are in no backup at all.
+
+### Why neither failure has bitten us
+
+- **RAPL cap from May 22** (PL1=20 W, PL2=27 W) addresses the original
+  crash risk directly. The snapshot's CPU burst can't exceed 27 W now
+  regardless of `nice`/`ionice` priority, so the lost cron wrapper is
+  moot for crash prevention.
+- **`~/` was never actually included**, so no surprise heavy snapshot
+  ever ran at 05:00. Post-May-17 snapshot history shows clean runs.
+
+The original crash analysis (timeshift cron at 05:00 was the proximate
+trigger) is **still correct**. It's only the mitigations that turned out
+not to do what we said.
+
+### Doc/TODO actions taken
+
+- This section added.
+- README "Current Status" entry for May 17 corrected.
+- Three TODOs added (cron-revert investigation, `~/` inclusion path
+  decision, dead-exclusion cleanup) — see project `TODO.md`.
+
 ## Files Touched This Session
 
 - `aidoc/projects/home-network/summary:haven-may17-timeshift-snapshot-crash.md` — this doc
