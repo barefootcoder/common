@@ -1,0 +1,31 @@
+#!/bin/bash
+# Snapshot of fire-backup runners across Avalir, Zadash, Nakama.
+
+echo "=== Avalir ==="
+echo "active:"
+pgrep -af 'rclone copy /' 2>/dev/null \
+    | grep -v 'pgrep\|grep' \
+    | head -1 \
+    | sed -E 's/.*rclone copy ([^ ]+).*b2(-crypt)?:([^ ]+).*/  \1 -> b2\2:\3/'
+echo "log tail:"
+tail -6 /var/tmp/fire-backup/runner.log 2>/dev/null
+echo
+
+echo "=== Zadash ==="
+ssh -o ConnectTimeout=5 zadash 'bash -s' <<'REMOTE'
+echo 'active:'
+ps auxf 2>/dev/null | grep 'rclone copy ' | grep -v grep \
+    | head -1 | sed -E 's/.*rclone copy ([^ ]+).*b2:([^ ]+).*/  \1 -> b2:\2/'
+echo 'log tail:'
+tail -6 /var/tmp/fire-backup/runner.log 2>/dev/null
+REMOTE
+echo
+
+echo "=== Nakama ==="
+ssh -o ConnectTimeout=5 -p 2322 nami@nakama 'sh -s' <<'REMOTE'
+echo 'active:'
+ps -ef 2>/dev/null | grep 'rclone ' | grep -v grep \
+    | head -1 | sed -E 's/.*copy ([^ ]+).*b2:([^ ]+).*/  \1 -> b2:\2/'
+echo 'log tail:'
+tail -6 /share/CACHEDEV1_DATA/homes/admin/fire-backup/runner.log 2>/dev/null
+REMOTE

@@ -54,10 +54,13 @@
     - Planned: hardwired Ethernet to office hub
     - Planned: SSH, Tailscale, Syncthing, sshfs shares (mirroring Zadash's role)
     - Console access via IP-KVM device (see Network Hardware section)
-  - **Caemlyn**: 
-    - Static IP: [see private/network-details.md]
-    - Being decommissioned; contains backups pending transfer to new NAS
-    - Will be returned to company after QNAP setup
+  - **Caemlyn** *(decommissioned May 2026, hardware dead)*:
+    - Was: company-issued machine. All data was migrated to Nakama
+      (`/share/{archive,personal,backup,proj,...}`) and the machine then died
+      before being returned. No longer on the network — `ssh caemlyn` returns
+      "no route to host" and the host should not be expected to be reachable.
+    - Mentioned in legacy MATE keybinding docs (Zadash↔Caemlyn pairing) — those
+      bindings are dormant.
 
 - **NAS Systems**:
   - **Previous - Taaveren**: Synology DS220j (decommissioned)
@@ -120,6 +123,5 @@
 - Complete Tailscale access for EC2 servers
 - Implement automated backup schedules using rsync scripts
 - Configure Syncthing on Nakama NAS
-- Decommission Caemlyn after remaining data migration
 - Decommission Zadash after Graymoor is fully operational
 - Consider adding second drive to Nakama for RAID-1 redundancy

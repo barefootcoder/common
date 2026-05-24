@@ -75,6 +75,33 @@ skill scans this file on load and surfaces due/pending items.
   list for option (b) in the `~/` backup-path TODO above). Low priority either way.
   _(added 2026-05-23 during May 17 follow-up audit)_
 
+- **anytime** — Set up nightly rclone cron on Nakama to sync `/share/*` → B2
+  (`barefoot-common/nakama/...`). Approach agreed: rclone + `/etc/config/crontab`
+  (QNAP cron management, NOT makeln). Script + cron entry should live in
+  `conf/crontab/` for version control, plus a one-time manual install on Nakama.
+  Excludes: `**/@Recently-Snapshot/**`, `**/.@__thumb/**`, `**/.qpkg/**`.
+  See fire-evac-recovery.md for the rclone.conf already in place on Nakama.
+  _(added 2026-05-24 during fire-evac backup session)_
+
+- **anytime** — Back up the remaining Avalir survey gaps identified 2026-05-22:
+  `~/.config/` (minus vivaldi, covered), `~/.local/` (1.8 GB), `~/.purple/` ✅
+  already set up, `~/Downloads/`, `~/.thunderbird-fresh/`, `/root/`, `/etc/`,
+  Haven host-unique (`~/Insync/` 35 GB, `~/local/`, `~/.ssh/`, `~/.mozilla/`).
+  `/var/lib/docker/` if containers have unique state. See the May 22 survey report
+  in conversation; user approved deferring most of this.
+  _(added 2026-05-24 during fire-evac backup session)_
+
+- **anytime** — `~/.config/` cleanup: safe to delete `vivaldi-install/` (115 MB,
+  mtime 2023-10-03, defunct Vivaldi profile). Likely safe: `chromium-crippled/`
+  (464 MB, mtime 2025-04-17). Borderline: `google-chrome/` (176 MB, 2026-03-07).
+  User to confirm before deletion. _(added 2026-05-24 during fire-evac backup session)_
+
+- **anytime** — Nakama `/share/{music,camera,rpg}` not yet uploaded to B2
+  (intentionally skipped since Avalir covers `/export/{music,camera,rpg}`). Nakama's
+  `/share/music` has extra subdirs (`Christy/`, `Danny/`, `Dreamtime/`) not present
+  on Avalir — worth a sweep under `barefoot-common/nakama/music/` eventually.
+  _(added 2026-05-24 during fire-evac backup session)_
+
 ## Done
 
 _(nothing yet)_
