@@ -1,5 +1,7 @@
 :se nocompatible
 :se undolevels=1000
+:se ruler
+:se pastetoggle=<Ins>
 :map g G
 :nmap Y y$
 :map <C-Y> :files<CR>

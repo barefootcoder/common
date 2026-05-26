@@ -1,4 +1,6 @@
 set showmode					" want to see insert / replace mode
+set ruler						" cursor pos in bottom-right; absence also signals 'paste' is on
+set pastetoggle=<Ins>			" rescue key for stuck-paste-mode bug (works even when maps are dead)
 set nobackup					" stop leaving annoying tilde droppings all over the place
 set autoindent					" handy for programming
 set tabstop=4					" standard for Barefoot files
