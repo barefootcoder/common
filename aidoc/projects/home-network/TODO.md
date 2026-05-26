@@ -5,8 +5,9 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
-- **2026-05-24** — Hardware intervention on Haven: battery replacement + CPU/GPU
-  repaste + visual capacitor inspection. User targeting "this weekend" (May 24–25).
+- **2026-06-01** — Hardware intervention on Haven: battery replacement + CPU/GPU
+  repaste + visual capacitor inspection. Originally targeted May 24–25 weekend;
+  pushed out a week on 2026-05-25 (user deferred).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
 - **2026-05-24** — Test the spare AC adapter at the office. Plug in the backup
@@ -102,6 +103,17 @@ skill scans this file on load and surfaces due/pending items.
   on Avalir — worth a sweep under `barefoot-common/nakama/music/` eventually.
   _(added 2026-05-24 during fire-evac backup session)_
 
+- **anytime** — Install Syncthing on the new phone (`pixel-4a`) and set up
+  continuous sync of the camera folder (`/sdcard/DCIM/Camera/`) to a tailnet
+  peer — Avalir is the natural choice (already a Syncthing hub). Pulls photos
+  off the phone without manual `adb pull` steps and works over both LAN and
+  Tailscale when off-LAN. Fits the existing Syncthing architecture; will need
+  a new folder definition on the receiving side and a per-device "send only"
+  config on the phone. _(added 2026-05-25 during phone replacement session)_
+
 ## Done
 
-_(nothing yet)_
+- ~~2026-05-25~~ — Remove stale `google-pixel-4a` node (100.98.252.81) from
+  Tailscale admin console. Old phone was replaced 2026-05-25; new phone is
+  `pixel-4a` at 100.76.67.17. _(added 2026-05-25 during phone replacement
+  session, completed 2026-05-25)_
