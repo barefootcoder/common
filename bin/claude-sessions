@@ -1,0 +1,248 @@
+#! /usr/bin/env perl
+
+# claude-sessions: a richer `/resume` for Claude Code.
+#
+# Claude Code's built-in `/resume` picker only labels each session with its
+# `/rename` alias (if set) or else the *last* prompt typed -- which is usually
+# useless for remembering what a session was about.  This lists the sessions for
+# the current project (cwd) keyed on the *first* prompt instead, plus a relative
+# last-activity time and a rough prompt count, and pipes them through fzf.  Pick
+# one and it resumes via `claude --resume <id>`.
+#
+# Usage:
+#   claude-sessions [query]      list this project's sessions in fzf; [query]
+#                                pre-seeds the fzf filter
+#   claude-sessions --print      print the chosen session id instead of resuming
+#   claude-sessions --list       print the table to stdout (no picker; pipeable)
+#   claude-sessions --help
+#
+# Session transcripts live as JSONL under
+#   ~/.claude/projects/<munged-cwd>/<session-id>.jsonl
+# where <munged-cwd> is the cwd with every non-alphanumeric char turned to '-'.
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+use Method::Signatures;
+
+use Cwd            ();
+use JSON::PP       ();
+use Time::Local    qw< timegm >;
+use IPC::Open2     qw< open2 >;
+use File::Basename qw< basename >;
+
+my $ME = basename($0);
+
+# subtle colour for the metadata columns and the alias, leaving the prompt plain
+my ($DIM, $CYAN, $RST) = ("\e[2m", "\e[36m", "\e[0m");
+
+sub usage
+{
+	my $msg = shift;
+	print STDERR "$ME: $msg\n\n" if $msg;
+	print STDERR <<EOF;
+usage: $ME [query]        list this project's Claude sessions in fzf and
+                          resume the chosen one ([query] pre-seeds the filter)
+       $ME --print        print the chosen session id instead of resuming
+       $ME --list         print the table to stdout, no picker (pipeable)
+       $ME --help
+
+Sessions are keyed on their first prompt, with last-activity time, a rough
+prompt count, and the /rename alias if one was set.
+EOF
+	exit($msg ? 2 : 0);
+}
+
+
+my ($print_only, $list_only) = (0, 0);
+if (@ARGV and $ARGV[0] =~ /\A(--help|-h)\z/)  { usage(); }
+if (@ARGV and $ARGV[0] =~ /\A(--print|-p)\z/) { $print_only = 1; shift @ARGV; }
+if (@ARGV and $ARGV[0] =~ /\A(--list|-l)\z/)  { $list_only  = 1; shift @ARGV; }
+my $query = "@ARGV";
+
+
+my $dir = project_dir();
+-d $dir or die "$ME: no sessions for this project (looked in $dir)\n";
+
+my @sessions =
+	sort { ($b->{last} // '') cmp ($a->{last} // '') }		# most-recent first
+	grep { defined }
+	map  { parse_session($_) }
+	glob "$dir/*.jsonl";										# top-level only: skips subagent subdirs
+
+@sessions or die "$ME: no sessions found in $dir\n";
+
+if ($list_only)
+{
+	say format_session($_, 0) for @sessions;				# plain (no colour), no picker
+	exit 0;
+}
+
+my $id = pick(@sessions);
+exit 0 unless defined $id;									# cancelled (Esc / no match)
+
+if ($print_only)
+{
+	say $id;
+}
+else
+{
+	exec 'claude', '--resume', $id;							# the wrapper, resolved via PATH
+}
+
+
+# Map the cwd to its transcript directory the way Claude Code does: every
+# non-alphanumeric character becomes a dash (so /export/proj/common ->
+# -export-proj-common).
+func project_dir ()
+{
+	(my $munged = Cwd::getcwd()) =~ s/[^A-Za-z0-9]/-/g;
+	return "$ENV{HOME}/.claude/projects/$munged";
+}
+
+
+# Read one transcript and distill it to { id, prompt, count, last, title }.
+# Returns undef for an empty/unreadable file.
+func parse_session ($file)
+{
+	my $json = JSON::PP->new;
+	my %s = ( id => ($file =~ m{([^/]+)\.jsonl$})[0], count => 0 );
+
+	open my $fh, '<', $file;
+	while (my $line = <$fh>)
+	{
+		my $rec = eval { $json->decode($line) } or next;	# tolerate truncated/partial lines
+		my $type = $rec->{type} // '';
+
+		$s{last}  = $rec->{timestamp}   if $rec->{timestamp} and ($s{last} // '') lt $rec->{timestamp};
+		$s{title} = $rec->{customTitle} if $type eq 'custom-title' and $rec->{customTitle};
+
+		next unless $type eq 'user';
+		my ($kind, $text) = classify(user_text($rec));
+		next if $kind eq 'noise';
+		++$s{count};
+		# prefer the first free-text prompt; fall back to the first slash-command
+		$s{prompt}  //= $text if $kind eq 'freetext';
+		$s{command} //= $text if $kind eq 'command';
+	}
+	close $fh;
+
+	return undef unless $s{count};
+	$s{prompt} //= $s{command} // '(no prompt)';
+	return \%s;
+}
+
+
+# Pull the human-authored text out of a `user` record, or undef if it carries
+# none (e.g. a tool_result turn).  Handles both the {content => "..."} and
+# {content => [ {type=>text}, ... ]} message shapes, plus a bare string.
+func user_text ($rec)
+{
+	my $m = $rec->{message} // return undef;
+	my $content = ref $m eq 'HASH' ? $m->{content} : $m;
+	return undef unless defined $content;
+	if (ref $content eq 'ARRAY')
+	{
+		my @t = map { $_->{text} } grep { ($_->{type} // '') eq 'text' } @$content;
+		return @t ? join("\n", @t) : undef;
+	}
+	return ref $content ? undef : $content;
+}
+
+
+# Classify a user turn's text as a slash-command, real free-text, or noise
+# (tool/system plumbing we don't want as a session's headline).
+func classify ($text)
+{
+	return ('noise', undef) unless defined $text and $text =~ /\S/;
+
+	if ($text =~ m{<command-name>\s*(.*?)\s*</command-name>}s)
+	{
+		my $name = $1;
+		my $args = $text =~ m{<command-args>\s*(.*?)\s*</command-args>}s ? $1 : '';
+		return ('command', squish($args =~ /\S/ ? "$name $args" : $name));
+	}
+
+	return ('noise', undef) if $text =~ m{\A\s*<(?:local-)?command-(?:stdout|message)>}s;
+	return ('noise', undef) if $text =~ m{\A\s*\[Request interrupted};
+	return ('noise', undef) if $text =~ m{\A\s*Caveat:};
+	return ('noise', undef) if $text =~ m{\AThis session is being continued from a previous};
+	# the skill-context block injected when a /slash-command skill loads -- the
+	# user's real first prompt comes after it (and the slash command itself is
+	# already captured as the 'command' fallback)
+	return ('noise', undef) if $text =~ m{\A\s*Base directory for this skill:};
+
+	(my $clean = $text) =~ s{\A\s*(?:<system-reminder>.*?</system-reminder>\s*)+}{}s;
+	return ('noise', undef) unless $clean =~ /\S/;
+	return ('freetext', squish($clean));
+}
+
+
+func squish ($s)
+{
+	$s =~ s/\s+/ /g;
+	$s =~ s/\A\s+|\s+\z//g;
+	$s = substr($s, 0, 300) if length $s > 300;				# fzf truncates display; this just caps the line
+	return $s;
+}
+
+
+# A short "time ago" string (4 cols wide) from an ISO-8601 UTC timestamp.
+func reltime ($iso)
+{
+	$iso && $iso =~ /(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/ or return '?';
+	my $then = timegm($6, $5, $4, $3, $2 - 1, $1);
+	my $d    = time - $then;
+	return  $d < 60      ? "${d}s"
+		 :  $d < 3600    ? int($d / 60)        . "m"
+		 :  $d < 86400   ? int($d / 3600)      . "h"
+		 :  $d < 604800  ? int($d / 86400)     . "d"
+		 :  $d < 2592000 ? int($d / 604800)    . "w"
+		 :  $d < 31536000? int($d / 2592000)   . "mo"
+		 :                 int($d / 31536000)  . "y";
+}
+
+
+# Build the human-readable line for a session: a 4-wide relative time, a 4-wide
+# prompt count, the /rename alias in brackets if set, then the first prompt.
+# With $color, the metadata is dimmed and the alias cyan (for fzf --ansi).
+func format_session ($s, $color)
+{
+	my $meta = sprintf '%4s  %4s', reltime($s->{last}), "$s->{count}p";
+	my $tag  = $s->{title} ? "[$s->{title}] " : '';
+	return $color
+		? "$DIM$meta$RST  " . ($tag ? "$CYAN$tag$RST" : '') . $s->{prompt}
+		: "$meta  $tag$s->{prompt}";
+}
+
+
+# Render the sessions into fzf and return the chosen session id (undef if the
+# user cancels).  The id rides as a hidden first (tab-delimited) field so fzf
+# shows only the human-readable part but hands the id back on selection.
+func pick (@sessions)
+{
+	my @args =
+	(
+		'--delimiter', "\t",
+		'--with-nth',  '2..',
+		'--no-sort',											# we've already ordered by recency
+		'--ansi',
+		'--layout=reverse',
+		'--height=90%',
+		'--border',
+		'--prompt', 'resume > ',
+		'--header', 'Enter resumes - type to filter the first prompt - Esc cancels',
+	);
+	push @args, '--query', $query if length $query;
+
+	my $pid = open2(my $out, my $in, 'fzf', @args);
+	print { $in } "$_->{id}\t" . format_session($_, 1) . "\n" for @sessions;
+	close $in;
+	my $line = <$out>;
+	close $out;
+	waitpid $pid, 0;
+
+	return undef unless defined $line;						# Esc / no match
+	chomp $line;
+	return (split /\t/, $line, 2)[0];
+}

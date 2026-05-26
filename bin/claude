@@ -5,6 +5,7 @@ use warnings;
 use autodie ':all';
 
 use Cwd ();
+use File::Which ();
 
 
 my $ME = 'claude';
@@ -36,6 +37,18 @@ $ENV{PATH} .= ":$_" foreach												# as always, read from the bottom up
 	grep { -d                                              }
 	map  { glob($_)                                        }
 	   qw< ~/.local/bin ~/common/conf/ai/devtools ~/go/bin >;
+
+# `-s` / `-S`: don't launch Claude at all -- hand off to claude-sessions, which
+# shows this project's sessions keyed on their first prompt and resumes the one
+# you pick via `claude --resume <id>`.  Done here, before the screen-size probe
+# and update check, so merely listing sessions stays cheap.
+if (@ARGV and $ARGV[0] =~ /\A-[sS]\z/)
+{
+	shift @ARGV;
+	my $sessions = File::Which::which('claude-sessions')
+		or die "$ME: cannot find claude-sessions in PATH\n";
+	exec $sessions, @ARGV;
+}
 
 # Verify local memory; create if necessary and possible
 my $localmem = 'CLAUDE.local.md';
