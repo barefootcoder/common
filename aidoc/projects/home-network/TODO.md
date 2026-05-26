@@ -10,15 +10,16 @@ skill scans this file on load and surfaces due/pending items.
   pushed out a week on 2026-05-25 (user deferred).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
-- **2026-05-24** — Test the spare AC adapter at the office. Plug in the backup
-  adapter, mark `office-ac`, leave it for several hours, then compare event rate to
-  the current adapter via `ac-mode report`. If rate drops dramatically, the adapter
-  itself is the culprit. _(added 2026-05-23 during May 22 double-crash mitigations)_
-
-- **2026-05-26** — Review `ac-mode report` after a few days of den-ac vs office-ac
-  data. Hypothesis: den-ac should show a materially lower events/hr. If confirmed,
-  office-side physical path (adapter/cable/jack) is flaky. Also try `office-usb`
-  for a day and compare. _(added 2026-05-23 during May 22 double-crash mitigations)_
+- **2026-06-01** — Re-run `ac-mode report` after ~1 week of office-ac avoidance
+  (user switched to USB charging at the office on 2026-05-25; den-ac unchanged).
+  Predictions if the office-ac-adapter culprit hypothesis is correct: (a) overall
+  daily rate should drop from ~13 to ~8–9 (removing the ~4 excess events/day that
+  office-ac was contributing); (b) office-usb / office-both / den-ac all stay at
+  their ~0.46–0.49/hr baseline. Falsifier: overall rate stays at ~13/day with no
+  office-ac in the mix → either our model is wrong or the office-ac elevation
+  (May 22–25 data: 0.67/hr vs den-ac 0.46/hr) was sampling noise. If confirmed,
+  next step is replacing the office AC adapter+cable.
+  _(added 2026-05-23, updated 2026-05-25 after analysis of May 22–25 data)_
 
 - **anytime** — Validate RAPL cap is working: after the next `termstart` / boot,
   check that `viv-mon.log` shows `pkg=` values not exceeding ~27W in normal use.
@@ -117,3 +118,15 @@ skill scans this file on load and surfaces due/pending items.
   Tailscale admin console. Old phone was replaced 2026-05-25; new phone is
   `pixel-4a` at 100.76.67.17. _(added 2026-05-25 during phone replacement
   session, completed 2026-05-25)_
+
+- ~~2026-05-25~~ — Test the spare AC adapter at the office (originally framed
+  as carrying the spare to the office for a side-by-side comparison). Resolved
+  by realizing the existing labels already give a clean comparison: spare
+  adapter lives permanently in the den (`den-ac` label, 0.46/hr) and main
+  adapter lives permanently in the office (`office-ac` label, 0.67/hr). Spare
+  is ~45% cleaner; combined with office-usb / office-both at the same ~0.49/hr
+  baseline as den-ac, the office adapter+cable is the suspect path (not the
+  barrel jack — that's shared by den-ac and would have elevated it too).
+  Follow-up captured in the 2026-06-01 office-ac-avoidance review.
+  _(added 2026-05-23 during May 22 double-crash mitigations, completed
+  2026-05-25 during May 22–25 data analysis)_
