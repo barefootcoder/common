@@ -223,6 +223,64 @@ once 7.9 has been stable for a while.
   `--addressBarPaddingRight` / `--addressBarPaddingLeft` adjustments.
   Tweak in-place; don't re-fetch the upstream file.
 
+## Avalir Upgrade — Outcome (2026-05-26)
+
+Done. Avalir upgraded **6.1.3035.302 → 7.9.3970.67** (the pre-flight checklist
+above held up). Pinned with `apt-mark hold vivaldi-stable` so it won't drift to
+the now-current **8.0** — a major "Unified" UI redesign we deliberately deferred
+(brand-new, touches the exact tab/chrome surface our CSS mods target; revisit via
+a throwaway profile or `vivaldi-snapshot` side-channel). No hardware instability,
+no `--disable-gpu` needed (desktop, as predicted).
+
+### Key finding: Vivaldi Sync does NOT carry the css-mods enable flag
+
+Avalir already had Sync on (`keep_everything_synced`), so it had pulled Haven's
+**theme**, **tab-bar position (top)**, and the **`css_ui_mods_directory` pointer**
+(`/home/buddy/common/vivaldi-patch`, which resolves correctly on Avalir via
+`~/common → proj/common`). But the **`chrome://flags/#vivaldi-css-mods` enable
+flag did NOT sync** — it lives in per-device `Local State`
+(`enabled_labs_experiments`), which Chromium/Vivaldi Sync never replicates.
+
+**Implication for future machines / fresh profiles:** on any synced machine you
+must still flip that flag by hand. Avalir got lucky — the in-place 6.1→7.9
+upgrade preserved the pre-7.7 enablement, so the CSS was *already* loading and
+flipping the new flag was a visual no-op. A *fresh* profile would not have that
+carryover.
+
+### Bug found + fixed (affects BOTH machines): dark bookmark bar
+
+The bookmark bar rendered as a dark band (`--colorBg` = `#2e2e2e`) amid the
+otherwise-purple chrome, on Avalir *and* Haven. Root cause: a stale "thread #2"
+rule at the end of `custom.css` —
+`.color-behind-tabs-on .bookmark-bar{,button} { background-color: var(--colorBg) }`
+— fired because the theme has "color behind tabs" on, overriding the
+unified-transparent `.bookmark-bar` rules added near the top in the May 8 rework
+(equal specificity, later in file → wins). Commented out 2026-05-26; the bookmark
+bar now unifies with the purple chrome. **Haven picks up the fix on its next
+Vivaldi restart** (shared, synced `custom.css`).
+
+### Tabs Backup & Restore on Avalir: intact but disabled
+
+Unlike Haven (where Vivaldi had pruned the MV2 code), Avalir's extension **code
+is intact** (`…/Extensions/dehocbglhkaogiljpihicakmlockmlgd/0.2.1_0/`) and **data
+is intact** (4.3 MB, last save May 14). It's just **disabled**
+(`disable_reasons=[1]` = user/sync action — NOT MV2 auto-disable; uBlock Origin
+MV2 runs fine here). Left disabled, consistent with the still-deferred
+Tab-Session-Manager migration.
+
+### Terminology correction
+
+This mod requires **tab position = TOP**; "tabs-below" means tabs sit *below the
+address bar* (the mod lifts the address bar up into the title-bar row), not tabs
+at the window bottom.
+
+### Commit note
+
+The May 8 CSS reorg (`custom.css` 5.x→7.x rework, `deprecated/`, `upstream/`,
+`custom.js` move) had been intentionally left **uncommitted** until Avalir was
+verified — which proved lucky, since we caught the bookmark-bar bug in the
+process. Committed 2026-05-26 together with the bookmark fix and these docs.
+
 ## Open Items After This Session
 
 > **Status update (2026-05-11):** items 4, 5, and 6 are resolved in the
@@ -231,7 +289,8 @@ once 7.9 has been stable for a while.
 > Item 1 remains the most impactful pending work.
 
 1. **Hardware intervention on Haven** (battery, repaste, cap inspection)
-2. **Avalir Vivaldi upgrade** (this doc is the handoff)
+2. ~~**Avalir Vivaldi upgrade** (this doc is the handoff)~~ **Done 2026-05-26 —
+   see "Avalir Upgrade — Outcome" above.**
 3. **Migrate Tabs Backup & Restore → Tab Session Manager** (defer until
    convenient; data is preserved)
 4. ~~**Update `bin/vivaldi-guard`** to inject `--disable-gpu` on Haven

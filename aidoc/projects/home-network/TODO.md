@@ -5,6 +5,19 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **2026-06-02** — Delete Avalir's `~/.config/vivaldi.bak.pre-7.9` (4.1 GB
+  pre-upgrade Vivaldi profile snapshot) once 7.9 has proven stable. NOT git-backed
+  (live browser profile outside the repo), so it's a one-way delete — but the
+  upgrade succeeded, so it's only rollback insurance now. _(added 2026-05-26
+  during Avalir Vivaldi 7.9 upgrade)_
+
+- **anytime** — Migrate Tabs Backup & Restore (MV2, bit-rotting) → Tab Session
+  Manager (MV3) on both Haven and Avalir. Data preserved on both (Avalir: code +
+  4.3 MB data intact but disabled; Haven: code was pruned and restored). Steps in
+  the "Tabs Backup & Restore" sections of
+  `summary:vivaldi-7.9-upgrade-and-haven-instability.md`. _(added 2026-05-26
+  during Avalir Vivaldi 7.9 upgrade)_
+
 - **2026-06-01** — Hardware intervention on Haven: battery replacement + CPU/GPU
   repaste + visual capacitor inspection. Originally targeted May 24–25 weekend;
   pushed out a week on 2026-05-25 (user deferred).

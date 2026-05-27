@@ -202,6 +202,21 @@ If user asks about EC2 sandbox sync:
 
 ## Current Status
 
+- **Avalir Vivaldi 6.1 → 7.9 upgrade complete** (May 26 2026): Mirrored Haven's
+  upgrade — `vivaldi-stable` 6.1.3035.302 → **7.9.3970.67**, `apt-mark hold`ed to
+  avoid drifting to the new **8.0** "Unified" redesign (deferred; revisit via a
+  throwaway profile/`vivaldi-snapshot`). Vivaldi Sync had already carried Haven's
+  theme + tab position + the CSS-mods folder pointer, but **not** the per-device
+  `chrome://flags/#vivaldi-css-mods` enable flag (flipped manually; CSS was
+  effectively already loading via the in-place upgrade's pre-7.7 carryover).
+  Caught & fixed a latent bug affecting **both** machines: a stale `custom.css`
+  rule painted the bookmark bar dark (`--colorBg`) under "color behind tabs" —
+  now unified with the purple chrome (Haven gets it on next restart). No hardware
+  mitigations needed (desktop). Tabs Backup & Restore here is intact-but-disabled
+  (not pruned like Haven). Pre-upgrade profile snapshot at
+  `~/.config/vivaldi.bak.pre-7.9` (4.1 GB) kept until 7.9 proves stable (see
+  TODO). See `summary:vivaldi-7.9-upgrade-and-haven-instability.md` ("Avalir
+  Upgrade — Outcome").
 - **Phone replaced; SwiftKey downgraded** (May 25 2026): New Pixel 4a (same model — `sunfish`) replaces previous unit. Tailscale node renamed `google-pixel-4a` → `pixel-4a`, IP `100.98.252.81` → `100.76.67.17`. Old node still in admin console pending manual removal (see TODO). USB debugging authorized for Haven, so `adb` workflows are available going forward. SwiftKey downgraded from Microsoft-era 9.12.29.12 to pre-acquisition **7.0.0.15** via adb sideload (APK at `/var/install/`); installer registered as `null` to block Play Store auto-update. Note: Pixel 4a is past Google's EOL (final firmware `TQ3A.230805.001.S2`, security patch 2023-08-05) — no further OS updates available. Full reinstall procedure in `private/network-details.md`.
 - **Automox-on-Linux push deflected; personal credentials vault established** (May 20–22 2026): Ops asked the user to run an Automox endpoint-management installer on Avalir. Analysis (artifacts at `/var/install/`) showed the agent runs as root with zero systemd sandboxing, bundles Meta's `osqueryi` for full-OS introspection, executes cloud-pushed "DCU" remediation scripts as root, and (crucially) gains lateral-movement capability via Avalir's stored personal SSH/GPG keys and Tailscale tailnet membership. After conversation, ops scoped the install to MacOS-only and excluded Linux boxes. Independent of the install decision, plaintext personal credentials in `/export/personal/Dropbox/sensitive/` (Syncthing-replicated for years) were migrated into an age-encrypted vault at `/export/personal/crypt/` using the identity-file pattern (single prompt per session for decrypt; re-encrypt is non-interactive via recipient pubkey). Original `Dropbox/sensitive/` plaintext tree wiped after diff verification; Syncthing propagated the deletion across personal nodes. Avalir is on a trajectory to **work-only**; Haven becoming personal-primary. Remaining: B2 cloud leg for `crypt/` (separate bucket + key to avoid circular dependency), credential rotation, migrate personal SSH/GPG identity off Avalir. See `summary:automox-deflect-and-crypt-vault.md`.
 - **Fire-evac cloud backup complete** (May 19–23 2026): During a shelter-in-place fire warning, triggered a comprehensive B2 backup of all at-risk machines; all queues drained by May 23. Avalir (~450 GB), Nakama (~650 GB incl. /share/archive), Zadash (.stversions ~200 GB + camera-bak ~56 GB). New bucket `barefoot-encrypted` holds rclone-crypt credentials. B2 keys + crypt passphrase in `/export/personal/Dropbox/sensitive/` (Syncthing-replicated to Haven). Recovery procedure: [fire-evac-recovery.md](fire-evac-recovery.md). Nightly `~/.purple` snapshot to `nakama:/share/incrementals/avalir/purple/YYYY-MM-DD/` configured (cron in `conf/crontab/avalir.cron`, script `bin/purple-snapshot`). Remaining: Nakama→B2 nightly rclone cron, `~/.config/` cleanup, remaining survey gaps — see TODO.

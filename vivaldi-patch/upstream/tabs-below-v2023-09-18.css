@@ -1,27 +1,5 @@
-/* PRE 4.x:                                 */
-/*    https://forum.vivaldi.net/topic/15834 */
-/*    ... later ...                         */
-/*    https://forum.vivaldi.net/topic/42105 */
-/* 4.x AND BEYOND:                          */
-/*    https://forum.vivaldi.net/topic/62447 */
-/*    ... later ...                         */
-/*    https://forum.vivaldi.net/topic/56809 */
-/* 5.x AND BEYOND:                          */
-/*    first post is kept updated            */
-
-
-/* ======================================== */
-/* FOR THIS CODE TO WORK, YOU *MUST* SET    */
-/* TAB POSITION TO _TOP_.                   */
-/* ======================================== */
-
-
-/* ======================================== */
-/* MAIN CODE                                */
-/* courtesy @nomadic (7/13/22)              */
-/* from thread #4                           */
-/* ======================================== */
-
+/* == Tabs Below Address Bar Mod - made by nomadic on the Vivaldi Forums == */
+/* Moves the tab bar below the address bar - https://forum.vivaldi.net/post/446311 */
 #browser {
   --addressBarPaddingRight: 137px;
   --addressBarPaddingLeft: 50px;
@@ -35,7 +13,7 @@
 }
 
 /* top addressbar above top tabbar */
-#browser.tabs-top.address-top #header {
+#header {
   padding-top: 36px;
 }
 
@@ -161,6 +139,7 @@
 .color-behind-tabs-off .window-buttongroup {
   background-color: var(--backgroundColorAccent);
 }
+.toolbar-mainbar .toolbar-extensions,
 .mainbar > .toolbar-mainbar {
   background-color: var(--backgroundColor);
 }
@@ -210,84 +189,3 @@
 .vivaldi {
   margin-top: unset;
 }
-
-
-/* ======================================== */
-/* FURTHER COSMETIC TWEAKS                  */
-/* courtesy @dude99 (6/12/21)               */
-/* from thread #3                           */
-/* ======================================== */
-
-/* Unify TabBar and AddressBar Color Palette */
-/* ENABLE ONLY ONE SET OF THESE! Disable the other set by adding "/" at beginning of line. */
-/*    ON: enable these lines: */
-.color-behind-tabs-off#browser.tabs-top.address-top .UrlBar > div:not(.UrlBar-AddressField):not(.UrlBar-SearchField) {color: var(--colorImageFg, var(--colorFg));}
-.color-behind-tabs-on#browser.tabs-top.address-top .UrlBar > div:not(.UrlBar-AddressField):not(.UrlBar-SearchField) {color: var(--colorImageFg, var(--colorAccentFg));}
-/*    OFF: enable these lines: */
-/ #browser.tabs-top.address-top #titlebar {background-color: var(--colorBg); color: var(--colorFg);}
-/ #browser.tabs-top.address-top .color-behind-tabs-off #titlebar {background-color: var(--colorAccentBg); color: var(--colorAccentFg);}
-/* end Unify Palette */
-
-
-/* ======================================== */
-/* INITIAL COSMETIC TWEAKS                  */
-/* courtesy @nomadic (9/20/20)              */
-/* from thread #2                           */
-/* ======================================== */
-
-/* corner rounding */
-.tabs-top .tab-position .tab {
-    border-top-left-radius: var(--radiusHalf);
-    border-top-right-radius: var(--radiusHalf);
-    border-bottom-left-radius: unset;
-    border-bottom-right-radius: unset;
-}
-
-/* Fix Fillets */
-.tabs-top .tab.active:not(.marked):not(.tab-mini):before {
-    top: unset;
-    bottom: 0;
-    -webkit-mask-image: radial-gradient(circle at 0 0, rgba(0, 0, 0, 0) 70%, #000 73%);
-}
-.tabs-top .tab.active:not(.marked):not(.tab-mini):after {
-    top: unset;
-    bottom: 0;
-    transform: unset;
-    -webkit-mask-image: radial-gradient(circle at 100% 0, rgba(0, 0, 0, 0) 70%, #000 73%);
-}
-
-/* tab group indicators*/
-.tabs-top .tab-strip .tab-group-indicator {
-    bottom: 28px !important;
-}
-/* Remove line between address bar and bookmark bar */
-.address-top .toolbar-mainbar:after {
-    content: unset;
-}
-
-/* Remove line between bookmark bar and tabs */
-.bookmark-bar {
-    border-bottom-width: 0px !important;
-}
-
-.bookmark-bar {
-    background-color: var(--colorAccentBg);
-}
-.color-behind-tabs-off .bookmark-bar button {
-    background-color: var(--colorAccentBg);
-}
-
-/* DISABLED 2026-05-26 (Avalir 7.9 upgrade): these legacy "thread #2" rules
-   painted the bookmark bar with the dark page background (--colorBg) whenever
-   "color behind tabs" is on, overriding the unified-transparent .bookmark-bar
-   rules in the MAIN CODE section above. With this theme (--colorBg #2e2e2e,
-   --colorAccentBg #7a4490) that made the bookmark bar a dark band amid the
-   otherwise-purple chrome. Disabled so it inherits the unified color like the
-   other bars.
-.color-behind-tabs-on .bookmark-bar {
-    background-color: var(--colorBg);
-}
-.color-behind-tabs-on .bookmark-bar button {
-    background-color: var(--colorBg);
-}
-*/

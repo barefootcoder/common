@@ -6,8 +6,6 @@
 /*    https://forum.vivaldi.net/topic/62447 */
 /*    ... later ...                         */
 /*    https://forum.vivaldi.net/topic/56809 */
-/* 5.x AND BEYOND:                          */
-/*    first post is kept updated            */
 
 
 /* ======================================== */
@@ -24,18 +22,16 @@
 
 #browser {
   --addressBarPaddingRight: 137px;
-  --addressBarPaddingLeft: 50px;
   --headerElementsHeight: 34px;
-  /* comment out the line below to NOT unify tab bar color with the address bar and bookmark bar*/
+  --tabBarPaddingRightToSeeTrashAndSync: 92px;
+  /* uncomment the line below to unify tab bar color with the address bar's */
   --unified: transparent;
   --backgroundColor: var(--unified, var(--colorBg));
   --backgroundColorAccent: var(--unified, var(--colorAccentBg));
-  /* comment out the line below to remove the drag region on the bookmark bar and tab bar */
-  --allowWindowDrag: 1;
 }
 
 /* top addressbar above top tabbar */
-#browser.tabs-top.address-top #header {
+#header {
   padding-top: 36px;
 }
 
@@ -48,8 +44,9 @@
 .mainbar {
   position: absolute;
   top: 0;
-  left: var(--addressBarPaddingLeft);
-  width: calc(100% - var(--addressBarPaddingLeft) - var(--addressBarPaddingRight));
+  padding-left: 34px;
+  padding-right: var(--addressBarPaddingRight);
+  width: 100%;
   z-index: 2 !important;
 }
 
@@ -64,10 +61,12 @@
 }
 
 /* Sets tabs to fill entire bar */
-#browser.tabs-top.address-top #tabs-tabbar-container.top > #tabs-container,
-#browser.tabs-top.address-top #tabs-tabbar-container.top > #tabs-subcontainer {
+#tabs-tabbar-container.top {
+  margin-left: 0px !important;
+  margin-right: -90px !important;
+}
+#browser.tabs-top.address-top #tabs-tabbar-container > div {
   padding-left: 2px;
-  padding-right: 2px;
 }
 
 /* bookmark bar enabled */
@@ -82,17 +81,6 @@
 }
 #browser.tabs-top.address-top.bookmark-bar-top.maximized:not(.tabs-at-edge) .bookmark-bar {
   top: 41px;
-}
-.color-behind-tabs-off .bookmark-bar,
-.color-behind-tabs-off .bookmark-bar button {
-  background-color: var(--backgroundColorAccent);
-}
-.color-behind-tabs-on .bookmark-bar,
-.color-behind-tabs-on .bookmark-bar button {
-  background-color: var(--backgroundColor);
-}
-.bookmark-bar {
-  border-color: var(--unified, var(--colorAccentBgDark)) !important;
 }
 
 /* horizontal menu enabled */
@@ -115,8 +103,7 @@
   padding-top: 0;
 }
 #browser.tabs-top.address-top.horizontal-menu .mainbar {
-  left: 0;
-  width: 100%;
+  padding: unset;
   transform: translateY(24px);
 }
 
@@ -147,7 +134,10 @@
   padding-top: 0;
 }
 
-/* Remove empty space above tabs*/
+/* Remove empty space to the right of tabs and above tabs*/
+#tabs-container {
+  padding-right: var(--tabBarPaddingRightToSeeTrashAndSync) !important;
+}
 #tabs-tabbar-container.top {
   padding-top: unset !important;
 }
@@ -161,9 +151,11 @@
 .color-behind-tabs-off .window-buttongroup {
   background-color: var(--backgroundColorAccent);
 }
-.mainbar > .toolbar-mainbar {
+.toolbar-mainbar .toolbar-extensions,
+.toolbar-mainbar {
   background-color: var(--backgroundColor);
 }
+.color-behind-tabs-off .toolbar-mainbar .toolbar-extensions,
 .color-behind-tabs-off .toolbar-mainbar {
   background-color: var(--backgroundColorAccent);
 }
@@ -174,41 +166,23 @@
 }
 
 /* Remove line under address bar and extensions bar */
-.address-top .mainbar {
-  border-bottom: unset;
+.address-top .mainbar > .toolbar-mainbar .toolbar-extensions:after,
+.address-top .mainbar > .toolbar-mainbar:after {
+  content: unset;
 }
 
 /* Move extension popups down to avoid crossing drag region which leads to dead zone */
-/* Horizontal menu needs -24px margin when drag is disabled */
 .extension-popup.top {
-  margin-top: calc(var(--allowWindowDrag) * 29px);
+  margin-top: 29px;
 }
 #browser.tabs-top.address-top.horizontal-menu .extension-popup.top {
-  margin-top: calc(var(--allowWindowDrag, -3.43) * 7px);
+  margin-top: 7px;
 }
 #browser.tabs-top.address-top.bookmark-bar-top .extension-popup.top {
-  margin-top: calc(var(--allowWindowDrag) * 58px);
+  margin-top: 58px;
 }
 #browser.tabs-top.address-top.bookmark-bar-top.horizontal-menu .extension-popup.top {
-  margin-top: calc(var(--allowWindowDrag, -0.71) * 34px);
-}
-
-#tabs-tabbar-container,
-.bookmark-bar {
-  app-region: var(--allowWindowDrag, no-drag);
-}
-
-/* Fix broken unified color in 6.2 */
-.color-behind-tabs-off.address-top .mainbar {
-  background-color: var(--backgroundColorAccent);
-}
-.color-behind-tabs-on.address-top .mainbar {
-  background-color: var(--backgroundColor);
-}
-
-/* Prevent menu button from shifting down */
-.vivaldi {
-  margin-top: unset;
+  margin-top: 2px;
 }
 
 
@@ -277,17 +251,9 @@
     background-color: var(--colorAccentBg);
 }
 
-/* DISABLED 2026-05-26 (Avalir 7.9 upgrade): these legacy "thread #2" rules
-   painted the bookmark bar with the dark page background (--colorBg) whenever
-   "color behind tabs" is on, overriding the unified-transparent .bookmark-bar
-   rules in the MAIN CODE section above. With this theme (--colorBg #2e2e2e,
-   --colorAccentBg #7a4490) that made the bookmark bar a dark band amid the
-   otherwise-purple chrome. Disabled so it inherits the unified color like the
-   other bars.
 .color-behind-tabs-on .bookmark-bar {
     background-color: var(--colorBg);
 }
 .color-behind-tabs-on .bookmark-bar button {
     background-color: var(--colorBg);
 }
-*/
