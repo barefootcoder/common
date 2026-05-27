@@ -117,6 +117,18 @@ skill scans this file on load and surfaces due/pending items.
   on Avalir — worth a sweep under `barefoot-common/nakama/music/` eventually.
   _(added 2026-05-24 during fire-evac backup session)_
 
+- **anytime** — Figure out an ordered-playlist path for tracklists that were
+  **NOT** on the old phone. The 2026-05-27 `peaceful` sync only worked because the
+  app ("Music Player", `mp3.music.download.player.music.search`) had cloud-restored
+  the playlist's track order from the old phone; a brand-new playlist has no
+  remembered order. The app has no m3u import, ignores MediaStore playlists, and
+  its private playlist DB is unreachable (not rooted, not debuggable, `adb backup`
+  is empty on Android 13). Options to evaluate: (a) manual in-app reorder; (b) a
+  different player that reads MediaStore/`.m3u` playlists (the MediaStore-injection
+  recipe already produces a correctly-ordered system playlist such an app would
+  pick up); (c) root. See `summary:phone-music-playlist-sync.md`.
+  _(added 2026-05-27 during peaceful.m3u phone sync)_
+
 - **anytime** — Install Syncthing on the new phone (`pixel-4a`) and set up
   continuous sync of the camera folder (`/sdcard/DCIM/Camera/`) to a tailnet
   peer — Avalir is the natural choice (already a Syncthing hub). Pulls photos
