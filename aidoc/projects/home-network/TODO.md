@@ -137,6 +137,14 @@ skill scans this file on load and surfaces due/pending items.
   a new folder definition on the receiving side and a per-device "send only"
   config on the phone. _(added 2026-05-25 during phone replacement session)_
 
+- **anytime** — Vim control-key-map heisenbug: instrumentation is now live on the
+  timer vim (keylog `-W`, event log, `\d`/`:TimerDump` capture → `~/local/log/vimkeys/`).
+  When the bug next trips, press `\d` *before restarting*, then analyze the resulting
+  `broken-<ts>.keys` (replay with `vim -s … -u ~/.vim-timer`) against `timer-events.log`
+  to find the trigger. Remove the instrumentation once caught. See
+  `summary:vim-control-key-map-bug.md` for the full signature and removal steps.
+  _(added 2026-05-27 during vim control-key-map investigation)_
+
 ## Done
 
 - ~~2026-05-25~~ — Remove stale `google-pixel-4a` node (100.98.252.81) from

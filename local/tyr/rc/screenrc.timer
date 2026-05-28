@@ -1,5 +1,5 @@
 screen -t timer
-	stuff "cd timer\015"
-	stuff "vi -u ~/.vim-timer timer-new\015"
+	stuff "mkdir -p ~/local/log/vimkeys >& /dev/null ; cd timer\015"
+	stuff "vi -W ~/local/log/vimkeys/timer.keys -u ~/.vim-timer timer-new\015"
 	sleep 1
 	stuff ":call FindCurrent()\015zz"

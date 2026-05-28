@@ -56,3 +56,47 @@
 :noremap <C-N> 1G:call FindTimer()<CR>/<C-R><C-A><CR>Nzz<C-L>
 :nmap <C-_> <C-Z><C-N>
 :let loaded_matchparen = 1
+
+:" ===== INSTRUMENTATION (temporary): catch the control-key-map heisenbug =====
+:" Symptom: after a long session, ALL <C-x> maps stop firing (printable & Alt
+:" maps still work, map table stays intact, byte still arrives, only restart
+:" cures it).  This logs keystrokes (-W in the `timer` alias) plus async events,
+:" and binds \d / :TimerDump to snapshot full state the moment it happens.
+:" Remove this whole block once captured.  See home-network aidoc
+:" summary:vim-control-key-map-bug.md.
+:silent! call mkdir(expand('~/local/log/vimkeys'), 'p')
+:function! TLog(ev)
+:	silent! call writefile([strftime('%Y-%m-%d %H:%M:%S') . ' ' . a:ev], expand('~/local/log/vimkeys/timer-events.log'), 'a')
+:endfunction
+:augroup TimerTrace
+:	autocmd!
+:	silent! autocmd VimEnter     * call TLog('VimEnter pid=' . getpid())
+:	silent! autocmd VimLeave     * call TLog('VimLeave')
+:	silent! autocmd VimResized   * call TLog('VimResized ' . &columns . 'x' . &lines)
+:	silent! autocmd FocusGained  * call TLog('FocusGained')
+:	silent! autocmd FocusLost    * call TLog('FocusLost')
+:	silent! autocmd VimSuspend   * call TLog('VimSuspend')
+:	silent! autocmd VimResume    * call TLog('VimResume')
+:	silent! autocmd ShellCmdPost * call TLog('ShellCmdPost ' . histget('cmd', -1))
+:augroup END
+:function! TimerDump()
+:	let l:ts  = strftime('%Y%m%dT%H%M%S')
+:	let l:dir = expand('~/local/log/vimkeys')
+:	silent! call mkdir(l:dir, 'p')
+:	let l:f = l:dir . '/broken-' . l:ts . '.txt'
+:	execute 'redir! > ' . l:f
+:	silent map
+:	silent map!
+:	silent set all
+:	silent scriptnames
+:	redir END
+:	let l:k = l:dir . '/timer.keys'
+:	if filereadable(l:k)
+:		call writefile(readfile(l:k, 'b'), l:dir . '/broken-' . l:ts . '.keys', 'b')
+:	endif
+:	call TLog('TimerDump -> ' . l:f)
+:	echohl WarningMsg | echo 'state + keylog captured -> ' . l:f | echohl None
+:endfunction
+:command! TimerDump call TimerDump()
+:nnoremap \d :call TimerDump()<CR>
+:" ===== end instrumentation =====
