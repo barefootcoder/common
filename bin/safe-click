@@ -1,16 +1,26 @@
 #! /usr/bin/env perl
 #
-# safe-click - synthesize a mouse-button click without leaving X11 modifiers
-#              "stuck" if the user releases the modifier mid-operation.
+# safe-click - synthesize a mouse-button click (or multi-click) without leaving
+#              X11 modifiers "stuck" if the user releases the modifier mid-op,
+#              and without tripping the "lone modifier tap = menu" heuristic
+#              that some apps (e.g. Vivaldi) apply when the only events between
+#              a modifier press and release are non-key events.
 #
-# Equivalent in spirit to `xdotool click --clearmodifiers BUTTON`, but with
-# one key difference: after the click we re-query the *physical* keyboard
-# and re-press only the modifiers that are still actually held.  xdotool
-# always re-presses what it released, so if the user happens to lift the
-# modifier between xdotool's release and re-press, X11 ends up thinking
-# the modifier is still held with nothing physical holding it down -- and
-# subsequent typing comes out wrong until the user taps the key to clear
-# it.
+# Equivalent in spirit to `xdotool click --clearmodifiers BUTTON`, but with two
+# important differences:
+#
+#   1) After the click we re-query the *physical* keyboard and re-press only
+#      the modifiers still actually held.  xdotool always re-presses what it
+#      released, so if the user lifts the modifier between xdotool's release
+#      and re-press, X11 ends up thinking the modifier is still held with no
+#      physical key down -- and subsequent typing comes out wrong until the
+#      user taps the key to clear it.
+#
+#   2) Synthesize a `Hyper_L` press+release inside each "modifier-held" window
+#      we create.  Hyper_L is mapped to the same modifier slot (Mod4) as Meta,
+#      so press/release of it doesn't change modifier state, but apps still
+#      see a key event during the Meta-held interval, which prevents the
+#      lone-modifier-tap-activates-menu heuristic from firing.
 
 use 5.14.0;
 use warnings;
@@ -23,15 +33,24 @@ use X11::Protocol;
 # click is seen by X as a shift+click.  The numbers are the slot indices
 # returned by GetModifierMapping (Shift=0, Lock=1, Control=2, Mod1..Mod5=3..7).
 my %keep_slot;
+my $clicks = 1;
 GetOptions(
-	'shift'   => sub { $keep_slot{0} = 1 },
-	'control|ctrl' => sub { $keep_slot{2} = 1 },
-	'alt|mod1' => sub { $keep_slot{3} = 1 },
-	'super|meta|mod4' => sub { $keep_slot{6} = 1 },
-) or die("usage: $0 [--shift] [--ctrl] [--alt] [--super] [BUTTON]\n");
+	'shift'            => sub { $keep_slot{0} = 1 },
+	'control|ctrl'     => sub { $keep_slot{2} = 1 },
+	'alt|mod1'         => sub { $keep_slot{3} = 1 },
+	'super|meta|mod4'  => sub { $keep_slot{6} = 1 },
+	'clicks=i'         => \$clicks,
+) or die(usage());
+
+sub usage
+{
+	return "usage: $0 [--shift] [--ctrl] [--alt] [--super] [--clicks N] [BUTTON]\n";
+}
+
+$clicks =~ /\A[1-9]\z/ or die("--clicks must be 1..9\n");
 
 my $button = shift // 1;
-$button =~ /\A[1-9]\z/ or die("usage: $0 [--shift] [--ctrl] [--alt] [--super] [BUTTON]\n");
+$button =~ /\A[1-9]\z/ or die(usage());
 
 my $X = X11::Protocol->new;
 $X->init_extension('XTEST') or die("XTEST extension unavailable\n");
@@ -49,11 +68,49 @@ for my $i (0..$#groups)
 	push @mod_keys, grep { $_ } @{ $groups[$i] };
 }
 
+# Find a "no-op" keycode for the menu-tap-break injection.  We want a key that
+# shares a modifier slot with whatever's likely held, so pressing it doesn't
+# change the modifier mask, but is otherwise inert.  Hyper_L is ideal on this
+# keyboard layout: it lives in Mod4 alongside Meta/Super, has no character or
+# command bound to it, and most apps treat it as just-another-modifier-key.
+# Fall back to undef if Hyper_L isn't mapped -- the menu-tap fix degrades
+# gracefully (becomes a no-op) rather than misbehaving.
+my $hyper_l = 0xffed;	# X11 spec: XK_Hyper_L
+my $tap_kc;
+{
+	# Walk the keyboard mapping looking for any keycode whose keysym list
+	# contains Hyper_L.  GetKeyboardMapping returns groups of keysyms per
+	# keycode in range $min..$max.
+	my ($min, $max) = ($X->{'min_keycode'}, $X->{'max_keycode'});
+	my @mapping = $X->GetKeyboardMapping($min, $max - $min + 1);
+	for my $i (0..$#mapping)
+	{
+		next unless ref $mapping[$i] eq 'ARRAY';
+		if (grep { defined && $_ == $hyper_l } @{ $mapping[$i] })
+		{
+			$tap_kc = $min + $i;
+			last;
+		}
+	}
+}
+
 sub key_held
 {
 	my ($keymap, $kc) = @_;
 	return ord(substr($keymap, $kc >> 3, 1)) & (1 << ($kc & 7));
 }
+
+sub menu_tap
+{
+	return unless defined $tap_kc;
+	$X->XTestFakeInput(name => 'KeyPress',   detail => $tap_kc);
+	$X->XTestFakeInput(name => 'KeyRelease', detail => $tap_kc);
+}
+
+# Inject a no-op key event INSIDE the user's real modifier-held window,
+# before we start synthesizing modifier releases.  This ensures the app sees
+# "key activity" during the user-pressed Meta interval.
+menu_tap;
 
 # Phase 1: snapshot the physical keyboard, release any modifier held.
 my $keymap = $X->QueryKeymap;
@@ -67,21 +124,34 @@ for my $kc (@mod_keys)
 	}
 }
 
-# Phase 2: the click itself.
-$X->XTestFakeInput(name => 'ButtonPress',   detail => $button);
-$X->XTestFakeInput(name => 'ButtonRelease', detail => $button);
+# Phase 2: the click(s).  Multiple presses fire in rapid succession inside
+# the same modifier envelope, so an app's double/triple-click timer treats
+# them as a multi-click.
+for (1..$clicks)
+{
+	$X->XTestFakeInput(name => 'ButtonPress',   detail => $button);
+	$X->XTestFakeInput(name => 'ButtonRelease', detail => $button);
+}
 
 # Phase 3: re-query and re-press only what is still physically held.
 # QueryKeymap is a round-trip, so it also flushes phases 1 and 2 and gives
 # us a fresh snapshot of physical state to base the re-press decision on.
 $keymap = $X->QueryKeymap;
+my $re_pressed = 0;
 for my $kc (@released)
 {
 	if (key_held($keymap, $kc))
 	{
 		$X->XTestFakeInput(name => 'KeyPress', detail => $kc);
+		$re_pressed = 1;
 	}
 }
 
-# Force a flush of the final keypress requests before we exit.
+# Inject another no-op key event inside the synth-re-pressed modifier window,
+# so the second Meta-held interval (which lives between phase-3 re-press and
+# the user's eventual real release) also has key activity in it.  Skip if we
+# didn't re-press anything -- nothing to break the heuristic on.
+menu_tap if $re_pressed;
+
+# Force a flush of the final requests before we exit.
 $X->GetInputFocus;

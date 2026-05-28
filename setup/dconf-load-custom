@@ -1,98 +1,181 @@
 #! /bin/bash
+#
+# dconf-load-custom -- canonical MATE keybindings & related desktop settings
+#
+# Source of truth for: custom keyboard shortcuts, keyboard/mouse/touchpad
+# preferences, Marco global keybindings, and panel clock prefs.  Run from
+# `makeln` on every invocation -- so any tweak made through the GUI will be
+# overwritten on the next `makeln` or `resrc`.  ALWAYS update this file
+# instead of the GUI for these settings.
+#
+# Per-host overrides:  if a `local/<hostname>/dconf-load-custom-overrides`
+# script exists, it is sourced after the common settings load (giving each
+# machine a chance to redefine or extend anything).  For example, the
+# Ctrl-Shift-Up/Down shortcuts that drive the Haven<->Avalir NoMachine
+# switching live in the per-host override (they make no sense on Avalir
+# unless Avalir is connecting back to Haven).
+#
+# Designed to be idempotent and fast enough to run on every shell startup.
 
-								dconf load /org/mate/desktop/keybindings/		<<.
-[custom1]
+set -e
+
+ME=${0##*/}
+
+mydir=$(cd "$(dirname "$0")"/.. && pwd)		# -> $HOME/common
+: ${LOCALHOSTNAME:=$($mydir/root/lbin/localhostname 2>/dev/null || hostname -s)}
+
+# Skip if MATE/dconf isn't configured for this user (e.g. a server account).
+if ! command -v dconf >/dev/null 2>&1
+then
+	exit 0
+fi
+
+
+###########################################################################
+# Custom keybindings.  Reset first so this file is fully authoritative --
+# bindings removed from here get cleared on next run, not left as ghosts.
+###########################################################################
+
+dconf reset -f /org/mate/desktop/keybindings/
+
+dconf load /org/mate/desktop/keybindings/		<<'.'
+[custom0]
 action='mate-display-properties'
 binding='<Mod4>d'
 name='Twiddle Monitors'
 
-[custom2]
+[custom1]
 action='mate-volume-control'
 binding='<Mod4>v'
 name='Volume Properties'
 
-[custom3]
+[custom2]
 action='blueberry'
 binding='<Mod4>b'
 name='Bluetooth Settings'
 
-[custom4]
-action='xdotool click 2'
-binding='<Mod4>KP_Enter'
-name='Middle Click'
-
-[custom5]
+[custom3]
 action='/home/buddy/bin/win-stack-comms --restack'
 binding='<Mod4>w'
 name='Restack Comms Windows'
 
-[custom6]
+[custom4]
 action='mate-screenshot -w'
 binding='<Mod4>Print'
 name='Window Screenshot'
 
-[custom7]
+[custom5]
+action='/bin/splatmoji copypaste'
+binding='<Mod4>KP_Add'
+name='Emoji Picker'
+
+[custom6]
 action='/usr/bin/clementine -t'
 binding='<Mod4>space'
 name='Clementine Pause/Play'
 
-[custom8]
+[custom7]
 action='/usr/bin/clementine --next'
 binding='<Mod4>Right'
 name='Clementine Next Track'
 
-[custom9]
+[custom8]
 action='/usr/bin/clementine --previous'
 binding='<Mod4>Left'
 name='Clementine Prev Track'
 
-[custom10]
+[custom9]
 action='/home/buddy/bin/music-player-volume up'
 binding='<Mod4>Up'
 name='Music Player Volume Up'
 
-[custom11]
+[custom10]
 action='/home/buddy/bin/music-player-volume down'
 binding='<Mod4>Down'
 name='Music Player Volume Down'
 
-[custom12]
+[custom11]
 action='/usr/bin/xdotool key --delay 50 ctrl+l alt+Left shift+F6'
 binding='<Alt><Mod4>Left'
 name='Previous Tab in Google Sheets'
 
-[custom13]
-action="bash -c 'sleep .1 && xdotool type :'"
-binding='<Shift>KP_Delete'
+[custom12]
+action="bash -c 'sleep .2 && xdotool type :'"
+binding='disabled'
 name='Keypad Colon'
 
-[custom14]
-action='/home/buddy/bin/launch-perl show-desktop PREVIOUS'
+[custom13]
+action='/home/buddy/bin/launch-perl show-desktop WORK'
 binding='<Primary><Alt>Up'
-name='Previous Desktop'
+name='Work Desktop'
+
+[custom14]
+action='/home/buddy/bin/launch-perl show-desktop HOME'
+binding='<Primary><Alt>Down'
+name='Home Desktop'
 
 [custom15]
+action='/home/buddy/bin/launch-perl show-desktop PREVIOUS'
+binding='<Primary><Alt>BackSpace'
+name='Previous Desktop'
+
+[custom16]
 action='/home/buddy/bin/launch-perl show-desktop caemlyn'
 binding='<Primary><Alt>c'
 name='Caemlyn Desktop'
 
-[custom16]
+[custom17]
 action='/home/buddy/bin/launch-perl show-desktop zadash'
 binding='<Primary><Alt>z'
 name='Zadash Desktop'
 
-[custom17]
+[custom18]
 action='/home/buddy/bin/launch-perl show-desktop avalir'
 binding='<Primary><Alt>a'
 name='Avalir Desktop'
 
-[custom18]
+[custom19]
 action='/home/buddy/bin/launch-perl show-desktop haven'
 binding='<Primary><Alt>h'
 name='Haven Desktop'
+
+[custom20]
+action='/home/buddy/bin/launch-perl safe-click 1'
+binding='<Mod4>z'
+name='Left Click'
+
+[custom21]
+action='/home/buddy/bin/launch-perl safe-click --shift 1'
+binding='<Shift><Mod4>z'
+name='Shift Left Click'
+
+[custom22]
+action='/home/buddy/bin/launch-perl safe-click --ctrl 1'
+binding='<Control><Mod4>z'
+name='Ctrl Left Click'
+
+[custom23]
+action='/home/buddy/bin/launch-perl safe-click 2'
+binding='<Mod4>KP_Enter'
+name='Middle Click'
+
+[custom24]
+action='/home/buddy/bin/launch-perl safe-click --clicks 2 1'
+binding='<Mod4>x'
+name='Double Click'
+
+[custom25]
+action='/home/buddy/bin/launch-perl safe-click --clicks 3 1'
+binding='<Shift><Mod4>x'
+name='Triple Click'
 .
 
-								dconf load /org/mate/desktop/peripherals/		<<.
+
+###########################################################################
+# Keyboard / mouse / touchpad preferences (loaded additively).
+###########################################################################
+
+dconf load /org/mate/desktop/peripherals/		<<'.'
 [keyboard]
 numlock-state='on'
 
@@ -103,11 +186,13 @@ options=['altwin\taltwin:left_meta_win', 'Compose key\tcompose:caps']
 accel-profile='default'
 cursor-size=24
 cursor-theme='DMZ-White'
+drag-threshold=7
 motion-acceleration=7.2465753424657535
 
 [touchpad]
 disable-while-typing=true
 motion-acceleration=6.3933823529411766
+motion-threshold=2
 natural-scroll=false
 tap-to-click=false
 three-finger-click=2
@@ -116,7 +201,19 @@ vertical-edge-scrolling=false
 vertical-two-finger-scrolling=false
 .
 
-								dconf load /org/mate/marco/						<<.
+
+###########################################################################
+# Marco (window manager) global keybindings + workspace names.
+#
+# workspace-names differ by machine type: personal hosts get the home set,
+# work hosts get the work set.  The marco/general block (theme, layout,
+# num-workspaces, double-click-titlebar action) is intentionally NOT loaded
+# here -- every value there is at distro default, so leaving it alone keeps
+# the file shorter and avoids accidentally pinning a value if Mint ever
+# changes its defaults.
+###########################################################################
+
+dconf load /org/mate/marco/						<<'.'
 [global-keybindings]
 cycle-windows='<Mod4>Tab'
 panel-main-menu='<Mod4>Escape'
@@ -130,7 +227,31 @@ switch-to-workspace-right='<Primary><Alt>Right'
 switch-to-workspace-up='disabled'
 .
 
-								dconf load /org/mate/panel/objects/clock/		<<.
+if [[ $MACHINE_TYPE == "work" ]]
+then
+	dconf load /org/mate/marco/workspace-names/	<<'.'
+[/]
+name-1='Main'
+name-2='Comms'
+name-3='Music'
+name-4='Personal'
+.
+else
+	dconf load /org/mate/marco/workspace-names/	<<'.'
+[/]
+name-1='Main'
+name-2='Media'
+name-3='Music'
+name-4='Gaming'
+.
+fi
+
+
+###########################################################################
+# Panel clock preferences.
+###########################################################################
+
+dconf load /org/mate/panel/objects/clock/		<<'.'
 [prefs]
 cities=['<location name="" city="Simi Valley" timezone="America/Los_Angeles" latitude="34.366669" longitude="-118.566666" code="K3A6" current="true"/>']
 custom-format=''
@@ -141,3 +262,31 @@ show-week-numbers=false
 speed-unit='mph'
 temperature-unit='Fahrenheit'
 .
+
+
+###########################################################################
+# Clean up nested ghost paths from past `dconf load` accidents -- e.g.
+# /org/mate/desktop/peripherals/org/mate/desktop/peripherals/keyboard/...
+# These are exact duplicates of the real keys and serve no purpose; deleting
+# them is safe and idempotent (reset on a non-existent path is a no-op).
+###########################################################################
+
+for ghost in										\
+	/org/mate/desktop/peripherals/org/				\
+	/org/mate/marco/global-keybindings/org/			\
+	/org/mate/panel/objects/clock/prefs/org/
+do
+	dconf reset -f $ghost 2>/dev/null || true
+done
+
+
+###########################################################################
+# Per-host overrides.  Each host can supplement or replace any setting by
+# providing its own dconf-load-custom-overrides script.
+###########################################################################
+
+override=$mydir/local/$LOCALHOSTNAME/dconf-load-custom-overrides
+if [[ -x $override ]]
+then
+	"$override"
+fi

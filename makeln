@@ -25,6 +25,7 @@ is-ec2 && [[ $LOCALHOSTNAME != "quin-"* ]]			&& MACHINE_TYPE="ec2"
 is-ec2 && [[ $LOCALHOSTNAME == "quin-"* ]]			&& MACHINE_TYPE="ec2-sandbox"
 [[ "in all other cases ..." && ! $MACHINE_TYPE ]]	&& MACHINE_TYPE="personal"
 [[ $1 == refresh ]] && echo "$0: full refresh for $MACHINE_TYPE machine"
+export MACHINE_TYPE			# subscripts may need it (e.g. setup/dconf-load-custom)
 
 
 ###########################
@@ -480,3 +481,11 @@ fi
 ###########################
 # Subscripts
 ###########################
+
+# MATE keybindings, peripherals, marco, panel clock prefs.  Idempotent and
+# fast enough to run every invocation; the subscript itself short-circuits
+# on machines without dconf installed.
+if [[ $MACHINE_TYPE == "personal" || $MACHINE_TYPE == "work" ]]
+then
+	$mydir/setup/dconf-load-custom
+fi

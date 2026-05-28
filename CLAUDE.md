@@ -43,6 +43,14 @@ The `myperl` module (perl/myperl.pm) provides:
   - Use kebab-case for functions/commands
   - Use snake_case for variables
 
+## Repository Distribution
+This repository is part of a Syncthing share that propagates across all the
+user's machines (Haven, Avalir, etc.).  There is no separate "deploy to
+machine X" step -- pushing a commit on one machine and waiting for Syncthing
+to catch up makes the change available everywhere.  Running `makeln` on a
+target host applies any new symlinks, setup-script changes, dconf settings,
+crontab updates, etc. relative to the synced repo state.
+
 ## Key Files and Directories
 - `/bin/t`: Comprehensive test runner with coverage, profiling, and parallel execution
 - `/bin/myperl-cpm`: Dependency installer using App::cpm with cpanfile features
