@@ -213,20 +213,23 @@ fi
 case "$model_id" in
     *"opus-4"*|*"opusplan"*|*"claude-4-opus"*)
         cost_warning="\e[1;31mEXPENSIVE\e[0m"
-        model_short="Opus 4"
-        ;;
-    *"sonnet-4-5"*|*"claude-sonnet-4-5"*)
-        cost_warning="\e[1;36mMEDIUM\e[0m"
-        # Distinguish between 200K and 1M context windows
-        if [ "$context_window_size" = "1000000" ]; then
-            model_short="Sonnet 4.5 (1M)"
+        # Derive the minor version (e.g. 4-8 -> 4.8) from the model id when present
+        if [[ "$model_id" =~ opus-4-([0-9]+) ]]; then
+            model_short="Opus 4.${BASH_REMATCH[1]}"
         else
-            model_short="Sonnet 4.5"
+            model_short="Opus 4"
         fi
+        # Mark the 1M context window variant
+        [ "$context_window_size" = "1000000" ] && model_short="$model_short (1M)"
         ;;
     *"sonnet-4"*|*"claude-sonnet-4"*)
         cost_warning="\e[1;36mMEDIUM\e[0m"
-        model_short="Sonnet 4"
+        if [[ "$model_id" =~ sonnet-4-([0-9]+) ]]; then
+            model_short="Sonnet 4.${BASH_REMATCH[1]}"
+        else
+            model_short="Sonnet 4"
+        fi
+        [ "$context_window_size" = "1000000" ] && model_short="$model_short (1M)"
         ;;
     *"sonnet"*|*"claude-3-5-sonnet"*)
         cost_warning="\e[1;31mMODERATE\e[0m"

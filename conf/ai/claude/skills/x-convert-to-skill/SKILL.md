@@ -84,7 +84,7 @@ allowed-tools: <tool patterns>
 
 ## Phase 4: Content Rewriting
 
-**IMPORTANT**: Modern models (Sonnet 4, Opus 4.5) are highly capable. Rewrite instructions to be concise and trust the model's knowledge. Don't teach basic skills.
+**IMPORTANT**: Modern Claude models are highly capable. Rewrite instructions to be concise and trust the model's knowledge. Don't teach basic skills.
 
 ### Rewriting Principles
 
@@ -98,7 +98,7 @@ allowed-tools: <tool patterns>
 
 5. **Remove redundant warnings**: Don't repeat "DO NOT do X" multiple times. State it once clearly.
 
-6. **Overshoot numeric formatting targets**: Claude consistently undershoots character-count targets (like line-wrapping width) by ~20-25 characters.  When writing a skill that specifies a wrapping width or similar numeric target, use a definitive number (not `~N`) and aim ~20 chars higher than the desired result.  Adding a concrete visual ruler as a reference line also helps anchor the model.
+6. **Numeric formatting targets**: Claude undershoots character-count targets (like line-wrapping width), but only mildly on current models — ~7-10 chars on Opus 4.8, versus ~20-25 on earlier models.  When writing a skill that specifies a wrapping width or similar numeric target, use a definitive number (not `~N`) and include a concrete visual ruler as a reference line to anchor the model.  Set the number to the width you actually want; add a few chars of headroom only if you need a hard upper bound — the large overshoots earlier models needed are no longer warranted.
 
 ### Structural Goals
 

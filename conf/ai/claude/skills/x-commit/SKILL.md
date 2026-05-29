@@ -64,7 +64,7 @@ A body goes between the subject and the attribution block, but only when warrant
     | jq -r 'select(.type=="assistant" and .attributionSkill != "x-commit") | .message.model' \
     | head -1
   ```
-  The `attributionSkill != "x-commit"` filter excludes turns spent inside `/x-commit` itself, so the result is the model of the most recent turn that did substantive work (e.g. `claude-opus-4-7`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-7` → "Claude Opus 4.7", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.7 - claude-opus-4-7`.
+  The `attributionSkill != "x-commit"` filter excludes turns spent inside `/x-commit` itself, so the result is the model of the most recent turn that did substantive work (e.g. `claude-opus-4-8`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-8` → "Claude Opus 4.8", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.8 - claude-opus-4-8`.
 - If the transcript probe returns nothing, fall back to the system-prompt line, but flag the uncertainty to the user before committing.  Most common cause: `/x-commit` is the first skill invoked in a brand-new session and there is no prior non-commit turn yet.
 - Do NOT add any additional AI attribution beyond the template (no extra "Co-Authored-By", "[Created by AI]", or similar lines).
 
