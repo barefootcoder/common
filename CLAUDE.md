@@ -88,21 +88,10 @@ When working with myperl code:
 3. Install new dependencies via `bin/myperl-cpm <feature>`
 4. Follow existing patterns in framework modules
 
-## Git Commit Format
-When committing changes, use this format:
-```
-brief summary line (imperative mood, lowercase)
-
-- Bullet point description of key changes
-- Use descriptive bullets focusing on "what" and "why"
-- Keep lines under 72 characters when possible
-
-🤖 Generated with [Claude Code](https://claude.ai/code) (<model_name>)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-**Note:** Replace `<model_name>` with the actual Claude model being used (e.g., "Sonnet 4", "Sonnet 4.1", etc.)
+## Git Commits
+Commits go through the `/x-commit` skill, which owns the message format, line
+wrapping, and AI-attribution rules.  Don't hand-craft commit messages or run
+`git commit` directly — invoke `/x-commit` and let it handle formatting.
 
 ## Collaboration Style
 - **"BE CREATIVE"**: Provide multiple high-level ideas with outside-the-box thinking
