@@ -145,6 +145,15 @@ skill scans this file on load and surfaces due/pending items.
   `summary:vim-control-key-map-bug.md` for the full signature and removal steps.
   _(added 2026-05-27 during vim control-key-map investigation)_
 
+- **anytime** — Remove the `show-desktop` duplicate-session instrumentation once
+  the `wmctrl`-based fix has proven out (give it a week or two of normal use, then
+  confirm `~/local/log/show-desktop.log` shows only `-> MATCH` and never a spurious
+  `-> NO MATCH` when a session was up). To remove: delete the `dbg()` sub, its
+  call sites, the `$LOG` const, and the `pairmap` import (if unused elsewhere) in
+  `bin/show-desktop`; delete the log file on each machine. The underlying fix
+  (wmctrl detection replacing `xdotool search`) stays. _(added 2026-05-28 during
+  show-desktop BadWindow-race diagnosis)_
+
 ## Done
 
 - ~~2026-05-25~~ — Remove stale `google-pixel-4a` node (100.98.252.81) from

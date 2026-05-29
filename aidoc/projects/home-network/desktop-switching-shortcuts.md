@@ -85,20 +85,43 @@ Key logic, in order:
      `notify(ERROR => "This should not be possible!")`.
    - Otherwise → `notify(INFO => "Already on <host>'s desktop.")` and exit.
 4. **Record + activate.** Save `$host` to `/tmp/previously-shown-desktop`, then:
-   - If an `<Host> - NoMachine` window already exists (note the capitalized
-     hostname — `xdotool search --name` matches case-sensitively against the
-     pattern `"\u$host - NoMachine"`): move it to the current workspace,
-     re-fullscreen it (`wmctrl -b add,fullscreen`), activate it, and
-     synthesize a click into it.
+   - If an `<Host> - NoMachine` window already exists (capitalized hostname,
+     matched as a substring against `wmctrl -l` titles via the same `pairgrep`
+     idiom as the cleanup): move it to the current workspace, re-fullscreen it
+     (`wmctrl -b add,fullscreen`), activate it, and synthesize a click into it.
    - Otherwise: launch `nxplayer` with the saved profile
      `~/NoMachine/<Host>.nxs`.
+
+   > **History:** this detection used to be `xdotool search --name`, which caused
+   > the intermittent duplicate-session bug below. Now it reads the window id out
+   > of `wmctrl -l` (which the cleanup step already fetches).
 
 > **Title-format gotcha:** NoMachine 9.x flipped its window-title order from
 > `NoMachine - haven` (8.x and earlier) to `Haven - NoMachine` (host first,
 > capitalized). The script was updated for 9.x in May 2026; if it ever fails
-> to recognize an existing session and starts launching duplicates on every
+> to recognize an existing session and starts launching duplicates on *every*
 > invocation, suspect a future title-format change and check `wmctrl -l`
-> against the patterns on lines 97 and 111.
+> against the title pattern (`"\u$host - NoMachine"`).
+
+> **`xdotool search` BadWindow race (diagnosed 2026-05-28) — FIXED:** the
+> *intermittent* duplicate-session bug (launches a new session sometimes, focuses
+> correctly other times, with no discernible pattern) was a different beast from
+> the title-format gotcha above. Detection used to be
+> `my $win = sh(xdotool => search => '--name' => $rdesktop)`. `xdotool search`
+> walks the **entire X window tree**, calling `XGetWindowProperty` on every node.
+> If any transient window (notification, tooltip, a dying nxplayer child) is
+> destroyed mid-walk, the X server returns a **fatal `BadWindow` error**; Xlib
+> aborts xdotool with exit 1 and **empty stdout**, which the script read as "no
+> existing session" → launched a duplicate. Reproduced live at ~50% failure (10
+> back-to-back `xdotool search` runs, 5 returned the window id, 5 aborted with
+> `BadWindow`); `wmctrl -l` found the same window 10/10. The intermittency tracks
+> whatever transient windows happen to be churning when you press the key — which
+> is why it can misfire several times then behave for a while. **Fix:** detect the
+> existing session from `wmctrl -l` (reads `_NET_CLIENT_LIST` in one shot, no tree
+> walk, race-immune) instead of `xdotool search`. There is temporary
+> instrumentation logging every decision to `~/local/log/show-desktop.log`
+> (host-local) — see the `dbg()` sub / `$LOG` const in `show-desktop`; remove it
+> once the fix has proven out (TODO).
 
 ### `~/common/bin/nxkill`
 

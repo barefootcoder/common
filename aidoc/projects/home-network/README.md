@@ -203,6 +203,21 @@ If user asks about EC2 sandbox sync:
 
 ## Current Status
 
+- **`show-desktop` duplicate-session heisenbug diagnosed + fixed** (May 28 2026):
+  The intermittent bug where `Ctrl+Alt+Up/Down` would *sometimes* launch a new
+  NoMachine session instead of focusing the existing one (no discernible pattern;
+  "3 times in a row then fine then again") was root-caused to `xdotool search
+  --name` aborting on a **fatal `BadWindow` X error**. `xdotool search` walks the
+  whole X window tree; if any transient window is destroyed mid-walk, it exits
+  with empty output, which `show-desktop` misread as "no existing session" →
+  duplicate launch. Reproduced live at ~50% failure; `wmctrl -l` found the same
+  window 10/10. Fixed by switching existing-session detection from `xdotool
+  search` to the `wmctrl -l` list the script already fetches (reads
+  `_NET_CLIENT_LIST`, no tree walk, race-immune). Temporary decision-logging
+  instrumentation (`dbg()` → `~/local/log/show-desktop.log`, host-local) left in
+  place to confirm the fix; remove once proven (see TODO). NOT the same as the
+  May 11 NoMachine-9.x title-order fix (`c49dbed`), which addressed an *every-time*
+  failure. See `desktop-switching-shortcuts.md`.
 - **Phone music + ordered playlist sync working** (May 27 2026): Established a
   reusable workflow for pushing music to the Pixel 4a's "Music Player" app
   (`mp3.music.download.player.music.search`) over `adb`: `adb push` into

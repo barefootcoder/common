@@ -3,10 +3,11 @@
 use myperl::Pxb;
 use autodie ':all';
 
-use List::AllUtils qw< pairkeys pairgrep >;
+use List::AllUtils qw< pairkeys pairgrep pairmap >;
 
 const my $CONNECT  => '/usr/NX/bin/nxplayer';
 const my $PREVIOUS => file('/tmp/previously-shown-desktop');
+const my $LOG      => file('~/local/log/show-desktop.log');	# duplicate-session heisenbug instrumentation (2026-05-28); remove once caught
 const my $ICONS    =>
 {
 	ERROR	=> '/usr/share/icons/Humanity/status/48/error.svg',
@@ -31,15 +32,21 @@ $OPT{n} //= 1;
 
 my $host = shift // usage_error('must supply host');
 
+# --- instrumentation: record every invocation so the duplicate-session heisenbug is diagnosable ---
+my $arg = $host;												# raw target before WORK/HOME/PREVIOUS resolution
+dbg('', '==== ' . now->strftime('%Y-%m-%d %H:%M:%S') . " : `show-desktop $arg` on " . sh('hostname'));
+
 
 # Get rid of any stray disconnected windows before opening new ones.
 # (ChatGPT helped write this: https://chat.openai.com/share/51318917-e9ad-4370-8fa6-5f814dcd8f2d)
-sh(wmctrl => -ic => $_) foreach
-		pairkeys
+my @windows = sh(wmctrl => -l =>);
+dbg('-- windows before cleanup (wmctrl -l):', map { "     $_" } @windows);
+my @stray =
 		pairgrep { $b eq "NoMachine"      }
-		map      { (split(" ",$_,4))[0,3] }
-		sh       ( wmctrl => -l =>        )
+		map      { (split(" ",$_,4))[0,3] } @windows
 ;
+dbg('-- cleanup closes (title eq "NoMachine"): ' . (@stray ? join(', ', pairmap { "$a" } @stray) : 'nothing'));
+sh(wmctrl => -ic => $_) foreach pairkeys @stray;
 
 
 my $me = sh('hostname');
@@ -109,9 +116,25 @@ else
 }
 
 my $rdesktop = "\u$host - NoMachine";			# NoMachine 9.x flipped the title order from "NoMachine - haven" to "Haven - NoMachine"
-my $win = sh(xdotool => search => '--name' => $rdesktop);
+# Find the existing session via wmctrl, NOT `xdotool search --name`.  xdotool's
+# search walks the *entire* X window tree calling XGetWindowProperty on each node;
+# if any transient window (notification, tooltip, dying player child) is destroyed
+# mid-walk, the X server returns a fatal BadWindow error and xdotool aborts with
+# empty output -- which this script misread as "no existing session" and launched
+# a duplicate.  wmctrl reads _NET_CLIENT_LIST in one shot and is race-immune.
+# (Diagnosed 2026-05-28: xdotool search was failing ~50% of the time.)
+my @decision = sh(wmctrl => -l =>);
+my ($win) =
+		pairkeys
+		pairgrep { $b =~ /\Q$rdesktop\E/  }		# substring match, as `xdotool search --name` did
+		map      { (split(" ",$_,4))[0,3] } @decision
+;
+# --- instrumentation: capture the exact decision state (post-cleanup) ---
+dbg("-- resolved target host: $host  (looking for window titled \"$rdesktop\")");
+dbg('-- windows at decision (wmctrl -l):', map { "     $_" } @decision);
 if ($win)
 {
+	dbg("-> MATCH: found existing window [$win] -- focusing existing session");
 	my $cur_desktop = sh(xdotool => get_desktop => );
 	sh(xdotool => set_desktop_for_window => $win, $cur_desktop);
 	sh(wmctrl => -ir => $win, -b => 'add,fullscreen');
@@ -120,10 +143,26 @@ if ($win)
 }
 else
 {
+	dbg("-> NO MATCH: no window titled \"$rdesktop\" in the wmctrl list above -- launching a NEW session");
 	my $machine = file("~/NoMachine/\u$host.nxs");
 	sh($CONNECT => $machine);
 }
 
+
+# Append-only diagnostic log.  Best-effort: a logging failure must never abort
+# the actual desktop switch, so everything is wrapped in eval.  Each arg is one
+# line.  Remove this sub (and its callers + the $LOG const) once the
+# duplicate-session heisenbug is caught.
+sub dbg
+{
+	eval
+	{
+		my $dir = $LOG->parent;
+		$dir->mkpath unless -d $dir;
+		$LOG->append(map { "$_\n" } @_);
+		1;
+	};
+}
 
 sub notify
 {
