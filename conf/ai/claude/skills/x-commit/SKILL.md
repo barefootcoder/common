@@ -53,6 +53,7 @@ A body goes between the subject and the attribution block, but only when warrant
   - Keystrokes: `Ctrl-G`, `^G`, `Meta-V`, `Esc`
   - Anything typed literally into a program or config: `:set paste`, `select count(*) from tblfoo`, `additionalDirectories`
 - Do NOT backtick generic English words that happen to also be technical concepts (e.g. stdin, cron job, pull request are fine without backticks)
+- **Keep the message ASCII**: see the global `CLAUDE.md` writing-style rule (no `…`, no space-padded dashes, straight quotes).  Beyond style, ASCII keeps the reflow's column math exact, since the wrapper counts bytes.
 
 ### AI Attribution (Last Lines)
 
@@ -64,6 +65,7 @@ A body goes between the subject and the attribution block, but only when warrant
     | head -1
   ```
   The `attributionSkill != "x-commit"` filter excludes turns spent inside `/x-commit` itself, so the result is the model of the most recent turn that did substantive work (e.g. `claude-opus-4-8`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-8` → "Claude Opus 4.8", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.8 - claude-opus-4-8`.
+- **A mismatch between the transcript result and the system-prompt "You are powered by…" line is EXPECTED — it is the whole reason for this probe, not a discrepancy to investigate.**  When the probe returns a model, treat it as authoritative and proceed silently: do not re-probe, count turns per model, or pause to reconcile the two.  The system prompt matters only as the empty-probe fallback below.
 - If the transcript probe returns nothing, fall back to the system-prompt line, but flag the uncertainty to the user before committing.  Most common cause: `/x-commit` is the first skill invoked in a brand-new session and there is no prior non-commit turn yet.
 - Do NOT add any additional AI attribution beyond the template (no extra "Co-Authored-By", "[Created by AI]", or similar lines).
 
@@ -114,6 +116,7 @@ When asked to amend a commit (e.g., to fold in additional changes):
 - **No `--no-verify`** unless explicitly requested
 - **No interactive rebase** - this skill handles simple commits only
 - Before amending, confirm HEAD is the user's commit
+- **Inspect staged state with `git status --porcelain`** or `git diff --cached --name-only` — not `git status -s | grep`.  The user's `color.ui = always` makes anchored greps on colored git output silently fail (see global `CLAUDE.md`).
 
 ## Pre-commit Hook Failures
 

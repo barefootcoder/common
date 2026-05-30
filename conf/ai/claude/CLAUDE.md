@@ -18,6 +18,15 @@
   - Source common functions with `. ~/bin/bash_funcs`
   - Use `: ${VAR:=default}` for defaults
 
+## Writing Style
+- **Use plain ASCII punctuation in prose you write (replies, file content,
+  code comments, commit messages); avoid "smart"/typographic characters.**
+  Write `...`, not the `…` glyph.  Don't pad a dash with spaces as a
+  connector (the ` — ` AI tell): almost always it just means a colon, so
+  write `: ` instead.  On the rare occasion a real dash genuinely fits, use
+  an unspaced `--` (a monospace em-dash can't be drawn long enough to read
+  as one anyway).  Use straight quotes (`'`/`"`), not curly ones.
+
 ## Command Safety Convention
 When running scripts that support dry-run/no-action modes, **always place the
 safety flag as the first argument** to the script. This enables permission
@@ -37,6 +46,14 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
   catch yourself writing something like `git -C /export/proj/common ...`
   or `git -C /home/buddy/workproj/CE ...` and that path is your cwd,
   drop the `-C <path>` part entirely.
+- **`git` is configured with `color.ui = always`**, so it emits ANSI
+  color even when its output is piped or redirected.  Naive parsing
+  breaks on the escape codes — e.g. `git status -s | grep '^M'` matches
+  nothing, because the status column is wrapped in color.  To parse git
+  output, use a color-immune format: `git status --porcelain` for
+  working-tree state, and `git diff --cached --name-only` / `--stat`
+  for staged files.  Don't pipe `git status -s` or `git diff` into
+  anchored `grep`/`awk`.
 
 ### Committing
 - **Do NOT commit unless the user has explicitly asked for a commit.**
