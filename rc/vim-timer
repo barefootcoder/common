@@ -68,16 +68,27 @@
 :function! TLog(ev)
 :	silent! call writefile([strftime('%Y-%m-%d %H:%M:%S') . ' ' . a:ev], expand('~/local/log/vimkeys/timer-events.log'), 'a')
 :endfunction
+:" Throttled idle heartbeat: gaps in heartbeats prove vim wasn't firing autocmds.
+:let g:TimerLastHeartbeat = 0
+:function! TimerHeartbeat()
+:	let l:now = localtime()
+:	if l:now - g:TimerLastHeartbeat >= 60
+:		let g:TimerLastHeartbeat = l:now
+:		call TLog('Heartbeat')
+:	endif
+:endfunction
 :augroup TimerTrace
 :	autocmd!
-:	silent! autocmd VimEnter     * call TLog('VimEnter pid=' . getpid())
-:	silent! autocmd VimLeave     * call TLog('VimLeave')
-:	silent! autocmd VimResized   * call TLog('VimResized ' . &columns . 'x' . &lines)
-:	silent! autocmd FocusGained  * call TLog('FocusGained')
-:	silent! autocmd FocusLost    * call TLog('FocusLost')
-:	silent! autocmd VimSuspend   * call TLog('VimSuspend')
-:	silent! autocmd VimResume    * call TLog('VimResume')
-:	silent! autocmd ShellCmdPost * call TLog('ShellCmdPost ' . histget('cmd', -1))
+:	silent! autocmd VimEnter             * call TLog('VimEnter pid=' . getpid())
+:	silent! autocmd VimLeave             * call TLog('VimLeave')
+:	silent! autocmd VimResized           * call TLog('VimResized ' . &columns . 'x' . &lines)
+:	silent! autocmd FocusGained          * call TLog('FocusGained')
+:	silent! autocmd FocusLost            * call TLog('FocusLost')
+:	silent! autocmd VimSuspend           * call TLog('VimSuspend')
+:	silent! autocmd VimResume            * call TLog('VimResume')
+:	silent! autocmd ShellCmdPost         * call TLog('ShellCmdPost ' . histget('cmd', -1))
+:	silent! autocmd CmdlineLeave       : if !get(v:event,'abort',0) | call TLog('Cmd ' . getcmdline()) | endif
+:	silent! autocmd CursorHold,CursorHoldI * call TimerHeartbeat()
 :augroup END
 :function! TimerDump()
 :	let l:ts  = strftime('%Y%m%dT%H%M%S')
@@ -88,7 +99,15 @@
 :	silent map
 :	silent map!
 :	silent set all
+:	silent autocmd
 :	silent scriptnames
+:	silent verbose nmap <C-T>
+:	silent verbose imap <C-T>
+:	silent set eventignore?
+:	silent echo 'mode=' . mode(1) . ' state=' . state()
+:	silent echo 't_BE=' . string(&t_BE) . ' t_TI=' . string(&t_TI) . ' t_TE=' . string(&t_TE)
+:	silent echo 'lastcmd=' . string(getreg(':'))
+:	silent 10messages
 :	redir END
 :	let l:k = l:dir . '/timer.keys'
 :	if filereadable(l:k)
