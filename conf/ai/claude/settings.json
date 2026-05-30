@@ -25,6 +25,8 @@
       "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-download-attachments *)",
       "Bash(/home/buddy/.claude/skills/x-assess-ticket/scripts/jira-set-user-field *)",
       "Bash(/home/bburden/.claude/skills/x-assess-ticket/scripts/jira-set-user-field *)",
+      "Bash(/home/buddy/.claude/skills/x-commit/scripts/reflow-commit-msg *)",
+      "Bash(/home/bburden/.claude/skills/x-commit/scripts/reflow-commit-msg *)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/ticket-preflight)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/jira-ticket-info *)",
       "Bash(/export/proj/common/conf/ai/claude/skills/x-take-ticket/scripts/ticket-config *)",

@@ -1,0 +1,172 @@
+#!/usr/bin/env perl
+
+# reflow-commit-msg — mechanically wrap a drafted commit message to a fixed
+# width so it renders well on GitHub, without the model having to count
+# characters as it writes.
+#
+# The companion `/x-commit` skill instructs the model to write each paragraph
+# and each bullet as a SINGLE unwrapped physical line (two spaces between
+# sentences).  This filter then wraps each over-long line independently:
+#
+#   - The first line (the commit subject) is emitted verbatim, never wrapped.
+#   - Lines that already fit within the width pass through byte-for-byte, so
+#     the attribution trailer, short bullets, and blank lines are untouched.
+#   - Over-long prose lines are word-wrapped at the width.
+#   - Over-long bullet / numbered lines wrap with a hanging indent so
+#     continuation lines align under the bullet's text.
+#   - Fenced ``` code blocks are passed through verbatim (never wrapped).
+#   - Interior whitespace is preserved exactly except at a break point, so
+#     two-spaces-between-sentences survives wherever it doesn't land on a wrap.
+#
+# Because each logical unit is its own input line, the filter never joins
+# lines, so there is no risk of merging two bullets, a header, etc.
+#
+# Pure core Perl: no CPAN dependencies, so it runs under any perl on $PATH.
+#
+# Usage: reflow-commit-msg [-w WIDTH] [FILE...]   (reads STDIN if no FILE)
+#        reflow-commit-msg --help
+
+use strict;
+use warnings;
+use 5.014;
+
+my $ME = $0;
+$ME =~ s{.*/}{};
+
+my $width = 95;
+
+while (@ARGV && $ARGV[0] =~ /^-/)
+{
+    my $opt = shift @ARGV;
+    if ($opt eq '-w' || $opt eq '--width')
+    {
+        $width = shift @ARGV;
+        die "$ME: --width requires a positive integer\n"
+            unless defined $width && $width =~ /^\d+$/ && $width > 0;
+    }
+    elsif ($opt eq '-h' || $opt eq '--help')
+    {
+        print usage();
+        exit 0;
+    }
+    elsif ($opt eq '--')
+    {
+        last;
+    }
+    else
+    {
+        die "$ME: unknown option '$opt'\n" . usage();
+    }
+}
+
+my @lines = <>;
+chomp @lines;
+
+my $in_fence = 0;
+for my $i (0 .. $#lines)
+{
+    my $line = $lines[$i];
+
+    # The subject line is sacred — never reflow it.
+    if ($i == 0)
+    {
+        say $line;
+        next;
+    }
+
+    # Fenced code blocks pass through verbatim; the fence markers toggle state.
+    if ($line =~ /^\s*```/)
+    {
+        $in_fence = !$in_fence;
+        say $line;
+        next;
+    }
+    if ($in_fence)
+    {
+        say $line;
+        next;
+    }
+
+    say for wrap_line($line, $width);
+}
+
+# Word-wrap a single line to $width, preserving interior whitespace and
+# honoring any leading indent / bullet marker as a hanging indent.  Returns
+# the (possibly multiple) output lines.
+sub wrap_line
+{
+    my ($line, $width) = @_;
+
+    # Fast path: anything already within width (incl. blank lines) is
+    # returned untouched, byte-for-byte.
+    return ($line) if length($line) <= $width;
+
+    my ($indent) = $line =~ /^(\s*)/;
+    my $rest = substr($line, length $indent);
+
+    # Detect a bullet ("- ", "* ", "+ ") or numbered ("1. ", "2) ") marker.
+    my $marker = '';
+    if ($rest =~ /^([-*+]\s+|\d+[.)]\s+)/)
+    {
+        $marker = $1;
+        $rest = substr($rest, length $marker);
+    }
+
+    my $first_prefix = $indent . $marker;
+    my $cont_prefix  = $indent . (' ' x length $marker);
+
+    # Split the content into (word, trailing-gap) pairs so interior spacing
+    # can be preserved verbatim when we don't break there.
+    my @tokens;
+    while ($rest =~ /\G(\S+)(\s*)/g)
+    {
+        push @tokens, [ $1, $2 ];
+    }
+
+    my @out;
+    my $cur = $first_prefix;
+    my $have_word = 0;
+    for my $tok (@tokens)
+    {
+        my ($word, $gap) = @$tok;
+        my $candidate = $cur . $word;
+
+        if (!$have_word || length($candidate) <= $width)
+        {
+            # First word on a line always goes on (even if it overflows on its
+            # own); otherwise it fits.
+            $cur = $candidate . $gap;
+            $have_word = 1;
+        }
+        else
+        {
+            push @out, rtrim($cur);
+            $cur = $cont_prefix . $word . $gap;
+            $have_word = 1;
+        }
+    }
+    push @out, rtrim($cur);
+
+    return @out;
+}
+
+sub rtrim
+{
+    my ($s) = @_;
+    $s =~ s/\s+$//;
+    return $s;
+}
+
+sub usage
+{
+    return <<"END";
+Usage: $ME [-w WIDTH] [FILE...]
+       $ME --help
+
+Wrap a drafted commit message to WIDTH columns (default 95) for clean GitHub
+rendering.  Reads FILE(s) or STDIN, writes the reflowed message to STDOUT.
+
+  -w, --width N   wrap width in columns (default 95)
+  -h, --help      show this help
+END
+}

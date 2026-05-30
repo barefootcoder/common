@@ -41,8 +41,7 @@ A body goes between the subject and the attribution block, but only when warrant
 
 - **The body is for the non-obvious *why*, not the *what*.**  Do not redescribe what changed — the diff does that.  Use the body only for a constraint that forced the approach, a bug being worked around, an alternative tried and abandoned, a non-obvious interaction with other code, or similar.  If the *why* is plain from the subject, omit the body entirely.
 - **Keep it short.**  When a body is warranted, one or two sentences is almost always enough.  A multi-line body for a small diff is a sign you are recapping rather than explaining.  Resist the urge to summarize what you just did; trust the reader.
-- Word-wrap prose at 95 characters; longer lines render poorly on GitHub.  Use two spaces between sentences on the same line.  Ruler for reference:
-  `xxxxx----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9`
+- **Do not hand-wrap.**  Write each paragraph and each bullet as a single, unwrapped physical line, with two spaces between sentences.  The skill reflows the whole message to 95 columns mechanically before committing (see "Producing the Commit" below), so manual line breaks only get in the way — and a sentence break that lands at a manual wrap would lose its double space.
 - Use `-` bullet points only when genuinely listing distinct items — multiple conceptually-distinct tweaks count, even within one cohesive change set (an intent-framed subject with a few bullets enumerating the pieces is often the right shape for these).  Do not bullet-itemize ordinary work just to add structure — running prose is fine and usually shorter.
 - Use backticks liberally for inline code formatting (GitHub renders these in commit messages).  Backtick the following:
   - Commands: `git`, `npm`, `sed` (even common ones like `bash` when referring to typing/running something)
@@ -67,6 +66,23 @@ A body goes between the subject and the attribution block, but only when warrant
   The `attributionSkill != "x-commit"` filter excludes turns spent inside `/x-commit` itself, so the result is the model of the most recent turn that did substantive work (e.g. `claude-opus-4-8`).  From the ID, derive the family/version for the human-readable half — e.g. `claude-opus-4-8` → "Claude Opus 4.8", `claude-sonnet-4-6` → "Claude Sonnet 4.6", `claude-haiku-4-5-20251001` → "Claude Haiku 4.5".  Final line format: `-   model: Claude Opus 4.8 - claude-opus-4-8`.
 - If the transcript probe returns nothing, fall back to the system-prompt line, but flag the uncertainty to the user before committing.  Most common cause: `/x-commit` is the first skill invoked in a brand-new session and there is no prior non-commit turn yet.
 - Do NOT add any additional AI attribution beyond the template (no extra "Co-Authored-By", "[Created by AI]", or similar lines).
+
+## Producing the Commit
+
+The body is written unwrapped (one line per paragraph/bullet — see "Body"), so the message
+must be reflowed to 95 columns before it is committed.  Write the full drafted message
+(subject, body, attribution block) to a file, reflow it, then commit with `-F`:
+
+```bash
+~/.claude/skills/x-commit/scripts/reflow-commit-msg < /tmp/commit-msg.draft > /tmp/commit-msg.txt
+git commit -F /tmp/commit-msg.txt
+```
+
+`reflow-commit-msg` (pure core Perl, no deps) wraps each over-long line independently: the
+subject line and the attribution block pass through untouched, fenced ``` ``` ``` code blocks
+are preserved verbatim, bullets wrap with a hanging indent, and interior whitespace —
+including two-spaces-between-sentences — is preserved wherever a wrap doesn't fall there.  It
+is idempotent, so re-running it (e.g. on an already-reflowed message during an amend) is safe.
 
 ## Amending Commits
 
