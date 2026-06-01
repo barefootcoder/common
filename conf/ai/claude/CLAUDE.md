@@ -55,6 +55,23 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
   for staged files.  Don't pipe `git status -s` or `git diff` into
   anchored `grep`/`awk`.
 
+### Syncthing-shared repositories
+Several of these repos (everything under `/export/proj`, which includes
+`~/common`) are propagated between machines by Syncthing, NOT by a git
+remote.  That makes the object store racy: a peer's commit can arrive
+ref-first (`refs/heads/master` syncs before its loose objects), so `git`
+here reports `bad object HEAD` / `fatal: bad object` even though nothing
+is actually corrupt.
+- This is a sync lag, not corruption.  Recover by forcing a Syncthing
+  rescan on the machine that *made* the commit:
+  `syncthing-rescan --path <repo>/.git` (it wraps the rescan `POST` so it
+  doesn't hit the `curl -X POST` deny rule -- never poke the Syncthing
+  REST API with a raw `curl`).  Then wait for the objects to arrive.
+- **Never `git gc` / `prune` / `repack`** on these repos to "fix" such a
+  problem: loose objects that haven't synced yet may be the only copy, and
+  gc will delete them.  `/x-commit` now gates on this and rescans after
+  committing.
+
 ### Committing
 - **Do NOT commit unless the user has explicitly asked for a commit.**
   An ask for a code *change* is NOT an ask for a *commit*, even an
@@ -72,6 +89,15 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
 - Once inside `/x-commit`, just stage and commit without stopping to
   ask about message wording.  It is always easier to amend after the
   fact than to negotiate commit message wording interactively.
+
+## Remote Hosts (ssh)
+The login shell on my hosts (Haven, Avalir, etc.) is **tcsh**, so a bare
+`ssh host '<command>'` runs your command under tcsh, which chokes on bash
+syntax (`$(...)`, `VAR=val`, `2>&1`, heredocs, `for`/`if` blocks, etc.).
+**Always wrap remote commands in bash**: `ssh host bash -lc '<command>'`,
+or `ssh host bash -s` with a heredoc on stdin for anything multi-line.
+Interactive `ssh host` and manual `ssh host my-alias` are unaffected --
+this only bites when *you* send a shell command.
 
 ## Jira Ticket References
 - **Default Project**: CLASS

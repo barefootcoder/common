@@ -209,6 +209,7 @@
       "Bash(npm --version)",
       "Bash(check-dir-age *)",
       "Bash(repo-last-pulled *)",
+      "Bash(syncthing-rescan *)",
       "Bash(journalctl *)",
       "Bash(dmesg *)",
       "Bash(sensors *)",

@@ -15,6 +15,25 @@ Invoked as: `/x-commit {{ARGS}}` — or auto-invoked when a commit is needed.
 - **No args / auto-invoked**: Commit files modified during this conversation
 - **With args**: Specific files, or instructions like "amend", or both
 
+## Repo Consistency Gate (before committing)
+
+Some of the user's repos live in a Syncthing share, where a peer's commit can
+arrive ref-first: `refs/heads/master` syncs before its objects do, so HEAD ends
+up pointing at an object this machine does not have yet.  Committing on that
+broken base makes a tangle.  Before staging, confirm the base resolves:
+
+```bash
+git rev-parse --verify HEAD >/dev/null 2>&1 || echo "BROKEN BASE"
+```
+
+If that prints `BROKEN BASE` (or any `git` command reports `bad object HEAD`),
+**STOP -- do not commit.**  The repo is mid-sync.  Tell the user, and recover
+by running a rescan on the machine that *made* the missing commit so its objects
+get announced (`syncthing-rescan --path "$(git rev-parse --absolute-git-dir)"`),
+then wait for this machine to pull them.  Never `git gc` / `prune` / `repack` to
+"fix" it -- that destroys the only local copy of not-yet-synced objects.  The
+full runbook is in the `/x-claude-setup` reference under "Syncthing".
+
 ## Commit Message Format
 
 Default form — most commits need nothing more than this:
@@ -85,6 +104,21 @@ subject line and the attribution block pass through untouched, fenced ``` ``` ``
 are preserved verbatim, bullets wrap with a hanging indent, and interior whitespace —
 including two-spaces-between-sentences — is preserved wherever a wrap doesn't fall there.  It
 is idempotent, so re-running it (e.g. on an already-reflowed message during an amend) is safe.
+
+## After Committing: Announce Objects (Syncthing repos)
+
+Right after a successful commit, push the new loose objects out so other
+machines don't see `master` point at objects they lack (the same failure the
+consistency gate guards against, from the sending side).  Run this
+unconditionally -- it is a silent no-op outside a Syncthing folder:
+
+```bash
+syncthing-rescan --path "$(git rev-parse --absolute-git-dir)"
+```
+
+`syncthing-rescan` is allowlisted and wraps the rescan POST internally, so it
+does not trip the `curl -X POST` deny rule -- do NOT call the Syncthing REST API
+directly.
 
 ## Amending Commits
 

@@ -116,6 +116,39 @@ Custom bash script (`statusline-command.sh`) that parses the transcript to show:
 | `claude-code-set-notification` | Notification hook: writes attention-needed marker |
 | `claude-code-clear-notification` | Clears notification marker |
 | `repo-last-pulled` | Reports when a repo was last pulled |
+| `syncthing-rescan` | Forces a Syncthing folder rescan; wraps `POST /rest/db/scan` so it dodges the `curl -X POST` deny rule |
+
+### Syncthing (shared-repo git hazard)
+
+The repos under `/export/proj` (including `~/common`) sync between machines via
+Syncthing, not a git remote.  Syncthing's fs-watcher can miss the burst of
+loose-object writes a commit/gc produces, so the tiny `refs/heads/master` file
+propagates while its objects lag -- a peer then sees `fatal: bad object HEAD`
+even though no data is lost.
+
+**Symptom**: `git` on one machine reports `bad object HEAD` / `bad object` for a
+commit another machine just made.
+
+**Recovery** (do NOT `git gc`/`prune`/`repack` -- that deletes the only copy of
+not-yet-synced loose objects):
+1. On the machine that *made* the commit, force a rescan so its objects get
+   indexed and announced: `syncthing-rescan --path <repo>/.git` (or the explicit
+   `syncthing-rescan <folder-id> <sub>`, e.g. `syncthing-rescan export-proj common/.git`).
+2. Wait for the lagging machine to pull them; `git rev-parse HEAD` resolves once
+   they arrive.  Confirm with `git fsck --connectivity-only`.
+
+**Diagnosis** (REST GETs are fine -- only `POST` is deny-listed; API key + GUI
+address are in `~/.config/syncthing/config.xml`):
+- Folder state: `curl -s -H "X-API-Key: $KEY" "$GUI/rest/db/status?folder=export-proj"` (`needBytes`, `state`).
+- Is an object indexed at all: `.../rest/db/file?folder=export-proj&file=common/.git/objects/<xx>/<rest>` (404 = not indexed -> the source machine hasn't scanned it).
+
+**Prevention**: `/x-commit` gates on a resolvable HEAD before committing and runs
+`syncthing-rescan --path` afterward, to announce new objects promptly.
+
+**Two-committer note**: now that `claude` runs on Haven *and* Avalir, both write
+into the same shared `.git`, so this lag (and divergent-`master` `.sync-conflict`
+files) will recur.  The durable fix is to stop syncing `.git` and use a real git
+remote between machines -- a deliberate, separate project.
 
 ## Step 3: Make Changes
 

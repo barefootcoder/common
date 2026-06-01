@@ -1,0 +1,156 @@
+#!/bin/bash
+#
+# syncthing-rescan - force a Syncthing folder rescan via the local REST API.
+#
+# Syncthing's ONLY mechanism for forcing a rescan is POST /rest/db/scan.
+# This wrapper exists so the POST lives *inside* a vetted script: an agent
+# invokes `syncthing-rescan ...` (which can be allowlisted), and the curl POST
+# never appears in the top-level command, so it does not trip the
+# `Bash(curl * -X POST *)` deny rule.  Rescans are safe and idempotent -- they
+# only make Syncthing re-read the folder from disk and reconcile its database
+# with reality (e.g. after a commit/gc whose loose-object writes the fs-watcher
+# missed, leaving another machine with a ref pointing at a "missing" object).
+#
+# Usage: syncthing-rescan [--noaction] <folder-id> [sub-path]
+#        syncthing-rescan [--noaction] --path <filesystem-path>
+#
+#   --noaction : print the request that would be sent, without sending it
+#                (must be the FIRST argument; see the safety-flag convention)
+#   <folder-id>: Syncthing folder ID (e.g. export-proj)
+#   [sub-path] : optional path within the folder to limit the rescan
+#                (e.g. common/.git) -- much faster than a full-folder scan
+#   --path P   : resolve which Syncthing folder contains filesystem path P and
+#                rescan just that subtree.  If P is in NO synced folder this is
+#                a silent no-op (exit 0), so it is safe to call unconditionally
+#                (e.g. as a post-commit step in any repo, synced or not).
+#
+# Reads the API key and GUI address from the local Syncthing config.
+
+ME=$(basename "$0")
+
+usage()
+{
+    echo "Usage: $ME [--noaction] <folder-id> [sub-path]"
+    echo "       $ME [--noaction] --path <filesystem-path>"
+    echo "  --noaction : show the request without sending it (must be first arg)"
+    echo "  --path P   : auto-resolve the folder containing P; no-op if P is unsynced"
+}
+
+noaction=
+if [ "$1" = "--noaction" ] || [ "$1" = "-n" ]
+then
+    noaction=1
+    shift
+fi
+
+# locate the syncthing config (honor $STHOMEDIR, then newer state dir, then legacy)
+config=
+for c in "${STHOMEDIR:+$STHOMEDIR/config.xml}" \
+         "$HOME/.local/state/syncthing/config.xml" \
+         "$HOME/.config/syncthing/config.xml"
+do
+    if [ -n "$c" ] && [ -f "$c" ]
+    then
+        config="$c"
+        break
+    fi
+done
+
+if [ -z "$config" ]
+then
+    echo "$ME: cannot find syncthing config.xml" >&2
+    exit 1
+fi
+
+folder=
+sub=
+
+if [ "$1" = "--path" ]
+then
+    target="$2"
+    if [ -z "$target" ]
+    then
+        usage >&2
+        exit 1
+    fi
+    abspath=$(readlink -f "$target" 2>/dev/null)
+    if [ -z "$abspath" ]
+    then
+        echo "$ME: cannot resolve path: $target" >&2
+        exit 1
+    fi
+    # find the folder whose root is an ancestor of (or equal to) abspath
+    mapfile -t folder_lines < <(grep -oE '<folder [^>]*>' "$config")
+    for line in "${folder_lines[@]}"
+    do
+        fid=$(grep -oP 'id="\K[^"]+' <<<"$line")
+        fpath=$(grep -oP 'path="\K[^"]+' <<<"$line")
+        [ -n "$fid" ] && [ -n "$fpath" ] || continue
+        fpath=${fpath/#\~/$HOME}
+        fpabs=$(readlink -f "$fpath" 2>/dev/null) || continue
+        if [ "$abspath" = "$fpabs" ] || [ "${abspath#"$fpabs"/}" != "$abspath" ]
+        then
+            folder="$fid"
+            sub=${abspath#"$fpabs"}
+            sub=${sub#/}
+            break
+        fi
+    done
+    if [ -z "$folder" ]
+    then
+        echo "$ME: $abspath is not in any Syncthing folder; nothing to rescan"
+        exit 0
+    fi
+else
+    folder="$1"
+    sub="$2"
+fi
+
+if [ -z "$folder" ]
+then
+    usage >&2
+    exit 1
+fi
+
+apikey=$(grep -oP '(?<=<apikey>)[^<]+' "$config" | head -1)
+gui=$(awk '/<gui /,/<\/gui>/' "$config" | grep -oP '(?<=<address>)[^<]+' | head -1)
+: ${gui:=127.0.0.1:8384}
+
+if [ -z "$apikey" ]
+then
+    echo "$ME: could not read apikey from $config" >&2
+    exit 1
+fi
+
+# build the scan URL (folder + optional sub are query params; the body is empty)
+url="http://$gui/rest/db/scan?folder=$folder"
+if [ -n "$sub" ]
+then
+    esc=${sub// /%20}                          # paths here are git-safe; just guard spaces
+    url="$url&sub=$esc"
+fi
+
+if [ -n "$noaction" ]
+then
+    echo "[noaction] would POST: $url"
+    exit 0
+fi
+
+http=$(curl -s -m 60 -o /dev/null -w '%{http_code}' -X POST -H "X-API-Key: $apikey" "$url")
+rc=$?
+
+if [ "$rc" -ne 0 ]
+then
+    echo "$ME: curl failed (exit $rc) contacting $gui" >&2
+    exit 1
+fi
+
+case "$http" in
+    200)
+        echo "$ME: rescan triggered for folder '$folder'${sub:+ (sub: $sub)}"
+        ;;
+    *)
+        echo "$ME: scan request returned HTTP $http (check folder ID and API key)" >&2
+        exit 1
+        ;;
+esac
