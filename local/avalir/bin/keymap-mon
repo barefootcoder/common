@@ -1,0 +1,62 @@
+#!/bin/bash
+# keymap-mon — forensic watcher for the keypad-colon mapping on Haven.
+#
+# Polls keycode 91 (<KPDL>, the key Haven's keypad-. ACTUALLY emits — NOT 129,
+# which the April work mistakenly targeted) and the NumLock state on :0, and
+# appends a timestamped record every time either transitions, with a context
+# snapshot.  Purpose: catch *what* reverts the `xmodmap` keypad->colon mapping
+# on kc91, since X does not journal keymap changes.  kc129 is logged too, for
+# reference, in case it ever turns out to matter.
+#
+# Throwaway diagnostic; remove once the trigger is identified.
+
+ME=${0##*/}
+export DISPLAY=:0
+
+: ${log:=/var/tmp/keymap-mon.log}
+: ${interval:=5}
+
+get-kc()   # $1 = keycode  (xmodmap right-aligns the code, so allow >1 space)
+{
+	xmodmap -pke 2>/dev/null | grep -E "^keycode +$1 " | sed -E "s/^keycode +$1 = //"
+}
+
+# NumLock state via the X LED mask (bit 0x2 == NumLock; verified on this box).
+get-numlock()
+{
+	local mask
+	mask=$(xset -q 2>/dev/null | sed -n 's/.*LED mask:[[:space:]]*\([0-9a-fA-F]*\).*/\1/p')
+	[[ -z $mask ]] && { echo "?/?"; return; }
+	if (( 0x$mask & 2 )); then echo "on/$mask"; else echo "off/$mask"; fi
+}
+
+snapshot()
+{
+	echo "  kc129(ref): $(get-kc 129)"
+	echo "  nx-sessions:"
+	sudo /usr/NX/bin/nxserver --list 2>/dev/null | grep -E '^[0-9]' | sed 's/^/    /'
+	echo "  journal-tail (last 25s):"
+	journalctl --since '-25s' 2>/dev/null | tail -10 | sed 's/^/    /'
+	echo "  active-window:"
+	xdotool getactivewindow getwindowname 2>/dev/null | sed 's/^/    /'
+}
+
+prev_kc="$(get-kc 91)"
+prev_nl="$(get-numlock)"
+echo "$(date '+%F %T') START kc91=[$prev_kc] numlock=[$prev_nl] interval=${interval}s pid=$$" >> "$log"
+
+while sleep "$interval"
+do
+	cur_kc="$(get-kc 91)"
+	cur_nl="$(get-numlock)"
+	if [[ "$cur_kc" != "$prev_kc" || "$cur_nl" != "$prev_nl" ]]
+	then
+		{
+			echo "$(date '+%F %T') CHANGE kc91:[$prev_kc]->[$cur_kc]  numlock:[$prev_nl]->[$cur_nl]"
+			snapshot
+			echo
+		} >> "$log"
+		prev_kc="$cur_kc"
+		prev_nl="$cur_nl"
+	fi
+done

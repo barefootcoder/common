@@ -8,6 +8,16 @@ This is a mixed-platform home network with Linux systems, NAS storage, and smart
 
 ## CRITICAL: System Environment Notes
 
+### Uptime — Haven and Avalir do NOT reboot
+**Common agent mistake:** assuming these machines reboot or shut down on any
+normal cadence. They don't. Haven and Avalir effectively **never** shut down or
+reboot except under extreme circumstances — Avalir's uptime is routinely measured
+in *months* (165+ days is normal), and Haven only ever restarts when it *crashes*
+(the recurring hardware instability), never a deliberate reboot. Do **not** assume
+a reboot will clear state, restart a detached process, or reload config — a process
+you start will keep running for months. If something must survive the *rare* crash,
+treat that as the exceptional case (wire it into `termstart`), not the norm.
+
 ### Shell Environment
 - **Interactive shell on Linux systems**: `tcsh` (NOT bash)
 - **Remote command execution**: Commands via SSH execute in tcsh by default
@@ -69,6 +79,9 @@ source file in `conf/crontab/`, since the mounts will be there next time.
 
 ### Desktop Workflow
 - **[desktop-switching-shortcuts.md](desktop-switching-shortcuts.md)**: Interlocking `Ctrl+Alt+Up` / `Ctrl+Alt+Down` MATE shortcuts that switch between paired desktops (Haven↔Avalir, Zadash↔Caemlyn) via NoMachine. Documents the `show-desktop` script, the `WORK`/`HOME` symbolic targets, and the full behavior matrix.
+
+### Keyboard / Input
+- **[keypad-colon-investigation.md](keypad-colon-investigation.md)**: OPEN investigation into the Shift+keypad-`.` = colon mapping on Haven. Establishes the physical key is **keycode 91** (NOT the long-assumed 129), explains the NumLock-dependent behavior, and documents the running `keymap-mon` watcher. **If Haven just crashed, the watcher died — restart it** (instructions at the top of that doc).
 
 ### Sync Maintenance
 - **[syncthing-troubleshooting.md](syncthing-troubleshooting.md)**: Symptom→fix guide for the Syncthing cluster (out-of-sync states, inotify-drop case studies, connectivity, `synudge` helper).
@@ -230,6 +243,13 @@ If user asks about EC2 sandbox sync:
   cloud-restored into the app's DB from the old phone — "select all → add to
   playlist" landed the songs in the remembered order. New playlists (not on the old
   phone) still need a workaround. See `summary:phone-music-playlist-sync.md` + TODO.
+- **Keypad-colon mapping investigation** (OPEN, May 26 2026): Haven's
+  Shift+keypad-`.` = colon mapping intermittently reverts to default. Root keycode
+  confirmed as **91** (`<KPDL>`, standard) — *not* the long-assumed 129 that
+  derailed earlier work. A `keymap-mon` watcher is hunting the still-unknown revert
+  trigger; NoMachine is ruled out. **If Haven just crashed, the watcher died —
+  restart it** (see [keypad-colon-investigation.md](keypad-colon-investigation.md)).
+  Boot-time loading is already handled by `termstart-common` (commit `75cea2a`).
 - **Avalir Vivaldi 6.1 → 7.9 upgrade complete** (May 26 2026): Mirrored Haven's
   upgrade — `vivaldi-stable` 6.1.3035.302 → **7.9.3970.67**, `apt-mark hold`ed to
   avoid drifting to the new **8.0** "Unified" redesign (deferred; revisit via a
