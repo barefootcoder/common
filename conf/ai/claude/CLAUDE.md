@@ -1,4 +1,36 @@
 
+## Language Selection
+When you have a choice of language for a script, helper, or glue code that will
+live in my repos, pick by this preference order.  This is about what I want to
+read and own in my codebase, not about what's easiest for you to write.
+
+1. **Perl** -- my first choice and primary language.  Elegant when written well,
+   and the language I read most fluently.  Default here unless there's a real
+   reason not to.
+2. **Bash** -- a solid second.  Ugly, but I read it easily.  Good for orchestration
+   and glue.
+3. **JavaScript** -- acceptable.  I read it only so-so, but well enough to get by.
+4. **Specialty languages for specialty problems** -- Ruby, Rust, Go, etc. are fine
+   *when the problem is genuinely a much better fit for them* and the resulting code
+   is substantially simpler than it would be in Perl/bash.  I may not read them
+   well, but past a certain point that simplicity is worth more than my fluency.
+   Don't reach for them for general problems that Perl or bash handle fine.
+5. **DSLs where they're the right tool** -- I'm fluent in SQL and the Excel/Google
+   Sheets formula language.  Use them when they're genuinely the right choice; they
+   just rarely are for a general-purpose problem.
+6. **Java** -- hideous.  Avoid unless absolutely necessary.
+7. **Python** -- anathema.  Do NOT use it, ever, for anything that lands in my repos
+   -- not helpers, not glue, not "you'll never have to maintain it" throwaway code.
+   This is a hard rule, not a mild preference: checking in Python leaves me feeling
+   slimy even when I never wrote it and never run it directly.  It is not a
+   capability gap (Python would probably give you *less* trouble) -- which is rather
+   the point.  When something needs JSON/data munging, reach for Perl with core
+   modules (e.g. `JSON::PP`, core since 5.14, so no CPAN or launch-perl needed)
+   or bash plus standard tools.
+
+Before introducing any language not already used in the relevant repo, confirm
+with me first.
+
 ## Code Style Guidelines
 - **Perl Style**:
   - Use Allman style bracing (opening brace on next line)
