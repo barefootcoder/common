@@ -282,3 +282,52 @@ ESR drift, etc.) — useful information either way.
   during the kernel-startup window before termstart sets the cap.
   If crash #3 happens during a boot, we'll need to set RAPL from a
   systemd unit ordered before juno-pp/TLP rather than from termstart.
+
+## ac-mode analysis (2026-06-03, ~11.4 days of data)
+
+Per-mode aggregate of udev AC / power-profile transitions (`in` = balanced,
+`out` = power-saver, `bnc` = un-disambiguable flap), May 22 -> Jun 3:
+
+| Mode        | rate     | /day | hours  | events |
+|-------------|----------|------|--------|--------|
+| office-ac   | 0.766/hr | 18.4 | 60.1h  | 46     |
+| den-ac      | 0.577/hr | 13.8 | 95.4h  | 55     |
+| office-usb  | 0.528/hr | 12.7 | 109.8h | 58     |
+| office-both | 0.491/hr | 11.8 | 8.2h   | 4 (n=1)|
+| overall     | 0.60/hr  | 14.4 |        | 163    |
+
+Key findings:
+
+1. **There is a ~12-13/day floor common to every charging method**, including
+   office-usb (USB-C PD, which does NOT go through the barrel jack) at 12.7/day.
+   That floor is almost certainly suspend/resume power-profile churn, not adapter
+   behavior -- you cannot swap your way below it. This means the earlier
+   "drop to 8-9/day" prediction was unsound: it ignored the floor. Discard it.
+
+2. **office-ac runs ~5 events/day ABOVE that floor** (18.4 vs ~13), and is the
+   only mode that does. The excess is clean `in`/`out` transitions, **bnc=0 across
+   all modes** (no rapid-flap signature). Magnitude (~5/day) matches the prior
+   ~4/day estimate.
+
+3. **Significance is only ~1.5-1.8 sigma** -- directional and consistent, not
+   statistically settled. And the metric is an *indirect* proxy: it counts AC/
+   profile transitions, not crashes.
+
+4. **The per-mode comparison is the valid test, and it does NOT require avoiding
+   office-ac** (a framing error in the original "re-run after a week of avoidance"
+   TODO). Continued office-ac use just adds samples to its rate estimate. Notably,
+   the user shifted office-ac out of the overnight block (the suspend-heaviest,
+   count-inflating stretch) into afternoons, and it is *still* the highest mode --
+   which makes the office-ac signal more convincing than the May 22-25 figure, not
+   less.
+
+5. **A strict office-ac-avoidance week is not worth doing.** office-usb is already
+   the best-sampled mode (110h); more of it has steep diminishing returns, and the
+   only unique thing a clean week buys (overall rate sans office-ac) tests the
+   discarded floor-dominated prediction.
+
+**Next step (no urgency -- RAPL cap is the live mitigation):** empirical adapter
+swap. Replace the office AC adapter+cable, keep the `office-ac` label, use normally
+for ~1 week, re-run `ac-mode report`. office-ac falling to the ~13/day floor =
+adapter was the culprit; staying at ~18 = points at the laptop's barrel jack /
+internal AC path. Captured in TODO.md (undated, gated on buying the adapter).

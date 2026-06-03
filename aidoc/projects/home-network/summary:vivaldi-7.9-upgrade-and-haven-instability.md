@@ -317,7 +317,9 @@ In repo (synced):
 
 On Haven (not synced):
 - Vivaldi upgraded to 7.9.3970.64
-- Profile backup at `~/.config/vivaldi.bak.pre-7.9`
+- Profile backup at `~/.config/vivaldi.bak.pre-7.9` (relocated 2026-06-03 to
+  `/export/backup/snapshots/config/haven-pre-7.9-20260508/vivaldi/`; see
+  "Post-Upgrade Tab-Stacking Behavior Changes" for the disposition note)
 - Restored extension code at
   `~/.config/vivaldi/Default/Extensions/dehocbglhkaogiljpihicakmlockmlgd/0.2.1_0/`
 - Tabs B&R data snapshot at `~/tabs-backup-restore-data.bak`
@@ -326,3 +328,69 @@ On Haven (not synced):
 - Touchpad disabled via Mate applet
 - CPU governor on powersave (non-persistent)
 - Monitor still polling at PID 86622 → `~/viv-mon-prelaunch.log`
+
+## Post-Upgrade Tab-Stacking Behavior Changes (2026-06-03)
+
+Two tab-stacking settings under **Settings > Tabs > Tab Features > Tab Stack
+Options** surfaced as new/changed in 7.9 vs the old 6.1 baseline. Both are
+distinct from **Settings > Tabs > New Tab Position** (the `As Tab Stack with
+Related Tab` / `After Active Tab` / etc. radio), which only governs where a
+tab opened *from a link in the active page* lands.
+
+### Fixed: new tabs hijacked into the current stack
+
+**Symptom:** with `New Tab Position = As Tab Stack with Related Tab` (the
+long-standing setting, kept for the wanted Ctrl+Click-stacks-with-parent
+behavior), opening a URL from a **bookmark, history, or the address/search
+bar** while the active tab was inside a tab stack put the new tab *into that
+stack* instead of opening it unstacked. Pre-7.9 those opened as standalone
+tabs.
+
+**Cause:** a separate toggle, **`Open Tabs in Current Tab Stack`** (Tab
+Features > Tab Stack Options), which is ON by default and the user believes
+did not exist in 6.1. It auto-adds new tabs to the active tab's stack. This
+is independent of New Tab Position -- so you do NOT have to give up the
+related-tab stacking to stop the hijacking.
+
+**Fix (applied, confirmed working):** turn **`Open Tabs in Current Tab
+Stack` OFF**. Related-tab (link) stacking via New Tab Position is unaffected.
+
+Note: this is a *settings* fix, not the 8.0 tab-engine-rewrite regression
+(we are pinned on 7.9; see "Avalir Upgrade -- Outcome" for the 8.0 hold). The
+8.0 rewrite separately broke tab-open positioning in some setting combos --
+another reason the 8.0 hold stands.
+
+### Tuning: `Stacking Drop Delay` slider (drag-to-stack difficulty)
+
+Same Tab Stack Options panel. Slider runs **Short <-> Long**; it's the dwell
+time you must hover a dragged tab over a target before Vivaldi switches from
+"reposition between tabs" to "drop onto/into stack" (the highlight).
+
+- **Short** = stacks quickly on hover (easier intentional stacking, more
+  accidental stacks while reordering).
+- **Long** = must hover longer before it stacks (prevents accidental stacks,
+  makes intentional drag-onto-stack a fight).
+
+User reported drag-onto-existing-stack was very hard (stack kept sliding
+aside to insert-between, resetting on mouse twitch) -- classic too-*long*
+delay. Recommended nudging toward **Short**, a notch or two left of center,
+then further only if needed (don't bottom it out or accidental stacks start
+during ordinary reordering). Slider was mid-bar by default.
+
+### Pre-7.9 profile snapshots relocated (not deleted)
+
+The pre-upgrade profile snapshots (`~/.config/vivaldi.bak.pre-7.9` on each box)
+had reached their disposition date with 7.9 proven stable (Haven ~4 weeks, Avalir
+~1 week). Rather than the originally-planned delete, they were **relocated** into
+the synced backup share, matching the existing `config/<host>-<date>/vivaldi/`
+snapshot convention:
+
+- Avalir 4.1 GB → `/export/backup/snapshots/config/avalir-pre-7.9-20260526/vivaldi/`
+- Haven 4.0 GB → `/export/backup/snapshots/config/haven-pre-7.9-20260508/vivaldi/`
+  (Haven's was an untracked orphan from the May 8 upgrade -- never in any TODO.)
+
+Both `~/.config` sources removed after the move. `/export/backup` is its own
+Syncthing share, so each profile now replicates across the backup-share mesh
+(redundant + within fire-evac B2 backup scope). These are vivaldi-*only* profile
+roots, unlike the 2025-dated `config/<host>-<date>/` entries which are full
+`~/.config` snapshots -- hence the `pre-7.9` tag to distinguish them.

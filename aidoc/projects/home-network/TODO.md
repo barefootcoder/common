@@ -5,12 +5,6 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
-- **2026-06-02** — Delete Avalir's `~/.config/vivaldi.bak.pre-7.9` (4.1 GB
-  pre-upgrade Vivaldi profile snapshot) once 7.9 has proven stable. NOT git-backed
-  (live browser profile outside the repo), so it's a one-way delete — but the
-  upgrade succeeded, so it's only rollback insurance now. _(added 2026-05-26
-  during Avalir Vivaldi 7.9 upgrade)_
-
 - **anytime** — Migrate Tabs Backup & Restore (MV2, bit-rotting) → Tab Session
   Manager (MV3) on both Haven and Avalir. Data preserved on both (Avalir: code +
   4.3 MB data intact but disabled; Haven: code was pruned and restored). Steps in
@@ -18,21 +12,22 @@ skill scans this file on load and surfaces due/pending items.
   `summary:vivaldi-7.9-upgrade-and-haven-instability.md`. _(added 2026-05-26
   during Avalir Vivaldi 7.9 upgrade)_
 
-- **2026-06-01** — Hardware intervention on Haven: battery replacement + CPU/GPU
+- **2026-08-03** — Hardware intervention on Haven: battery replacement + CPU/GPU
   repaste + visual capacitor inspection. Originally targeted May 24–25 weekend;
-  pushed out a week on 2026-05-25 (user deferred).
+  pushed out a week on 2026-05-25, then pushed out ~2 months on 2026-06-03 (user
+  hasn't bought a replacement battery and won't for a while -- the whole job is
+  gated on acquiring the battery, so this date is a re-check, not a hard deadline).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
-- **2026-06-01** — Re-run `ac-mode report` after ~1 week of office-ac avoidance
-  (user switched to USB charging at the office on 2026-05-25; den-ac unchanged).
-  Predictions if the office-ac-adapter culprit hypothesis is correct: (a) overall
-  daily rate should drop from ~13 to ~8–9 (removing the ~4 excess events/day that
-  office-ac was contributing); (b) office-usb / office-both / den-ac all stay at
-  their ~0.46–0.49/hr baseline. Falsifier: overall rate stays at ~13/day with no
-  office-ac in the mix → either our model is wrong or the office-ac elevation
-  (May 22–25 data: 0.67/hr vs den-ac 0.46/hr) was sampling noise. If confirmed,
-  next step is replacing the office AC adapter+cable.
-  _(added 2026-05-23, updated 2026-05-25 after analysis of May 22–25 data)_
+- **anytime** — Empirical office AC adapter swap (the next step out of the
+  2026-06-03 ac-mode analysis). Buy a new office AC adapter+cable (will take time;
+  no rush -- RAPL cap is the live crash mitigation). When it arrives, swap it,
+  KEEP the `office-ac` label, use normally for ~1 week, then re-run `ac-mode
+  report`: office-ac falling to the ~13/day common floor = adapter was the culprit;
+  staying at ~18/day = points at the laptop's barrel jack / internal AC path. See
+  the "ac-mode analysis (2026-06-03)" section of
+  `summary:haven-may22-double-crash.md`. _(added 2026-06-03, supersedes the spent
+  "re-run after avoidance week" item)_
 
 - **anytime** — Validate RAPL cap is working: after the next `termstart` / boot,
   check that `viv-mon.log` shows `pkg=` values not exceeding ~27W in normal use.
@@ -155,6 +150,25 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-03~~ — Re-run + analyze `ac-mode report` (was the 2026-06-01 item).
+  Result: office-ac remains the highest-rate mode (0.766/hr, 18.4/day) vs a ~12-13/day
+  floor common to all modes incl. USB-C (so the original "drop to 8-9/day" prediction
+  was unsound -- floor-dominated). office-ac's ~5/day excess is real, consistent, and
+  held up even after being moved out of the suspend-heavy overnight block -- but only
+  ~1.5-1.8 sigma and an indirect proxy (transitions, not crashes). No strict-avoidance
+  week needed; next step is the empirical adapter swap (new Outstanding item). Full
+  writeup in `summary:haven-may22-double-crash.md`. _(added 2026-05-23, completed
+  2026-06-03 during Vivaldi tab-stacking session)_
+
+- ~~2026-06-03~~ — Dispose of the pre-7.9 Vivaldi profile snapshots. Instead of
+  deleting (the original plan), **relocated** them into the synced backup share so
+  they're preserved + redundant, matching the existing `config/<host>-<date>/vivaldi/`
+  convention: Avalir's 4.1 GB → `/export/backup/snapshots/config/avalir-pre-7.9-20260526/vivaldi/`
+  and Haven's own 4.0 GB orphan (was untracked) → `.../config/haven-pre-7.9-20260508/vivaldi/`.
+  Sources under `~/.config/vivaldi.bak.pre-7.9` removed on both boxes; Syncthing
+  replicates the backup-share copies across the mesh. _(added 2026-05-26 during
+  Avalir Vivaldi 7.9 upgrade, completed 2026-06-03 during Vivaldi tab-stacking session)_
 
 - ~~2026-05-25~~ — Remove stale `google-pixel-4a` node (100.98.252.81) from
   Tailscale admin console. Old phone was replaced 2026-05-25; new phone is
