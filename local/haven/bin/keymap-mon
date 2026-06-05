@@ -56,6 +56,21 @@ do
 			snapshot
 			echo
 		} >> "$log"
+		# Self-heal (added 2026-06-04): if the colon mapping was wiped (kc91
+		# reverted to default), reapply ~/.Xmodmap and log the result.  The
+		# forensic snapshot above still captures the trigger context — this
+		# just shrinks the broken window to ~${interval}s.  Covers both known
+		# wipe mechanisms (BT-speaker AVRCP hotplug on Haven, and the
+		# still-unidentified silent one that also hits Avalir).
+		if [[ "$cur_kc" != *colon* && -r ~/.Xmodmap ]]
+		then
+			xmodmap ~/.Xmodmap 2>>"$log"
+			cur_kc="$(get-kc 91)"
+			{
+				echo "$(date '+%F %T') REAPPLY xmodmap ~/.Xmodmap -> kc91=[$cur_kc]"
+				echo
+			} >> "$log"
+		fi
 		prev_kc="$cur_kc"
 		prev_nl="$cur_nl"
 	fi

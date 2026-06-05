@@ -1,0 +1,24 @@
+# Timeshift scheduling owned by US, not by timeshift.  Timeshift rewrites the
+# cron files it owns (timeshift-hourly, timeshift-boot) to match its settings
+# whenever it runs, silently reverting any edits (learned 2026-05-17, solved
+# 2026-06-04).  It leaves files it does not own -- like this one -- alone.
+#
+# The unconditional creates below pin the heavy snapshot work at quiet hours;
+# timeshift's hourly --check grid then never finds a snapshot due and stays a
+# ~200ms no-op, ending the midday top-of-hour snapshot drift (the June 4
+# daily fired at 14:00).
+#
+# The @reboot line replaces timeshift's own boot snapshot (schedule_boot set
+# to false 2026-06-04, which made timeshift remove its own timeshift-boot
+# cron).  Timeshift's delay was a hardcoded 10m in the binary -- too close to
+# Haven's vulnerable post-boot window; 45m lets the box settle first.
+#
+# Source of truth: ~/common/conf/crontab/haven-timeshift.cron-d
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=""
+
+23 4 * * *  root  ionice -c3 nice -n 19 timeshift --create --scripted --tags D
+43 4 * * 0  root  ionice -c3 nice -n 19 timeshift --create --scripted --tags W
+3  5 1 * *  root  ionice -c3 nice -n 19 timeshift --create --scripted --tags M
+@reboot     root  sleep 45m && ionice -c3 nice -n 19 timeshift --create --scripted --tags B

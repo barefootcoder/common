@@ -78,6 +78,60 @@ the user at the keyboard to test (press `.` and Shift+`.` under both NumLock sta
 
 ## What the watchers have caught
 
+**Haven, 2026-06-04 16:49:21** (second capture; crash killed the watcher 11 min later):
+
+```
+CHANGE kc91:[colon KP_Decimal KP_Decimal colon]->[KP_Delete KP_Decimal KP_Delete KP_Decimal]
+       numlock:[on/00000002]->[on/00000002]
+  kc129(ref): KP_Decimal KP_Decimal KP_Decimal KP_Decimal       <-- kc129 state not shown, journal was:
+  journal-tail:
+    bluetoothd: btd_service_connect() a2dp-sink profile connect failed for 7C:96:D2:6B:6D:71: Device or resource busy
+    kernel: input: ECOXGEAR (AVRCP) as /devices/virtual/input/input48
+    systemd-logind: Watching system buttons on /dev/input/event16 (ECOXGEAR (AVRCP))
+    bluetoothd: /org/bluez/hci0/.../fd5: fd(41) ready
+  active-window: Is Britain Headed For DICTATORSHIP? - YouTube - Vivaldi
+```
+
+**CONFIRMED: this IS mechanism #2, and the ECOXGEAR Bluetooth speaker is its
+trigger.** Xorg.0.log.old (the May 22 boot's log) shows that **every** ECOXGEAR
+connect follows the same sequence: udev tags the speaker's AVRCP profile (its
+media buttons) as a *keyboard*; X adds `ECOXGEAR (AVRCP)` as an extended input
+device of type KEYBOARD; and the add applies `Option "xkb_model" "pc105"` /
+`"xkb_layout" "us"` -- the exact mechanism-#2 recompile signature.  Four such
+adds appear in the log, and the timestamp arithmetic maps the earlier ones onto
+**May 23 (Sat), May 24 (Sun), May 30 (Sat)** -- matching the user's
+once-a-week (Saturday) speaker habit exactly.  June 4 was an unusual midweek
+connect, and keymap-mon caught the resulting wipe live at 16:49:21.
+
+Implications:
+
+- **Mechanism #2 is solved**: BT-speaker connect → AVRCP "keyboard" hotplug →
+  XKB recompile from rules → xmodmap layer wiped.  It's Haven-specific because
+  only Haven gets the speaker.  Any future BT device presenting media keys
+  would do the same.
+- **We now have an on-demand reproducer**: connect the ECOXGEAR and watch
+  keymap-mon.  Fix-test cycles drop from weeks to minutes.
+- **Mechanism #1 (the silent wipe -- May 28 Haven, and Avalir's) remains
+  unsolved** and is NOT this: the May 28 event had no BT activity, no Xorg
+  lines, and Avalir's 178-day-uptime Xorg log has no pc105 lines at all.
+
+### Fix plan (now concrete)
+
+1. **Durable fix -- the TWO_LEVEL/XKB change** (already sketched above): move
+   kc91's colon mapping into the XKB-rules layer that mate-settings-daemon
+   reapplies automatically after every recompile (the same self-healing layer
+   that makes `compose:caps` survive every wipe).  Fixes NumLock fragility AND
+   immunizes against both mechanisms.  Test with the reproducer: apply, connect
+   speaker, verify kc91 survives.
+2. **Quick band-aid (optional, also covers mechanism #1 and Avalir)**: teach
+   `keymap-mon` to re-run `xmodmap ~/.Xmodmap` whenever it detects a CHANGE,
+   in addition to logging it.  Self-heals within its poll interval.  Doesn't
+   fix NumLock fragility; purely a stopgap until (1).
+3. **Source-level option (mechanism #2 only, probably unnecessary)**: a udev
+   rule / libinput quirk to ignore the ECOXGEAR AVRCP input device entirely.
+   Would cost the speaker's play/pause buttons and does nothing for
+   mechanism #1.
+
 **Haven, 2026-05-28 02:17:47** (the first capture):
 
 ```
@@ -96,7 +150,7 @@ NoMachine on Haven at the moment.
 
 **Two distinct trigger mechanisms exist:**
 
-1. The silent one above — **no Xorg log entry**, no journal hit. This is what's
+1. The silent one above -- **no Xorg log entry**, no journal hit. This is what's
    currently affecting both machines.
 2. A separate, *visible* mechanism — Xorg's log shows occasional
    `Option "xkb_model" "pc105"` / `"xkb_layout" "us"` lines (with
@@ -104,8 +158,11 @@ NoMachine on Haven at the moment.
    strings), indicating an `XkbGetKbdByName`-style recompile from rules.
    Haven gets these sporadically (e.g. **May 23 ×3, May 24, May 30** since the May
    22 boot). **Avalir's Xorg log shows NONE** in its full 178-day uptime. So
-   mechanism #2 is Haven-specific (CLEVO module? a Haven-only X client?) — but
-   it's *not* what bit Avalir.
+   mechanism #2 is Haven-specific — but it's *not* what bit Avalir.
+   **IDENTIFIED 2026-06-04: the trigger is the ECOXGEAR Bluetooth speaker
+   connecting** (its AVRCP media buttons enumerate as a "keyboard"; the
+   device-add recompiles the keymap). See the June 4 capture below for the
+   evidence and the now-concrete fix plan.
 
 ## Why compose survives the wipes but `xmodmap` doesn't
 
@@ -151,6 +208,13 @@ XKB-rules-level mapping lives in those rules.
 - `termstart-common` in `bin/bash_funcs` loads `~/.Xmodmap` at session start
   (commit `75cea2a`). Correct for boot-time application; does nothing for a
   mid-session revert.
+- **Self-heal stopgap (2026-06-04), both machines**: `keymap-mon` now
+  reapplies `xmodmap ~/.Xmodmap` whenever it detects kc91 losing the colon
+  mapping, logging a `REAPPLY` line after the forensic `CHANGE` snapshot
+  (trigger-hunting for mechanism #1 is unimpaired). Broken window is now
+  ~5s (the poll interval) on both boxes, for BOTH wipe mechanisms. The next
+  ECOXGEAR connect on Haven doubles as its live test. Does not address the
+  NumLock fragility -- that still needs the TWO_LEVEL fix.
 
 ## The watchers
 

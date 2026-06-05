@@ -18,6 +18,17 @@ sudo chmod a+r /sys/class/powercap/intel-rapl*/energy_uj 2>/dev/null
 # short_term).  Idempotent — writing the same value back is a no-op.
 echo 20000000 | sudo tee /sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw >/dev/null
 echo 27000000 | sudo tee /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw >/dev/null
+# Cap the iGPU frequency (stock max/boost = 1500 MHz).  The June 4 crash
+# died on a 300->1083 MHz GPU ramp (X/glamor painting a relaunched browser
+# window — the browser itself was already --disable-gpu) while pkg power
+# stayed inside the RAPL caps: the killer is the sub-ms inrush transient of
+# the ramp itself, which RAPL's averaging windows can't see.  400 MHz keeps
+# desktop 2D fluid while shrinking the idle->max swing ~4x.  Boost is a
+# separate knob that bypasses gt_max if left at stock.  card1, not card0:
+# simpledrm claims card0 (same reason as in viv-mon).  Idempotent.
+# See aidoc/projects/home-network/summary:haven-jun4-gpu-ramp-crash.md
+echo 400 | sudo tee /sys/class/drm/card1/gt_max_freq_mhz >/dev/null
+echo 400 | sudo tee /sys/class/drm/card1/gt_boost_freq_mhz >/dev/null
 # Let MATE session restore, juno-pp, TLP, and ssh-agent setup finish their
 # pkg-power burst before adding viv-mon's 5Hz polling on top.  Crash on
 # 2026-05-22 17:21:58 (34s into boot) hit pkg=38W during this window.

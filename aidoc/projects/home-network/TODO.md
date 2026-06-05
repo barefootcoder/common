@@ -5,6 +5,28 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Verify the GPU frequency cap is holding: after the next
+  `termstart`/boot, `cat /sys/class/drm/card1/gt_max_freq_mhz` should be 400, and
+  viv-mon's `gfreq=` column should never exceed ~400 in normal use. If 400MHz
+  feels sluggish in daily use (video-call composite, page rendering), bump both
+  `gt_max_freq_mhz` and `gt_boost_freq_mhz` to 700 live and update termstart to
+  match. _(added 2026-06-04 during June 4 crash mitigations)_
+
+- **anytime** — Implement the durable keypad-colon fix (TWO_LEVEL/XKB level), now
+  that mechanism #2 is IDENTIFIED (2026-06-04): every ECOXGEAR Bluetooth speaker
+  connect makes X add an AVRCP "keyboard" device and recompile the keymap (pc105/us
+  Xorg-log signature confirmed; historical hits all on weekends, matching the
+  Saturday speaker habit). We have an ON-DEMAND REPRODUCER: connect the speaker,
+  watch keymap-mon. The stopgap is ALREADY DEPLOYED (2026-06-04): keymap-mon on
+  both boxes auto-reapplies `xmodmap ~/.Xmodmap` on detected wipe (REAPPLY log
+  lines), shrinking the broken window to ~5s and covering the still-unsolved silent
+  mechanism #1 too. What remains is the TWO_LEVEL change (Shift picks the level,
+  NumLock irrelevant -- see `keypad-colon-investigation.md` "Fix plan"), which
+  needs the user at Haven's keyboard to test the four NumLock/Shift combos, and
+  the BT reproducer to verify survival. Note: the next ECOXGEAR connect doubles
+  as the stopgap's live test. _(added 2026-06-04 during June 4 crash
+  investigation; stopgap completed same day)_
+
 - **anytime** — Migrate Tabs Backup & Restore (MV2, bit-rotting) → Tab Session
   Manager (MV3) on both Haven and Avalir. Data preserved on both (Avalir: code +
   4.3 MB data intact but disabled; Haven: code was pruned and restored). Steps in
@@ -65,16 +87,21 @@ skill scans this file on load and surfaces due/pending items.
   a separate tool for `~/` (borg, restic, rdiff-backup). _(added 2026-05-23 during
   May 17 follow-up audit)_
 
-- **anytime** — Investigate what reverted the `ionice -c3 nice -n 19` cron edit at
-  `/etc/cron.d/timeshift-hourly` on Haven around **2026-05-17 14:00 PDT**. Edit was
-  applied at 13:48 PDT; file mtime as of May 23 is 14:00 PDT and content is byte-
-  identical to the `.bak.pre-may17` backup. User confirms no manual revert.
-  `apt-history` shows no timeshift package action in that window. Suspects worth
-  checking: unattended-upgrades conffile restore, timeshift self-reinstall via some
-  other path, or a concurrent agent session. Mostly academic now (RAPL cap supersedes
-  the need for the wrapper) but worth knowing so future cron edits in `/etc/cron.d/`
-  aren't silently lost the same way. _(added 2026-05-23 during May 17 follow-up
-  audit)_
+- **2026-06-08** — Verify the Timeshift rescheduling (all changes APPLIED
+  2026-06-04: `/etc/cron.d/timeshift-local` with quiet-hour unconditional creates
+  at 04:23 D / 04:43 Sun W / 05:03 1st M + `@reboot sleep 45m` B; `schedule_boot`
+  set false, timeshift removed its own `timeshift-boot` cron; json backup at
+  `/etc/timeshift/timeshift.json.bak.pre-jun4`; source in
+  `conf/crontab/haven-timeshift.cron-d`). Check `sudo timeshift --list`:
+  (a) daily snapshots landing at 04-23 and count_daily=1 pruning holding (no D
+  accumulation); (b) expected one-time borderline events: W will self-create
+  ~05:00 June 6 (hourly grid, quiet hour, harmless) before our Sunday cron takes
+  over June 7, and M similarly ~05:00 June 7 before our July 1 cron takes over;
+  (c) after the next boot: exactly one B snapshot at +45m, and B-count pruning
+  still working with schedule_boot off (uncertain -- timeshift's pruning may only
+  iterate enabled schedules; if B's accumulate past count_boot=2, prune manually
+  and rethink). _(added 2026-06-04 during June 4 crash investigation; all
+  implementation completed same day)_
 
 - **anytime** — Clean up the dead `/home/buddy/*` exclusion entries in
   `/etc/timeshift/timeshift.json` (26 entries added on May 17). They're no-ops given
@@ -150,6 +177,17 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-04~~ — Investigate what reverted the `ionice` cron edit at
+  `/etc/cron.d/timeshift-hourly` on Haven at 2026-05-17 14:00 PDT. **Solved:
+  timeshift itself.** The file's mtime is 14:00:02.092 -- two seconds into the
+  14:00 hourly `--check` run, 12 min after the 13:48 edit. Timeshift rewrites
+  the cron files it owns (`timeshift-hourly`, `timeshift-boot`) to match its
+  settings whenever it runs; direct edits to those files can never stick.
+  Conversely, `/etc/cron.d/timeshift-daily` (custom, not timeshift-owned) has
+  survived untouched since Jan 2025 -- the safe pattern for our own scheduling.
+  _(added 2026-05-23 during May 17 follow-up audit, completed 2026-06-04 during
+  June 4 crash investigation)_
 
 - ~~2026-06-03~~ — Re-run + analyze `ac-mode report` (was the 2026-06-01 item).
   Result: office-ac remains the highest-rate mode (0.766/hr, 18.4/day) vs a ~12-13/day
