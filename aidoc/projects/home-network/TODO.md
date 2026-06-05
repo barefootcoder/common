@@ -27,6 +27,21 @@ skill scans this file on load and surfaces due/pending items.
   as the stopgap's live test. _(added 2026-06-04 during June 4 crash
   investigation; stopgap completed same day)_
 
+- **anytime** — Markdown-viewer rollout (winner: **mdcat**, decided 2026-06-04 on
+  aesthetics — glow's margins/reflow/colors lost on raw impact even after the
+  TERM fix). Wrapper `bin/mdless` (renamed from `mdv` 2026-06-05): `mdcat
+  --ansi` + `--columns` pinned to real terminal width + perl filter fixing
+  mdcat's space-inside-italics bug, paged via `$PAGER`. DONE: mdcat installed
+  on Haven + Avalir + quin (sha256-verified, tarball stashed in `/var/install/`
+  on both home boxes); `setup/local-packages.setup` install section added;
+  user-verified working in and out of screen; README "Tools and Scripts"
+  section documents it. Remaining: (a) port the mdcat install into
+  `$CHEOPSROOT/launch-ec2/control-instance/build` (work-side; glow optional,
+  mdcat is the one that matters); (b) report the space-before-italics bug
+  upstream (swsnr/mdcat) — pty captures from the 2026-06-04 session make a
+  clean repro. _(added 2026-06-04 during markdown-viewer selection session;
+  updated 2026-06-05)_
+
 - **anytime** — Migrate Tabs Backup & Restore (MV2, bit-rotting) → Tab Session
   Manager (MV3) on both Haven and Avalir. Data preserved on both (Avalir: code +
   4.3 MB data intact but disabled; Haven: code was pruned and restored). Steps in
@@ -177,6 +192,34 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-05~~ — Make bold "pop" more in kitty. Side-by-side comparison
+  (Bold/ExtraBold/Black test windows): user picked **Black** (900) for bold
+  cells. Wired up: `bold_font Inconsolata Black` in `conf/kitty/kitty.conf`
+  (synced, covers both boxes); Black face installed in `~/.fonts` on Avalir +
+  Haven; `/var/install/Inconsolata.zip` rebuilt with Regular+Bold+Black on
+  both; `setup/home-dir.setup` addfont line updated. Bold face (700) kept for
+  generic fontconfig bold matches by other apps; unused ExtraBold trial face
+  removed. Takes effect in new kitty windows. _(added and completed 2026-06-05
+  after font side-by-sides)_
+
+- ~~2026-06-04~~ — Diagnose quin markdown-rendering degradation + fix invisible
+  bold globally. Root causes (all empirically verified): (1) glow under plain
+  `TERM=screen` drops to termenv's no-color profile (`TERM=screen-256color`
+  restores full 256-color output); (2) GNU screen 4.9 translates SGR 3 italics
+  → SGR 7 reverse video (pty-harness capture; screen has no italics attribute —
+  fixed upstream in screen 5.0); (3) mdcat 2.7.1 emits the space *before* an
+  emphasis span inside the italic codes (off-by-one; filterable in a wrapper);
+  (4) bold was invisible in EVERY kitty window since 2023 — `~/.fonts/
+  Inconsolata.otf` was a single Medium face (no bold face existed) and kitty
+  0.21.2 can't synthesize bold; `bold_is_bright` only rescued basic-8-color
+  text (the kitty.conf comment blaming "tmux rendering buffer" weight loss was
+  misattributed — it was the font). Fix: Google Inconsolata v3 Regular+Bold
+  installed on Avalir AND Haven; `/var/install/Inconsolata.zip` rebuilt on both
+  (old zip preserved as `Inconsolata-2011.zip`, old Medium face moved to
+  `/tmp/Inconsolata-2011-medium.otf` on each box); `setup/home-dir.setup`
+  updated to match. _(added and completed 2026-06-04 during markdown-viewer
+  selection session)_
 
 - ~~2026-06-04~~ — Investigate what reverted the `ionice` cron edit at
   `/etc/cron.d/timeshift-hourly` on Haven at 2026-05-17 14:00 PDT. **Solved:

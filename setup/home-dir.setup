@@ -16,10 +16,11 @@ as buddy:
 
 	cd /tmp
 	unzip /var/install/Inconsolata.zip
-	rm 'SIL Open Font License.txt'
-	addfont Inconsolata.otf
-	fc-list | grep -i incon # just to make sure it's there
-	rm Inconsolata.otf
+	addfont Inconsolata-Regular.otf Inconsolata-Bold.otf Inconsolata-Black.otf
+	fc-list | grep -i incon # should show Regular, Bold, and Black
+	rm Inconsolata-*.otf OFL.txt
+	# Black is what kitty.conf's bold_font points at (Bold is kept for
+	# generic fontconfig "Inconsolata:bold" matches by other apps)
 
 	FOR A FRESH MACHINE
 	-------------------

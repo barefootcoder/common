@@ -87,6 +87,16 @@ source file in `conf/crontab/`, since the mounts will be there next time.
 - **[syncthing-troubleshooting.md](syncthing-troubleshooting.md)**: Symptom→fix guide for the Syncthing cluster (out-of-sync states, inotify-drop case studies, connectivity, `synudge` helper).
 - **[quin-syncthing-downgrade.md](quin-syncthing-downgrade.md)**: Standalone agent-runnable brief for rolling quin back from Syncthing v2.1.0 to v1.30.0 and disabling auto-upgrade. Hand this to a quin-side session when it's time to realign the cluster.
 
+### Machine Setup / Provisioning
+- **`~/common/setup/`**: step-by-step instruction files (notes, not scripts) for
+  provisioning fresh or restored machines — `home-dir.setup`, `laptop.setup`,
+  `root-prep.setup`, `local-packages.setup`, etc.
+- **`/var/install/`**: host-local stash (NOT Syncthing-synced — it's outside
+  `/export` and `~`) of installers and artifacts referenced by those
+  instructions: font archives (`Inconsolata.zip`, installed via `bin/addfont`),
+  sideload APKs, one-off .debs. Artifacts needed on multiple machines are
+  copied there manually (e.g. `Inconsolata.zip` lives on both Avalir and Haven).
+
 ### Disaster Recovery
 - **[fire-evac-recovery.md](fire-evac-recovery.md)**: **READ THIS FIRST POST-DISASTER.** Step-by-step recovery from the Backblaze B2 backup. Covers where the keys live on Haven, how to reconfigure rclone, full bucket layout, restoration order, and re-keying afterward. The crypt passphrase and B2 application keys live in `/export/personal/Dropbox/sensitive/` (Syncthing-replicated to Haven).
 
@@ -125,6 +135,11 @@ The following files contain summaries from previous AI collaboration sessions. T
 
 The quin is an **EC2 instance** (not a local Vagrant VM — do not confuse with the local Vagrant sandbox on 127.0.0.1:2222). Connection details:
 
+- **Platform**: Ubuntu 22.04 LTS (jammy), x86_64, glibc 2.35 — every quin is
+  built from this image, and will be until the host class upgrades past jammy
+  (a long way off as of June 2026). Safe to assume when picking prebuilt
+  binaries / release assets. Provisioning lives in
+  `$CHEOPSROOT/launch-ec2/control-instance/build` (work repo).
 - **Script**: `local/avalir/bin/term-quin` launches the terminal window
 - **Method**: SSH over **Tailscale VPN on port 8822** (not port 22)
 - **Username**: `$CE_REMOTE_USERNAME` (currently `bburden`) — NOT `vagrant`, NOT `buddy`
@@ -328,6 +343,19 @@ Run `ac-mode <label>` *immediately before* the next plug action — the
 mark defines the active mode for any AC events that follow it. No
 need to mark anything when unplugging (the unplug event correctly
 attributes to the prior mode, and no events fire during transit).
+
+### mdless
+Terminal markdown viewer (`bin/mdless`): thin wrapper around `mdcat`, chosen
+over `glow` in the 2026-06 viewer trial (full diagnosis in the TODO Done
+entry for 2026-06-04). The wrapper pins `--columns` to the real terminal
+width (mdcat can't detect it through a pipe), filters out mdcat's
+space-inside-italics bug, and pages via `$PAGER`.
+
+`mdcat` itself is at `/usr/local/bin` on Avalir, Haven, and the quin;
+install procedure for new machines is in `setup/local-packages.setup`
+(tarball stashed in `/var/install/`). Known cosmetic limitation: under GNU
+screen 4.x, italics render as reverse video (screen translates SGR 3 → SGR 7;
+fixed in screen 5.0, so it goes away whenever the distro catches up).
 
 ### parse-nakama-alerts.pl
 Parses QNAP Nakama email alerts to extract the actual alert messages from MIME-encoded emails.

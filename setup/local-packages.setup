@@ -32,6 +32,16 @@ packages to install:
 	<get NoMachine .deb from /var/install on an existing machine>
 	apt install /var/install/nomachine*.deb
 
+install mdcat (markdown viewer; bin/mdless is a wrapper around it):
+	<get mdcat tarball from /var/install on an existing machine>
+	cd /tmp
+	tar -xzf /var/install/mdcat-*-x86_64-unknown-linux-gnu.tar.gz
+	install -m 0755 mdcat-*/mdcat /usr/local/bin/mdcat
+	install -D -m 0644 mdcat-*/mdcat.1/mdcat.1 /usr/local/share/man/man1/mdcat.1
+	rm -rf mdcat-*
+	# new versions: https://github.com/swsnr/mdcat/releases (verify against B2SUMS.txt)
+	# note: gnu-libc build, x86_64 only (no musl/arm builds as of 2.7.1)
+
 install music packages:
 	apt install kid3 picard cdparanoia lame sox libsox-fmt-mp3 bpm-tools
 

@@ -1,0 +1,17 @@
+#! /bin/bash
+
+# mdless: view markdown on the terminal, paged via $PAGER
+#
+# Thin wrapper around mdcat, fixing up two things:
+#	* mdcat can't detect terminal width through a pipe, so pin it
+#	* mdcat (as of 2.7.1) puts the space *before* an emphasis span
+#	  inside the italics codes; the perl filter moves it back out
+#
+# Note: under GNU screen 4.x, italics render as reverse video; that's
+# screen translating SGR 3 (which it doesn't support) to SGR 7, not
+# anything mdcat or this wrapper can fix.  (Fixed in screen 5.0.)
+
+cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')
+: ${cols:=${COLUMNS:-80}}
+
+mdcat --ansi --columns $cols "$@" | perl -pe 's/(\e\[3m) / $1/g' | ${PAGER:-less -R}
