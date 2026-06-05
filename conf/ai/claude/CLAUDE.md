@@ -59,6 +59,15 @@ with me first.
   an unspaced `--` (a monospace em-dash can't be drawn long enough to read
   as one anyway).  Use straight quotes (`'`/`"`), not curly ones.
 
+## Asking Questions (AskUserQuestion)
+Before calling AskUserQuestion, always summarize your findings and the context
+for the question in normal response text first.  Never let the dialog be the
+only communication in a turn: the question UI has a known rendering bug where
+it can cover or truncate the text immediately preceding it, and option
+descriptions are too cramped to carry full context on their own.  A short
+prose recap right before the dialog means that even when the rendering
+glitches, at worst one line is lost instead of the whole explanation.
+
 ## Command Safety Convention
 When running scripts that support dry-run/no-action modes, **always place the
 safety flag as the first argument** to the script. This enables permission
