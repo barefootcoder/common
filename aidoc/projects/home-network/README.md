@@ -353,9 +353,16 @@ space-inside-italics bug, and pages via `$PAGER`.
 
 `mdcat` itself is at `/usr/local/bin` on Avalir, Haven, and the quin;
 install procedure for new machines is in `setup/local-packages.setup`
-(tarball stashed in `/var/install/`). Known cosmetic limitation: under GNU
-screen 4.x, italics render as reverse video (screen translates SGR 3 → SGR 7;
-fixed in screen 5.0, so it goes away whenever the distro catches up).
+(tarball stashed in `/var/install/`), and new quins get it from the cheops
+build script. Known cosmetic limitation: under GNU screen 4.x, italics
+render as reverse video (screen translates SGR 3 → SGR 7; fixed in screen
+5.0, so it goes away whenever the distro catches up).
+
+Note: mdcat upstream (swsnr/mdcat) is archived/unmaintained as of 2025-01-10;
+2.7.1 is the final release. So the pinned version is permanent (no upgrades
+coming), the space-before-italics bug `mdless` filters will never be fixed
+upstream, and if a future glibc ever bit-rots the binary we'd switch viewers
+(glow is the fallback). Full detail in the TODO Done entry for 2026-06-08.
 
 ### parse-nakama-alerts.pl
 Parses QNAP Nakama email alerts to extract the actual alert messages from MIME-encoded emails.

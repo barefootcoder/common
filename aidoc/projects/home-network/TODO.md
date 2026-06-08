@@ -35,12 +35,13 @@ skill scans this file on load and surfaces due/pending items.
   on Haven + Avalir + quin (sha256-verified, tarball stashed in `/var/install/`
   on both home boxes); `setup/local-packages.setup` install section added;
   user-verified working in and out of screen; README "Tools and Scripts"
-  section documents it. Remaining: (a) port the mdcat install into
-  `$CHEOPSROOT/launch-ec2/control-instance/build` (work-side; glow optional,
-  mdcat is the one that matters); (b) report the space-before-italics bug
-  upstream (swsnr/mdcat) — pty captures from the 2026-06-04 session make a
-  clean repro. _(added 2026-06-04 during markdown-viewer selection session;
-  updated 2026-06-05)_
+  section documents it. Build-script port DONE 2026-06-05: mdcat install block
+  (pinned 2.7.1 + sha256, loud-skip on checksum failure, idempotent via
+  `cmd-available`) added to `$CHEOPSROOT/launch-ec2/control-instance/build`
+  between the pjawk and Claude Code sections (committed to cheops as 437b2b429). glow deliberately NOT ported (trial-only; still
+  installed on the current quin, remove or ignore at leisure). _(added
+  2026-06-04 during markdown-viewer selection session; updated 2026-06-05;
+  upstream-report item resolved-as-moot 2026-06-08, see Done)_
 
 - **anytime** — Migrate Tabs Backup & Restore (MV2, bit-rotting) → Tab Session
   Manager (MV3) on both Haven and Avalir. Data preserved on both (Avalir: code +
@@ -192,6 +193,24 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-08~~ — Report mdcat's space-before-italics bug upstream. RESOLVED
+  AS MOOT: swsnr/mdcat is no longer maintained -- README top line says so and
+  the repo was ARCHIVED (read-only) 2025-01-10, which is why it has zero open
+  issues (archiving closed them all and blocks new ones). No mirror/successor
+  named; takeover-by-email only. So there is nowhere to file. Our diagnosis was
+  corroborated anyway: changelog + PR GH-255 ("Flush trailing space before
+  starting link... prevents the link from extending to the left, starting over
+  a whitespace") is the LINK sibling of our bug -- mdcat had a general
+  swallow-leading-space-into-styled-span pattern, fixed it for links, never
+  fixed the emphasis/italic equivalent we hit. Our `bin/mdless` perl filter is
+  therefore the permanent fix (no upstream patch will ever come). Upside: 2.7.1
+  (2024-12-14) is the final release forever, so the pinned version + sha256 in
+  the cheops build script never needs a feature/security bump -- the pin is now
+  permanent by nature, not just by caution. Long-term watch-item only: if a
+  future glibc bump ever bit-rots the 2.7.1 gnu binary, we'd need a replacement
+  viewer (glow still the obvious fallback). _(added 2026-06-04, completed
+  2026-06-08 during upstream-issue search)_
 
 - ~~2026-06-05~~ — Make bold "pop" more in kitty. Side-by-side comparison
   (Bold/ExtraBold/Black test windows): user picked **Black** (900) for bold
