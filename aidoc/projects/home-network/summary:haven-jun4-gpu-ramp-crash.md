@@ -229,6 +229,10 @@ mechanism #1 (May 28 Haven, and Avalir) -- that trigger is still unknown.
    way.  Verification TODO covers pruning behavior for B with the schedule
    off, plus one-time borderline W/M self-creates on June 6/7 (~05:00,
    quiet hour, harmless) before the new W/M cron lines take over.
+   **[Verified 2026-06-08 -- see Verification / Watch Items below. The W/M
+   prediction was wrong about the mechanism: not a ~05:00 hourly-grid
+   self-create, but timeshift auto-promoting the 04:23 `--tags D` create
+   to W/M when due. That also makes the explicit W/M cron lines redundant.]**
 4. **UC launcher `--disable-gpu`: no action needed** -- discovered already
    present on both UC launchers (see the X/glamor refinement above).
 
@@ -238,7 +242,16 @@ mechanism #1 (May 28 Haven, and Avalir) -- that trigger is still unknown.
   (`cat /sys/class/drm/card1/gt_max_freq_mhz` -> 400) and viv-mon's `gfreq=`
   column never exceeds ~400.
 - After 2026-06-05 04:23: confirm the daily snapshot timestamp is 04-23 and
-  the D count stays at 1 (pruning on the --create path).
+  the D count stays at 1 (pruning on the --create path).  **VERIFIED 2026-06-08:**
+  daily landed at `2026-06-08_04-23-02 D`, count_daily=1 held, zero midday-drift
+  snapshots.  Correction to the prediction below: the borderline W/M did NOT
+  self-create at ~05:00 via the hourly grid -- timeshift AUTO-PROMOTES the 04:23
+  `--create --tags D` to weekly/monthly when that level is due (June 6 -> W,
+  June 7 -> M; confirmed in each snapshot's `info.json` tags).  Side effect:
+  the explicit 04:43-W / 05:03-M cron lines are now redundant with promotion
+  and double up on boundary days (weekly briefly hit 3 vs count_weekly=2).
+  Boot-prune-with-schedule-off (item c) still unprovable until Haven's 3rd
+  reboot.  Both residuals tracked in `TODO.md`.
 - If 400MHz feels sluggish in daily use (video calls, page rendering), bump
   to 700 live and update termstart.
 - Keymap: next ECOXGEAR connect should produce CHANGE + REAPPLY pairs in

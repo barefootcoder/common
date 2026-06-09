@@ -103,21 +103,21 @@ skill scans this file on load and surfaces due/pending items.
   a separate tool for `~/` (borg, restic, rdiff-backup). _(added 2026-05-23 during
   May 17 follow-up audit)_
 
-- **2026-06-08** — Verify the Timeshift rescheduling (all changes APPLIED
-  2026-06-04: `/etc/cron.d/timeshift-local` with quiet-hour unconditional creates
-  at 04:23 D / 04:43 Sun W / 05:03 1st M + `@reboot sleep 45m` B; `schedule_boot`
-  set false, timeshift removed its own `timeshift-boot` cron; json backup at
-  `/etc/timeshift/timeshift.json.bak.pre-jun4`; source in
-  `conf/crontab/haven-timeshift.cron-d`). Check `sudo timeshift --list`:
-  (a) daily snapshots landing at 04-23 and count_daily=1 pruning holding (no D
-  accumulation); (b) expected one-time borderline events: W will self-create
-  ~05:00 June 6 (hourly grid, quiet hour, harmless) before our Sunday cron takes
-  over June 7, and M similarly ~05:00 June 7 before our July 1 cron takes over;
-  (c) after the next boot: exactly one B snapshot at +45m, and B-count pruning
-  still working with schedule_boot off (uncertain -- timeshift's pruning may only
-  iterate enabled schedules; if B's accumulate past count_boot=2, prune manually
-  and rethink). _(added 2026-06-04 during June 4 crash investigation; all
-  implementation completed same day)_
+- **anytime** — Timeshift post-reschedule residuals (spun out of the 2026-06-08
+  verification, see Done). (1) **Boot pruning with `schedule_boot=false`** is
+  still unprovable: currently 2 B snapshots (May 22, June 4) sit exactly at
+  `count_boot=2`, so we can't tell whether timeshift prunes B's when its own
+  boot schedule is off until Haven reboots a 3rd time (rare). If B's ever climb
+  past 2, prune manually and rethink. (2) **Explicit `W`/`M` cron lines are
+  redundant** -- timeshift AUTO-PROMOTES the daily 04:23 `--tags D` create to
+  weekly/monthly whenever that level is due (verified June 6 -> W, June 7 -> M),
+  so the explicit 04:43 Sun W and 05:03 1st M lines in
+  `conf/crontab/haven-timeshift.cron-d` double up on boundary days (June 7 got
+  both a promoted M at 04:23 and an explicit W at 04:43; weekly transiently hit
+  3 vs `count_weekly=2`). Decide whether to drop the explicit W/M lines and let
+  promotion do the work (cleaner: one quiet-hour create/day, timeshift tags it).
+  Low priority -- both paths are functional, just redundant. _(added 2026-06-08
+  during Timeshift reschedule verification)_
 
 - **anytime** — Clean up the dead `/home/buddy/*` exclusion entries in
   `/etc/timeshift/timeshift.json` (26 entries added on May 17). They're no-ops given
@@ -193,6 +193,26 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-08~~ — Verify the Timeshift rescheduling (applied 2026-06-04).
+  **VERIFIED working.** `sudo timeshift --list` on June 8 (via `ssh haven bash
+  -s` heredoc -- a bare `bash -lc '...2>&1...'` fails because the remote tcsh
+  re-parses the redirect): daily landed at `2026-06-08_04-23-02 D`,
+  `count_daily=1` holding (single D, no accumulation); zero midday-drift
+  snapshots (the original bug) -- every recent create is at 04:23/04:43, none
+  at a random hour. `/etc/cron.d/timeshift-local` present and unmodified by
+  timeshift; `schedule_boot=false` confirmed in `timeshift.json`; the two
+  leftover timeshift-owned cron files (`timeshift-daily` 07:00, `timeshift-hourly`
+  hourly) are both `--check` only, so harmless no-ops now that our crons own
+  creation. The predicted "borderline" W/M did appear, but the MECHANISM was
+  not what the jun4 summary guessed (it said ~05:00 self-creates via the hourly
+  grid): timeshift AUTO-PROMOTES the 04:23 `--create --tags D` to weekly (June
+  6, last W 7d prior) or monthly (June 7, last M 31d prior) when that level is
+  due -- confirmed via each snapshot's `info.json` `tags` field (single tag
+  each, not multi-tag). Two residuals (boot-prune-with-schedule-off still
+  unprovable; explicit W/M cron lines redundant with promotion) spun out to a
+  new anytime item above; summary doc corrected. _(added 2026-06-04 during June
+  4 crash investigation, verified + completed 2026-06-08)_
 
 - ~~2026-06-08~~ — Report mdcat's space-before-italics bug upstream. RESOLVED
   AS MOOT: swsnr/mdcat is no longer maintained -- README top line says so and
