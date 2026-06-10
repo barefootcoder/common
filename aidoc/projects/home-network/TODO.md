@@ -31,9 +31,16 @@ skill scans this file on load and surfaces due/pending items.
   mechanism #1 too. What remains is the TWO_LEVEL change (Shift picks the level,
   NumLock irrelevant -- see `keypad-colon-investigation.md` "Fix plan"), which
   needs the user at Haven's keyboard to test the four NumLock/Shift combos, and
-  the BT reproducer to verify survival. Note: the next ECOXGEAR connect doubles
-  as the stopgap's live test. _(added 2026-06-04 during June 4 crash
-  investigation; stopgap completed same day)_
+  the BT reproducer to verify survival. **Deferred 2026-06-09 (user decision):
+  the stopgap is now PROVEN -- keymap-mon caught and reapplied a real wipe on
+  2026-06-06 (15:22:55 -> 15:22:56, ~1s), and the user has used the ECOXGEAR
+  since with no colon breakage -- so we wait for the wipe to recur DESPITE the
+  stopgap, or for NumLock fragility to actually bite, before doing the XKB
+  surgery.** Two implementation refinements for when it's taken up (prefer
+  `~/.config/xkb/` over editing `/usr/share/X11/xkb/`; prove survival via the
+  reproducer and keep keymap-mon as a backstop) are in the investigation doc's
+  "Status (2026-06-09)" note. _(added 2026-06-04 during June 4 crash
+  investigation; stopgap completed same day; durable fix deferred 2026-06-09)_
 
 - **anytime** — Markdown-viewer rollout (winner: **mdcat**, decided 2026-06-04 on
   aesthetics — glow's margins/reflow/colors lost on raw impact even after the

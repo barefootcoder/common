@@ -378,13 +378,17 @@ If user asks about EC2 sandbox sync:
   cloud-restored into the app's DB from the old phone — "select all → add to
   playlist" landed the songs in the remembered order. New playlists (not on the old
   phone) still need a workaround. See `summary:phone-music-playlist-sync.md` + TODO.
-- **Keypad-colon mapping investigation** (OPEN, May 26 2026): Haven's
-  Shift+keypad-`.` = colon mapping intermittently reverts to default. Root keycode
-  confirmed as **91** (`<KPDL>`, standard) — *not* the long-assumed 129 that
-  derailed earlier work. A `keymap-mon` watcher is hunting the still-unknown revert
-  trigger; NoMachine is ruled out. **If Haven just crashed, the watcher died —
-  restart it** (see [keypad-colon-investigation.md](keypad-colon-investigation.md)).
-  Boot-time loading is already handled by `termstart-common` (commit `75cea2a`).
+- **Keypad-colon mapping investigation** (May 26 2026; stopgap PROVEN, durable fix
+  DEFERRED 2026-06-09): Haven's Shift+keypad-`.` = colon mapping intermittently
+  reverts to default. Root keycode confirmed as **91** (`<KPDL>`, standard) — *not*
+  the long-assumed 129 that derailed earlier work. Mechanism #2 is identified (every
+  ECOXGEAR Bluetooth connect recompiles the keymap); the silent mechanism #1 is still
+  unknown. The `keymap-mon` self-heal stopgap (auto-reapplies `xmodmap` on a detected
+  wipe) **caught and fixed a real wipe on 2026-06-06 in ~1s**, so the durable
+  TWO_LEVEL/XKB fix is deferred until the wipe recurs *despite* the stopgap or NumLock
+  fragility starts biting. **If Haven just crashed, the watcher died — restart it**
+  (see [keypad-colon-investigation.md](keypad-colon-investigation.md)). Boot-time
+  loading is already handled by `termstart-common` (commit `75cea2a`).
 - **Avalir Vivaldi 6.1 → 7.9 upgrade complete** (May 26 2026): Mirrored Haven's
   upgrade — `vivaldi-stable` 6.1.3035.302 → **7.9.3970.67**, `apt-mark hold`ed to
   avoid drifting to the new **8.0** "Unified" redesign (deferred; revisit via a

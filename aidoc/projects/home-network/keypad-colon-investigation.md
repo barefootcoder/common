@@ -132,6 +132,26 @@ Implications:
    Would cost the speaker's play/pause buttons and does nothing for
    mechanism #1.
 
+**Status (2026-06-09): band-aid (2) shipped and now PROVEN; durable fix (1)
+deferred by user decision.**  keymap-mon's self-heal caught its first
+in-the-wild wipe on 2026-06-06 15:22:55 (kc91 colon -> KP_Delete) and reapplied
+it ~1s later (15:22:56); the user confirms using the ECOXGEAR since with no
+noticeable colon breakage.  The stopgap holds, so we are NOT doing the
+TWO_LEVEL fix yet -- wait for the wipe to recur *despite* the stopgap, or for
+NumLock fragility to actually bite, before more XKB surgery.  Two refinements
+for whenever (1) is taken up:
+
+- **Prefer `~/.config/xkb/` over editing `/usr/share/X11/xkb/`** -- the per-user
+  XKB config dir is upgrade-safe and root-free.  First verify Haven's Xorg
+  server honors it for the *physical* keyboard (solid in libxkbcommon, spottier
+  in classic Xorg); only fall back to the system dir (plus a documented
+  reinstall-after-upgrade note) if it doesn't.
+- **Prove survival with the reproducer; don't assume it.**  Apply the mapping,
+  test the four NumLock x Shift combos at the keyboard, then connect the
+  ECOXGEAR and confirm keymap-mon logs NO `CHANGE` for kc91 (it rode the
+  recompile).  Keep keymap-mon running as a backstop even afterward -- defense
+  in depth is free.
+
 **Haven, 2026-05-28 02:17:47** (the first capture):
 
 ```
@@ -212,9 +232,11 @@ XKB-rules-level mapping lives in those rules.
   reapplies `xmodmap ~/.Xmodmap` whenever it detects kc91 losing the colon
   mapping, logging a `REAPPLY` line after the forensic `CHANGE` snapshot
   (trigger-hunting for mechanism #1 is unimpaired). Broken window is now
-  ~5s (the poll interval) on both boxes, for BOTH wipe mechanisms. The next
-  ECOXGEAR connect on Haven doubles as its live test. Does not address the
-  NumLock fragility -- that still needs the TWO_LEVEL fix.
+  ~5s (the poll interval) on both boxes, for BOTH wipe mechanisms. **Live test
+  PASSED 2026-06-06**: a real wipe at 15:22:55 (kc91 colon -> KP_Delete) was
+  reapplied one second later at 15:22:56, and the user reports normal ECOXGEAR
+  use since with no noticeable colon breakage. Does not address the NumLock
+  fragility -- that still needs the TWO_LEVEL fix.
 
 ## The watchers
 
