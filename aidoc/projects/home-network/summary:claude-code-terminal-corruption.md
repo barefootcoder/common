@@ -104,7 +104,7 @@ To activate: change line 4 of `myterm` from `termprog=urxvt` to `termprog=kitty`
 ## Known Issues / Watch Items
 
 - **Font size conversion**: The `pixels * 0.75` conversion assumes 96 DPI. May need adjustment depending on display. Kitty also does its own DPI scaling.
-- **SSH faux_term**: Resolved. Changed from urxvt-specific `-tn vt100` to terminal-agnostic `env TERM=vt100` command prefix. This works with any terminal emulator and is actually an improvement: the local terminal retains full rendering capabilities while only the remote host sees `vt100`.
+- **SSH faux_term**: Superseded (June 2026). The `env TERM=vt100` command prefix turned out to be the *cause* of color loss on remote views, not an improvement: forwarding `vt100` tells the remote `screen` it has no color, so when the session is reattached over `ssh` from another box, `screen` strips Claude's 256-indexed prompt-bar tint (index 237) and other color out of the display. Replaced with a per-emulator `case` in `myterm` (`kitty`/`urxvt`/`gnome-terminal` get `env TERM=xterm-256color`, others keep `vt100`), plus gating the unconditional `set term=vt100` in `rc/login` so it no longer clobbers a real inherited `TERM` on interactive logins. Full writeup: `summary:ssh-remote-view-color-loss.md`.
 - **Kitty colors/tinting**: Handled via `conf/kitty/kitty.conf` (cursor blink, bell, blue→cyan remap, bold-as-bright).
 - **tmux bold degradation**: tmux provably sends `\e[1m` (bold) to screen (confirmed via `script` byte capture), but GNU screen loses the bold font weight when the source is tmux's pty. Bold works correctly in kitty+screen (no tmux) and kitty+tmux (no screen), but NOT in the full kitty+screen+tmux chain. Root cause unknown — possibly a GNU screen 4.09 bug in attribute handling for alternate-screen-mode ptys. **Workaround**: `bold_is_bright yes` in `conf/kitty/kitty.conf` makes bold use bright color variant, which survives the full chain.
 - **GNU screen DEC 2026 passthrough**: Watch for future screen patches that add support. This would be the most impactful single fix if it ever lands.
@@ -129,5 +129,5 @@ The winning approach wraps Claude Code in tmux, which acts as a differential ren
 3. ~~Wrap Claude Code in tmux as rendering buffer~~ Done, working well
 4. ~~Fix tmux bold degradation~~ Workaround: `bold_is_bright yes` in kitty.conf
 5. Clean up stale tmux socket files (`/tmp/tmux-1000/claude-*`) — add cleanup to wrapper
-6. Verify `env TERM=vt100` SSH title suppression works on remote terminals
+6. ~~Verify `env TERM=vt100` SSH title suppression works on remote terminals~~ Done, and reversed: `env TERM=vt100` was found to kill remote color (washed-out prompt-bar tint over `ssh`); `myterm` now forwards `xterm-256color` for color-capable emulators. See `summary:ssh-remote-view-color-loss.md`
 7. Investigate GNU screen 4.09 bold attribute bug with tmux ptys (low priority — workaround in place)

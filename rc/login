@@ -4,7 +4,17 @@
 #	exec /usr/local/bin/screen -s -tcsh
 #fi
 
-set term=vt100
+# Fall back to vt100 only when no usable terminal type was inherited
+# (a genuinely dumb/unknown login).  Otherwise keep the real TERM --
+# notably xterm-kitty forwarded in over ssh -- so screen renders color
+# to the attached display instead of stripping it to monochrome vt100.
+# (The old bare `set term=vt100' clobbered every interactive ssh login,
+# which is why remote views of a screen session lost the prompt-bar tint.)
+if ( ! $?term ) then
+	set term=vt100
+else if ( "$term" == "" || "$term" == "unknown" || "$term" == "dumb" ) then
+	set term=vt100
+endif
 stty erase 
 
 # turn on numlock (hopefully)

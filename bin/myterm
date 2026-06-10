@@ -214,7 +214,18 @@ then
 		faux_cmd=
 		if [[ $1 == *ssh* ]]		# immediately launching to a new server
 		then
-			faux_cmd="env TERM=vt100"	# see e.g. https://superuser.com/a/792701
+			# Force a TERM the remote is sure to have in terminfo: the local
+			# emulator's own TERM (e.g. xterm-kitty) often isn't installed on
+			# the far end -- the original reason this forced vt100 (see
+			# https://superuser.com/a/792701).  But vt100 has no color, which
+			# silently killed screen's prompt-bar tint on remote views.  Use
+			# the richest type each emulator can actually render: kitty/urxvt
+			# handle xterm-256color so color survives; Eterm's 256 support is
+			# iffy (and its terminfo is rarely on remotes), so it keeps vt100.
+			case $termprog in
+				kitty|urxvt|gnome-terminal) faux_cmd="env TERM=xterm-256color" ;;
+				*) faux_cmd="env TERM=vt100" ;;
+			esac
 		fi
 		run-term -e $faux_cmd "$@"
 	else
