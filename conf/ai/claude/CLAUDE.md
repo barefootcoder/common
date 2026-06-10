@@ -132,11 +132,35 @@ is actually corrupt.
   fact than to negotiate commit message wording interactively.
 
 ## Remote Hosts (ssh)
-The login shell on my hosts (Haven, Avalir, etc.) is **tcsh**, so a bare
-`ssh host '<command>'` runs your command under tcsh, which chokes on bash
-syntax (`$(...)`, `VAR=val`, `2>&1`, heredocs, `for`/`if` blocks, etc.).
-**Always wrap remote commands in bash**: `ssh host bash -lc '<command>'`,
-or `ssh host bash -s` with a heredoc on stdin for anything multi-line.
+**First, orient yourself.**  In a repo that ships one (`common` and `CE` both
+do), run `aidoc/check-environment` -- it reports which box you are on, whether
+your cwd and `~/common` are symlinks (and to where), and whether the git base is
+sound.  Otherwise just run `hostname`.  Either way the point is the same: these
+hosts share `~/common` (and more) over Syncthing, so the filesystem looks
+identical everywhere and it is easy to lose track of which box you are on.  If
+you are already ON the target host, run the command directly -- do NOT `ssh
+haven` from Haven (it loops back into yourself over SSH and drags you through the
+quoting trap below for nothing).
+
+When you genuinely are on a different box: the login shell on my hosts (Haven,
+Avalir, etc.) is **tcsh**, so a bare `ssh host '<command>'` runs your command
+under tcsh, which chokes on bash syntax (`$(...)`, `VAR=val`, `2>&1`, heredocs,
+`for`/`if` blocks, etc.).  And `ssh host bash -lc '<command>'` does NOT rescue
+you: your *local* shell strips the quotes before `ssh` ever runs, so `ssh`
+forwards the bare words and the *remote* tcsh re-parses them -- two shells chew
+the command in turn, and piling on more quotes is just whack-a-mole.
+
+**Use a `bash -s` heredoc by default** for anything with a pipe, semicolon,
+redirect, loop, or more than a word or two of argument:
+```bash
+ssh host bash -s <<'EOF'
+for f in foo bar; do something "$f"; done
+EOF
+```
+The single-quoted `<<'EOF'` keeps your local shell off the body, and `bash -s`
+feeds it to bash (not tcsh) verbatim on the far side: no quoting horrors,
+multi-line for free.  A single trivial command inline (`ssh host uptime`) is
+fine; the instant you need shell syntax, go straight to the heredoc.
 Interactive `ssh host` and manual `ssh host my-alias` are unaffected --
 this only bites when *you* send a shell command.
 

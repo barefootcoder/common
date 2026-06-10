@@ -15,6 +15,18 @@ Invoked as: `/x-commit {{ARGS}}` — or auto-invoked when a commit is needed.
 - **No args / auto-invoked**: Commit files modified during this conversation
 - **With args**: Specific files, or instructions like "amend", or both
 
+**Stage only YOUR work -- this is a shared tree.**  Several of these repos are
+Syncthing shares worked by multiple agents and machines at once, and even on a
+single machine the working copy routinely carries unrelated in-flight edits.  So:
+
+- Stage the specific files THIS conversation changed, **by explicit path**.
+  Never `git add -A`, `git add .`, `git add -u`, or `git commit -a` -- those
+  sweep up whatever else is dirty, including another agent's uncommitted work.
+- First run `git status --porcelain` and reconcile it against what you actually
+  touched this session.  Dirty files you did not change are NOT yours to commit:
+  leave them unstaged.
+- If you cannot tell whether a dirty file is yours, ask rather than commit it.
+
 ## Repo Consistency Gate (before committing)
 
 Some of the user's repos live in a Syncthing share, where a peer's commit can

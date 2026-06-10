@@ -45,6 +45,7 @@ These files under `~/.claude/` are symlinks into `~/common/conf/ai/claude/` (ver
 |---------|--------|
 | `CLAUDE.md` | `conf/ai/claude/CLAUDE.md` |
 | `settings.json` | `conf/ai/claude/settings.json` |
+| `keybindings.json` | `conf/ai/claude/keybindings.json` |
 | `skills/` | `conf/ai/claude/skills/` |
 | `commands/` | `conf/ai/claude/commands/` |
 | `agents/` | `conf/ai/claude/agents/` |
@@ -53,6 +54,8 @@ These files under `~/.claude/` are symlinks into `~/common/conf/ai/claude/` (ver
 **Not symlinked** (local-only): `.credentials.json`, `history.jsonl`, `sessions/`, `projects/`, `cache/`, `plugins/`, `plans/`, `tasks/`
 
 When editing config, edit the real file in `~/common/conf/ai/claude/` — the symlink ensures `~/.claude/` sees it. Changes are committable via git in `~/common`.
+
+**The Edit/Write tool refuses to write through a symlinked file**, erroring with `Refusing to write through symlink: ~/.claude/CLAUDE.md ...`. So if you target a `~/.claude/` path you get bounced — run `readlink -f <path>` and edit the resolved `~/common/conf/ai/claude/...` target (the canonical, git-tracked file, which is what you wanted anyway). A symlinked *parent directory* is fine; only a symlinked target file trips the guard. When creating a **new** config artifact: skills/commands/agents written under `~/.claude/skills|commands|agents/` land in the repo automatically via those directory symlinks, but a brand-new *top-level* file (a new `~/.claude/foo.json`) does NOT — create it under `~/common/conf/ai/claude/` and add a symlink (and to `makeln`), or it stays local-only and is lost on every other machine.
 
 ### Terminal Environment (GNU screen)
 

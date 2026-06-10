@@ -51,6 +51,32 @@ to catch up makes the change available everywhere.  Running `makeln` on a
 target host applies any new symlinks, setup-script changes, dconf settings,
 crontab updates, etc. relative to the synced repo state.
 
+Because every machine mounts this same synced tree, three things bite agents
+constantly:
+- **Know which machine you are on.**  Run `aidoc/check-environment` (or at
+  least `hostname`) before any host-specific action; if you are already on the
+  target box, run commands directly instead of `ssh`-ing (often into yourself).
+  When you genuinely `ssh` between boxes,
+  the login shell is tcsh: use a `bash -s` heredoc, never inline-quoted
+  commands.  Full rationale in the global `~/.claude/CLAUDE.md` "Remote Hosts
+  (ssh)" section.
+- **Other agents may be working in this tree right now** (on this machine or
+  another).  The working copy can hold uncommitted changes that are not yours,
+  and a file you read may change under you before you write it -- if an edit is
+  rejected as stale, re-read and redo it rather than forcing it.  See "## Git
+  Commits" for what this means when you commit.
+- **The repo's paths are host-dependent, and Claude's config is symlinked.**
+  Don't hardcode assumptions about `~/common`: on Haven/Avalir it is a symlink
+  to `/export/proj/common`, but on quin it is a real directory Syncthing writes
+  to directly.  Rather than guess, run `aidoc/check-environment` -- it reports
+  the host plus your cwd/`~/common` symlink status (and whether the git base is
+  sound).  Separately, Claude's own config (`CLAUDE.md`, `settings.json`,
+  `keybindings.json`, `skills/`, ...) is git-tracked by living here in
+  `conf/ai/claude/` and symlinked into `~/.claude/`.  Edit the repo copy: the
+  Edit/Write tool refuses to write through a symlinked *file*, so `readlink -f`
+  a `~/.claude/...` path to its real target.  Full map and the new-artifact
+  rule: the `/x-claude-setup` skill.
+
 ## Key Files and Directories
 - `/bin/t`: Comprehensive test runner with coverage, profiling, and parallel execution
 - `/bin/myperl-cpm`: Dependency installer using App::cpm with cpanfile features
@@ -92,6 +118,21 @@ When working with myperl code:
 Commits go through the `/x-commit` skill, which owns the message format, line
 wrapping, and AI-attribution rules.  Don't hand-craft commit messages or run
 `git commit` directly — invoke `/x-commit` and let it handle formatting.
+
+This is a shared tree that other agents may be editing concurrently (see
+"## Repository Distribution"), so **stage only the specific files YOU changed
+this session, by explicit path.**  Never `git add -A`, `git add .`, `git add
+-u`, or `git commit -a`: those sweep up whatever else is dirty, including
+another agent's in-flight work.  If `git status --porcelain` shows changes you
+do not recognize, leave them unstaged.
+
+And **do not pre-compute the commit before you are asked to make one.**  The
+user gates every commit precisely so they can coordinate the several agents
+working this tree at once -- which means other commits land *while* you would be
+measuring, so any scope, staged state, or `git status` reading you gather ahead
+of the go-ahead is stale before you finish.  When your work is done, summarize
+it and stop; work out what to stage only once the user says "commit" (and then
+only your own files, per above).
 
 ## Collaboration Style
 - **"BE CREATIVE"**: Provide multiple high-level ideas with outside-the-box thinking

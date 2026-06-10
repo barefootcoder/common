@@ -1,0 +1,116 @@
+#! /usr/bin/perl
+#
+# check-environment -- orient an agent (or human) before doing work in the
+# `common` repo / on the home machines.
+#
+# Prints the handful of HOST-DEPENDENT facts that agents otherwise rediscover
+# (often wrongly) every session, so the docs don't have to enumerate them and
+# can't go stale:
+#   * which machine this actually is (the "don't ssh into yourself" guard);
+#   * whether the current directory is reached through a symlink, and to where;
+#   * whether ~/common is a symlink (Haven/Avalir) or a real directory that
+#     Syncthing writes to directly (quin) -- this varies per host, so NEVER
+#     hardcode it in prose;
+#   * the git toplevel;
+#   * whether the git base (HEAD) resolves -- which catches the Syncthing
+#     "ref arrives before its objects" lag that makes commits blow up.
+#
+# Run this FIRST, instead of hand-checking `hostname`, `readlink`, `pwd -P`,
+# `git rev-parse`, etc. one at a time.
+#
+# Output: labelled lines on stdout (greppable).
+# Exit:   0 = fine (findings are informational)
+#         2 = git base is BROKEN (HEAD will not resolve): the repo is mid-sync
+#             (Syncthing object lag) -- do NOT commit.  See the Syncthing notes
+#             in CLAUDE.md and the x-claude-setup skill.
+#
+# DELIBERATELY core-Perl-only (no myperl, no CPAN, system-perl shebang): it must
+# run under ANY perl, including bare system perl in a constrained agent/cron
+# context.  Do NOT "modernize" it onto myperl -- that would reintroduce the
+# perlbrew dependency this script exists to sidestep.
+
+use 5.014;
+use strict;
+use warnings;
+
+use Cwd qw( getcwd realpath );
+use Sys::Hostname qw( hostname );
+
+my $home = $ENV{HOME} // (getpwuid $<)[7];
+
+# --- which machine ---
+my $host = hostname();
+$host =~ s/\..*//;                              # short name, drop any domain
+
+# --- current directory: logical (as you cd'd here) vs resolved real path ---
+my $cwd_logical = ($ENV{PWD} && -d $ENV{PWD}) ? $ENV{PWD} : getcwd();
+my $cwd_real    = realpath($cwd_logical) // $cwd_logical;
+
+# --- ~/common: symlink, real directory, or absent (varies by host) ---
+my $common = "$home/common";
+my $common_desc;
+if (-l $common)
+{
+    my $target   = readlink $common;
+    my $resolved = realpath($common);
+    $common_desc = "symlink -> $target";
+    $common_desc .= " (resolves to $resolved)"
+        if defined $resolved && $resolved ne $target;
+}
+elsif (-d $common)
+{
+    $common_desc = "real directory (NOT a symlink -- a direct Syncthing share, as on quin)";
+}
+else
+{
+    $common_desc = "ABSENT (no ~/common on this host)";
+}
+
+# --- git: toplevel + base sanity (rev-parse output is never colorized, so it
+#     is safe to read despite color.ui = always) ---
+chomp(my $toplevel = qx{git rev-parse --show-toplevel 2>/dev/null});
+my $in_repo = ($? == 0 && length $toplevel);
+
+my ($base_ok, $head);
+if ($in_repo)
+{
+    chomp($head = qx{git rev-parse --verify --short HEAD 2>/dev/null});
+    $base_ok = ($? == 0 && length $head);
+}
+
+# --- report ---
+print "check-environment (common repo / home machines)\n\n";
+printf "host:      %s\n", $host;
+
+if ($cwd_logical eq $cwd_real)
+{
+    printf "cwd:       %s\n", $cwd_real;
+}
+else
+{
+    printf "cwd:       %s\n", $cwd_logical;
+    printf "  real:    %s   (cwd is reached via a symlink)\n", $cwd_real;
+}
+
+printf "~/common:  %s\n", $common_desc;
+
+if ($in_repo)
+{
+    printf "repo:      %s  (git toplevel)\n", $toplevel;
+    if ($base_ok)
+    {
+        printf "git base:  OK (HEAD = %s)\n", $head;
+    }
+    else
+    {
+        print "git base:  BROKEN -- HEAD will not resolve.  The repo is mid-sync\n";
+        print "           (Syncthing object lag); do NOT commit.  See the Syncthing\n";
+        print "           notes in CLAUDE.md and the x-claude-setup skill.\n";
+    }
+}
+else
+{
+    print "repo:      not inside a git repo\n";
+}
+
+exit(($in_repo && !$base_ok) ? 2 : 0);

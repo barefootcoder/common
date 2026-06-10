@@ -240,7 +240,22 @@ mechanism #1 (May 28 Haven, and Avalir) -- that trigger is still unknown.
 
 - After the next few boots: confirm termstart applied the GPU cap
   (`cat /sys/class/drm/card1/gt_max_freq_mhz` -> 400) and viv-mon's `gfreq=`
-  column never exceeds ~400.
+  column never exceeds ~400.  **VERIFIED 2026-06-09:** on the still-current
+  post-crash boot (up since 2026-06-04 19:12), `gt_max_freq_mhz` and
+  `gt_boost_freq_mhz` both read 400 and never deviated under rapid live
+  sampling; cap has held ~5 days with no crash.  **IMPORTANT caveat about the
+  `gfreq=` column -- do NOT misread it as a cap breach:** the log shows
+  `gfreq=cur/act` values up to **600** despite the 400 cap.  These are i915
+  RC6-idle sysfs readout artifacts, not real operation.  `gt_cur_freq_mhz`
+  (the *requested* freq) is reported unclamped while the GPU is in RC6, and
+  `gt_act_freq_mhz` latches stale values across idle->wake boundaries.
+  Empirically: 99.75% of `act=600` samples (1991/1996 across both logs)
+  coincide with the GPU confirmed idle (rc6 accumulating the full poll
+  interval); the 5 "busy" exceptions all carry low power (pkg ~4W, nowhere
+  near a real 600MHz draw) and one shows cur=350 < act=600 (backwards).  No
+  `act>400` reading is corroborated by a power spike.  The trustworthy signal
+  is `gt_max_freq_mhz`/`gt_boost_freq_mhz` (rock-solid 400) plus the absence of
+  any power-corroborated high-freq run -- NOT the raw `gfreq=` column.
 - After 2026-06-05 04:23: confirm the daily snapshot timestamp is 04-23 and
   the D count stays at 1 (pruning on the --create path).  **VERIFIED 2026-06-08:**
   daily landed at `2026-06-08_04-23-02 D`, count_daily=1 held, zero midday-drift
@@ -253,7 +268,8 @@ mechanism #1 (May 28 Haven, and Avalir) -- that trigger is still unknown.
   Boot-prune-with-schedule-off (item c) still unprovable until Haven's 3rd
   reboot.  Both residuals tracked in `TODO.md`.
 - If 400MHz feels sluggish in daily use (video calls, page rendering), bump
-  to 700 live and update termstart.
+  to 700 live and update termstart.  **2026-06-09: user reports no sluggishness
+  at 400, so left as-is (not bumped).**
 - Keymap: next ECOXGEAR connect should produce CHANGE + REAPPLY pairs in
   `/var/tmp/keymap-mon.log` and the colon mapping should survive (minus a
   <=5s window).  That doubles as the reproducer test for the eventual

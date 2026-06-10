@@ -20,13 +20,6 @@ skill scans this file on load and surfaces due/pending items.
   but it touches the daily sandbox launcher, so verify an actual `term-quin`
   launch afterward. _(added 2026-06-09 during claude-notify build)_
 
-- **anytime** — Verify the GPU frequency cap is holding: after the next
-  `termstart`/boot, `cat /sys/class/drm/card1/gt_max_freq_mhz` should be 400, and
-  viv-mon's `gfreq=` column should never exceed ~400 in normal use. If 400MHz
-  feels sluggish in daily use (video-call composite, page rendering), bump both
-  `gt_max_freq_mhz` and `gt_boost_freq_mhz` to 700 live and update termstart to
-  match. _(added 2026-06-04 during June 4 crash mitigations)_
-
 - **anytime** — Implement the durable keypad-colon fix (TWO_LEVEL/XKB level), now
   that mechanism #2 is IDENTIFIED (2026-06-04): every ECOXGEAR Bluetooth speaker
   connect makes X add an AVRCP "keyboard" device and recompile the keymap (pc105/us
@@ -208,6 +201,29 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-09~~ — Verify the GPU frequency cap is holding (applied 2026-06-04).
+  **VERIFIED holding; kept at 400** (user reports no sluggishness, so NOT bumped
+  to 700). Checked on Haven *directly* -- no ssh, since `hostname` confirmed I
+  was already on the box (an earlier attempt this session wastefully `ssh`ed into
+  Haven from Haven; that mistake drove the README "FIRST: confirm which host"
+  and heredoc-quoting doc updates). `gt_max_freq_mhz` and `gt_boost_freq_mhz`
+  both read 400, written by `local/bin/termstart` lines 30-31 (survive the rare
+  crash-reboot). Rapid live sampling never showed either deviate. Boot time
+  2026-06-04 19:12:49 = the post-Jun-4-crash boot, so the cap has been live ~5
+  days with no crash (first endurance test, passed). **Gotcha recorded for
+  future viv-mon readers (also added to `summary:haven-jun4-gpu-ramp-crash.md`):**
+  viv-mon's `gfreq=cur/act` column shows values up to 600 in the log, which LOOKS
+  like a cap breach but is NOT. `gt_cur_freq_mhz` (requested) is reported
+  unclamped during RC6 idle, and `gt_act_freq_mhz` latches stale values across
+  idle->wake boundaries. 99.75% of the act=600 readings (1991/1996 across both
+  logs) coincide with the GPU confirmed idle (rc6 accumulating the full poll
+  interval); the 5 "busy" exceptions all carry low power (pkg ~4W, nowhere near
+  a real 600MHz draw) and one even shows cur=350 < act=600 (backwards). No
+  act>400 reading is corroborated by a power spike. The cap reads 400/400
+  rock-solid; the 600s are i915 RC6 sysfs readout artifacts, not real operation.
+  _(added 2026-06-04 during June 4 crash mitigations, verified + completed
+  2026-06-09)_
 
 - ~~2026-06-08~~ — Verify the Timeshift rescheduling (applied 2026-06-04).
   **VERIFIED working.** `sudo timeshift --list` on June 8 (via `ssh haven bash

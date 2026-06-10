@@ -8,6 +8,51 @@ This is a mixed-platform home network with Linux systems, NAS storage, and smart
 
 ## CRITICAL: System Environment Notes
 
+### FIRST: confirm which host you are on before doing any host work
+**The single most common agent mistake in this project is doing work on the
+wrong machine -- or, worse, `ssh`-ing into the very box you are already running
+on.** These machines share `~/common` (and much else) over Syncthing, so the
+filesystem looks identical everywhere and it is genuinely easy to lose track of
+where you are. This has actually happened: an agent ran `ssh haven bash -s`
+repeatedly *while already on Haven*, looping back into itself over SSH and
+fighting the tcsh quoting trap (below) the whole time, for commands it could
+have just run directly.
+
+Before any host-specific action (reading `/sys`, restarting a watcher, checking
+`journalctl`, editing host-local files under `~/local`, inspecting the live
+process table):
+
+1. **Run `aidoc/check-environment`.** It reports which box you are on, whether
+   your cwd and `~/common` are symlinks (and to where), and whether the git base
+   is sound. (Bare `hostname` is enough if you only need the machine name.)
+2. **If you are ALREADY on the target host, run the command directly** -- do not
+   `ssh haven ...` from Haven. It loops back into yourself over SSH, wastes a
+   round trip, and needlessly drags a perfectly good command through the tcsh
+   login-shell quoting trap.
+3. **Only reach for `ssh <host>` when that proves you are on a different box**
+   (e.g. driving Haven from Avalir, or vice versa).
+
+Tell-tale host-local paths that do NOT sync, so they differ per machine and
+help confirm where you are: `~/local/`, `~/local/log/`, `/var/install/`, `/sys`,
+and the live process table.
+
+### Multiple agents edit these docs at once: re-read before you write
+The `TODO.md` and `README.md` for this project are the files most likely to be
+touched by another agent concurrently -- multiple sessions across Haven, Avalir,
+etc. all maintain them, and Syncthing merges the tree underneath you. Two
+consequences:
+
+1. **Re-read right before editing.** A `TODO.md`/`README.md` you read at the
+   start of the session may have changed by the time you go to write. If an
+   Edit is rejected as stale, re-read and redo it -- do not try to force it
+   through. (This very session saw exactly that: the `TODO.md` had grown two
+   new items from another session mid-task.)
+2. **At commit time, stage only your own changes**, by explicit path -- never
+   `git add -A` / `git commit -a`. The working tree may hold another agent's
+   in-flight edits to these same docs, and committing them as yours is the
+   classic mistake here. `/x-commit` guards against this, but the scope is
+   your responsibility.
+
 ### Uptime — Haven and Avalir do NOT reboot
 **Common agent mistake:** assuming these machines reboot or shut down on any
 normal cadence. They don't. Haven and Avalir effectively **never** shut down or
@@ -18,14 +63,36 @@ a reboot will clear state, restart a detached process, or reload config — a pr
 you start will keep running for months. If something must survive the *rare* crash,
 treat that as the exceptional case (wire it into `termstart`), not the norm.
 
-### Shell Environment
-- **Interactive shell on Linux systems**: `tcsh` (NOT bash)
-- **Remote command execution**: Commands via SSH execute in tcsh by default
-- **Use `bash -c` for complex remote commands**: 
+### Shell Environment (and the cross-host `ssh` quoting trap)
+- **The interactive/login shell on every Linux box here (Haven, Avalir, Zadash,
+  Caemlyn, quin) is `tcsh`, NOT bash.** A bare `ssh <host> '<command>'` runs
+  `<command>` under the remote tcsh, which chokes on bash syntax (`$(...)`,
+  `VAR=val`, `2>&1`, `for`/`if`, heredocs).
+- **Why inline-quoted remote commands keep blowing up (the lesson that refuses
+  to stick):** when you write `ssh haven bash -lc '...'`, YOUR local shell strips
+  those quotes before `ssh` even runs, so `ssh` forwards the bare words, and the
+  REMOTE tcsh then re-parses them -- splitting on `;`, spaces, and so on. The
+  command gets chewed by two shells in a row, and piling on more quotes is just
+  whack-a-mole. (Note: `bash -lc 'long; multi; statement'` falls into exactly
+  this hole, despite naming bash, because the quotes never survive to bash.)
+- **The form that is immune to all of it -- make it your DEFAULT for anything
+  with a pipe, semicolon, redirect, loop, or more than a word or two of
+  argument: a `bash -s` heredoc on stdin:**
   ```bash
-  # CORRECT: ssh haven 'bash -c "ls -l 2>/dev/null | grep foo"'
-  # WRONG:   ssh haven "ls -l 2>/dev/null | grep foo"  # tcsh syntax error
+  ssh haven bash -s <<'EOF'
+  for f in gt_max_freq_mhz gt_cur_freq_mhz; do
+      cat /sys/class/drm/card1/$f
+  done
+  EOF
   ```
+  The single-quoted `<<'EOF'` stops your LOCAL shell from touching the body, and
+  `bash -s` feeds that body to bash (not tcsh) verbatim on the REMOTE side. No
+  quoting horrors; multi-line comes for free.
+- A single trivial command inline is fine (`ssh haven uptime`), but the instant
+  you need real shell syntax, go straight to the heredoc -- do not try to escape
+  your way through tcsh.
+- **And per the section above: check `hostname` first. If you are already on the
+  target box, skip `ssh` entirely and just run the command.**
 
 ### Linux Mint Filesystem Structure  
 - **UsrMerge implementation**: On Haven and Avalir (Linux Mint 21.1), these are symlinks:
@@ -34,6 +101,30 @@ treat that as the exceptional case (wire it into `termstart`), not the norm.
   - `/lib*` → `/usr/lib*`
 - **Important**: `/bin/foo` and `/usr/bin/foo` are the SAME file - don't compare them
 - **Package queries**: Use `/usr/bin/*` paths (e.g., `dpkg -S /usr/bin/python3`)
+
+### Symlink-heavy environment (and the Edit-tool gotcha)
+Managing these machines means constantly touching symlinked paths.  The ones
+that matter for this project's work:
+- **The repo itself**: host-dependent.  On Haven/Avalir, `~/common` is a symlink
+  to `/export/proj/common` (same tree, two names); on quin it is a real directory
+  Syncthing writes to directly.  Don't hardcode it -- `aidoc/check-environment`
+  reports the truth for whichever host you are on.
+- **Host-local scripts**: `~/local/bin` is a symlink into
+  `~/common/local/<host>/bin`, so editing e.g. `~/local/bin/termstart` or
+  `~/local/bin/viv-mon` *is* editing the synced repo copy -- the edit deploys
+  itself across machines (that is the point).
+- **Claude config**: the `~/.claude/*` entries (`CLAUDE.md`, `settings.json`,
+  `keybindings.json`, `skills/`, ...) are symlinks into
+  `~/common/conf/ai/claude/`; edit the repo copy.  Detail and the new-artifact
+  rule live in the `/x-claude-setup` skill.
+- **System (UsrMerge)**: `/bin`, `/sbin`, `/lib*` (see the subsection above).
+
+**The Edit/Write tool refuses to write through a symlinked *file*** (e.g.
+`~/.claude/CLAUDE.md`), erroring with `Refusing to write through symlink: ...`.
+When that happens, run `readlink -f <path>` and edit the resolved real target
+-- which is the git-tracked repo copy you wanted anyway.  A symlinked *parent
+directory* (like `~/common/...` or `~/local/...`) is fine; only a symlinked
+target file trips the guard.
 
 ### Crontab management via makeln
 **Never edit a user's crontab directly with `crontab -e` / `crontab -`** on
@@ -251,8 +342,11 @@ If user asks about EC2 sandbox sync:
   during video call setup -- a light profile; workload size is irrelevant, any
   GPU wake-from-idle ramp now crashes the box. RAPL cap was in place but can't
   catch it: pkg peaked at only ~24W (within PL2); the killer is the sub-ms GPU
-  inrush transient. **New recommended mitigation: GPU frequency cap
-  (`gt_max_freq_mhz` + `gt_boost_freq_mhz` = 400) in termstart.** Side findings:
+  inrush transient. **Mitigation: GPU frequency cap (`gt_max_freq_mhz` +
+  `gt_boost_freq_mhz` = 400) in termstart -- VERIFIED holding 2026-06-09, ~5
+  days up with no crash; kept at 400 (no sluggishness reported). NB: viv-mon's
+  `gfreq=` column reads up to 600 but that's an i915 RC6 readout artifact, not a
+  cap breach -- see the summary doc.** Side findings:
   May 17 cron-revert mystery solved (timeshift rewrites its own cron files);
   keymap mechanism #2 = ECOXGEAR Bluetooth connects (on-demand reproducer now
   available). Hardware intervention (battery + repaste + cap inspection) remains
