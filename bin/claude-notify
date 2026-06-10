@@ -1,0 +1,101 @@
+#! /bin/bash
+
+# claude-notify -- opt in or out of Claude Code "waiting for input"
+# notifications, per host.  Notifications for any subscribed host surface in the
+# Notifications window on the hub (avalir).  Default-off: nothing notifies until
+# you opt a host in, and it keeps notifying until you opt it back out.
+#
+# Usage:
+#   claude-notify [on]         enable notifications from THIS host  (the default)
+#   claude-notify off          disable notifications from THIS host
+#   claude-notify on   <host>  enable a named host, from anywhere
+#   claude-notify off  <host>  disable a named host, from anywhere
+#   claude-notify status       list which hosts are currently enabled
+#   claude-notify emit         (internal) print this host's pending markers, one
+#                              basename-of-cwd per line; used by the monitor to
+#                              pull a remote host's markers over ssh
+#
+# The subscription registry lives on the hub (avalir) under
+# ~/.claude/notify-enabled/ (one empty file per enabled host).  On the hub this
+# edits the registry directly; on another home box it reaches the hub over ssh
+# (those have key auth to it); on the ephemeral EC2 sandbox -- which has no ssh
+# path back into the home network, by design -- it can't, so it tells you to
+# manage that subscription from the hub.  The hub is the sole connection
+# initiator: it reaches OUT to pull markers, nothing reaches back in.
+
+ME=${0##*/}
+
+HUB=avalir
+reg_dir=~/.claude/notify-enabled
+
+# Friendly local hostname.  We go through the localhostname resolver (with -f)
+# rather than $LOCALHOSTNAME, because that var is only set by interactive tcsh
+# and would be absent in a cron environment; the resolver reads /etc/localhostname
+# or falls back to `hostname -s` under bare system perl, and -f trims an EC2
+# sandbox suffix (quin-i-05db... -> quin).  The trim lives in localhostname so
+# there is a single definition of it.
+friendly-localhost()
+{
+	local lh
+	lh=$(~/common/root/lbin/localhostname -f 2>/dev/null)
+	echo "${lh:-$(hostname -s)}"
+}
+
+cmd=${1:-on}
+
+# `emit` is purely local: dump this host's pending markers as basenames of their
+# cwd (one per waiting session).  The caller labels them with the host name.
+if [[ $cmd == emit ]]
+then
+	shopt -s nullglob
+	for marker in /tmp/claude-code-notification-*.json
+	do
+		cwd=$(sed -n 's/.*"cwd": *"\([^"]*\)".*/\1/p' "$marker")
+		echo "${cwd##*/}"
+	done
+	exit 0
+fi
+
+me=$(friendly-localhost)
+host=${2:-$me}
+
+if [[ $me == "$HUB" ]]
+then
+	case "$cmd" in
+		on)
+			mkdir -p "$reg_dir"
+			: > "$reg_dir/$host"
+			echo "$ME: notifications ON for '$host'"
+			;;
+		off)
+			rm -f "$reg_dir/$host"
+			echo "$ME: notifications OFF for '$host'"
+			;;
+		status)
+			if [[ -d $reg_dir ]] && [[ -n $(ls -A "$reg_dir" 2>/dev/null) ]]
+			then
+				echo "enabled: $(ls "$reg_dir" | paste -sd' ' -)"
+			else
+				echo "enabled: (none)"
+			fi
+			;;
+		*)
+			echo "$ME: unknown command '$cmd' (use: on | off | status)" >&2
+			exit 2
+			;;
+	esac
+elif ~/common/bin/friendly-hosts | grep -qw "$me"
+then
+	# A persistent home box (haven, ...): it has key-based ssh to the hub, so
+	# manage the hub's registry over ssh.  BatchMode=yes means we fail fast if a
+	# key is ever missing, rather than sitting at a password prompt.
+	exec ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$HUB" \
+			"~/common/bin/$ME" "$cmd" "$host"
+else
+	# Ephemeral EC2 sandbox (quin): it has no key path back into the home network
+	# and shouldn't -- the hub reaches OUT to pull markers, nothing reaches back
+	# in.  So its subscription is managed from the hub, not from here.
+	echo "$ME: '$me' is the sandbox; it has no ssh path back to the hub ($HUB)." >&2
+	echo "$ME: manage its subscription from $HUB instead, e.g.:  $ME $cmd $host" >&2
+	exit 1
+fi

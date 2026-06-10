@@ -1,0 +1,27 @@
+#! /bin/bash
+
+# Resolve the SSH connection target for the current EC2 sandbox (e.g. quin),
+# via Tailscale -- the same mechanism term-quin uses to find the live sandbox.
+# Prints the ssh target args (port + user@ip) on success; exits non-zero if the
+# sandbox can't be located via Tailscale (the caller decides whether to fall
+# back to SSM, as term-quin does, or simply skip it, as the notification
+# monitor does for a quick poll).
+#
+# Usage:
+#   sandbox-ssh-target [name]            # name defaults to "quin"
+#   ssh $(sandbox-ssh-target) <command>  # -> ssh -p 8822 bburden@100.x.y.z ...
+#
+# Extracted from term-quin so the monitor and term-quin share a single
+# definition of "how do I reach the current sandbox".
+
+ME=${0##*/}
+
+name=${1:-quin}
+: ${CE_REMOTE_USERNAME:=bburden}
+
+# `tailscale status` lists "<ip> <hostname> ..."; the sandbox shows up as
+# "<name>-<launch-id>" (e.g. quin-1757731644), so match the hostname column.
+ip=$(tailscale status 2>/dev/null | awk -v n="^$name-" '$2 ~ n { print $1; exit }')
+[[ $ip ]] || exit 1
+
+echo "-p 8822 ${CE_REMOTE_USERNAME}@${ip}"

@@ -47,31 +47,56 @@ else
 		}
 	}
 
-	# Check for Claude Code notification markers
-	my $hostname = sh(hostname => '-s');
-	chomp $hostname;
-	my @marker_files = glob("/tmp/claude-code-notification-${hostname}-*.json");
-	foreach my $marker_file (@marker_files)
+	# Claude Code "waiting for input" notifications, gated by per-host opt-in.
+	# The subscription registry lives here on the hub (~/.claude/notify-enabled/,
+	# one file per enabled host, managed by `claude-notify`).  For each enabled
+	# host we collect its pending markers via `claude-notify emit` -- run locally
+	# if the host is us, else pulled over ssh -- and show one short blinking line
+	# per waiting session: "Claude [host:projdir]".
+	my @ssh_opts = qw(
+			-o BatchMode=yes
+			-o ConnectTimeout=2
+			-o ServerAliveInterval=4
+			-o ServerAliveCountMax=2
+			-o ControlMaster=auto
+			-o ControlPath=/tmp/claude-notify-ssh-%r@%h:%p
+			-o ControlPersist=30
+	);
+	my $me    = friendly_localhost();
+	my %known = map { $_ => 1 } split ' ', join ' ', capture("$ENV{HOME}/common/bin/friendly-hosts");
+	foreach my $host ( notify_enabled_hosts() )
 	{
-		# Read and parse JSON marker file
-		open my $fh, '<', $marker_file;
-		my $json = do { local $/; <$fh> };
-		close $fh;
-
-		# Extract message using basic regex (avoiding JSON module dependency)
-		if ( $json =~ /"message":\s*"([^"]+)"/ )
+		my @projdirs;
+		if ( $host eq $me )
 		{
-			my $message = $1;
+			@projdirs = capture("$ENV{HOME}/common/bin/claude-notify", 'emit');
+		}
+		else
+		{
+			# A host listed by friendly-hosts is a normal box (plain ssh);
+			# anything else is the EC2 sandbox, reached via its Tailscale
+			# target.  If we can't resolve/reach it this tick, skip it.
+			my @target = ($host);
+			unless ( $known{$host} )
+			{
+				my ($spec) = capture("$ENV{HOME}/common/bin/sandbox-ssh-target", $host);
+				@target = split ' ', ($spec // '');
+			}
+			@target or next;
+			@projdirs = capture(ssh => @ssh_opts, @target, '~/common/bin/claude-notify', 'emit');
+		}
 
-			# Abbreviate common patterns for compact display
-			$message =~ s/^Claude needs your permission to use /Approve /;
-			$message =~ s/is waiting for your input/Waiting for input/;
-			$message =~ s/^Claude //;  # Strip leading "Claude " if still present
-
-			say "${ON}Claude: $message$OFF";
+		foreach my $projdir (@projdirs)
+		{
+			$projdir = '?' if $projdir eq '';
+			say "${ON}Claude [$host:$projdir]${OFF}";
 			$found = 1;
 		}
 	}
+
+	# webcapture marker is still keyed by this box's raw short hostname
+	my $hostname = sh(hostname => '-s');
+	chomp $hostname;
 
 	# Check for webcapture notification marker
 	my $webcapture_marker = "/tmp/webcapture-notification-${hostname}.json";
@@ -92,4 +117,53 @@ else
 	}
 
 	print "\n", sh(date => '+"     %m/%d/%Y  %I:%M%P"') unless $found or $OPT{q};
+}
+
+
+# --- helpers for the Claude-notification aggregation -----------------------
+
+# Run a command (no shell, so no quoting / glob / ~ surprises on this side) and
+# return its stdout as a list of chomped lines.  We fork-and-exec by hand so the
+# child can send its STDERR to /dev/null first: ssh chatter (a raced control
+# socket "disabling multiplexing", a connection timeout, etc.) must never reach
+# the Notifications window.  autodie is off here on purpose: a sandbox that isn't
+# up, or an ssh that times out, should yield no lines, not kill the monitor tick.
+# The literal `~` in a remote command reaches the far shell unexpanded (we never
+# run a local shell), so it expands against the remote home, not ours.
+sub capture
+{
+	my @cmd = @_;
+	no autodie;
+	my $pid = open my $fh, '-|';
+	return () unless defined $pid;
+	unless ($pid)                       # child
+	{
+		open STDERR, '>', '/dev/null';
+		exec { $cmd[0] } @cmd or exit 127;
+	}
+	my @lines = <$fh>;
+	close $fh;
+	chomp @lines;
+	return @lines;
+}
+
+# This box's friendly name (e.g. quin-i-05db... -> quin), via the shared
+# localhostname resolver -- so the trim rule lives in exactly one place.
+sub friendly_localhost
+{
+	my ($name) = capture("$ENV{HOME}/common/root/lbin/localhostname", '-f');
+	return defined $name ? $name : '';
+}
+
+# Hosts currently opted in: the filenames under the hub's notify-enabled
+# registry (empty dir, or no dir at all, means nothing is subscribed).
+sub notify_enabled_hosts
+{
+	my $reg = "$ENV{HOME}/.claude/notify-enabled";
+	return () unless -d $reg;
+	no autodie;
+	opendir my $dh, $reg or return ();
+	my @hosts = sort grep { !/^\./ } readdir $dh;
+	closedir $dh;
+	return @hosts;
 }

@@ -4,22 +4,42 @@ use strict;
 use warnings;
 use autodie;
 
+# Print this machine's short hostname.  With -f/--friendly, also trim an EC2
+# sandbox instance suffix (e.g. quin-i-05db6a... -> quin) to yield the short,
+# stable, human-facing name.
+#
+# WITHOUT the flag the raw name is returned unchanged, on purpose: makeln keys
+# its machine-type detection off the full "quin-i-*" form (`$LOCALHOSTNAME ==
+# "quin-"*`), so trimming by default would make it misclassify a sandbox.  Tools
+# that want the friendly name (claude-notify, monitor-notifications, ...) pass
+# -f rather than re-implementing the trim, so there is a single definition of it.
+
+my $friendly = @ARGV && ( $ARGV[0] eq '-f' || $ARGV[0] eq '--friendly' );
+
+my $name;
 my $lhost_filename = '/etc/localhostname';
 if ( -r $lhost_filename )
 {
-	local *IN;
-	open(IN, $lhost_filename);
-	print scalar <IN>;
-	close(IN);
+	open my $in, '<', $lhost_filename;
+	$name = scalar <$in>;
+	close $in;
 }
 else
 {
-	my $name = `hostname -s 2>/dev/null`;
+	$name = `hostname -s 2>/dev/null`;
 	if ( not $name or $name eq 'localhost' )
 	{
 		$name = $ENV{HOST};
 		$name =~ s/\..*//;
 		$name .= "\n";
 	}
-	print $name;
 }
+
+if ($friendly)
+{
+	chomp $name;
+	$name =~ s/-i-.*//;
+	$name .= "\n";
+}
+
+print $name;

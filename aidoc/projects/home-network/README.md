@@ -61,6 +61,20 @@ the `[[ -d $proj_dir ]]` check and never updates the crontab. Direct
 `crontab` edits stick while in that state — but always *also* fix the
 source file in `conf/crontab/`, since the mounts will be there next time.
 
+### Launching Perl from cron / launchers / non-interactive contexts
+Any Perl script invoked where the interactive shell environment is absent --
+cron jobs, MATE/X keybindings, `.desktop` launchers, systemd units -- must run
+through **`~/bin/launch-perl <script> [args]`**, NOT via its own shebang. A bare
+`#!/usr/bin/env perl` picks up system Perl, which lacks the perlbrew/CPAN and
+`myperl` modules and fails (often *silently*, since stderr is discarded in those
+contexts). `launch-perl` locates perlbrew's Perl, sets `PATH`/`PERL5LIB`/
+`local::lib`, and redirects stderr to `/tmp/launch-perl/<pid>.error`. This holds
+on **quin** too -- its perlbrew env is reproduced there, so `launch-perl` finds
+it. Canonical details: the "Launching Perl from constrained environments"
+section of the repo `CLAUDE.md`. Concrete example in this project: the Haven
+notification cron runs `launch-perl monitor-notifications avalir` rather than the
+script's bare name.
+
 ## Key Documentation
 
 ### Core Network Documentation

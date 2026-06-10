@@ -231,7 +231,7 @@ alias reset-term 'echo -n "\e]0;`echo $LOCALHOSTNAME | perl -lne print\ ucfirst`
 alias pxl-fix "ls -l PXL* && perl -MDate::Easy -E '$pxl_prog' PXL* || echo 'no files to fix'"
 	set _mpv="music-player-volume"
 alias fade-in "$_mpv set 3 ; music-player-ctl -v pos load \!^ ; bash -c 'for i in {4..9} ; do sleep 450 ; $_mpv up ; done'"
-alias ack-claude 'rm /tmp/claude-code-notification-avalir-*'
+alias ack-claude 'rm -f /tmp/claude-code-notification-*'
 	set _screenshots_dir='~/docs/ai/screenshots'
 alias sshot-for-claude 'echo "'$_screenshots_dir'"/`ls -t $_screenshots_dir | head -n1`'
 

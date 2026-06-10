@@ -5,6 +5,21 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Notification system: add a "delay before popup" option so a
+  subscribed Claude only escalates to the Haven zenity URGENT popup after it has
+  been waiting > ~30-60s (you genuinely stepped away), instead of instantly.
+  Would use the marker's `timestamp` field. Deferred as a future feature during
+  the 2026-06-09 opt-in-notifications build (user: "enticing, but maybe a future
+  feature"). _(added 2026-06-09 during claude-notify build)_
+
+- **anytime** — DRY up `bin/term-quin` to use the new `bin/sandbox-ssh-target`
+  helper (which was extracted from term-quin's own Tailscale-IP lookup during
+  the 2026-06-09 notification build). term-quin still carries its own inline copy
+  of the `tailscale status | awk '/quin-/'` logic; point it at sandbox-ssh-target
+  so there's a single definition of "how to reach the current sandbox". Low risk,
+  but it touches the daily sandbox launcher, so verify an actual `term-quin`
+  launch afterward. _(added 2026-06-09 during claude-notify build)_
+
 - **anytime** — Verify the GPU frequency cap is holding: after the next
   `termstart`/boot, `cat /sys/class/drm/card1/gt_max_freq_mhz` should be 400, and
   viv-mon's `gfreq=` column should never exceed ~400 in normal use. If 400MHz

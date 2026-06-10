@@ -1,0 +1,9 @@
+#! /bin/bash
+
+hosts=
+local_dir=$(dirname $0)/../local
+for file in $(ls $local_dir)
+do
+	[[ -d $local_dir/$file ]] && hosts="$hosts $file"
+done
+echo $hosts
