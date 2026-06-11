@@ -5,6 +5,58 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Configure TLP to enforce the Haven GPU frequency cap across
+  AC events. In `/etc/tlp.d/juno-tlp.conf`, uncomment and set all four GPU freq
+  lines to 400:
+  ```
+  INTEL_GPU_MAX_FREQ_ON_AC=400
+  INTEL_GPU_BOOST_FREQ_ON_AC=400
+  INTEL_GPU_MAX_FREQ_ON_BAT=400
+  INTEL_GPU_BOOST_FREQ_ON_BAT=400
+  ```
+  Without this, the 400MHz cap set by termstart is volatile -- it may be reset
+  by mid-session AC events (June 10 crash saw gfreq=600/600 during active video
+  decode, contributing to the crash). TLP applies GPU freq settings on every
+  AC connect/disconnect, so this makes the cap durable. Verify after with
+  `tlp-stat -g` and test by unplugging/replugging AC and checking gt_max_freq_mhz.
+  _(added 2026-06-10 during June 10 crash investigation)_
+
+- **anytime** — Haven charging discipline (June 10 crash mitigations, behavior +
+  config, no code). The June 10 crash needed three legs stacked; the two easiest
+  to remove are about charging: (1) **switch office charging to office-usb**
+  (USB-C) instead of the suspect office-ac adapter -- avoids the suspect
+  adapter+cable path AND USB-C PD's lower wattage limits the bulk-charge spike;
+  (2) **don't let the battery run down to ~16% before plugging in** -- a near-flat
+  40%-health pack bulk-charges at a constant ~21W, which is what stacked onto the
+  video+NoMachine load and crossed the adapter's limit. Keeping it topped up keeps
+  charging in trickle/taper. Both are user habits, captured here so they're not
+  lost. See `summary:haven-jun10-video-crash.md` "Mitigations". _(added 2026-06-10
+  during June 10 crash investigation)_
+
+- **anytime** — (Optional) Try a NoMachine frame-rate / quality cap if further
+  video-over-NoMachine power reduction is wanted. Background: the marco-
+  compositing-off measurement is DONE (2026-06-10, see Done) -- compositing-off
+  is a free but MODEST GPU-clock-up trim that does NOT reduce pkg power, because
+  pkg during video-over-NoMachine is CPU-dominated (software decode + NoMachine
+  capture/encode), with the GPU 75-85% idle. So the `EnableEGLCapture 0` idea is
+  RULED OUT (it would shift capture onto the already-loaded CPU and raise pkg).
+  The only NoMachine knob that would actually cut pkg is reducing the streamed
+  frame rate / quality (fewer captures+encodes per second). Untried; low priority
+  since the charging-discipline + hardware levers dominate. See
+  `summary:haven-jun10-video-crash.md` "Mitigations" #4. _(added 2026-06-10)_
+
+- **anytime** — Fix vivaldi-guard's NoMachine blind spot. It detects NoMachine
+  via `pgrep -f 'nxagent|nxplayer\.bin'`, but the user's actual usage (viewing
+  Haven's *physical* desktop over NoMachine) is a shadow/physical-desktop session
+  that runs through `nxnode -H` with NO nxagent (virtual-session only) and NO
+  nxplayer.bin (that's the client, on Avalir). So the guard's NoMachine-active
+  block has never fired for this usage -- confirmed 2026-06-10 (active `nxnode -H
+  31`, zero nxagent/nxplayer on Haven). Add `nxnode\.bin .*-H` (a served session)
+  to the guard's pattern so it also blocks launches during a physical-desktop
+  session. Low risk; test that it still allows launches when NoMachine is fully
+  disconnected. See `summary:haven-jun10-video-crash.md` "Why vivaldi-guard does
+  not prevent this class". _(added 2026-06-10 during June 10 crash investigation)_
+
 - **anytime** — Notification system: add a "delay before popup" option so a
   subscribed Claude only escalates to the Haven zenity URGENT popup after it has
   been waiting > ~30-60s (you genuinely stepped away), instead of instantly.
@@ -208,6 +260,20 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-10~~ — Quantify the marco-compositing-off win during video-over-
+  NoMachine. **MEASURED** via a controlled 45s-off / 45s-on / back-off sweep on
+  the same video (viv-mon as instrument; intel_gpu_top not installed). Result:
+  compositing OFF = pkg 10.63W mean, GPU idle 221ms (~85%), GPU clock-ups
+  (cur>300) 0%; compositing ON = pkg 10.56W, GPU idle 196ms (~75%), clock-ups
+  15%; neither hit 600MHz. So compositing-off is a free but MODEST GPU-clock-up
+  trim that does NOT move pkg power -- because pkg during video-over-NoMachine is
+  CPU-dominated (software decode + NoMachine capture/encode), GPU 75-85% idle.
+  Kept compositing OFF (free, no power cost). Ruled out `EnableEGLCapture 0`
+  (would shift capture to the loaded CPU, raising pkg); a NoMachine frame-rate
+  cap is the only knob that would cut pkg (spun out to an optional Outstanding
+  item). Full detail in `summary:haven-jun10-video-crash.md` "Mitigations" #4.
+  _(added + completed 2026-06-10 during June 10 crash investigation)_
 
 - ~~2026-06-09~~ — Verify the GPU frequency cap is holding (applied 2026-06-04).
   **VERIFIED holding; kept at 400** (user reports no sluggishness, so NOT bumped

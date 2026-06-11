@@ -38,6 +38,15 @@ then
 	nohup ~/local/bin/viv-mon >/dev/null 2>&1 &
 fi
 
+# Bulk-charge monitor: desktop-notifies when the battery is bulk-charging (high
+# charge current), the load that stacked with video-over-NoMachine to crash the
+# box on 2026-06-10.  Same pidfile-guard / restart-on-crash pattern as viv-mon.
+# See aidoc/projects/home-network/summary:haven-jun10-video-crash.md
+if ! kill -0 "$(cat ~/.bulk-charge-mon.pid 2>/dev/null)" 2>/dev/null
+then
+	nohup ~/local/bin/bulk-charge-mon >/dev/null 2>&1 &
+fi
+
 # Prefer deep S3 over default s2idle: much lower drain in suspend, and less
 # trigger-happy on stray interrupts.  Critical given the 40%-health battery.
 echo deep | sudo tee /sys/power/mem_sleep >/dev/null

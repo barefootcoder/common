@@ -185,8 +185,42 @@ script's bare name.
 ### Desktop Workflow
 - **[desktop-switching-shortcuts.md](desktop-switching-shortcuts.md)**: Interlocking `Ctrl+Alt+Up` / `Ctrl+Alt+Down` MATE shortcuts that switch between paired desktops (Haven↔Avalir, Zadash↔Caemlyn) via NoMachine. Documents the `show-desktop` script, the `WORK`/`HOME` symbolic targets, and the full behavior matrix.
 
+### Haven Crash Forensics
+
+**If Haven just crashed, do these first:**
+
+1. **keymap-mon**: the watcher died -- restart it per the instructions at the
+   top of [keypad-colon-investigation.md](keypad-colon-investigation.md).
+2. **viv-mon**: termstart auto-restarts it via pidfile check on every session
+   start. Confirm it's running: `pgrep -a viv-mon`. The log is at `~/viv-mon.log`
+   (NOT `~/local/log/`); previous log at `~/viv-mon.log.prev` (rotated at 50 MB).
+3. **bulk-charge-mon**: also termstart-restarted via pidfile (dies on crash like
+   the others). Confirm: `pgrep -a bulk-charge-mon`. Log at
+   `~/local/log/bulk-charge-mon.log`. See the "bulk-charge-mon" tool entry below.
+4. **RAPL + GPU cap**: applied by termstart on each boot. Current values:
+   `cat /sys/class/drm/card1/gt_max_freq_mhz` (should be 400).
+5. **Vivaldi stuck on its startup splash?** After an unclean shutdown Vivaldi can
+   come up showing ONLY its faded logo splash ("Made with love in Europe") with
+   no browser UI -- no tab bar, toolbar, or menu, and unresponsive to keystrokes.
+   This is NOT a compositing/GPU problem (the splash paints fine) and NOT a lost
+   session: it's Vivaldi's known post-crash hang -- its UI is itself a web
+   document that stalls loading the crash-recovery state (`exit_type` reads
+   `CrashedOnlyOnce`). Recovery (tabs stay safe throughout; verified 2026-06-10 on
+   the vivaldi-media profile -- recovered on the first relaunch, full session
+   restored, ~5 W pkg, no crash-risk spike):
+   a. **Back up the session first** (it's the only copy of those tabs):
+      `cp -p ~/.config/vivaldi-<profile>/Default/Sessions/* /var/tmp/viv-sess-bak/`
+   b. **Graceful kill** -- SIGTERM, not SIGKILL: `pkill -TERM -f vivaldi-bin`. The
+      graceful signal makes Vivaldi record a clean exit. Confirm `exit_type`
+      flipped to `SessionEnded`/`Normal` (NOT `Crashed*`):
+      `grep -o '"exit_type":"[^"]*"' ~/.config/vivaldi-<profile>/Default/Preferences`
+   c. **Relaunch** via the profile's normal launcher. The clean-exit flag makes it
+      take the normal restore path instead of the hung crash-recovery path.
+   (Profile shown is `vivaldi-media`; the default profile is `~/.config/vivaldi`.
+   See `summary:haven-jun10-video-crash.md` for the session it was first hit in.)
+
 ### Keyboard / Input
-- **[keypad-colon-investigation.md](keypad-colon-investigation.md)**: OPEN investigation into the Shift+keypad-`.` = colon mapping on Haven. Establishes the physical key is **keycode 91** (NOT the long-assumed 129), explains the NumLock-dependent behavior, and documents the running `keymap-mon` watcher. **If Haven just crashed, the watcher died — restart it** (instructions at the top of that doc).
+- **[keypad-colon-investigation.md](keypad-colon-investigation.md)**: OPEN investigation into the Shift+keypad-`.` = colon mapping on Haven. Establishes the physical key is **keycode 91** (NOT the long-assumed 129), explains the NumLock-dependent behavior, and documents the running `keymap-mon` watcher. **If Haven just crashed, the watcher died -- restart it** (instructions at the top of that doc).
 
 ### Sync Maintenance
 - **[syncthing-troubleshooting.md](syncthing-troubleshooting.md)**: Symptom→fix guide for the Syncthing cluster (out-of-sync states, inotify-drop case studies, connectivity, `synudge` helper).
@@ -219,7 +253,8 @@ The following files contain summaries from previous AI collaboration sessions. T
 - `summary:ssh-remote-view-color-loss.md` - June 10 2026: Claude Code's submitted-prompt background tint (256-color index 237, a dark grey) renders crisply when a `screen` session is viewed locally but collapses into the background when the *same* session is reattached over `ssh` from another box: symmetric (local good / remote bad, in both directions), and visible even on an already-typed prompt, because it is purely a display-of-stored-cells difference, not anything Claude re-queries per view. Ruled out the OSC-11 / theme-detection and truecolor-quantization trails (the fill is a plain 256-*indexed* color, confirmed via `tmux capture-pane -e`). Root cause: `TERM` forced to colorless `vt100` on the ssh-attached display, by TWO synced layers: `rc/login`'s unconditional `set term=vt100` (fires on interactive login shells, not on local non-login kitty shells or `ssh host cmd`), and `bin/myterm`'s `faux_cmd="env TERM=vt100"` prepended before any `ssh`/`cessh` (forwarding `vt100` from the start, which is why fixing only `rc/login` left `termstart`-launched windows broken). Fix: gate the `rc/login` fallback to keep a real inherited `TERM`; make `myterm` pick `TERM` per emulator (`kitty`/`urxvt`/`gnome-terminal` get `xterm-256color`, Eterm/others keep `vt100`). Also corrects the now-falsified "faux_term ... actually an improvement" note in `summary:claude-code-terminal-corruption.md`.
 - `summary:phone-music-playlist-sync.md` - May 27 2026: pushed `peaceful.m3u` (21 tracks) from Haven onto the Pixel 4a and got it playing as an ordered playlist in the phone's "Music Player" app (`mp3.music.download.player.music.search`). Documents the reusable song-push recipe (`adb push` to `/sdcard/Music/` + `content call scan_volume`), the app's playlist model (own private SQLite DB, no m3u import, ignores MediaStore playlists), the full set of ruled-out non-root DB-write avenues (root / `run-as` / `adb backup` all dead on Android 13, no exported provider), and the key finding: the playlist's track ORDER survived in the app's cloud-restored DB from the old phone, so selecting all songs and "Add to playlist" slotted them into the remembered order automatically. Limitation: that only works for playlists the old phone already knew — new ones need manual ordering or a different player (TODO captured).
 - `summary:automox-deflect-and-crypt-vault.md` - May 20–22 2026: ops asked the user to run Automox endpoint-management on Avalir; pre-install analysis (root + osquery + cloud-pushed root scripts + lateral movement via Avalir's stored identity) led to MacOS-only scoping. Adjacent hygiene fix: plaintext personal credentials migrated from `Dropbox/sensitive/` (Syncthing-replicated) to age-encrypted vault at `/export/personal/crypt/` using identity-file pattern. Documents the architectural reasoning, the gotchas hit along the way (Avalir's GUI-only pinentry, libsecret per-symkey-id quirk, age 1.0's no-stdin-passphrase policy, prompt-cycle pain that drove the identity-file pivot), and the Avalir→work-only trajectory.
-- `summary:haven-jun4-gpu-ramp-crash.md` - **[START HERE for Haven crash issues -- most recent]** June 4 2026: silent power-off at 17:00:43 PDT after ~12d 13h uptime. User-confirmed trigger: exit + restart of ungoogled-chromium (a LIGHT profile -- one window, ~12 tabs) while setting up a video call. GPU frequency ramped from constant 300MHz to 1083/1100MHz at the restart moment (browser GPU-process init + camera-preview page reload); crash within ~1s. RAPL cap (PL1=20W / PL2=27W) was in place but did NOT prevent it -- measured pkg peaked at only ~24W, within the limit; the killer is the sub-millisecond inrush transient of the GPU idle→max ramp, which RAPL's averaging windows can't see. Key implication: workload size is irrelevant; ANY GPU wake-from-idle ramp now exceeds the degraded power-delivery margin (Vivaldi is immune only because it runs `--disable-gpu`; UC has no guard). Timeshift exonerated for THIS crash (its 17:00 fire was a 200ms no-op; the heavy daily snapshot ran at 14:00 and survived fine) -- but the side investigation SOLVED the May 17 cron-revert mystery (timeshift itself rewrites `timeshift-hourly`/`timeshift-boot` to match its settings on every run; mtime 14:00:02 = the 14:00 check) and surfaced that boot snapshots fire 10 min after every boot (hazard window). Second major finding: keymap revert mechanism #2 IDENTIFIED -- every ECOXGEAR Bluetooth speaker connect makes X add an AVRCP "keyboard" and recompile the keymap (pc105/us Xorg-log signature; historical hits all land on weekends, matching the Saturday speaker habit) -- giving the keypad investigation an on-demand reproducer. Recommended mitigation: GPU frequency cap in termstart (`gt_max_freq_mhz` AND `gt_boost_freq_mhz` to 400). See `summary:haven-jun4-gpu-ramp-crash.md`.
+- `summary:haven-jun10-video-crash.md` - **[START HERE for Haven crash issues -- most recent]** June 10 2026: silent power-off at 14:53 PDT after ~6 days uptime, during video playback (vivaldi-media) over NoMachine on office-ac. **Three legs stacked**: (1) battery at 16% discharging when plugged in at 14:26 -> hard ~21W constant bulk-charge through the crash; (2) video-over-NoMachine sustained CPU+iGPU load, pkg peaked 27.86W (>PL2=27W); (3) flaky office-ac adapter couldn't supply ~48W combined. Sustained-load crash, NOT June 4's sub-ms GPU transient. **Corrects a first-pass error (user caught it):** vivaldi-guard worked -- vivaldi-media routes through it (panel launcher, --disable-gpu injected) and ran continuously for days (the "07:33 launch" was a viv-mon log rotation, not a restart). The GPU load isn't the browser (GPU disabled) but the display path --disable-gpu can't touch: marco compositing (on) + NoMachine nxnode capturing/encoding the framebuffer at realtime priority. Mitigations (best first): office-usb charging (avoids suspect adapter + lower bulk-charge wattage); don't drain to ~16% before plugging in; TLP GPU cap for AC durability; hardware fix (40%-health battery is leg #1). See TODO.md.
+- `summary:haven-jun4-gpu-ramp-crash.md` - June 4 2026: silent power-off at 17:00:43 PDT after ~12d 13h uptime. User-confirmed trigger: exit + restart of ungoogled-chromium (a LIGHT profile -- one window, ~12 tabs) while setting up a video call. GPU frequency ramped from constant 300MHz to 1083/1100MHz at the restart moment (browser GPU-process init + camera-preview page reload); crash within ~1s. RAPL cap (PL1=20W / PL2=27W) was in place but did NOT prevent it -- measured pkg peaked at only ~24W, within the limit; the killer is the sub-millisecond inrush transient of the GPU idle→max ramp, which RAPL's averaging windows can't see. Key implication: workload size is irrelevant; ANY GPU wake-from-idle ramp now exceeds the degraded power-delivery margin (Vivaldi is immune only because it runs `--disable-gpu`; UC has no guard). Timeshift exonerated for THIS crash (its 17:00 fire was a 200ms no-op; the heavy daily snapshot ran at 14:00 and survived fine) -- but the side investigation SOLVED the May 17 cron-revert mystery (timeshift itself rewrites `timeshift-hourly`/`timeshift-boot` to match its settings on every run; mtime 14:00:02 = the 14:00 check) and surfaced that boot snapshots fire 10 min after every boot (hazard window). Second major finding: keymap revert mechanism #2 IDENTIFIED -- every ECOXGEAR Bluetooth speaker connect makes X add an AVRCP "keyboard" and recompile the keymap (pc105/us Xorg-log signature; historical hits all land on weekends, matching the Saturday speaker habit) -- giving the keypad investigation an on-demand reproducer. Recommended mitigation: GPU frequency cap in termstart (`gt_max_freq_mhz` AND `gt_boost_freq_mhz` to 400). See `summary:haven-jun4-gpu-ramp-crash.md`.
 - `summary:haven-may22-double-crash.md` - May 22 2026: **two silent power-offs in 15 minutes**. Crash #1 at 17:07:23 PDT after a 3 d 19 h uptime, during browser-over-NoMachine activity, with three `AC:`-tagged udev firings landing in the crash second (rapid AC-online bounce). Crash #2 at 17:21:58 PDT — only 34 seconds into the recovery boot, killed by termstart's own self-launching processes pushing CPU pkg power past ~38 W. Both deaths at the same pkg threshold (sustained ~30 W, peak ~38 W); no thermal, GPU, or IO component. Surfaced two new signals: (a) Haven has been logging ~18 spurious AC-online transitions per day for a week (vs. user's actual ~6/day plug-cycle), pointing at flaky AC adapter/cable/jack; (b) the crash threshold has dropped low enough that a routine boot's own activity can cross it. Three mitigations applied: termstart de-burst (sleeps between parallel launches), RAPL package-power cap (PL1=20W / PL2=27W on intel-rapl:0, written from termstart), and new `ac-mode` tool (`common/bin/ac-mode`) for localizing the AC anomaly across charging methods (office-ac / office-usb / office-both / den-ac). Initial den-ac data point: zero AC events in first 10 minutes (vs. 0.75/hr office-ac baseline) — too small to conclude but qualitatively favors office-side flakiness. Hardware intervention (battery + repaste + cap inspection) still pending; RAPL cap is the bandage until then.
 - `summary:haven-may17-timeshift-snapshot-crash.md` - May 17 2026 (with May 23 follow-up section appended): silent power-off at 05:00:33 PDT after ~3.5-day uptime, overnight unattended, plugged in, no NoMachine. First crash investigation in the May series where the post-May-13 viv-mon instrumentation and journalctl together identify a specific proximate trigger: the daily Timeshift snapshot fired by the hourly `--check` cron at 05:00:01. viv-mon data cleanly rules out thermal (peak 61°C), GPU (rc6 rose through failure, gfreq returned to 300MHz after a one-sample blip), and user activity (tp=off, load=0.25 right up to the trigger). 02:00/03:00/04:00 lightweight `--check` fires all survived with ~1-second bursts; 05:00 was the daily-snapshot fire (heavier rsync). Existing exclusions already cover `/home/buddy/**`, `/root/**`, and `/export/**` (separate filesystem). Two live-config mitigations attempted (cron `nice/ionice` wrapper + JSON exclusion rework to bring `~/` into snapshots) **both failed silently** — the cron edit was reverted by an unknown actor 12 minutes later, and the exclusion rework had zero practical effect because Timeshift's RSYNC mode has hardcoded `/home/*` defaults that override the user `exclude` array. Both findings documented in the May 23 follow-up section; the crash analysis itself still stands. Neither failure has bitten us because the May 22 RAPL cap covers the original crash risk independently. Bigger lever still pending: hardware intervention.
 - `summary:haven-may13-vivmon-fix-and-nomachine-profile.md` - May 13 2026: another silent power-off, this time during a workspace switch onto a fullscreen video with NoMachine active. Three takeaways. (a) `viv-mon`'s `pkg=` and `gpu=` columns have been silently zero for the entire May 11→13 window — RAPL energy counters are root-only by default (PLATYPUS / CVE‑2020‑8694) and `rd()` swallowed the failure. Fixed: termstart now `chmod a+r`s them at boot; `viv-mon` rewritten to pick RAPL subdomains by name, add `gfreq=cur/act` and `rc6=Δms` columns from `/sys/class/drm/card1/`, add `tp=on/off` touchpad-state column and a periodic `BROWSERS` snapshot line listing distinct browser profiles, and rename the misleading `gpu=` field to `unc=`. (b) Captured the user's full NoMachine usage profile (servers, fullscreen-only, sound-on-Avalir, both clipboard modes; the per-host switching hotkeys are MATE+`show-desktop`, NOT a NoMachine feature) and assessed `xpra shadow` as a possible replacement — covers the functional surface, but the assessment ends with a **defer recommendation**: the crash data doesn't actually point at NoMachine, crashes happen without it, real root cause is hardware, switching cost is non-trivial. Revisit only if the next crash's new viv-mon data shows GPU climbing + RC6 collapsing in the final seconds. (c) Mystery: intermittent ~1-sec truncated audio clip the user has been chasing for weeks; logged for future correlation.
@@ -338,20 +373,39 @@ If user asks about EC2 sandbox sync:
 
 ## Current Status
 
-- **Haven crashed again (June 4 2026):** Silent power-off at 17:00:43 PDT after
+- **Haven crashed again (June 10 2026):** Silent power-off at 14:53 PDT after
+  ~6 days uptime, during video playback (vivaldi-media) over NoMachine on
+  office-ac. **Three legs stacked** (remove any one and it likely doesn't crash):
+  (1) battery was at **16% discharging** when plugged in at 14:26, triggering a
+  hard ~21W constant bulk-charge that ran through the crash; (2) video-over-
+  NoMachine sustained CPU+iGPU load (pkg peaked 27.86W >PL2); (3) the known-flaky
+  office-ac adapter couldn't supply the ~48W combined draw. Sustained-load crash,
+  NOT the June-4 sub-ms GPU transient. **Key correction (user caught my first-pass
+  error):** vivaldi-guard worked correctly -- vivaldi-media DOES route through it
+  (panel launcher, with --disable-gpu injected) and ran continuously for days (no
+  restart; the "07:33 launch" was a viv-mon log rotation). The GPU load is NOT the
+  browser (its GPU was disabled) but the display path --disable-gpu can't touch:
+  **marco compositing (on) + NoMachine nxnode capturing/encoding the framebuffer
+  at realtime priority**, recompositing the video region every frame. Mitigations
+  (best leverage first): switch office charging to **office-usb** (avoids suspect
+  adapter, lower bulk-charge wattage); don't run battery to ~16% before plugging
+  in; TLP GPU freq cap for AC-event durability; hardware fix (battery is leg #1)
+  remains the real lever. See `summary:haven-jun10-video-crash.md`.
+- **Haven crashed (June 4 2026):** Silent power-off at 17:00:43 PDT after
   ~12d 13h uptime. GPU ramp (300→1083MHz) triggered by ungoogled-chromium restart
   during video call setup -- a light profile; workload size is irrelevant, any
   GPU wake-from-idle ramp now crashes the box. RAPL cap was in place but can't
   catch it: pkg peaked at only ~24W (within PL2); the killer is the sub-ms GPU
-  inrush transient. **Mitigation: GPU frequency cap (`gt_max_freq_mhz` +
+  inrush transient. Mitigation: GPU frequency cap (`gt_max_freq_mhz` +
   `gt_boost_freq_mhz` = 400) in termstart -- VERIFIED holding 2026-06-09, ~5
-  days up with no crash; kept at 400 (no sluggishness reported). NB: viv-mon's
-  `gfreq=` column reads up to 600 but that's an i915 RC6 readout artifact, not a
-  cap breach -- see the summary doc.** Side findings:
-  May 17 cron-revert mystery solved (timeshift rewrites its own cron files);
-  keymap mechanism #2 = ECOXGEAR Bluetooth connects (on-demand reproducer now
-  available). Hardware intervention (battery + repaste + cap inspection) remains
-  the real fix -- 2026-08-03 re-check. See `summary:haven-jun4-gpu-ramp-crash.md`.
+  days up with no crash; kept at 400 (no sluggishness reported). NOTE after June 10
+  crash: gfreq=600/600 readings during ACTIVE GPU work are real, not just RC6
+  artifacts -- the 600/0 RC6-idle readings are still artifacts but active-decode
+  600/600 readings require attention. Side findings: May 17 cron-revert mystery
+  solved (timeshift rewrites its own cron files); keymap mechanism #2 = ECOXGEAR
+  Bluetooth connects (on-demand reproducer now available). Hardware intervention
+  (battery + repaste + cap inspection) remains the real fix -- 2026-08-03 re-check.
+  See `summary:haven-jun4-gpu-ramp-crash.md`.
 - **`show-desktop` duplicate-session heisenbug diagnosed + fixed** (May 28 2026):
   The intermittent bug where `Ctrl+Alt+Up/Down` would *sometimes* launch a new
   NoMachine session instead of focusing the existing one (no discernible pattern;
@@ -434,6 +488,28 @@ If user asks about EC2 sandbox sync:
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
 
 ## Tools and Scripts
+
+### bulk-charge-mon
+Haven-local watcher (`local/haven/bin/bulk-charge-mon`, Perl, core-only) that
+fires a desktop notification (`notify-send` on `:0`, visible locally and over
+NoMachine) when the battery starts **bulk-charging** -- drawing high charge
+current, the load that stacked with video-over-NoMachine to crash the box on
+2026-06-10. A near-flat 40%-health pack bulk-charges at a constant ~20W; that
+on top of the display load pushed the flaky office-ac adapter over its limit.
+
+- **Detects**: `status=Charging` AND charge power >= 15 W (computed from
+  `current_now * voltage_now` on `/sys/class/power_supply/BAT0`). Hysteresis:
+  clears below 10 W (taper) -- prevents notification flapping.
+- **Notifies**: a **persistent** critical-urgency bubble at onset (`--expire-time
+  0`, so it stays up the whole time it's bulk-charging -- you can't miss it by
+  glancing late); when it tapers, that same bubble is replaced in place
+  (`--replace-id`) with a transient normal-urgency all-clear.
+- **Manual check**: `bulk-charge-mon status` prints a one-shot snapshot
+  (`battery=.. status=.. charge=..W bulk-charging=YES/no`) using the same
+  threshold; `tail ~/local/log/bulk-charge-mon.log` shows the on/off history.
+- **Lifecycle**: launched pidfile-guarded from `termstart` (like viv-mon); dies
+  on crash, restarted next session. Log: `~/local/log/bulk-charge-mon.log`.
+- Polls every 20 s (bulk charge lasts many minutes, so onset latency <= 20 s).
 
 ### ac-mode
 Tracks Haven's AC charging method against journalctl's `AC: Process` udev

@@ -1,0 +1,150 @@
+#! /usr/bin/perl
+#
+# bulk-charge-mon -- warn when Haven's battery is bulk-charging (drawing high
+# charge current), the load that -- stacked with the GPU/CPU load of video over
+# NoMachine -- crashed the box on 2026-06-10.  A near-flat 40%-health pack
+# bulk-charges at a constant ~20W; that on top of the display load pushed the
+# flaky office-ac adapter past its limit.
+#
+# Two modes:
+#   bulk-charge-mon          daemon: poll BAT0, notify on bulk-charge onset/end
+#   bulk-charge-mon status   one-shot: print whether it's bulk-charging right now
+#
+# The onset notification is PERSISTENT (expire-time 0): the bubble stays up the
+# whole time it's bulk-charging, so you can't miss "still charging" by glancing
+# late.  When it tapers, that same bubble is replaced in place with a transient
+# all-clear.  For a definitive manual check any time, run `bulk-charge-mon
+# status` (or `tail ~/local/log/bulk-charge-mon.log` for the on/off history).
+#
+# See aidoc/projects/home-network/summary:haven-jun10-video-crash.md
+#
+# Launched pidfile-guarded from local/haven/bin/termstart, like viv-mon; dies on
+# a crash/reboot, restarted by the next termstart.  Core Perl only -- a bare
+# shebang is fine, no launch-perl / PERL5LIB / CPAN.
+
+use strict;
+use warnings;
+
+my $BAT     = '/sys/class/power_supply/BAT0';
+my $PIDFILE = "$ENV{HOME}/.bulk-charge-mon.pid";
+my $LOG     = "$ENV{HOME}/local/log/bulk-charge-mon.log";
+my $POLL    = 20;       # seconds between samples (bulk charge lasts many minutes)
+
+# Hysteresis on charge power (watts into the battery): enter "bulk" above ENTER,
+# leave below EXIT.  CC-phase charging of a depleted pack sits near ~20W; taper
+# (CV phase, ~80%+) and topped-off both fall well under EXIT.  The gap keeps a
+# reading hovering near the line from flapping the notification.
+my $ENTER = 15.0;
+my $EXIT  = 10.0;
+
+# notify-send / gsettings need the user's session bus; DISPLAY alone isn't
+# enough for a detached process, so point at the standard systemd user bus too.
+my $uid = $<;
+$ENV{DISPLAY}                  = ':0';
+$ENV{DBUS_SESSION_BUS_ADDRESS} ||= "unix:path=/run/user/$uid/bus";
+
+sub rd
+{
+	my ($f) = @_;
+	open my $fh, '<', "$BAT/$f" or return undef;
+	my $v = <$fh>;
+	close $fh;
+	chomp $v if defined $v;
+	return $v;
+}
+
+# charge power in watts = current_now (uA) * voltage_now (uV); 0 if unreadable
+sub charge_watts
+{
+	my $i = rd('current_now');
+	my $v = rd('voltage_now');
+	return 0 unless defined $i and defined $v;
+	return ($i / 1e6) * ($v / 1e6);
+}
+
+# --- manual query mode: `bulk-charge-mon status` -------------------------------
+# One-shot snapshot (no pidfile, no daemon), using the same threshold the daemon
+# uses, so a manual check always agrees with what the notifications would say.
+if (@ARGV and $ARGV[0] eq 'status')
+{
+	my $status = rd('status')   // '?';
+	my $pct    = rd('capacity') // '?';
+	my $w      = charge_watts;
+	my $bulk   = ($status eq 'Charging' and $w >= $ENTER) ? 'YES' : 'no';
+	printf "battery=%s%%  status=%s  charge=%.1fW  bulk-charging=%s  (threshold %.0fW)\n",
+			$pct, $status, $w, $bulk, $ENTER;
+	exit 0;
+}
+
+# --- daemon mode ---------------------------------------------------------------
+open my $pf, '>', $PIDFILE or die "$0: cannot write $PIDFILE: $!\n";
+print $pf "$$\n";
+close $pf;
+
+sub logline
+{
+	my ($msg) = @_;
+	my @t = localtime;
+	my $ts = sprintf '%04d-%02d-%02dT%02d:%02d:%02d',
+			$t[5] + 1900, $t[4] + 1, $t[3], $t[2], $t[1], $t[0];
+	if (open my $lf, '>>', $LOG)
+	{
+		print $lf "$ts $msg\n";
+		close $lf;
+	}
+}
+
+# notify-send returning the notification id (via --print-id), or undef on
+# failure.  Caller-supplied args (urgency, expire-time, replace-id, title, body)
+# follow the fixed app-name/icon.  Never let a missing daemon kill the loop.
+sub notify
+{
+	my (@args) = @_;
+	my $id;
+	if (open my $fh, '-|', 'notify-send', '--print-id', '--app-name',
+			'bulk-charge-mon', '--icon', 'battery-caution', @args)
+	{
+		$id = <$fh>;
+		close $fh;
+		chomp $id if defined $id;
+	}
+	return $id;
+}
+
+logline 'START monitoring';
+
+my $in_bulk  = 0;
+my $notif_id;       # id of the persistent onset bubble, so we can replace it
+
+while (1)
+{
+	my $status = rd('status')   // '';
+	my $pct    = rd('capacity') // '?';
+	my $watts  = charge_watts;
+
+	if (not $in_bulk and $status eq 'Charging' and $watts >= $ENTER)
+	{
+		$in_bulk = 1;
+		logline sprintf 'BULK on  pct=%s%% charge=%.1fW', $pct, $watts;
+		# expire-time 0 = never auto-dismiss: stays up until it tapers.
+		$notif_id = notify '--urgency', 'critical', '--expire-time', '0',
+				'Haven is bulk-charging',
+				sprintf 'Battery %s%%, drawing ~%.0f W to charge. This bubble stays up '
+				      . 'until it tapers -- hold off on video over NoMachine until then.',
+						$pct, $watts;
+	}
+	elsif ($in_bulk and ($status ne 'Charging' or $watts < $EXIT))
+	{
+		$in_bulk = 0;
+		logline sprintf 'BULK off pct=%s%% charge=%.1fW status=%s', $pct, $watts, $status;
+		# Replace the persistent onset bubble in place with a transient all-clear
+		# (so the "still charging" bubble doesn't linger after it's done).
+		my @replace = $notif_id ? ('--replace-id', $notif_id) : ();
+		notify @replace, '--urgency', 'normal',
+				'Haven charging tapered',
+				sprintf 'Battery %s%%, charge draw now low. GPU-heavy use is safer.', $pct;
+		$notif_id = undef;
+	}
+
+	sleep $POLL;
+}
