@@ -156,14 +156,19 @@ skill scans this file on load and surfaces due/pending items.
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
 - **anytime** — Empirical office AC adapter swap (the next step out of the
-  2026-06-03 ac-mode analysis). Buy a new office AC adapter+cable (will take time;
-  no rush -- RAPL cap is the live crash mitigation). When it arrives, swap it,
-  KEEP the `office-ac` label, use normally for ~1 week, then re-run `ac-mode
-  report`: office-ac falling to the ~13/day common floor = adapter was the culprit;
-  staying at ~18/day = points at the laptop's barrel jack / internal AC path. See
-  the "ac-mode analysis (2026-06-03)" section of
+  2026-06-03 ac-mode analysis). **ORDERED 2026-06-12:** DTK 90W 19V/4.74A
+  5.5x2.5mm barrel adapter (Amazon, $17) -- a generic match for Haven's OEM
+  Chicony A16-090P1A brick (Haven = Clevo NS5x/NS7xAU, standard N-series 5.5x2.5mm
+  tip). Tip verified by the user via direct visual A/B against the den-ac adapter
+  (a known-working Haven charger): identical barrel, dimple ring, inner-barrel
+  flathead slots, and right-angle two-level housing. Awaiting delivery. **When it
+  arrives:** swap it in at the office, KEEP the `office-ac` label (do NOT relabel),
+  use normally for ~1 week, then re-run `ac-mode report` -- office-ac falling to
+  the ~13/day common floor = the old adapter was the culprit; staying at ~18/day =
+  points at the laptop's barrel jack / internal AC path. The ~1-week clock starts
+  at swap-in, not at order. See the "ac-mode analysis (2026-06-03)" section of
   `summary:haven-may22-double-crash.md`. _(added 2026-06-03, supersedes the spent
-  "re-run after avoidance week" item)_
+  "re-run after avoidance week" item; ordered 2026-06-12)_
 
 - **anytime** — Validate RAPL cap is working: after the next `termstart` / boot,
   check that `viv-mon.log` shows `pkg=` values not exceeding ~27W in normal use.
