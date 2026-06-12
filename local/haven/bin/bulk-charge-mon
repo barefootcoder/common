@@ -37,7 +37,7 @@ my $POLL    = 20;       # seconds between samples (bulk charge lasts many minute
 my $ENTER = 15.0;
 my $EXIT  = 10.0;
 
-# notify-send / gsettings need the user's session bus; DISPLAY alone isn't
+# The gdbus Notify call needs the user's session bus; DISPLAY alone isn't
 # enough for a detached process, so point at the standard systemd user bus too.
 my $uid = $<;
 $ENV{DISPLAY}                  = ':0';
@@ -94,27 +94,56 @@ sub logline
 	}
 }
 
-# notify-send returning the notification id (via --print-id), or undef on
-# failure.  Caller-supplied args (urgency, expire-time, replace-id, title, body)
-# follow the fixed app-name/icon.  Never let a missing daemon kill the loop.
+# Fire a desktop notification via the D-Bus Notify method and return the
+# server-assigned id (or undef on failure).  We call gdbus directly rather than
+# notify-send because Haven's libnotify is 0.7.9, which has NEITHER --print-id
+# (to capture the id) NOR --replace-id (to replace a bubble in place) -- the two
+# things this monitor's persistent-onset-then-replace design needs.  gdbus
+# introspects the method, so the bare positional args below coerce to the right
+# GVariant types (the multi-word strings -> 's', the hint dict -> 'a{sv}').
+# Never let a notify failure kill the poll loop.
+#
+#   notify($urgency, $expire, $replaces, $title, $body)
+#     $urgency : 0 low, 1 normal, 2 critical
+#     $expire  : 0 = never auto-dismiss, or milliseconds to live
+#     $replaces: 0 for a fresh bubble, or a prior id to replace in place
 sub notify
 {
-	my (@args) = @_;
+	my ($urgency, $expire, $replaces, $title, $body) = @_;
 	my $id;
-	if (open my $fh, '-|', 'notify-send', '--print-id', '--app-name',
-			'bulk-charge-mon', '--icon', 'battery-caution', @args)
+	if (open my $fh, '-|', 'gdbus', 'call', '--session',
+			'--dest',        'org.freedesktop.Notifications',
+			'--object-path', '/org/freedesktop/Notifications',
+			'--method',      'org.freedesktop.Notifications.Notify',
+			'bulk-charge-mon', $replaces, 'battery-caution',
+			$title, $body, '[]', "{'urgency': <byte $urgency>}", $expire)
 	{
-		$id = <$fh>;
+		my $out = <$fh>;
 		close $fh;
-		chomp $id if defined $id;
+		# reply looks like "(uint32 7,)"; anchor on the space so the "32" in
+		# "uint32" can't be mistaken for the id.
+		($id) = $out =~ /uint32\s+(\d+)/ if defined $out;
 	}
 	return $id;
+}
+
+# Title + body for the bulk-charge bubble, built from the live readings.  Both
+# the onset and the in-place refreshes use this, so the wording stays in sync
+# and the displayed numbers track the charge.
+sub bulk_body
+{
+	my ($pct, $watts) = @_;
+	return ('Haven is bulk-charging',
+			sprintf 'Battery %s%%, drawing ~%.0f W to charge. This bubble stays up '
+			      . 'until it tapers -- hold off on video over NoMachine until then.',
+					$pct, $watts);
 }
 
 logline 'START monitoring';
 
 my $in_bulk  = 0;
 my $notif_id;       # id of the persistent onset bubble, so we can replace it
+my $shown_pct;      # the % currently painted in that bubble (refresh on change)
 
 while (1)
 {
@@ -125,25 +154,37 @@ while (1)
 	if (not $in_bulk and $status eq 'Charging' and $watts >= $ENTER)
 	{
 		$in_bulk = 1;
+		$shown_pct = $pct;
 		logline sprintf 'BULK on  pct=%s%% charge=%.1fW', $pct, $watts;
-		# expire-time 0 = never auto-dismiss: stays up until it tapers.
-		$notif_id = notify '--urgency', 'critical', '--expire-time', '0',
-				'Haven is bulk-charging',
-				sprintf 'Battery %s%%, drawing ~%.0f W to charge. This bubble stays up '
-				      . 'until it tapers -- hold off on video over NoMachine until then.',
-						$pct, $watts;
+		# urgency critical, expire 0 = never auto-dismiss (stays up until it
+		# tapers), replaces 0 = a fresh bubble.
+		$notif_id = notify 2, 0, 0, bulk_body($pct, $watts);
 	}
 	elsif ($in_bulk and ($status ne 'Charging' or $watts < $EXIT))
 	{
 		$in_bulk = 0;
 		logline sprintf 'BULK off pct=%s%% charge=%.1fW status=%s', $pct, $watts, $status;
-		# Replace the persistent onset bubble in place with a transient all-clear
-		# (so the "still charging" bubble doesn't linger after it's done).
-		my @replace = $notif_id ? ('--replace-id', $notif_id) : ();
-		notify @replace, '--urgency', 'normal',
+		# Replace the persistent onset bubble in place (pass its id as replaces)
+		# with a transient normal-urgency all-clear that auto-dismisses (10s), so
+		# the "still charging" bubble doesn't linger after it's done.
+		notify 1, 10000, ($notif_id // 0),
 				'Haven charging tapered',
 				sprintf 'Battery %s%%, charge draw now low. GPU-heavy use is safer.', $pct;
 		$notif_id = undef;
+	}
+	elsif ($in_bulk and $notif_id and $pct ne $shown_pct)
+	{
+		# Still bulk-charging and the battery % moved: refresh the SAME bubble in
+		# place (replaces_id) so the number tracks the climb.  mate's daemon
+		# updates a same-id notification quietly, with no re-pop (verified live
+		# 2026-06-11).  Gated on integer-% change, so it refreshes ~once a minute
+		# as the pack climbs, not on every poll.
+		my $rid = notify 2, 0, $notif_id, bulk_body($pct, $watts);
+		if (defined $rid)
+		{
+			$notif_id  = $rid;
+			$shown_pct = $pct;
+		}
 	}
 
 	sleep $POLL;

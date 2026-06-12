@@ -519,8 +519,8 @@ If user asks about EC2 sandbox sync:
 
 ### bulk-charge-mon
 Haven-local watcher (`local/haven/bin/bulk-charge-mon`, Perl, core-only) that
-fires a desktop notification (`notify-send` on `:0`, visible locally and over
-NoMachine) when the battery starts **bulk-charging** -- drawing high charge
+fires a desktop notification (via the D-Bus `Notify` method on `:0`, visible
+locally and over NoMachine) when the battery starts **bulk-charging** -- drawing high charge
 current, the load that stacked with video-over-NoMachine to crash the box on
 2026-06-10. A near-flat 40%-health pack bulk-charges at a constant ~20W; that
 on top of the display load pushed the flaky office-ac adapter over its limit.
@@ -528,10 +528,23 @@ on top of the display load pushed the flaky office-ac adapter over its limit.
 - **Detects**: `status=Charging` AND charge power >= 15 W (computed from
   `current_now * voltage_now` on `/sys/class/power_supply/BAT0`). Hysteresis:
   clears below 10 W (taper) -- prevents notification flapping.
-- **Notifies**: a **persistent** critical-urgency bubble at onset (`--expire-time
+- **Notifies**: a **persistent** critical-urgency bubble at onset (`expire_timeout
   0`, so it stays up the whole time it's bulk-charging -- you can't miss it by
-  glancing late); when it tapers, that same bubble is replaced in place
-  (`--replace-id`) with a transient normal-urgency all-clear.
+  glancing late); its battery %/watts **refresh in place** as the pack climbs
+  (re-`Notify` with the same `replaces_id` whenever the integer % moves, ~once a
+  minute -- mate updates a same-id bubble quietly, with no re-pop, verified
+  2026-06-11); when it tapers, that same bubble is replaced in place (the onset's
+  notification id fed back as `replaces_id`) with a transient normal-urgency
+  all-clear.
+- **Why gdbus, not notify-send**: Haven's `notify-send` is libnotify **0.7.9**,
+  which has neither `--print-id` (to capture the id) nor `--replace-id` (to
+  replace a bubble in place) -- the two things the persistent-then-replace design
+  needs. So the script calls the `org.freedesktop.Notifications` `Notify` method
+  via `gdbus` instead (which returns the id and takes `replaces_id`). The first
+  cut used notify-send and silently fired NOTHING -- every call died on `Unknown
+  option --print-id` before sending -- so no bubble ever appeared until this was
+  found and fixed 2026-06-11. Any other Haven desktop-notification code that
+  needs an id or replace-in-place must use gdbus for the same reason.
 - **Manual check**: `bulk-charge-mon status` prints a one-shot snapshot
   (`battery=.. status=.. charge=..W bulk-charging=YES/no`) using the same
   threshold; `tail ~/local/log/bulk-charge-mon.log` shows the on/off history.

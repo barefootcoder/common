@@ -5,6 +5,19 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Confirm `bulk-charge-mon`'s live-`%` update fires in a real bulk
+  cycle. The notify path was fixed 2026-06-11 (gdbus, not notify-send -- Haven's
+  libnotify 0.7.9 lacks `--print-id`/`--replace-id`, so the original silently
+  fired NOTHING, which is why no popup ever appeared), and a live-update refresh
+  branch was added (re-`Notify` with the same `replaces_id` when the integer %
+  moves). The quiet in-place update was verified with a synthetic test bubble,
+  but the refresh branch itself hasn't run in an actual bulk-charge yet (battery
+  was too full to trigger one). Next time Haven is plugged in below ~80%, watch
+  the "Haven is bulk-charging" bubble climb its % in place, and check
+  `~/local/log/bulk-charge-mon.log` for the BULK on/off pair. See the
+  "bulk-charge-mon" tool entry in README. _(added 2026-06-11 during the
+  notify-path fix + live-update build)_
+
 - **anytime** — Avalir trackball lag: read `~/local/log/trackball-mon.log` after
   the next episode and identify the interferer. Diagnosis is confirmed at the
   layer (the 2.4GHz Unifying link between the MX Ergo and its receiver, not USB /
