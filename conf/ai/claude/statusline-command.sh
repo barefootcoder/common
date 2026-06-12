@@ -56,31 +56,33 @@ cost_display=$(awk -v c="$total_cost" 'BEGIN {
     else                printf "$%.6f", c;
 }')
 
-# Context window usage: both the token count and the percentage come straight
-# from the JSON.  .context_window.total_input_tokens already folds in cache
-# creation/reads, and .used_percentage is computed on that same input-only
-# basis, so the displayed number and its color stay consistent with each other.
+# Context window headroom: the raw token count is always large and hard to
+# reason about, so the thing that actually matters mid-task -- how much room is
+# left before space runs out -- gets lost.  Turn it around and show free space
+# instead.  .total_input_tokens already folds in cache creation/reads, and
+# dividing by the window size gives the same input-only basis as
+# .used_percentage, so this is effectively the "NN.N% free" figure /context
+# reports, minus all the per-server breakdown noise.
 context_tokens=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
-context_percent=$(echo "$input" | jq -r '(.context_window.used_percentage // 0) | floor')
-
-# Format token count (K for thousands, M for millions)
-if [ "$context_tokens" -ge 1000000 ]; then
-    token_display="$((context_tokens / 1000000))M"
-elif [ "$context_tokens" -ge 1000 ]; then
-    token_display="$((context_tokens / 1000))K"
+if [ "$context_window_size" -gt 0 ]; then
+    context_free=$(awk -v t="$context_tokens" -v w="$context_window_size" \
+        'BEGIN { f = (1 - t / w) * 100; if (f < 0) f = 0; printf "%.1f", f }')
 else
-    token_display="$context_tokens"
+    context_free="100.0"
 fi
 
-# Color-code the token count by how much of the window is consumed
-if [ "$context_percent" -ge 75 ]; then
-    token_color="\e[1;31m"          # red at 75%+
-elif [ "$context_percent" -ge 60 ]; then
-    token_color="\e[1;33m"          # yellow at 60-74%
-else
-    token_color=""                  # default below 60%
+# Color-code free space so it stays quiet while there is plenty of room and
+# escalates as headroom shrinks: green above 40%, yellow down to 25%, red down
+# to 10%, then white-on-red below that to make a nearly-full window impossible
+# to miss.  (The yellow/red cutoffs are the free-space complement of the old
+# 60%/75%-used warning levels, plus a new critical tier.)
+free_int=${context_free%.*}
+if   [ "$free_int" -le 10 ]; then free_color="\e[1;97;41m"   # white on red: critical
+elif [ "$free_int" -le 25 ]; then free_color="\e[1;31m"      # red
+elif [ "$free_int" -le 40 ]; then free_color="\e[1;33m"      # yellow
+else                              free_color="\e[32m"        # green: healthy
 fi
-token_display="${token_color}${token_display}\e[0m"
+free_display="${free_color}${context_free}% free\e[0m"
 
 # Set cost warning and model display based on actual model ID
 case "$model_id" in
@@ -144,8 +146,9 @@ if [ -n "$effort_level" ]; then
     effort_display=" ${effort_color}${effort_level}\e[0m"
 fi
 
-# Output compact status line with cost and token usage.  Effort (when present)
-# rides right after the model name, since it is a property of how the model runs.
-printf "%b%b %s%b | %s | %s | %b tokens | [%s]\n" \
+# Output compact status line with cost and the free-space gauge.  Effort (when
+# present) rides right after the model name, since it is a property of how the
+# model runs.
+printf "%b%b %s%b | %s | %s | %b | [%s]\n" \
     "$sandbox_indicator" "$cost_warning" "$model_short" "$effort_display" \
-    "$project_name" "$cost_display" "$token_display" "$session_display"
+    "$project_name" "$cost_display" "$free_display" "$session_display"
