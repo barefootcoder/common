@@ -5,6 +5,24 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Avalir trackball lag: read `~/local/log/trackball-mon.log` after
+  the next episode and identify the interferer. Diagnosis is confirmed at the
+  layer (the 2.4GHz Unifying link between the MX Ergo and its receiver, not USB /
+  not autosuspend / not battery / not host software -- see
+  `summary:avalir-trackball-lag.md`), but the root cause (what changed ~early June)
+  and a fix are still open. The `~/oneoff/trackball-mon` watcher (deployed
+  2026-06-11, running detached) logs the jump signature + solaar link state + node
+  absent/present when it next happens. Follow-ups: (a) analyze the log and tune
+  thresholds (`TBMON_GAP`/`TBMON_JUMP`, `TBMON_DEBUG=1`); (b) **user test** -- power
+  off Haven's trackball at the base switch for a day and see if Avalir's lag stops;
+  (c) Bluetooth was soft-blocked as a free elimination (`sudo rfkill block
+  bluetooth`) -- if the lag recurs anyway, BT is exonerated, consider re-enabling;
+  (d) if it proves useful, promote the monitor to `local/avalir/bin/` + termstart
+  (pidfile-gated like viv-mon); (e) fallback fixes if confirmed RF-on-marginal-link:
+  USB extension cable for line-of-sight, spare Unifying receiver via solaar re-pair,
+  or MX Ergo on Bluetooth via Easy-Switch as an A/B. _(added 2026-06-11 during the
+  trackball-lag investigation)_
+
 - **anytime** — Configure TLP to enforce the Haven GPU frequency cap across
   AC events. In `/etc/tlp.d/juno-tlp.conf`, uncomment and set all four GPU freq
   lines to 400:
