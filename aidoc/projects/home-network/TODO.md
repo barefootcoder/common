@@ -36,22 +36,6 @@ skill scans this file on load and surfaces due/pending items.
   or MX Ergo on Bluetooth via Easy-Switch as an A/B. _(added 2026-06-11 during the
   trackball-lag investigation)_
 
-- **anytime** — Configure TLP to enforce the Haven GPU frequency cap across
-  AC events. In `/etc/tlp.d/juno-tlp.conf`, uncomment and set all four GPU freq
-  lines to 400:
-  ```
-  INTEL_GPU_MAX_FREQ_ON_AC=400
-  INTEL_GPU_BOOST_FREQ_ON_AC=400
-  INTEL_GPU_MAX_FREQ_ON_BAT=400
-  INTEL_GPU_BOOST_FREQ_ON_BAT=400
-  ```
-  Without this, the 400MHz cap set by termstart is volatile -- it may be reset
-  by mid-session AC events (June 10 crash saw gfreq=600/600 during active video
-  decode, contributing to the crash). TLP applies GPU freq settings on every
-  AC connect/disconnect, so this makes the cap durable. Verify after with
-  `tlp-stat -g` and test by unplugging/replugging AC and checking gt_max_freq_mhz.
-  _(added 2026-06-10 during June 10 crash investigation)_
-
 - **anytime** — Haven charging discipline (June 10 crash mitigations, behavior +
   config, no code). The June 10 crash needed three legs stacked; the two easiest
   to remove are about charging: (1) **switch office charging to office-usb**
@@ -75,18 +59,6 @@ skill scans this file on load and surfaces due/pending items.
   frame rate / quality (fewer captures+encodes per second). Untried; low priority
   since the charging-discipline + hardware levers dominate. See
   `summary:haven-jun10-video-crash.md` "Mitigations" #4. _(added 2026-06-10)_
-
-- **anytime** — Fix vivaldi-guard's NoMachine blind spot. It detects NoMachine
-  via `pgrep -f 'nxagent|nxplayer\.bin'`, but the user's actual usage (viewing
-  Haven's *physical* desktop over NoMachine) is a shadow/physical-desktop session
-  that runs through `nxnode -H` with NO nxagent (virtual-session only) and NO
-  nxplayer.bin (that's the client, on Avalir). So the guard's NoMachine-active
-  block has never fired for this usage -- confirmed 2026-06-10 (active `nxnode -H
-  31`, zero nxagent/nxplayer on Haven). Add `nxnode\.bin .*-H` (a served session)
-  to the guard's pattern so it also blocks launches during a physical-desktop
-  session. Low risk; test that it still allows launches when NoMachine is fully
-  disconnected. See `summary:haven-jun10-video-crash.md` "Why vivaldi-guard does
-  not prevent this class". _(added 2026-06-10 during June 10 crash investigation)_
 
 - **anytime** — Notification system: add a "delay before popup" option so a
   subscribed Claude only escalates to the Haven zenity URGENT popup after it has
@@ -296,6 +268,53 @@ skill scans this file on load and surfaces due/pending items.
   show-desktop BadWindow-race diagnosis)_
 
 ## Done
+
+- ~~2026-06-12~~ — Fix vivaldi-guard's NoMachine detection gap. **DONE** (user
+  approved; applied to `bin/vivaldi-guard`, synced to both boxes). The original
+  framing here was too strong and is corrected: the guard's block has NOT "never
+  fired" -- it fires constantly via `nxplayer.bin` (the client), and the user
+  confirmed it blocks in both directions in everyday use. Live process data
+  (2026-06-12, both boxes mutually viewing) explained why: the guard keys off
+  the CLIENT process, but in the user's usual bidirectional pairing BOTH boxes
+  run a client, so it trips on each. The real gap is narrower: the crash-risk
+  LOAD is on the SERVED box (running `nxnode.bin -H` + `nxcodec.bin`, capturing/
+  encoding its framebuffer -- the part `--disable-gpu` can't touch), and the
+  guard catches that only INCIDENTALLY (because the served box is usually also a
+  client). In a ONE-directional session (A views B, B not viewing back), the
+  served box B runs only `nxnode.bin -H` -- no client, no nxagent -- so the guard
+  did NOT fire on it. That is exactly the 2026-06-10 Haven state (`nxnode -H 31`,
+  zero nxplayer/nxagent) when vivaldi-media ran unguarded and the box crashed.
+  Fix: added `nxnode\.bin -H` to the guard's `pgrep -f` alternation. Validated
+  live on both boxes -- the ` -H` anchor matches an active served session but
+  NOT the always-running bare `nxnode.bin` daemon worker (matching plain
+  `nxnode` would block Vivaldi permanently). Comment block rewritten to document
+  all three roles + the one-directional rationale. Note: the clause is
+  host-agnostic (matches the existing "block in either direction" intent), so it
+  will also block a Vivaldi launch on Avalir when Avalir is being served
+  one-directionally -- harmless (Avalir has no crash risk) but a new block;
+  gate the clause to Haven if that ever annoys. See
+  `summary:haven-jun10-video-crash.md` "Why vivaldi-guard does not prevent this
+  class". _(added 2026-06-10 during June 10 crash investigation, completed
+  2026-06-12 during the doc-notes + TLP-cap session)_
+
+- ~~2026-06-12~~ — Configure TLP to enforce the Haven GPU frequency cap across
+  AC events. **DONE + VERIFIED (config side).** Uncommented and set the four
+  MAX/BOOST lines in `/etc/tlp.d/juno-tlp.conf` to 400
+  (`INTEL_GPU_MAX_FREQ_ON_AC`, `INTEL_GPU_BOOST_FREQ_ON_AC`,
+  `INTEL_GPU_MAX_FREQ_ON_BAT`, `INTEL_GPU_BOOST_FREQ_ON_BAT`); the two MIN lines
+  left at the commented `=0` default. Original backed up to
+  `/etc/tlp.d/juno-tlp.conf.pre-gpucap.bak` first. Reloaded with `sudo tlp
+  start`; `tlp-stat -g` now reports `gt_max_freq_mhz=400` /
+  `gt_boost_freq_mhz=400` (hardware RP0 ceiling is 1500, so it is a real cap).
+  This makes the 400 cap durable across mid-session AC events -- TLP re-applies
+  GPU freq on every AC connect/disconnect -- instead of relying solely on
+  termstart's one-time boot write, closing the gap behind the June 10 crash's
+  gfreq=600/600-during-decode reading. Edited over `ssh` from Avalir;
+  `/etc/tlp.d/` is host-local so this change lives only on Haven (not synced).
+  **Remaining (user, physical only):** confirm with an actual unplug/replug that
+  `gt_max_freq_mhz` stays 400 across the AC transition. _(added 2026-06-10
+  during June 10 crash investigation, completed 2026-06-12 during the
+  doc-notes + TLP-cap session)_
 
 - ~~2026-06-10~~ — Quantify the marco-compositing-off win during video-over-
   NoMachine. **MEASURED** via a controlled 45s-off / 45s-on / back-off sweep on

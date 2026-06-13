@@ -20,9 +20,21 @@
 
 : ${ME:=${0##*/}}
 
-# nxagent      — server-side X server spawned per incoming NoMachine session
-# nxplayer.bin — client-side viewer running when connected to a remote host
-if pgrep -f 'nxagent|nxplayer\.bin' >/dev/null 2>&1
+# Detect an active NoMachine session, in any role (see project doc
+# summary:haven-jun10-video-crash.md "Why vivaldi-guard does not prevent this"):
+#   nxagent       : server side of a VIRTUAL (headless) session
+#   nxplayer.bin  : client-side viewer -- the box you are viewing FROM
+#   nxnode.bin -H : server side of a PHYSICAL-desktop shadow -- the box being
+#                   viewed, capturing+encoding its real framebuffer (the
+#                   GPU/display load that crashes Haven). Anchor on the -H flag:
+#                   a bare nxnode.bin daemon worker runs at all times, so
+#                   matching plain 'nxnode' would block Vivaldi permanently.
+# The client checks (nxagent/nxplayer) fire on whichever box is viewing, so in
+# the usual both-ways-paired session the guard already trips on both ends. The
+# nxnode.bin -H clause is what catches a ONE-directional session on the served
+# box itself (viewed but not viewing back) -- the exact case that ran Vivaldi
+# unguarded on Haven during the 2026-06-10 crash.
+if pgrep -f 'nxagent|nxplayer\.bin|nxnode\.bin -H' >/dev/null 2>&1
 then
 	title='Vivaldi launch blocked'
 	msg='<span foreground="red" size="x-large"><b>NoMachine is active.</b></span>'$'\n\n'

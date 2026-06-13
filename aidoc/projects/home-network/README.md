@@ -63,6 +63,40 @@ a reboot will clear state, restart a detached process, or reload config — a pr
 you start will keep running for months. If something must survive the *rare* crash,
 treat that as the exceptional case (wire it into `termstart`), not the norm.
 
+### Password-less sudo on Avalir and Haven
+Both Avalir and Haven are set up for **password-less `sudo`** for the primary
+user: `sudo` runs privileged commands without ever prompting for a password.
+An agent can therefore run `sudo` freely (e.g. `sudo tlp start`, `sudo tee`
+into `/etc/...`, editing root-owned config, `sudo journalctl`) without needing
+a password and without the call silently hanging on a hidden prompt -- this
+holds both on the box directly and when driving it over `ssh` (verified on
+Haven via `sudo -n true`). This is specific to Avalir and Haven; do NOT assume
+it on quin or other hosts.
+
+### Encrypted root disks (LUKS) on Avalir and Haven
+Both boxes run with their **root/system disk LUKS-encrypted** behind a fairly
+long passphrase. `/etc/crypttab`'s key field is `none` -- no keyfile, no TPM
+auto-unlock -- so the passphrase is typed at boot. Implications:
+- `fdisk -l` / `lsblk` show a `crypto_LUKS` partition feeding a `dm-crypt`
+  mapper into LVM (`vgmint-root` = `/`), NOT a plain filesystem on the raw
+  partition. That is expected, not a misconfiguration. Per-host layout:
+  - **Avalir**: single NVMe; `nvme0n1p3` (crypto_LUKS) -> `nvme0n1p3_crypt`
+    -> `vgmint-root` (`/`). `/export` lives *inside* the encrypted root, so on
+    Avalir effectively everything is encrypted at rest.
+  - **Haven**: `nvme0n1p3` (crypto_LUKS) -> `nvme1n1p3_crypt` (the mapper name
+    reflects the NVMe enumeration flip noted in the fstab-UUID summary) ->
+    `vgmint-root` (`/`). But Haven's big **`/export` data partition
+    (`nvme1n1p1`, ~950G) is plain ext4, NOT encrypted** -- the Syncthing-shared
+    tree at rest is in the clear on Haven.
+- Because the key is a boot-time passphrase (no auto-unlock), a **cold boot
+  stops at a LUKS prompt that must be answered at the console.** Combined with
+  "Haven and Avalir do NOT reboot" above, the disks are effectively
+  always-unlocked in steady state -- but a Haven crash-reboot does NOT come
+  back unattended: someone has to type the passphrase first.
+- For security reasoning: data at rest on the encrypted volumes is protected,
+  so weight live/online compromise over physical-disk theft -- with the caveat
+  that Haven's `/export` is the exception (unencrypted at rest).
+
 ### Deliberately disabled -- so don't assume "broken" means broken
 Hardware/services intentionally turned off on a given box, recorded here so a
 future "why doesn't X work?" doesn't trigger a wild goose chase -- the answer

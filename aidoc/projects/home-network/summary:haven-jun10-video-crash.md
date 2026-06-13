@@ -98,16 +98,25 @@ NoMachine is active, and (b) injects --disable-gpu. Neither helps here:
   NoMachine session connected, so the launch block never fired.
 - (b) only disables the browser's GPU use. The crash load is the compositor +
   NoMachine capture path, which --disable-gpu doesn't touch.
-- **NEW blind spot found 2026-06-10:** even at launch time, (a) would NOT have
-  fired for the user's actual NoMachine usage. vivaldi-guard detects NoMachine
-  via `pgrep -f 'nxagent|nxplayer\.bin'`. But the user views Haven's *physical*
-  desktop over NoMachine (a shadow/physical-desktop session), which runs through
-  `nxnode` + the real Xorg `:0` -- **no `nxagent`** (that's only for virtual
-  sessions) and **no `nxplayer.bin`** (that's the client, on Avalir, not Haven).
-  Confirmed live: an active session (`nxnode -H 31`) was running with zero
-  nxagent/nxplayer on Haven. So the guard's NoMachine block has never fired for
-  this session type. Fix would be to also detect `nxnode.bin -H` (a served
-  session) -- captured in TODO.
+- **Detection gap (found 2026-06-10; framing corrected + FIXED 2026-06-12):**
+  the launch block (a) keys off `pgrep -f 'nxagent|nxplayer\.bin'` -- i.e. the
+  CLIENT (`nxplayer.bin`, the box viewing FROM) or a VIRTUAL-session server
+  (`nxagent`). The crash-risk LOAD, though, is on the box being VIEWED: it runs
+  `nxnode.bin -H` + `nxcodec.bin`, capturing/encoding the real framebuffer (the
+  part --disable-gpu can't touch). The original 2026-06-10 note here said the
+  block "has never fired for this session type" -- that was WRONG, and the user
+  corrected it: in the everyday both-ways-paired setup BOTH boxes run a client,
+  so the guard DOES fire on each (the user confirmed it blocks in both
+  directions, and live process data on 2026-06-12 showed `nxplayer.bin` running
+  on Avalir and Haven simultaneously). The gap is narrower: in a ONE-directional
+  session (Avalir views Haven, Haven not viewing back) the served box runs only
+  `nxnode.bin -H` -- no client, no nxagent -- so the guard did not fire on it.
+  That is exactly this crash's Haven state (`nxnode -H 31`, zero nxplayer/
+  nxagent), with vivaldi-media running unguarded. **Fixed 2026-06-12:** added
+  `nxnode\.bin -H` to the guard's pattern (anchored on `-H` so the
+  always-running bare `nxnode.bin` daemon worker is not matched), so the guard
+  now also fires on the served box itself. See the matching TODO Done entry for
+  the full validation.
 
 So the guard worked as coded but is aimed at the wrong signals for this usage.
 No launcher fix is needed (my first-pass TODO to "create a vivaldi-media
