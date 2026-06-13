@@ -75,6 +75,12 @@ feature myperl => sub
 	requires 'MooseX::StrictConstructor';
 	requires 'Devel::Declare', '== 0.006019';		# newer version breaks Method::Signatures
 };
+feature 'myperl-gmail' => sub
+{
+	requires 'URI';
+	requires 'LWP::UserAgent';
+	requires 'LWP::Protocol::https';				# needed for HTTPS to the Gmail REST API
+};
 
 # required for `xrestore` et al
 feature xrestore => sub

@@ -1,0 +1,30 @@
+#! /usr/bin/env perl
+
+use myperl::Script NO_SYNTAX => 0;		# we load myperl::Gmail, a class-based module that needs the syntax keywords
+
+use myperl::Gmail;
+use JSON::PP;
+
+opts <<'-';
+	<command> [args ...]
+	read-only access to a personal Gmail account (reads ~/.config/gmail-personal/creds)
+	commands:
+	  search <query>   message stubs matching a Gmail query (from:, newer_than:, subject:, ...)
+	  get <id>         one message: decoded text body plus the key headers
+	  labels           the account's labels
+	output is JSON on stdout
+-
+
+const our $CREDS => "$ENV{HOME}/.config/gmail-personal/creds";
+-e $CREDS or die("$ME: no creds at $CREDS -- run gmail-personal-auth first\n");
+
+my $command = shift or die("$ME: need a command: search|get|labels\n");
+my $gmail   = myperl::Gmail->from_creds_file($CREDS);
+
+my $result;
+if    ($command eq 'search') { $result = [ $gmail->search("@ARGV") ] }
+elsif ($command eq 'get')    { $result = $gmail->get( shift @ARGV // die("$ME: get needs a message id\n") ) }
+elsif ($command eq 'labels') { $result = [ $gmail->labels ] }
+else                         { die("$ME: unknown command '$command' (use search|get|labels)\n") }
+
+print JSON::PP->new->utf8->canonical->pretty->encode($result);

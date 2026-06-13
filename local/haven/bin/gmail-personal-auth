@@ -1,0 +1,94 @@
+#! /usr/bin/env perl
+
+use myperl::Script NO_SYNTAX => 0;		# we load myperl::Gmail, a class-based module that needs the syntax keywords
+
+use myperl::Gmail;
+use JSON::PP;
+use URI::Escape qw< uri_unescape >;
+use IO::Socket::INET;
+use File::Path qw< make_path >;
+
+opts <<'-';
+	[-p <port>] <client-id>
+	one-time OAuth grant for a personal Gmail account; writes ~/.config/gmail-personal/creds,
+	which gmail-personal then reads at runtime
+	-p : loopback callback port (default 8080; must match the GCP redirect URI)
+	<client-id> : the NNN-xxxx.apps.googleusercontent.com OAuth client id from the GCP console
+	you'll be prompted for the client secret (kept off the command line and shell history)
+-
+
+const our $CREDS_DIR => "$ENV{HOME}/.config/gmail-personal";
+
+my $port      = $OPT{'p'} || 8080;
+my $client_id = shift or die("$ME: need the OAuth client id (try: $ME -h)\n");
+my $client_secret = prompt_secret("OAuth client secret (input hidden): ");
+
+my $gmail = myperl::Gmail->new(
+	client_id		=>	$client_id,
+	client_secret	=>	$client_secret,
+	redirect_uri	=>	"http://localhost:$port/callback",
+);
+
+my $url = $gmail->auth_url;
+say STDERR "\nOpen this URL in your browser, sign in as your PERSONAL account, click through the\n",
+		   "'unverified app' warning (Advanced -> proceed), and grant read access:\n\n$url\n";
+system('xdg-open', $url);				# best-effort; the URL is printed above regardless
+
+my $code    = await_oauth_code($port);
+my $tokens  = $gmail->exchange_code($code);
+my $refresh = $tokens->{refresh_token}
+		or die("$ME: Google returned no refresh token -- re-run (the consent URL forces prompt=consent, so this is unexpected)\n");
+
+make_path($CREDS_DIR, { mode => 0700 });
+my $credfile = "$CREDS_DIR/creds";
+open my $fh, '>', $credfile;
+print {$fh} JSON::PP->new->canonical->pretty->encode({
+	client_id		=>	$client_id,
+	client_secret	=>	$client_secret,
+	refresh_token	=>	$refresh,
+});
+close $fh;
+chmod 0600, $credfile;
+
+say STDERR "\nWrote $credfile (chmod 600).  Test it with:  gmail-personal labels";
+
+
+# Read the client secret without echoing it to the terminal (keeps it out of scrollback).
+sub prompt_secret
+{
+	my ($msg) = @_;
+
+	print STDERR $msg;
+	system('stty', '-echo');
+	my $secret = <STDIN>;
+	system('stty', 'echo');
+	print STDERR "\n";
+
+	chomp $secret;
+	return $secret;
+}
+
+# One-shot loopback listener: catch Google's redirect and pull the ?code= out of the request line.
+sub await_oauth_code
+{
+	my ($port) = @_;
+
+	my $srv = IO::Socket::INET->new(
+		LocalHost	=>	'127.0.0.1',
+		LocalPort	=>	$port,
+		Listen		=>	1,
+		ReuseAddr	=>	1,
+	) or die("$ME: can't listen on port $port: $!\n");
+	say STDERR "Waiting for the OAuth redirect on http://localhost:$port/callback ...";
+
+	my $conn = $srv->accept;
+	my $request = <$conn>;
+	my ($code) = $request =~ m{[?&]code=([^&\s]+)};
+	print {$conn} "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n",
+				  "gmail-personal-auth: authorization received -- you can close this tab.\n";
+	close $conn;
+	close $srv;
+
+	$code or die("$ME: no authorization code in the redirect:\n$request\n");
+	return uri_unescape($code);
+}
