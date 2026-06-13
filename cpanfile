@@ -75,18 +75,6 @@ feature myperl => sub
 	requires 'MooseX::StrictConstructor';
 	requires 'Devel::Declare', '== 0.006019';		# newer version breaks Method::Signatures
 };
-feature 'myperl-google' => sub
-{
-	requires 'Number::Latin';
-	requires 'Config::General';
-	requires 'Time::ParseDate';						# rewrite to use Date::Easy?
-	requires 'MooseX::NonMoose';
-	requires 'Class::PseudoHash';
-	requires 'Net::Google::Calendar';
-	requires 'Net::Google::PicasaWeb';
-	requires 'Net::Google::Spreadsheets';
-	requires 'Net::Google::DocumentsList';
-};
 
 # required for `xrestore` et al
 feature xrestore => sub
@@ -110,15 +98,15 @@ feature support => sub
 {
 	requires 'Term::Size';
 	requires 'File::Next';
-	requires 'Date::Parse';								# `perlsecs` uses this, but should be rewritten to use Date::Easy
-	requires 'MCE::Shared';								# `git-grep-all` uses this
-	requires 'Git::Helpers';							# `syconf-analyze` uses this
-	requires 'Sys::RunAlone';							# `music-player-ctl` uses this
-	requires 'Regexp::Common';							# `clgrep` uses this
+	requires 'Date::Parse';							# `perlsecs` uses this, but should be rewritten to use Date::Easy
+	requires 'MCE::Shared';							# `git-grep-all` uses this
+	requires 'Git::Helpers';						# `syconf-analyze` uses this
+	requires 'Sys::RunAlone';						# `music-player-ctl` uses this
+	requires 'Regexp::Common';						# `clgrep` uses this
 	requires 'List::AllUtils';
-	requires 'Time::ParseDate';							# `perlsecs` uses this, but should be rewritten to use Date::Easy
+	requires 'Time::ParseDate';						# `fake_timeravg`, `perlsecs` use this (but should use Date::Easy)
 	requires 'Number::Bytes::Human';
-	requires 'Date::Gregorian::Business';				# `fake_timerdavg` uses this
+	requires 'Date::Gregorian::Business';			# `fake_timerdavg` uses this
 };
 
 # required for music scripts
