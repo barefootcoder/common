@@ -601,7 +601,12 @@ ac-mode modes                   # dump full mode log
 ac-mode labels                  # list valid labels
 ```
 
-Valid labels: `office-ac`, `office-usb`, `office-both`, `den-ac`.
+Valid labels: `office-ac`, `office-usb`, `office-both`, `den-ac`, `spare-ac`.
+Each is a distinct physical unit fixed at its location (office barrel adapter /
+office USB-C / both / den barrel adapter), except `spare-ac`: the old office
+adapter retired 2026-06-15 (a Chicony, a different unit from den-ac), kept as a
+roaming low-load spare and given its own label so any pinch-use never pollutes
+the new office-ac adapter's data.
 Mode log lives at `~/local/log/ac-mode.log` (host-local, not synced).
 Run `ac-mode <label>` *immediately before* the next plug action — the
 mark defines the active mode for any AC events that follow it. No

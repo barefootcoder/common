@@ -127,20 +127,42 @@ skill scans this file on load and surfaces due/pending items.
   gated on acquiring the battery, so this date is a re-check, not a hard deadline).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
-- **anytime** — Empirical office AC adapter swap (the next step out of the
-  2026-06-03 ac-mode analysis). **ORDERED 2026-06-12:** DTK 90W 19V/4.74A
-  5.5x2.5mm barrel adapter (Amazon, $17) -- a generic match for Haven's OEM
-  Chicony A16-090P1A brick (Haven = Clevo NS5x/NS7xAU, standard N-series 5.5x2.5mm
-  tip). Tip verified by the user via direct visual A/B against the den-ac adapter
-  (a known-working Haven charger): identical barrel, dimple ring, inner-barrel
-  flathead slots, and right-angle two-level housing. Awaiting delivery. **When it
-  arrives:** swap it in at the office, KEEP the `office-ac` label (do NOT relabel),
-  use normally for ~1 week, then re-run `ac-mode report` -- office-ac falling to
-  the ~13/day common floor = the old adapter was the culprit; staying at ~18/day =
-  points at the laptop's barrel jack / internal AC path. The ~1-week clock starts
-  at swap-in, not at order. See the "ac-mode analysis (2026-06-03)" section of
-  `summary:haven-may22-double-crash.md`. _(added 2026-06-03, supersedes the spent
-  "re-run after avoidance week" item; ordered 2026-06-12)_
+- **2026-06-22** — Analyze the empirical office AC adapter swap (the next step out
+  of the 2026-06-03 ac-mode analysis). **SWAPPED IN 2026-06-15:** the DTK 90W
+  19V/4.74A 5.5x2.5mm barrel adapter (Amazon, $17; ordered 2026-06-12) replaced the
+  suspect old office barrel adapter (now labeled `spare-ac`) at the office. The DTK
+  is a generic match for `den-ac`'s spec (Chicony A16-090P1A: 90W, 19V/4.74A,
+  5.5x2.5mm barrel; Haven = Clevo NS5x/NS7xAU, standard N-series tip). den-ac is a
+  SEPARATE, known-good Chicony that lives in the den and is staying; it is the unit
+  we have a photo of (`~/docs/ai/screenshots/chicony-laptop-adapter.jpg`, Jun 11),
+  and the A16-090P1A model number + 19.0V/4.74A/90W rating were read straight off
+  that label -- so A16-090P1A IS den-ac, NOT the retired office adapter and not
+  (verified) any "Haven OEM" unit. The DTK's tip was verified by the user via
+  direct visual A/B against den-ac: identical barrel, dimple ring, inner-barrel
+  flathead slots, right-angle two-level housing. The retired office adapter (now
+  `spare-ac`) is itself a Chicony but a DIFFERENT physical unit, exact model
+  unconfirmed (user's read: possibly a bit smaller than den-ac). **Boundary mark:** `2026-06-15T19:05:18-0700 office-ac` --
+  every `office-ac` event after that timestamp is the NEW adapter. We KEPT the
+  `office-ac` label (did NOT relabel): `ac-mode report` renders one row per
+  mark-interval, so the fresh mark isolates the new adapter's data automatically
+  while the pre-June-10 office-ac intervals stay as the frozen ~18/day baseline.
+  **On/after 2026-06-22 (~1 week of normal office use on the new adapter):** run
+  `ac-mode report '2026-06-15 19:05:18'` and read the office-ac interval row(s)
+  since the boundary. office-ac falling to the ~13/day common floor = the old
+  adapter was the culprit (CONFIRMED); staying at ~18/day = old adapter exonerated,
+  points at the laptop's barrel jack / internal AC path. Note: since June 10 the
+  user had been deliberately on `office-usb`/`den-ac` (charging-discipline
+  mitigation), so the office-ac slot was cold for 5 days before this swap -- clean
+  start. **Then decide old-adapter disposition** (do NOT toss it before the verdict
+  -- it's the control): if confirmed flaky, retire it from Haven (the box already
+  has den-ac + the new office brick, so it's redundant) -- keep as a clearly-labeled
+  low-load/emergency spare, NOT for the high-draw office video-over-NoMachine
+  scenario or bulk-charging a low battery. If it's ever pressed into Haven service,
+  mark it `spare-ac` (label already added to `@LABELS` in `bin/ac-mode` 2026-06-15)
+  so its events don't contaminate the new adapter's clean office-ac data. See the "ac-mode
+  analysis (2026-06-03)" section of `summary:haven-may22-double-crash.md`. _(added
+  2026-06-03, supersedes the spent "re-run after avoidance week" item; ordered
+  2026-06-12; swapped in + analysis scheduled 2026-06-15)_
 
 - **anytime** — Validate RAPL cap is working: after the next `termstart` / boot,
   check that `viv-mon.log` shows `pkg=` values not exceeding ~27W in normal use.

@@ -21,7 +21,15 @@ use File::Basename;
 
 my $ME     = basename($0);
 my $LOG    = "$ENV{HOME}/local/log/ac-mode.log";
-my @LABELS = qw< office-ac office-usb office-both den-ac >;
+# Every label is a distinct physical unit that stays put: office-ac (the office
+# barrel adapter), office-usb (the office USB-C feed), office-both (both at once),
+# den-ac (a separate barrel adapter that lives in the den).  spare-ac is the
+# exception -- not tied to a location: it's the old office barrel adapter retired
+# 2026-06-15 (the AC-event suspect; itself a Chicony, but a different unit from
+# den-ac and of unconfirmed model), kept as a roaming low-load spare.  Its own
+# label keeps any pinch-use from polluting the new office-ac adapter's data.
+# See the aidoc home-network TODO + the May 22 crash summary's "ac-mode analysis".
+my @LABELS = qw< office-ac office-usb office-both den-ac spare-ac >;
 my %VALID  = map { $_ => 1 } @LABELS;
 
 sub usage
