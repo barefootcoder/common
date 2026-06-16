@@ -275,6 +275,7 @@ my %DESCRIPTIONS =
 							qr/Coldstone( Creamery)?/i,
 							qr/Yogurtland/i,
 							qr/Raising Canes/i,
+							qr/Wingstop/i,
 						],
 	Personal		=>	[
 							qr/PlayStation Net(work)?/i,
@@ -284,6 +285,8 @@ my %DESCRIPTIONS =
 							qr/Kickstarter/i,
 							qr/Critical Role/i,
 							qr/Renegade Games/i,
+							qr/Renegade Game Studios/i,
+							qr/Valkyrie Vault/i,
 							qr/Treasured Memories/i,
 							qr/Jimmy ?Beans ?Wool?/i,
 							qr/Joann\b/i,
@@ -615,6 +618,12 @@ foreach (@transactions)
 		when ( /TM ON THE GO?/i )
 		{
 			$what = 'Treasured Memories';
+			$category = "Personal";
+			$who = 'Christy';
+		}
+		when ( /LAUGHTER AND MEMOR/i )
+		{
+			$what = 'Laughter and Memories';
 			$category = "Personal";
 			$who = 'Christy';
 		}
