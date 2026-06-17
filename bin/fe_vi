@@ -4,19 +4,29 @@ BEGIN { eval { require 5.14.0 } or exec "vim", @ARGV }
 use 5.14.0;
 use warnings FATAL => 'all';
 
-my $timer_line_sep = "=" x 40;
 my $svn_line_sep = qr{ -- .* ignored-- $ }x;
 my $cvs_line_sep = "CVS: " . "-" x 70;
 my $git_line_sep = quotemeta('# Please enter the commit message for your changes.');
 
 my @lines;
-if ($ARGV[0])
+my $found_sep;
+if ($ARGV[0] and open(FILE, $ARGV[0]))
 {
-	if (open(FILE, $ARGV[0]))
+	# Store only the first 5 lines (for the greps below, and to cap RAM), but
+	# keep scanning for a commit-message separator: it sits at line 2 for a fresh
+	# commit, but well below an existing message when amending.  Stop the moment
+	# we find one, and never read past 200 lines so editing a huge file stays cheap.
+	my $scan_limit = 200;
+	while ($scan_limit-- and defined(my $line = <FILE>))
 	{
-		push @lines, scalar(<FILE>) // () for 1..5;
-		close(FILE);
+		push @lines, $line if @lines < 5;
+		if ($line =~ /^($svn_line_sep|$cvs_line_sep|$git_line_sep)/)
+		{
+			$found_sep = 1;
+			last;
+		}
 	}
+	close(FILE);
 }
 
 
@@ -41,9 +51,12 @@ elsif (grep { /(PRE-QA|TESTING) NOTES/i } @lines)
 {
 	exec 'vim', '+', '-c', 'set comments=', @ARGV;
 }
-elsif ($lines[0] eq "\n" and $lines[1] =~ /^($timer_line_sep|$svn_line_sep|$cvs_line_sep|$git_line_sep)/)
+elsif ($found_sep)
 {
-	exec 'vim', '+1', '-c', 'startinsert', '-c', 'set textwidth=95', @ARGV;
+	# Existing message (e.g. amending): land at the top in normal mode.  Empty
+	# message (fresh commit, blank line 1): drop into insert mode.
+	my @insert = $lines[0] eq "\n" ? ('-c', 'startinsert') : ();
+	exec 'vim', '+1', @insert, '-c', 'set textwidth=95', @ARGV;
 }
 else
 {
