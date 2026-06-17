@@ -1,5 +1,6 @@
 eval "set "`grep VCtoolsDir ~/.vctools/vctools.conf`
-alias vc $VCtoolsDir/bin/vc
+set _vc=$VCtoolsDir/bin/vc
+alias vc $_vc
 set complete_file=~/.tcshrc.complete.vc
 if ( ! -e $complete_file || $?tcsh_reset ) then
 	# refresh VCtools shell completion files
@@ -35,6 +36,7 @@ if ( $?VCTOOLS_SHELL ) then
 
 	alias branch vbranch
 	alias bcontains 'vc branch-contains'
+	alias ticket-whereis "git log --grep '\!^\b' -i --pretty='%h' | head -n1 | each -q '$_vc branch-contains {}'"
 
 	alias vd git diff --color-moved
 	alias vcf vc commit-filedate
