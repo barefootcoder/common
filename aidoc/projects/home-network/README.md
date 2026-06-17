@@ -102,15 +102,12 @@ Hardware/services intentionally turned off on a given box, recorded here so a
 future "why doesn't X work?" doesn't trigger a wild goose chase -- the answer
 may simply be "we turned it off on purpose, here's how to undo it":
 
-- **Bluetooth on Avalir is OFF** (rfkill soft-block), disabled **2026-06-11** as
-  a 2.4GHz-interference elimination during the trackball-lag investigation. The
-  user does not normally use Bluetooth on Avalir, so this is unlikely to be
-  noticed soon -- but **if Bluetooth ever "isn't working" on Avalir, this is
-  almost certainly why.** Re-enable with `sudo rfkill unblock bluetooth` (it is a
-  soft block, and Avalir rarely reboots, so it just persists). It was only a
-  low-probability suspect; if the trackball lag has since been pinned on
-  something else, re-enabling is perfectly fine. Background:
-  `summary:avalir-trackball-lag.md`.
+- _(Nothing currently disabled here.)_ **Bluetooth on Avalir was soft-blocked
+  2026-06-11 -> 2026-06-17** as a 2.4GHz-interference elimination during the
+  trackball-lag investigation, then **re-enabled 2026-06-17 once exonerated** (the
+  trackball lag recurred with BT still blocked, so BT was cleared as a suspect).
+  Kept here as a breadcrumb so a future agent knows the section is live but empty,
+  not deleted. Background: `summary:avalir-trackball-lag.md`.
 
 ### Shell Environment (and the cross-host `ssh` quoting trap)
 - **The interactive/login shell on every Linux box here (Haven, Avalir, Zadash,
@@ -422,19 +419,25 @@ If user asks about EC2 sandbox sync:
 
 ## Current Status
 
-- **Avalir trackball lag diagnosed to the 2.4GHz link (June 10-11 2026):**
+- **Avalir trackball lag diagnosed to the 2.4GHz link (June 10-17 2026):**
   The MX Ergo trackball intermittently freezes then jumps "halfway across the
   screen." It is a Logitech **Unifying** (2.4GHz proprietary radio) device, NOT
   Bluetooth despite the "USB receiver" framing. Confirmed the fault is on the
-  wireless link the receiver hides from the OS: during a live episode solaar
-  read the device `offline` (3x while actively in use), the kernel logged zero
+  wireless link the receiver hides from the OS: during live episodes solaar
+  read the device `offline` while actively in use, the kernel logged zero
   USB/HID events across 186 days uptime, the receiver never autosuspended, and
-  battery is healthy (90%). Buffered-then-flushed motion = the jump. Recent
-  onset + day-to-day intermittency points at an external 2.4GHz interferer (root
-  cause still open). Actions: Bluetooth soft-blocked as a free elimination; new
-  `~/oneoff/trackball-mon` watcher deployed (logs jump signature + link state +
-  node drops to `~/local/log/`) to catch the next episode with timestamps. See
-  `summary:avalir-trackball-lag.md` and TODO.md.
+  battery is healthy (90%). Buffered-then-flushed motion = the jump. **Monitor
+  PROVEN: `~/oneoff/trackball-mon` caught its first full episode 2026-06-17**
+  (15:24-~15:29, signature reconfirmed). That episode cleared two suspects:
+  **Bluetooth** (lag recurred with BT soft-blocked -> exonerated, BT re-enabled
+  2026-06-17) and **Avalir's own WiFi** (radio off). A `powertop --auto-tune`
+  udev storm seen during episodes is a symptom (a 2023 Juno rule firing on the
+  trackball's `hidpp_battery_0` power_supply device), not a cause. Root cause
+  still open and now narrowed: the user confirms NOTHING changed on Avalir's
+  side ~Jun 9-10 and the Haven-trackball arrangement is long-standing, so the
+  trigger is likely external RF or intermittent link-hardware degradation. Test
+  in progress (2026-06-17): Haven's trackball powered off at its base switch for
+  a day. See `summary:avalir-trackball-lag.md` and TODO.md.
 - **Haven crashed again (June 10 2026):** Silent power-off at 14:53 PDT after
   ~6 days uptime, during video playback (vivaldi-media) over NoMachine on
   office-ac. **Three legs stacked** (remove any one and it likely doesn't crash):

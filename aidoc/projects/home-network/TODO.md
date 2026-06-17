@@ -18,23 +18,61 @@ skill scans this file on load and surfaces due/pending items.
   "bulk-charge-mon" tool entry in README. _(added 2026-06-11 during the
   notify-path fix + live-update build)_
 
-- **anytime** — Avalir trackball lag: read `~/local/log/trackball-mon.log` after
-  the next episode and identify the interferer. Diagnosis is confirmed at the
-  layer (the 2.4GHz Unifying link between the MX Ergo and its receiver, not USB /
-  not autosuspend / not battery / not host software -- see
-  `summary:avalir-trackball-lag.md`), but the root cause (what changed ~early June)
-  and a fix are still open. The `~/oneoff/trackball-mon` watcher (deployed
-  2026-06-11, running detached) logs the jump signature + solaar link state + node
-  absent/present when it next happens. Follow-ups: (a) analyze the log and tune
-  thresholds (`TBMON_GAP`/`TBMON_JUMP`, `TBMON_DEBUG=1`); (b) **user test** -- power
-  off Haven's trackball at the base switch for a day and see if Avalir's lag stops;
-  (c) Bluetooth was soft-blocked as a free elimination (`sudo rfkill block
-  bluetooth`) -- if the lag recurs anyway, BT is exonerated, consider re-enabling;
-  (d) if it proves useful, promote the monitor to `local/avalir/bin/` + termstart
-  (pidfile-gated like viv-mon); (e) fallback fixes if confirmed RF-on-marginal-link:
+- **anytime** — Avalir trackball lag: identify the interferer / find a fix. The
+  2.4GHz-Unifying-link diagnosis is confirmed (not USB / not autosuspend / not
+  battery / not host software -- see `summary:avalir-trackball-lag.md`); the
+  `~/oneoff/trackball-mon` watcher caught its **first full episode 2026-06-17**
+  (15:24-~15:29, 3 logged jumps, solaar `offline` coincident with a jump --
+  signature reconfirmed). Root cause (what changed ~early June) and a fix are
+  still open. **NOTE (user, 2026-06-17): nothing changed on Avalir's side ~Jun 9-10,
+  and the Haven-trackball arrangement is NOT new** -- the user has brought Haven +
+  its mouse into this room for months/years. So if the onset is real (and the
+  Jun 9/10 powertop spike + two captured episodes say it is), the trigger is either
+  EXTERNAL to the user's gear (a neighbor's/new RF source) or the Avalir link
+  hardware itself degrading intermittently -- not anything on Avalir or a new Haven
+  habit. This lowers the prior on the Haven-mouse test below but doesn't kill it
+  (a long-tolerated emitter can start mattering once the link goes marginal).
+  Follow-ups: (a) ~~analyze the log~~ DONE for the 2026-06-17 episode
+  (signature confirmed; thresholds gap=0.3s/jump=150 caught it fine, no tuning
+  needed yet); (b) **Haven-mouse test IN PROGRESS as of 2026-06-17 ~15:30** -- user
+  powered Haven's trackball off at its base switch (receiver still plugged into
+  Haven, so only the trackball's TX is gone, not the receiver -- fine, the receiver
+  alone emits almost nothing). Leaving off for the rest of the day. **Wrinkle the
+  user flagged:** Haven gets carried out and brought back in to plug in at night;
+  when it returns its mouse may get switched back on, breaking the test -- so the
+  open question is remembering to re-disable it then. **Handled:** a bedtime
+  reminder is armed -- `~/oneoff/trackball-test-reminder` (detached, PPID 1, fires
+  02:50 tonight) pops a persistent, above+sticky, click-to-dismiss zenity window on
+  Avalir's `:0` (hands focus back so typing can't dismiss it) telling the user to
+  switch Haven's trackball off. One-shot; re-arm for another night with `setsid
+  ~/oneoff/trackball-test-reminder </dev/null >/dev/null 2>&1 &`. To read the
+  result: after a day with Haven's mouse off, check `~/local/log/trackball-mon.log`
+  for whether JUMP episodes stopped (see the dated 2026-06-18 item below).
+  (c) **Bluetooth EXONERATED + RE-ENABLED 2026-06-17** -- the
+  lag recurred with BT soft-blocked, so BT is cleared; `sudo rfkill unblock
+  bluetooth` run, README "Deliberately disabled" BT entry removed. (d) if it
+  proves useful, promote the monitor to `local/avalir/bin/` + termstart
+  (pidfile-gated like viv-mon) -- it has now proven its worth, so this is a
+  reasonable do-anytime; (e) fallback fixes if confirmed RF-on-marginal-link:
   USB extension cable for line-of-sight, spare Unifying receiver via solaar re-pair,
   or MX Ergo on Bluetooth via Easy-Switch as an A/B. _(added 2026-06-11 during the
-  trackball-lag investigation)_
+  trackball-lag investigation; updated 2026-06-17 after the first monitor capture)_
+
+- **2026-06-18** — Read out the Haven-mouse-off trackball test (set up 2026-06-17).
+  Must run ON Avalir -- the log is host-local (`~/local/log/`), not synced, so this
+  can't be a cloud agent. Steps: (1) `tail` / scan `~/local/log/trackball-mon.log`
+  for JUMP lines dated after ~2026-06-17 15:30 (when Haven's trackball went off);
+  (2) sanity-check the day was a fair test -- was Haven actually in the room with
+  its mouse off? (the 02:50 reminder should have caught the overnight re-disable;
+  check `~/local/log/trackball-test-reminder.log` for the FIRE/closed lines).
+  Verdict logic: **no JUMPs while Haven's mouse was off** = Haven's trackball is
+  implicated (surprising given the years-old arrangement, but then pursue it); **JUMPs
+  still occurred** = Haven's trackball cleared, refocus on external RF / link-hardware
+  degradation (the two live hypotheses). If the day was inconclusive (e.g. no episodes
+  even occur at baseline, or Haven wasn't really present), re-arm the bedtime reminder
+  for another night (`setsid ~/oneoff/trackball-test-reminder </dev/null >/dev/null
+  2>&1 &`) and re-check the day after. _(added 2026-06-17 during the bedtime-reminder
+  setup)_
 
 - **anytime** — Haven charging discipline (June 10 crash mitigations, behavior +
   config, no code). The June 10 crash needed three legs stacked; the two easiest
