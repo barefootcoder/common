@@ -71,18 +71,28 @@ func get_screen_size
 
 func get_window_id ($name)
 {
-	my $window = `xdotool search --name '^$name\$'`; chomp $window;
-	if ($window =~ /\s/)
+	# wmctrl -l reads _NET_CLIENT_LIST -- no X tree walk, immune to BadWindow races
+	my @windows;
+	open(my $fh, "wmctrl -l |") or return '';
+	while (<$fh>)
 	{
-		$window = first { /^\d+$/ } sort { $b <=> $a } split(' ', $window);
-		warn("got multiple windows for $name! [using $window]");
+		# format: 0xWINID  DESKTOP  HOST  TITLE (title extends to EOL)
+		push @windows, $1 if /^(0x[\da-f]+)\s+\d+\s+\S+\s+\Q$name\E\s*$/;
 	}
-	return $window;
+	close($fh);
+
+	if (@windows > 1)
+	{
+		my $window = (sort { hex($b) <=> hex($a) } @windows)[0];
+		warn("got multiple windows for $name! [using $window]");
+		return $window;
+	}
+	return $windows[0] // '';
 }
 
 func goto_window ($name)
 {
-	system(qq{ xdotool search --name "$name" windowactivate --sync });
+	system('wmctrl', '-Fa', $name);
 }
 
 func type_in_contact_window ($string)
@@ -95,9 +105,10 @@ func type_in_contact_window ($string)
 		1;
 	};
 
+	my $win = get_window_id($PidginWindow);
+	return unless $win;
 	goto_window($PidginWindow);
-	# the `search` is most likely unnecessary here
-	system(qq{ xdotool search --name "$PidginWindow" type "$string" });
+	system('xdotool', 'windowfocus', '--sync', $win, 'type', $string);
 }
 
 

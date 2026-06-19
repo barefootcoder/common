@@ -481,9 +481,11 @@ If user asks about EC2 sandbox sync:
   duplicate launch. Reproduced live at ~50% failure; `wmctrl -l` found the same
   window 10/10. Fixed by switching existing-session detection from `xdotool
   search` to the `wmctrl -l` list the script already fetches (reads
-  `_NET_CLIENT_LIST`, no tree walk, race-immune). Temporary decision-logging
-  instrumentation (`dbg()` → `~/local/log/show-desktop.log`, host-local) left in
-  place to confirm the fix; remove once proven (see TODO). NOT the same as the
+  `_NET_CLIENT_LIST`, no tree walk, race-immune). The temporary decision-logging
+  instrumentation (`dbg()` to `~/local/log/show-desktop.log`, host-local) confirmed
+  the fix (405 invocations over 3 weeks, zero spurious `NO MATCH`) and was REMOVED
+  2026-06-18 alongside the sibling `pidgin_restore` fix for the same race; the
+  `wmctrl` detection stays. NOT the same as the
   May 11 NoMachine-9.x title-order fix (`c49dbed`), which addressed an *every-time*
   failure. See `desktop-switching-shortcuts.md`.
 - **Phone music + ordered playlist sync working** (May 27 2026): Established a

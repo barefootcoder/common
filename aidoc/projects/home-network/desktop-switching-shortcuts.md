@@ -118,10 +118,10 @@ Key logic, in order:
 > whatever transient windows happen to be churning when you press the key — which
 > is why it can misfire several times then behave for a while. **Fix:** detect the
 > existing session from `wmctrl -l` (reads `_NET_CLIENT_LIST` in one shot, no tree
-> walk, race-immune) instead of `xdotool search`. There is temporary
-> instrumentation logging every decision to `~/local/log/show-desktop.log`
-> (host-local) — see the `dbg()` sub / `$LOG` const in `show-desktop`; remove it
-> once the fix has proven out (TODO).
+> walk, race-immune) instead of `xdotool search`. The temporary `dbg()`
+> instrumentation that logged every decision to `~/local/log/show-desktop.log`
+> confirmed the fix (405 invocations over 3 weeks, zero spurious `NO MATCH`) and
+> was removed 2026-06-18; only the `wmctrl` detection remains.
 
 ### `~/common/bin/nxkill`
 
