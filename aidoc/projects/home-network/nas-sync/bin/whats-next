@@ -1,0 +1,341 @@
+#!/bin/bash
+#
+# whats-next -- locate the next action in the NAS-sync roadmap by cheap probe.
+#
+# The "probe" half of the hybrid model described in ../README.md: it reads
+# live state cheaply (df / targeted du / path presence / host reachability),
+# maps it onto the phases in ../roadmap.md, and prints the highest-priority
+# step that is both incomplete and unblocked as the single NEXT action.
+#
+# It does NOT generate listings or diff trees -- that heavy verification
+# (dir-listing / review-dir-listings) is run by hand only to confirm a
+# transfer immediately before a delete.
+#
+# Safe to run repeatedly.  Read-only.  Degrades gracefully when a host is down.
+
+set -u
+ME=${0##*/}
+SELF_DIR=$(cd "$(dirname "$0")" && pwd)
+
+SSH_TIMEOUT=12
+DO_SIZES=1
+
+usage()
+{
+    cat <<USAGE
+$ME -- print the next NAS-sync roadmap action (see ../README.md, ../roadmap.md)
+
+usage: $ME [--no-sizes] [-h|--help]
+
+  --no-sizes   skip the du-based size probes (faster; reports those steps as
+               UNKNOWN instead of walking 70G+ trees)
+  -h, --help   this help
+
+Probes haven, avalir, nakama, zadash, graymoor.  Run it from any of them;
+it runs commands locally when already on the target host (never ssh-to-self).
+USAGE
+}
+
+while (( $# ))
+do
+    case $1 in
+        --no-sizes) DO_SIZES=0 ;;
+        -h|--help)  usage; exit 0 ;;
+        *)          echo "$ME: unknown arg '$1'" >&2; usage >&2; exit 2 ;;
+    esac
+    shift
+done
+
+# --- host plumbing ---------------------------------------------------------
+# tcsh login shells on haven/avalir/zadash, so wrap remote commands in bash -s
+# via a (locally-expanded) heredoc.  nakama is bash on port 2322.  When we are
+# already ON the target host, run locally -- do not ssh into ourselves.
+
+THIS_HOST=$(hostname)
+
+run_on()    # host  command-string
+{
+    local host=$1; shift
+    if [[ $host == "$THIS_HOST" ]]
+    then
+        bash -c "$*" 2>/dev/null
+    elif [[ $host == nakama ]]
+    then
+        timeout "$SSH_TIMEOUT" ssh -p 2322 -o BatchMode=yes -o ConnectTimeout=5 \
+            nami@nakama "$*" 2>/dev/null
+    else
+        timeout "$SSH_TIMEOUT" ssh -o BatchMode=yes -o ConnectTimeout=5 \
+            "$host" bash -s 2>/dev/null <<EOF
+$*
+EOF
+    fi
+}
+
+host_up()   # host  -> 0 if reachable
+{
+    local host=$1
+    [[ $host == "$THIS_HOST" ]] && return 0
+    if [[ $host == nakama ]]
+    then
+        timeout 8 ssh -p 2322 -o BatchMode=yes -o ConnectTimeout=5 nami@nakama true 2>/dev/null
+    else
+        timeout 8 ssh -o BatchMode=yes -o ConnectTimeout=5 "$host" true 2>/dev/null
+    fi
+}
+
+du_kb()     # host  path  -> KB integer, or empty
+{
+    local out
+    out=$(run_on "$1" "du -sk '$2' 2>/dev/null | cut -f1 | head -1")
+    [[ $out =~ ^[0-9]+$ ]] && echo "$out"
+}
+
+path_exists()   # host  path  -> "yes"/"no"/"" (empty = unreachable)
+{
+    run_on "$1" "if [ -e '$2' ]; then echo yes; else echo no; fi" | head -1
+}
+
+hr()        # kb  -> human size
+{
+    local kb=${1:-}
+    [[ $kb =~ ^[0-9]+$ ]] || { echo '?'; return; }
+    if   (( kb >= 1048576 )); then printf '%dG' $(( kb / 1048576 ))
+    elif (( kb >= 1024 ));    then printf '%dM' $(( kb / 1024 ))
+    else                           printf '%dK' "$kb"
+    fi
+}
+
+# --- result accumulation ---------------------------------------------------
+# parallel arrays, walked in priority order; first TODO becomes NEXT.
+
+IDS=() TITLES=() STATES=() DETAILS=() HOWS=()
+
+record()    # id  title  state  detail  how
+{
+    IDS+=("$1"); TITLES+=("$2"); STATES+=("$3"); DETAILS+=("$4"); HOWS+=("$5")
+}
+
+# --- reachability ----------------------------------------------------------
+declare -A UP
+for h in haven avalir nakama zadash graymoor
+do
+    if host_up "$h"; then UP[$h]=up; else UP[$h]=DOWN; fi
+done
+
+NAK=/share/CACHEDEV1_DATA       # du-safe Nakama base (the /share symlinks du as 0)
+
+# === P1a -- backup/snapshots -> Nakama =====================================
+if [[ $DO_SIZES == 0 ]]
+then
+    record P1a "backup/snapshots -> Nakama" UNKNOWN "size probe skipped (--no-sizes)" \
+        "rsync /export/backup/snapshots -> nakama:/share/backup/snapshots (detached, on source box)"
+elif [[ ${UP[haven]} == DOWN || ${UP[nakama]} == DOWN ]]
+then
+    record P1a "backup/snapshots -> Nakama" UNKNOWN "haven or nakama unreachable" \
+        "rsync /export/backup/snapshots -> nakama:/share/backup/snapshots (detached, on source box)"
+else
+    h=$(du_kb haven /export/backup/snapshots)
+    n=$(du_kb nakama "$NAK/backup/snapshots")
+    if [[ -z $h || -z $n ]]
+    then
+        record P1a "backup/snapshots -> Nakama" UNKNOWN "du failed (haven=${h:-?} nakama=${n:-?})" \
+            "rsync /export/backup/snapshots -> nakama:/share/backup/snapshots (detached, on source box)"
+    elif (( n >= h * 95 / 100 ))
+    then
+        record P1a "backup/snapshots -> Nakama" DONE "Nakama $(hr "$n") >= Haven $(hr "$h")" ""
+    else
+        record P1a "backup/snapshots -> Nakama" TODO "gap: Haven $(hr "$h") vs Nakama $(hr "$n")" \
+            "rsync /export/backup/snapshots -> nakama:/share/backup/snapshots (detached, on source box)"
+    fi
+fi
+
+# === P1b -- backup/git + backup/proj -> Nakama =============================
+if [[ ${UP[nakama]} == DOWN ]]
+then
+    record P1b "backup/git+proj -> Nakama" UNKNOWN "nakama unreachable" \
+        "copy /export/backup/{git,proj} -> nakama:/share/backup/"
+else
+    g=$(path_exists nakama "$NAK/backup/git")
+    p=$(path_exists nakama "$NAK/backup/proj")
+    if [[ $g == yes && $p == yes ]]
+    then
+        record P1b "backup/git+proj -> Nakama" DONE "both present on Nakama" ""
+    elif [[ -z $g || -z $p ]]
+    then
+        record P1b "backup/git+proj -> Nakama" UNKNOWN "probe failed" \
+            "copy /export/backup/{git,proj} -> nakama:/share/backup/"
+    else
+        record P1b "backup/git+proj -> Nakama" TODO "missing on Nakama (git=$g proj=$p)" \
+            "copy /export/backup/{git,proj} -> nakama:/share/backup/  (~60M)"
+    fi
+fi
+
+# === P4 -- Nakama -> B2 ongoing cron (disaster keystone) ===================
+if [[ ${UP[nakama]} == DOWN ]]
+then
+    record P4 "Nakama -> B2 ongoing cron" UNKNOWN "nakama unreachable" \
+        "install rclone sync cron in nakama:/etc/config/crontab (see roadmap P4)"
+else
+    rc=$(run_on nakama "grep -c rclone /etc/config/crontab 2>/dev/null" | head -1)
+    [[ $rc =~ ^[0-9]+$ ]] || rc=0
+    if (( rc > 0 ))
+    then
+        record P4 "Nakama -> B2 ongoing cron" DONE "rclone cron present ($rc line(s)) -- verify freshness manually" ""
+    else
+        record P4 "Nakama -> B2 ongoing cron" TODO "no rclone cron on Nakama (fire-evac was one-time)" \
+            "install rclone sync cron in nakama:/etc/config/crontab (see roadmap P4)"
+    fi
+fi
+
+# === P3 -- Nakama as live receive-only peer ================================
+if [[ ${UP[nakama]} == DOWN ]]
+then
+    record P3 "Nakama live receive-only peer" UNKNOWN "nakama unreachable" \
+        "stand up Container Station Syncthing (recv-only) OR a nasupdate sync cron"
+else
+    proc=$(run_on nakama "ps w 2>/dev/null | grep -iE 'syncthing|dockerd|container-station' | grep -v grep | head -1")
+    ncron=$(run_on nakama "grep -c nasupdate /etc/config/crontab 2>/dev/null" | head -1)
+    [[ $ncron =~ ^[0-9]+$ ]] || ncron=0
+    if [[ -n $proc ]]
+    then
+        record P3 "Nakama live receive-only peer" DONE "syncthing/container running on Nakama" ""
+    elif (( ncron > 0 ))
+    then
+        record P3 "Nakama live receive-only peer" DONE "interim nasupdate sync cron present" ""
+    else
+        record P3 "Nakama live receive-only peer" TODO "no Syncthing/container, no sync cron on Nakama" \
+            "stand up Container Station Syncthing (recv-only) OR a nasupdate sync cron"
+    fi
+fi
+
+# === P5 -- monitoring + verification (incremental) =========================
+if [[ ${UP[nakama]} == DOWN ]]
+then
+    record P5 "monitoring + test-restore" UNKNOWN "nakama unreachable" \
+        "build Syncthing health-check, B2-cron alert, QNAP email triage, test-restore (roadmap P5)"
+else
+    mon=$(run_on nakama "grep -cE 'sync-health|test-restore|rclone-check' /etc/config/crontab 2>/dev/null" | head -1)
+    [[ $mon =~ ^[0-9]+$ ]] || mon=0
+    if (( mon > 0 ))
+    then
+        record P5 "monitoring + test-restore" DONE "some monitoring cron present ($mon)" ""
+    else
+        record P5 "monitoring + test-restore" TODO "no automated sync/backup monitoring detected" \
+            "build Syncthing health-check, B2-cron alert, QNAP email triage, test-restore (roadmap P5)"
+    fi
+fi
+
+# === P1c -- personal top-up (low priority; needs toolchain verify) =========
+record P1c "personal top-up" TODO \
+    "headline size delta is mostly nas-xfer listing-file noise -- verify real delta with the toolchain" \
+    "review-dir-listings on personal (exclude nas-xfer listings) before any copy; or skip once P3 makes Nakama live"
+
+# === P2-pre -- verified-deletion tool present? ============================
+if [[ -x $SELF_DIR/nas-reclaim ]]
+then
+    record P2-pre "nas-reclaim deletion tool" DONE "present and executable" ""
+else
+    record P2-pre "nas-reclaim deletion tool" TODO "missing -- build before any auto-mode deletion (raw rm is blocked)" \
+        "write bin/nas-reclaim (verified-deletion, --noaction first, allowlisted targets); see README 'Verified deletion'"
+fi
+
+# === P2a -- delete Haven /export/synology-sync_hist (approval) =============
+if [[ ${UP[haven]} == DOWN ]]
+then
+    record P2a "delete Haven synology-sync_hist" UNKNOWN "haven unreachable" \
+        "USER APPROVAL: rm -rf /export/synology-sync_hist on Haven (verified deletable, 12G)"
+else
+    e=$(path_exists haven /export/synology-sync_hist)
+    if [[ $e == no ]]
+    then
+        record P2a "delete Haven synology-sync_hist" DONE "already gone" ""
+    elif [[ $e == yes ]]
+    then
+        record P2a "delete Haven synology-sync_hist" TODO "still present (12G, verified deletable) -- NEEDS USER APPROVAL" \
+            "nas-reclaim synology-sync_hist  (preview: nas-reclaim --noaction synology-sync_hist)"
+    else
+        record P2a "delete Haven synology-sync_hist" UNKNOWN "probe failed" ""
+    fi
+fi
+
+# === P2b -- clean Haven /var/tmp (approval) ================================
+if [[ $DO_SIZES == 0 || ${UP[haven]} == DOWN ]]
+then
+    record P2b "clean Haven /var/tmp" UNKNOWN "skipped or haven unreachable" \
+        "USER APPROVAL: review + clear old staging under /var/tmp on Haven (~73G)"
+else
+    v=$(du_kb haven /var/tmp)
+    if [[ -z $v ]]
+    then
+        record P2b "clean Haven /var/tmp" UNKNOWN "du failed" ""
+    elif (( v < 5 * 1048576 ))
+    then
+        record P2b "clean Haven /var/tmp" DONE "/var/tmp down to $(hr "$v")" ""
+    else
+        record P2b "clean Haven /var/tmp" TODO "/var/tmp is $(hr "$v") of old staging -- NEEDS USER APPROVAL" \
+            "nas-reclaim var-tmp-staging  (preview: nas-reclaim --noaction var-tmp-staging)"
+    fi
+fi
+
+# === P6 -- Graymoor: version authority (gated on network) ==================
+if [[ ${UP[graymoor]} == up ]]
+then
+    record P6 "Graymoor version authority" TODO "Graymoor is REACHABLE -- begin Phase 6 (capacity, Syncthing recv-only+staggered, migrate sync_hist from Zadash)" \
+        "read disk capacity; install Syncthing recv-only + staggered maxAge=0; migrate sync_hist Zadash->Graymoor"
+else
+    record P6 "Graymoor version authority" BLOCKED "Graymoor not on the network (keep Zadash alive meanwhile)" ""
+fi
+
+# === P7 -- retire Zadash (gated on P6 verified) ============================
+record P7 "retire Zadash" BLOCKED "depends on Phase 6 complete + version history verified on Graymoor" ""
+
+# --- report ----------------------------------------------------------------
+state_mark()
+{
+    case $1 in
+        DONE)    echo "[DONE]   " ;;
+        TODO)    echo "[TODO]   " ;;
+        BLOCKED) echo "[BLOCKED]" ;;
+        *)       echo "[UNKNOWN]" ;;
+    esac
+}
+
+echo
+echo "NAS-SYNC :: what's next   (probed $(date +%F\ %H:%M) from $THIS_HOST)"
+echo
+printf 'reachability: '
+for h in haven avalir nakama zadash graymoor
+do
+    printf ' %s=%s' "$h" "${UP[$h]}"
+done
+echo
+echo
+
+next_idx=-1
+for i in "${!IDS[@]}"
+do
+    printf '  %s %-6s %-32s %s\n' "$(state_mark "${STATES[$i]}")" "${IDS[$i]}" "${TITLES[$i]}" "${DETAILS[$i]}"
+    if [[ $next_idx == -1 && ${STATES[$i]} == TODO ]]; then next_idx=$i; fi
+done
+
+echo
+if (( next_idx >= 0 ))
+then
+    echo "==> NEXT: ${IDS[$next_idx]}  ${TITLES[$next_idx]}"
+    echo "          ${DETAILS[$next_idx]}"
+    [[ -n ${HOWS[$next_idx]} ]] && echo "          how: ${HOWS[$next_idx]}"
+else
+    have_unknown=0
+    for s in "${STATES[@]}"; do [[ $s == UNKNOWN ]] && have_unknown=1; done
+    if (( have_unknown ))
+    then
+        echo "==> No actionable TODO found, but some probes were UNKNOWN (host down?)."
+        echo "    Resolve reachability above and re-run."
+    else
+        echo "==> Steady state: no unblocked structural work outstanding."
+        echo "    Ongoing: monitoring (P5), periodic re-verification + test-restores,"
+        echo "    Nakama capacity watch (RAID-1 second drive is the contingency)."
+    fi
+fi
+echo
+echo "(plan: ../roadmap.md   architecture: ../README.md)"

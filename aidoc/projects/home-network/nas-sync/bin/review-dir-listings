@@ -1,0 +1,128 @@
+#!/usr/bin/env perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use Date::Easy;
+use Number::Bytes::Human qw< format_bytes >;
+
+
+my $no_conflicts = 0;
+my (%include_only, %but_exclude, %sub_path);
+while ( $ARGV[0] =~ m{^[:-]|=} )
+{
+	my $arg = shift;
+	if ($arg =~ /=/)
+	{
+		my ($from, $to) = split('=', $arg);
+		die("duplicate path sub: $from") if exists $sub_path{$from};
+		$sub_path{$from} = $to;
+	}
+	elsif ($arg =~  /^--/)
+	{
+		if ($arg eq '--no-conflicts')
+		{
+			$no_conflicts = 1;
+		}
+		else
+		{
+			die("unrecognized switch: $arg");
+		}
+	}
+	else
+	{
+		$arg =~ s/^(.)//; my $prefix = $1;
+		$prefix eq ':' ? ++$include_only{$arg} : $prefix eq '-' ? ++$but_exclude{$arg} : die("should be impossible");
+	}
+}
+#use Data::Printer; p %sub_path;
+
+my %left  = read_listing(shift);
+my %right = read_listing(shift);
+say STDERR "comparing ", scalar keys %left, " orig files against ", scalar keys %right, " archived files";
+
+# Check each file in left dir
+foreach my $name (sort keys %left)
+{
+	next if $name =~ /^[@#]/;						# bogus Synology dir files that I don't care about
+	next if $name =~ m{/(\@eaDir|#recycle)/};		# bogus dirs live in the midst of paths too, sometimes
+	next if $name =~ m{(^|/)\.(sync)/};				# these are dirs from the sync'ing programs; not important to back up
+	next if $no_conflicts and is_conflict($name);	# ditch sync conflict files, if we were specifically asked to
+	report_review($name, $left{$name}, $right{$name})
+			if needs_review($left{$name}, $right{$name});
+}
+
+
+sub read_listing
+{
+#say "reading: $_[0]";
+#my $dbg = $_[0] =~ /test/;
+	my %hash;
+	open(my $IN, shift);
+	while (<$IN>)
+	{
+		chomp;
+		my ($time, $size, $name) = split(' ', $_, 3);
+		# do any path substitutions that were requested
+#say "name: $name" if $dbg;
+		$name =~ s/^\Q$_\E/$sub_path{$_}/ foreach keys %sub_path;
+		# in case we have include/exclude args
+		next unless keep($name);
+		# eliminate milliseconds on epoch seconds
+		$hash{$name} = { time => int($time), size => $size, };
+	}
+	return %hash;
+}
+
+sub keep
+{
+	my ($name) = @_;
+			foreach (keys %but_exclude)
+			{
+				return 0 if $name =~ m/^\Q$_\E/;
+			}
+	return 1 unless %include_only;
+	foreach (keys %include_only)
+	{
+		if ($name =~ m/^\Q$_\E/)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+sub is_conflict
+{
+	my ($name) = @_;
+	return 1 if $name =~ /'s conflicted copy/;
+	return 1 if $name =~ /-\d{4}_Conflict/;
+	return 1 if $name =~ /\.sync-conflict-/;
+	return 0;
+}
+
+sub needs_review
+{
+    my ($left, $right) = @_;
+	return 1 unless defined $right;					# files only on left always need review
+	return not
+			$right->{time} >= $left->{time} && 
+			$right->{size} >= $left->{size}
+	;
+}
+
+# Human-readable datetime
+sub hr_date { local $_ = shift; defined() ? datetime($_)->strftime("%Y/%m/%d %H:%M") : "none"; }
+
+# Human-readable file size
+sub hr_size { local $_ = shift; defined() ? format_bytes($_) : "none"; }
+
+sub report_review
+{
+	my ($name, $left, $right) = @_;
+	printf "%-75s [%6s, %s  vs %6s, %s]\n", $name,
+			hr_size($left ->{size}), hr_date($left ->{time}),
+			hr_size($right->{size}), hr_date($right->{time}),
+	;
+}

@@ -1,0 +1,11 @@
+#! /bin/bash
+
+function remote-df
+{
+	local size=$(ssh $1 df -h $2 2>/dev/null | awk 'NR == 2 { print $4 }')
+	printf "%7s: %5s\n" $1 $size
+}
+remote-df haven   /export
+remote-df avalir  /export
+remote-df caemlyn /export
+remote-df zadash  /srv

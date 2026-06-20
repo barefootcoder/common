@@ -1,0 +1,62 @@
+#! /usr/bin/env perl
+
+use myperl::Pxb;
+use autodie ':all';
+
+use Date::Easy;
+
+
+opts <<'-';
+	[-vD] { <dir> | <remote>:<dir> }
+	-v : be more verbose
+	-D : debug mode (implies -v)
+	<dir>    : directory to verify
+	<remote> : server where <dir> is located (default: current server)
+-
+$OPT{v} = 1 if $OPT{D};
+
+my $dir  = shift or usage_error("must supply dir to list");
+my $host = sh(hostname => );						# default; might be overridden below
+say "# host: $host" if $OPT{v};
+
+
+my @cmd;
+if ( $dir =~ s/^(\w+):// )
+{
+	$host = $1;
+	push @cmd, ssh => $host;
+}
+
+# Normalize directory path (remove trailing slash if present)
+$dir =~ s/\/$//;
+
+# Build the command using the approach that works everywhere
+my $find_cmd = qq{'find -H $dir -type f -print0 | xargs -0 -r stat -c "%Y %12s %n"'};
+
+if ($host ne sh(hostname => ))
+{
+	# Remote host
+	push @cmd, $find_cmd;
+}
+else
+{
+	# Local execution
+	@cmd = (bash => '-c', $find_cmd);
+}
+
+my $out  = join('-', path($dir)->basename, $host) . ".list";
+
+# Use a pipeline to transform the output on the fly
+my $base_dir = $dir;
+open my $OUTPUT, ">", $out;
+my $pipe_cmd = join(' ', @cmd) . " | perl -pe 's{^(\\d+\\s+\\d+\\s+)\\Q$base_dir\\E/}{\\1}'";
+say "# Running: $pipe_cmd" if $OPT{D};
+open my $PIPE, "-|", bash => '-c', $pipe_cmd;
+while (<$PIPE>)
+{
+	print $OUTPUT $_;
+}
+close $PIPE;
+close $OUTPUT;
+
+say "# Created file: $out" if $OPT{v};

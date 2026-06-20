@@ -1,0 +1,53 @@
+#! /bin/bash
+
+
+function verify
+{
+	local dir=":$1/"
+	local logfile="${1//\//-}-verify.log"
+	shift
+	local -a args=()
+	while [[ $# -gt 1 ]]
+	do
+		args+=( "$1" )
+		shift
+	done
+	local last="$1.list"
+
+	echo "checking: $dir ..."
+	(
+		set -x
+		review-dir-listings $dir --no-conflicts "${args[@]}" volume1-taaveren.list $last
+		{ set +x; } 2>/dev/null
+	) >$logfile 2>&1
+	logfiles="$logfiles $logfile"
+}
+
+logfiles=
+verify proj																					export-haven
+verify personal					-personal/Dropbox/											export-haven
+verify personal/Dropbox			synology-Dropbox/=personal/Dropbox/							export-avalir
+verify backup																				export-haven
+verify work						synology-work/=work/										export-haven
+verify rpg																					export-haven
+verify camera					synology-camera/=camera/									export-avalir
+verify music																				export-haven
+verify homes					synology-homes/=homes/										export-haven
+verify archive					-archive/snapshots/ -archive/Archive-Albums/				export-caemlyn
+verify archive/snapshots		nas-backup/archive/snapshots/=archive/snapshots/			srv-zadash
+verify archive/Archive-Albums	music/Albums/=archive/Archive-Albums/						export-haven
+verify sync_hist				-sync_hist/work/ -sync_hist/personal/ -sync_hist/backup/						\
+										-sync_hist/music/.stversions/						srv-zadash
+verify sync_hist/work			synology-sync_hist/work/=sync_hist/work/					export-avalir
+verify sync_hist/personal		synology-sync_hist/personal/=sync_hist/personal/								\
+										-sync_hist/personal/.stversions/					export-avalir
+verify sync_hist/backup			synology-sync_hist/backup/=sync_hist/backup/									\
+										-sync_hist/backup/.stversions/						export-avalir
+verify sync_hist/music/.stversions																				\
+					synology-sync_hist/music/stversions/=sync_hist/music/.stversions/		export-haven
+verify sync_hist/personal/.stversions																			\
+					synology-sync_hist/personal/stversions/=sync_hist/personal/.stversions/	export-haven
+verify sync_hist/backup/.stversions																				\
+					synology-sync_hist/backup/stversions/=sync_hist/backup/.stversions/		export-haven
+
+cat $logfiles | $PAGER

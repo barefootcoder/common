@@ -1,0 +1,287 @@
+#!/bin/bash
+#
+# nas-reclaim -- verified deletion of allowlisted reclamation targets.
+# Companion to whats-next; see ../README.md "Verified deletion".
+#
+# Deletes ONLY a named, internally-allowlisted target, and ONLY after re-running
+# that target's verification (which proves the data is safe elsewhere).  The
+# named-target table is the real allowlist; sane_path() is defense-in-depth.
+#
+#   --noaction (FIRST arg)  preview + verify, delete nothing  (allowlist-safe)
+#   --accept-caveats        proceed on a 'caveated' target (documented partial
+#                           loss); never implicit, so the only-copy bits of such
+#                           a target are never silently destroyed
+#   --self-test             exercise every decision branch in a throwaway
+#                           sandbox -- a logic bug can only nuke scratch files,
+#                           never real data (answers "how do you test the
+#                           refuse-to-delete path without risking anything")
+#
+# Fail-closed throughout: anything ambiguous (host down, probe empty, unknown
+# target, unsafe path) refuses to delete.
+
+set -u
+ME=${0##*/}
+SELF_DIR=$(cd "$(dirname "$0")" && pwd)
+LOG=${NAS_RECLAIM_LOG:-$HOME/local/log/nas-reclaim.log}
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
+
+NOACTION=0
+ACCEPT_CAVEATS=0
+SSH_T=300                       # verification is the safety-critical moment; slow is fine
+
+# known target names (keep in sync with target_spec)
+TARGETS="synology-sync_hist var-tmp-synology-camera"
+
+usage()
+{
+    cat <<USAGE
+$ME -- verified deletion of allowlisted NAS-sync reclamation targets
+
+usage: $ME [--noaction] [--accept-caveats] <target>
+       $ME --list
+       $ME --self-test
+       $ME -h|--help
+
+  --noaction        preview + verify only; delete nothing (put it FIRST)
+  --accept-caveats  proceed on a 'caveated' target despite its documented
+                    accepted-loss (required for such targets; never implicit)
+  --list            list known targets and their kind (clean/caveat)
+  --self-test       run the safe sandbox test matrix and exit
+
+Deletes only the exact path bound to <target>, on its owning host, only if that
+target's verification passes.  Run it on the target's host.   Log: $LOG
+USAGE
+}
+
+log()     { printf '%s %s\n' "$(date '+%F %T')" "$*" >> "$LOG" 2>/dev/null || true; }
+on_host() { [[ $(hostname) == "$1" ]]; }
+nakama()  { timeout "$SSH_T" ssh -p 2322 -o BatchMode=yes -o ConnectTimeout=8 nami@nakama "$@" 2>/dev/null; }
+is_int()  { [[ ${1:-} =~ ^[0-9]+$ ]]; }
+du_kb_local()  { du -sk "$1" 2>/dev/null | cut -f1 | head -1; }
+du_kb_nakama() { nakama "du -sk '$1' 2>/dev/null | cut -f1 | head -1"; }
+
+# --- path guard (defense in depth; the target table is the real allowlist) ---
+sane_path()
+{
+    local p=${1:-}
+    [[ -n $p && $p == /* && $p != *..* ]] || return 1
+    case $p in
+        / | /export | /home | /usr | /var | /var/tmp | /etc | /bin | /sbin | /lib* | /root | "$HOME")
+            return 1 ;;
+    esac
+    [[ ${#p} -ge 10 ]] || return 1
+    return 0
+}
+
+# --- target table -----------------------------------------------------------
+# target_spec NAME -> sets T_host T_path T_desc T_verify T_caveat (rc 1=unknown)
+T_host=""; T_path=""; T_desc=""; T_verify=""; T_caveat=""
+target_spec()
+{
+    T_host=""; T_path=""; T_desc=""; T_verify=""; T_caveat=""
+    case $1 in
+        synology-sync_hist)
+            T_host=haven
+            T_path=/export/synology-sync_hist
+            T_desc="Taaveren leftover; history consolidated into Nakama sync_hist"
+            T_verify=verify_synology_sync_hist
+            T_caveat="~336M of music/stversions (51 old-version files) exist ONLY here per the 2026-04-04 verification; deleting accepts that documented loss"
+            ;;
+        var-tmp-synology-camera)
+            T_host=haven
+            T_path=/var/tmp/synology-camera
+            T_desc="camera migration staging; camera is live on the mesh + Nakama"
+            T_verify=verify_var_tmp_synology_camera
+            T_caveat=""
+            ;;
+        *) return 1 ;;
+    esac
+    return 0
+}
+
+# --- verifications (echo a reason; rc 0 == safe to delete) -------------------
+verify_var_tmp_synology_camera()
+{
+    on_host haven || { echo "must run on haven"; return 1; }
+    [[ -e /export/camera/.stfolder ]] || { echo "camera is not a live Syncthing folder here -- fail closed"; return 1; }
+    local src=/var/tmp/synology-camera dst=/share/CACHEDEV1_DATA/camera s d
+    nakama "test -d '$dst'" || { echo "Nakama camera unreachable/missing -- fail closed"; return 1; }
+    s=$(du_kb_local "$src"); d=$(du_kb_nakama "$dst")
+    is_int "$s" && is_int "$d" || { echo "size probe failed (src=$s nakama=$d) -- fail closed"; return 1; }
+    (( d >= s )) || { echo "Nakama camera (${d}KB) smaller than staging (${s}KB) -- fail closed"; return 1; }
+    echo "camera live on mesh; Nakama camera ${d}KB >= staging ${s}KB"
+    return 0
+}
+
+verify_synology_sync_hist()
+{
+    on_host haven || { echo "must run on haven"; return 1; }
+    local src=/export/synology-sync_hist dst=/share/CACHEDEV1_DATA/sync_hist s d child base miss=0
+    nakama "test -d '$dst'" || { echo "Nakama sync_hist unreachable/missing -- fail closed"; return 1; }
+    s=$(du_kb_local "$src"); d=$(du_kb_nakama "$dst")
+    is_int "$s" && is_int "$d" || { echo "size probe failed (src=$s nakama=$d) -- fail closed"; return 1; }
+    (( d >= s )) || { echo "Nakama sync_hist (${d}KB) not >= source (${s}KB) -- fail closed"; return 1; }
+    while IFS= read -r child
+    do
+        base=${child##*/}
+        nakama "test -e '$dst/$base'" || { echo "top-level child missing on Nakama: $base"; miss=1; }
+    done < <(find "$src" -mindepth 1 -maxdepth 1 2>/dev/null)
+    (( miss == 0 )) || { echo "structure mismatch -- fail closed"; return 1; }
+    echo "Nakama sync_hist ${d}KB >= source ${s}KB; all top-level children present"
+    return 0
+}
+
+# --- core decision ----------------------------------------------------------
+do_reclaim()    # path  verify_fn  desc  caveat
+{
+    local path=$1 vfn=$2 desc=${3:-} caveat=${4:-} vout vrc rc
+    if [[ ! -e $path ]]
+    then
+        echo "$ME: nothing to do -- $path is already absent"
+        log "NOOP absent $path"
+        return 0
+    fi
+    if ! sane_path "$path"
+    then
+        echo "$ME: REFUSING unsafe path: $path" >&2
+        log "REFUSE-UNSAFE $path"
+        return 3
+    fi
+
+    vout=$("$vfn" 2>&1); vrc=$?
+
+    if (( NOACTION ))
+    then
+        if (( vrc == 0 ))
+        then
+            echo "$ME: [noaction] WOULD delete $path"
+            echo "    verify: PASS -- $vout"
+            [[ -n $caveat ]] && echo "    caveat: $caveat (needs --accept-caveats to act)"
+        else
+            echo "$ME: [noaction] would NOT delete $path"
+            echo "    verify: FAIL -- $vout"
+        fi
+        log "NOACTION $path verify=$vrc"
+        return "$vrc"
+    fi
+
+    if (( vrc != 0 ))
+    then
+        echo "$ME: REFUSING to delete $path -- verification FAILED" >&2
+        echo "    $vout" >&2
+        log "REFUSE-VERIFY $path :: $vout"
+        return 1
+    fi
+    if [[ -n $caveat ]] && (( ! ACCEPT_CAVEATS ))
+    then
+        echo "$ME: REFUSING to delete $path -- caveated target" >&2
+        echo "    caveat: $caveat" >&2
+        echo "    re-run with --accept-caveats to proceed" >&2
+        log "REFUSE-CAVEAT $path"
+        return 2
+    fi
+
+    rm -rf -- "$path"; rc=$?
+    if (( rc == 0 ))
+    then
+        echo "$ME: deleted $path"
+        log "DELETED $path ($desc)${caveat:+ [caveat accepted]}"
+    else
+        echo "$ME: rm failed (rc=$rc) on $path" >&2
+        log "RMFAIL $path rc=$rc"
+    fi
+    return "$rc"
+}
+
+# --- self test --------------------------------------------------------------
+# Every case runs against a throwaway sandbox.  The dangerous cases (B: must
+# refuse a real delete when verify fails; F: must refuse an unsafe path) operate
+# on scratch files, so even a logic bug that wrongly deletes destroys nothing
+# real.  C does a genuine delete -- of a scratch file -- to prove the happy path.
+self_test()
+{
+    local sb fails=0 rc
+    sb=$(mktemp -d "${TMPDIR:-/tmp}/nas-reclaim-selftest.XXXXXX") || return 1
+
+    _vpass() { [[ -e "$sb/dst/ok" ]]; }
+    _vfail() { echo "synthetic fail"; return 1; }
+    _reset() { rm -rf "$sb/src"; mkdir -p "$sb/src"; echo x > "$sb/src/f"; }
+    mkdir -p "$sb/dst"; echo x > "$sb/dst/ok"
+
+    _reset; NOACTION=1; ACCEPT_CAVEATS=0
+    do_reclaim "$sb/src" _vpass test "" >/dev/null 2>&1
+    [[ -e $sb/src ]] || { echo "  FAIL A: --noaction deleted"; fails=1; }
+
+    _reset; NOACTION=0
+    do_reclaim "$sb/src" _vfail test "" >/dev/null 2>&1
+    [[ -e $sb/src ]] || { echo "  FAIL B: deleted despite verify FAIL"; fails=1; }
+
+    _reset; NOACTION=0
+    do_reclaim "$sb/src" _vpass test "" >/dev/null 2>&1
+    [[ -e $sb/src ]] && { echo "  FAIL C: did not delete on verify PASS"; fails=1; }
+
+    _reset; NOACTION=0; ACCEPT_CAVEATS=0
+    do_reclaim "$sb/src" _vpass test "synthetic caveat" >/dev/null 2>&1
+    [[ -e $sb/src ]] || { echo "  FAIL D: deleted caveated target without --accept-caveats"; fails=1; }
+
+    _reset; NOACTION=0; ACCEPT_CAVEATS=1
+    do_reclaim "$sb/src" _vpass test "synthetic caveat" >/dev/null 2>&1
+    [[ -e $sb/src ]] && { echo "  FAIL E: --accept-caveats did not delete"; fails=1; }
+    ACCEPT_CAVEATS=0
+
+    NOACTION=0
+    do_reclaim "$HOME" _vpass test "" >/dev/null 2>&1; rc=$?
+    { [[ $rc == 3 ]] && [[ -e $HOME ]]; } || { echo "  FAIL F: unsafe-path guard (rc=$rc)"; fails=1; }
+
+    NOACTION=0
+    do_reclaim "$sb/nope" _vpass test "" >/dev/null 2>&1; rc=$?
+    [[ $rc == 0 ]] || { echo "  FAIL G: absent path not a clean noop (rc=$rc)"; fails=1; }
+
+    "$0" no-such-target >/dev/null 2>&1; rc=$?
+    [[ $rc != 0 ]] || { echo "  FAIL H: unknown target accepted"; fails=1; }
+
+    rm -rf "$sb"
+    if (( fails )); then echo "$ME --self-test: FAILED"; return 1
+    else echo "$ME --self-test: all cases passed (A-H)"; return 0; fi
+}
+
+# --- arg parsing ------------------------------------------------------------
+while (( $# ))
+do
+    case $1 in
+        --noaction)        NOACTION=1 ;;
+        --accept-caveats)  ACCEPT_CAVEATS=1 ;;
+        --self-test)       self_test; exit $? ;;
+        --list)
+            printf '%-26s %-7s %s\n' TARGET KIND HOST:PATH
+            for t in $TARGETS
+            do
+                target_spec "$t"
+                kind=clean; [[ -n $T_caveat ]] && kind=caveat
+                printf '%-26s %-7s %s\n' "$t" "$kind" "$T_host:$T_path"
+            done
+            exit 0 ;;
+        -h|--help)         usage; exit 0 ;;
+        --*)               echo "$ME: unknown option '$1'" >&2; usage >&2; exit 2 ;;
+        *)                 break ;;
+    esac
+    shift
+done
+
+(( $# == 1 )) || { echo "$ME: expected exactly one target (got $#)" >&2; usage >&2; exit 2; }
+TARGET=$1
+
+if ! target_spec "$TARGET"
+then
+    echo "$ME: unknown target '$TARGET'  (known: $TARGETS)" >&2
+    log "REFUSE-UNKNOWN $TARGET"
+    exit 2
+fi
+if ! on_host "$T_host"
+then
+    echo "$ME: target '$TARGET' lives on $T_host; run this there (you are on $(hostname))" >&2
+    exit 2
+fi
+
+do_reclaim "$T_path" "$T_verify" "$T_desc" "$T_caveat"
+exit $?

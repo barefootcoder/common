@@ -228,6 +228,16 @@ script's bare name.
   - Service setup priorities (Syncthing, Backblaze B2 backup)
   - Security and future expansion planning
 
+### NAS Sync + Backup Architecture
+- **[nas-sync/](nas-sync/)**: Target end-state for the whole home data-sync +
+  backup topology -- share tiers, the Syncthing mesh, Graymoor as version
+  authority, Nakama, and the periodic push to Backblaze B2 -- plus the phased
+  [roadmap](nas-sync/roadmap.md) to get there and a `nas-sync/bin/whats-next`
+  probe that reports the next action on demand. Keeps its own README/TODO in
+  the subdir to stay out of this file's multi-agent churn; **put new NAS-sync
+  deferred work in `nas-sync/TODO.md`, not here.** Supersedes the old one-off
+  `/export/personal/technical/nas-xfer/` workspace.
+
 ### Desktop Workflow
 - **[desktop-switching-shortcuts.md](desktop-switching-shortcuts.md)**: Interlocking `Ctrl+Alt+Up` / `Ctrl+Alt+Down` MATE shortcuts that switch between paired desktops (Haven↔Avalir, Zadash↔Caemlyn) via NoMachine. Documents the `show-desktop` script, the `WORK`/`HOME` symbolic targets, and the full behavior matrix.
 

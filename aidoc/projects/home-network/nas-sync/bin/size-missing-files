@@ -1,0 +1,32 @@
+#! /usr/bin/env perl
+
+use 5.14.0;
+use warnings;
+use autodie ':all';
+
+use List::AllUtils qw< reduce >;
+use Number::Bytes::Human qw< format_bytes parse_bytes >;
+
+my $total = 0;
+my %biggest_files;
+while ( <> )
+{
+	if ( /^(.*?)\s+\[\s*(\d+(\.\d+)?[KMG]?).* none, none/ )
+	{
+#print "Cur size: $2; ";
+		my $name = $1;
+		my $size = parse_bytes($2);
+		$total += $size;
+#say "New total: $total";
+		$biggest_files{$name} = $size;
+		if (scalar keys %biggest_files > 5)
+		{
+			my $smallest = reduce { $biggest_files{$a} < $biggest_files{$b} ? $a : $b } keys %biggest_files;
+			delete $biggest_files{$smallest};
+		}
+	}
+}
+say "total files: ", format_bytes($total);
+say "biggest files:";
+say "  * ", format_bytes($biggest_files{$_}), " $_"
+		foreach sort { $biggest_files{$b} <=> $biggest_files{$a} } keys %biggest_files;

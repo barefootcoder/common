@@ -234,7 +234,11 @@
       "Bash(aws rds describe-db-clusters *)",
       "Bash(aws secretsmanager describe-secret *)",
       "Bash(aws cloudfront list-distributions *)",
-      "Bash(aws cloudformation describe-stacks *)"
+      "Bash(aws cloudformation describe-stacks *)",
+      "Bash(/export/proj/common/aidoc/projects/home-network/nas-sync/bin/whats-next:*)",
+      "Bash(/home/buddy/common/aidoc/projects/home-network/nas-sync/bin/whats-next:*)",
+      "Bash(/export/proj/common/aidoc/projects/home-network/nas-sync/bin/nas-reclaim:*)",
+      "Bash(/home/buddy/common/aidoc/projects/home-network/nas-sync/bin/nas-reclaim:*)"
     ],
     "deny": [
       "Bash(git push *)",
@@ -328,7 +332,8 @@
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "allow": [
-      "git add and git commit are allowed when the user has explicitly requested a commit (e.g. via /x-commit or 'commit this')"
+      "git add and git commit are allowed when the user has explicitly requested a commit (e.g. via /x-commit or 'commit this')",
+      "The nas-reclaim script (aidoc/projects/home-network/nas-sync/bin/nas-reclaim, invoked by full path) may delete in auto mode: it deletes only named, internally-allowlisted reclamation targets, and only after re-verifying the data is safe elsewhere; caveated targets require an explicit --accept-caveats, unsafe paths are refused, and --noaction is read-only. Its internal verification is the safety gate."
     ],
     "soft_deny": [
       "Do not run git add or git commit spontaneously — only when the user has asked to commit",
