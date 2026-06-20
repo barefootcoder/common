@@ -34,20 +34,26 @@ skill scans this file on load and surfaces due/pending items.
   (a long-tolerated emitter can start mattering once the link goes marginal).
   Follow-ups: (a) ~~analyze the log~~ DONE for the 2026-06-17 episode
   (signature confirmed; thresholds gap=0.3s/jump=150 caught it fine, no tuning
-  needed yet); (b) **Haven-mouse test IN PROGRESS as of 2026-06-17 ~15:30** -- user
-  powered Haven's trackball off at its base switch (receiver still plugged into
-  Haven, so only the trackball's TX is gone, not the receiver -- fine, the receiver
-  alone emits almost nothing). Leaving off for the rest of the day. **Wrinkle the
-  user flagged:** Haven gets carried out and brought back in to plug in at night;
-  when it returns its mouse may get switched back on, breaking the test -- so the
-  open question is remembering to re-disable it then. **Handled:** a bedtime
-  reminder is armed -- `~/oneoff/trackball-test-reminder` (detached, PPID 1, fires
-  02:50 tonight) pops a persistent, above+sticky, click-to-dismiss zenity window on
-  Avalir's `:0` (hands focus back so typing can't dismiss it) telling the user to
-  switch Haven's trackball off. One-shot; re-arm for another night with `setsid
-  ~/oneoff/trackball-test-reminder </dev/null >/dev/null 2>&1 &`. To read the
-  result: after a day with Haven's mouse off, check `~/local/log/trackball-mon.log`
-  for whether JUMP episodes stopped (see the dated 2026-06-18 item below).
+  needed yet); (b) **Haven-mouse test UPGRADED + ONGOING (2026-06-18 readout).**
+  First readout: ~27h with zero JUMP episodes after Haven's M570 went off
+  ~2026-06-17 15:30, monitor confirmed alive the whole time -- but INCONCLUSIVE,
+  because the baseline is only ~1 episode per ~6 days (the monitor ran Jun 11->17
+  catching nothing before the first cluster), so a 1-day clean window is exactly
+  what an *unchanged* setup would show too. The 02:50 reminder fired and was
+  dismissed 04:53 as designed. **The test is now both stronger and free, so it
+  just continues:** the user has returned to the pre-investigation arrangement and
+  Haven's M570 now lives permanently in the den, 3-4 rooms from Haven (full
+  physical separation, not merely powered off) and no longer travels with Haven --
+  so the bedtime reminder is OBSOLETE and retired (its whole job was catching an
+  overnight re-enable that can't happen now; the one-shot already fired+finished,
+  not re-armed). Zero cost because the M570 was only ever in the office to spare
+  Haven's *touchpad* (an old crash suspect, since superseded by the AC-adapter
+  theory); the touchpad is fine to use now. **Timeline confound (sharpens the low
+  prior):** the user was bringing the M570 into the office WELL BEFORE the ~6/10
+  jump onset, so its mere presence demonstrably coexisted with months of
+  no-jumping -- it can only be the cause in the weak "long-tolerated emitter turns
+  harmful once the link goes marginal" form. Re-check the log after a multi-day
+  clean stretch (see the dated 2026-07-02 item below).
   (c) **Bluetooth EXONERATED + RE-ENABLED 2026-06-17** -- the
   lag recurred with BT soft-blocked, so BT is cleared; `sudo rfkill unblock
   bluetooth` run, README "Deliberately disabled" BT entry removed. (d) if it
@@ -58,21 +64,22 @@ skill scans this file on load and surfaces due/pending items.
   or MX Ergo on Bluetooth via Easy-Switch as an A/B. _(added 2026-06-11 during the
   trackball-lag investigation; updated 2026-06-17 after the first monitor capture)_
 
-- **2026-06-18** — Read out the Haven-mouse-off trackball test (set up 2026-06-17).
-  Must run ON Avalir -- the log is host-local (`~/local/log/`), not synced, so this
-  can't be a cloud agent. Steps: (1) `tail` / scan `~/local/log/trackball-mon.log`
-  for JUMP lines dated after ~2026-06-17 15:30 (when Haven's trackball went off);
-  (2) sanity-check the day was a fair test -- was Haven actually in the room with
-  its mouse off? (the 02:50 reminder should have caught the overnight re-disable;
-  check `~/local/log/trackball-test-reminder.log` for the FIRE/closed lines).
-  Verdict logic: **no JUMPs while Haven's mouse was off** = Haven's trackball is
-  implicated (surprising given the years-old arrangement, but then pursue it); **JUMPs
-  still occurred** = Haven's trackball cleared, refocus on external RF / link-hardware
-  degradation (the two live hypotheses). If the day was inconclusive (e.g. no episodes
-  even occur at baseline, or Haven wasn't really present), re-arm the bedtime reminder
-  for another night (`setsid ~/oneoff/trackball-test-reminder </dev/null >/dev/null
-  2>&1 &`) and re-check the day after. _(added 2026-06-17 during the bedtime-reminder
-  setup)_
+- **2026-07-02** — Re-check the Haven-mouse-OFF trackball test, now a permanent
+  physical-separation test (Haven's M570 has lived in the den, 3-4 rooms away,
+  since 2026-06-17). Must run ON Avalir -- `~/local/log/trackball-mon.log` is
+  host-local, not synced, so this can't be a cloud agent. The 2026-06-18 first
+  readout was clean but INCONCLUSIVE: baseline is only ~1 episode per ~6 days, so
+  one clean day proves nothing (see Done). By 2026-07-02 the M570 will have been
+  gone ~2 weeks = ~2 baseline intervals -- the first window big enough to mean
+  something. Scan the log for JUMP lines after 2026-06-17 15:30, and confirm
+  `trackball-mon` is still alive (`pgrep -af trackball-mon`; it's a perl script, so
+  bare `pgrep trackball-mon` matches nothing). Verdict: **a multi-day clean stretch
+  with the M570 in the den** = Haven's trackball implicated despite the timeline
+  confound (then pursue per the main trackball item's fallback fixes (e)); **JUMPs
+  still occurring** = M570 cleared, refocus on external RF / Avalir link-hardware
+  degradation (the two leading hypotheses). No reminder to re-arm -- the M570 no
+  longer travels with Haven. _(added 2026-06-18 during the trackball test readout,
+  supersedes the spent 2026-06-18 readout item)_
 
 - **anytime** — Haven charging discipline (June 10 crash mitigations, behavior +
   config, no code). The June 10 crash needed three legs stacked; the two easiest
@@ -311,6 +318,23 @@ skill scans this file on load and surfaces due/pending items.
   lines). Done alongside the sibling `pidgin_restore` fix for the same BadWindow
   tree-walk race. _(added 2026-05-28 during show-desktop BadWindow-race diagnosis,
   completed 2026-06-18)_
+
+- ~~2026-06-18~~ — Read out the Haven-mouse-off trackball test (set up 2026-06-17).
+  **DONE; verdict INCONCLUSIVE.** `trackball-mon` confirmed alive the whole window
+  (pid 164896, continuous since the 2026-06-11 deploy) and logged ZERO JUMP
+  episodes in the ~27h after Haven's M570 went off ~2026-06-17 15:30 (readout at
+  2026-06-18 18:38). The 02:50 reminder fired and was dismissed 04:53 (reminder log
+  FIRE/closed pair) -- worked as designed. BUT the baseline is only ~1 episode per
+  ~6 days (monitor caught nothing Jun 11->17 before the first cluster), so a 27h
+  clean window is uninformative -- exactly what an unchanged setup would show.
+  Couldn't confirm from Haven that the M570 was physically off (its Unifying
+  pairing persists in the kernel whether on or off, and solaar isn't installed on
+  Haven), but the user reports it's now 3-4 rooms away in the den. Outcome: test
+  upgraded to permanent physical separation, bedtime reminder retired (obsolete),
+  timeline confound recorded (M570 was in the office well before the ~6/10 onset),
+  and a dated 2026-07-02 re-check added (see Outstanding); main trackball item's
+  sub-item (b) updated. _(added 2026-06-17 during the bedtime-reminder setup,
+  completed 2026-06-18 during the readout)_
 
 - ~~2026-06-12~~ — Fix vivaldi-guard's NoMachine detection gap. **DONE** (user
   approved; applied to `bin/vivaldi-guard`, synced to both boxes). The original

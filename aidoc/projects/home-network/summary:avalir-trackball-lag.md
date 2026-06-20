@@ -3,9 +3,13 @@
 **Status: diagnosis confirmed at the layer level; root cause (which interferer)
 not yet identified; no fix verified. Monitor deployed 2026-06-11 and PROVEN --
 caught its first full episode 2026-06-17 (see "Episode: 2026-06-17" below).
-Bluetooth and Avalir's own WiFi are both now exonerated; the leading open
-hypothesis is an external 2.4GHz emitter (Haven's trackball is the cheapest
-thing left to test).**
+Bluetooth and Avalir's own WiFi are both now exonerated. The Haven-mouse test is
+now running long-term as a permanent physical-separation test (M570 moved to the
+den, 3-4 rooms from Haven, 2026-06-17) but carries a LOW prior -- it coexisted
+with months of no-jumping before the ~6/10 onset (see "Next steps" #2). Leading
+open hypotheses: an external 2.4GHz emitter, or the Avalir link hardware degrading.
+First readout 2026-06-18 was clean but inconclusive (base rate too low); re-check
+~2026-07-02.**
 
 ## Symptom
 
@@ -146,25 +150,28 @@ corroboration of an early-June intensification, not proof.
 1. ~~**Read `trackball-mon.log` after the next episode.**~~ DONE 2026-06-17 (above);
    signature confirmed, default thresholds (gap=0.3s / jump=150) caught it cleanly,
    no tuning needed yet.
-2. **Haven-mouse test -- IN PROGRESS (started 2026-06-17 ~15:30).** User powered
-   Haven's trackball off at its base switch; its Unifying receiver stays plugged
-   into Haven (only the trackball's transmitter is gone -- the receiver alone
-   emits almost nothing, so the test is valid). Leaving off for the rest of the
-   day. To read the result: after ~a day mouse-off, check
-   `~/local/log/trackball-mon.log` for whether JUMP episodes stop. **Wrinkle:**
-   Haven is carried out and brought back in at night to plug in; on return its
-   mouse may get switched back on, breaking the test -- the open question is
-   remembering to re-disable it then. **Reminder armed for that:**
-   `~/oneoff/trackball-test-reminder` (Perl, core-only; detached one-shot) sleeps
-   until 02:50 then pops a persistent, above+sticky, click-to-dismiss zenity window
-   on `:0` telling the user to switch Haven's trackball off. It hands keyboard focus
-   back to the user's window right after mapping, because a zenity dialog grabs focus
-   and a stray space/Enter while typing was activating its default OK and dismissing
-   it instantly (found during setup). One-shot; re-arm for another night with `setsid
-   ~/oneoff/trackball-test-reminder </dev/null >/dev/null 2>&1 &`. Log:
-   `~/local/log/trackball-test-reminder.log`. Read-out is the dated 2026-06-18 TODO.
-   Prior is LOW (the arrangement isn't new -- see "Narrowing from the user" above)
-   but the test is free and falsifiable.
+2. **Haven-mouse test -- ONGOING, upgraded to permanent physical separation
+   (2026-06-18).** First readout (2026-06-18, ~27h after the M570 went off
+   2026-06-17 ~15:30): zero JUMP episodes, monitor confirmed alive throughout --
+   but INCONCLUSIVE, because the baseline is only ~1 episode per ~6 days (the
+   monitor ran Jun 11->17 with nothing before the first cluster), so one clean day
+   is what an unchanged setup would show too. The 02:50 reminder fired + was
+   dismissed 04:53 as designed. The user has now returned to the pre-investigation
+   arrangement: Haven's M570 lives **permanently in the den, 3-4 rooms from Haven**
+   (full physical separation, not just a power-off at the base switch), and no
+   longer travels with Haven -- so the bedtime reminder is **retired** (obsolete:
+   there is no overnight re-enable left to catch; the one-shot already fired and
+   finished, not re-armed). Zero cost, because the M570 was only ever brought into
+   the office to let the user keep Haven's *touchpad* disabled (an old crash
+   suspect, since superseded by the AC-adapter theory). **Timeline confound
+   (sharpens the already-low prior):** the user was bringing the M570 into the
+   office *well before* the ~6/10 onset, so its presence demonstrably coexisted
+   with months of no-jumping -- it survives as a suspect only in the weak
+   "long-tolerated emitter turns harmful once the link goes marginal" form.
+   Re-check after a multi-day clean stretch (dated 2026-07-02 TODO); the read is
+   just `~/local/log/trackball-mon.log` JUMP lines after 2026-06-17 15:30, plus a
+   `pgrep -af trackball-mon` liveness check. Log of the (now finished) reminder:
+   `~/local/log/trackball-test-reminder.log`.
 3. ~~**Bluetooth-disabled experiment.**~~ RESOLVED 2026-06-17: lag recurred with BT
    off, so BT is exonerated; `sudo rfkill unblock bluetooth` run, README updated.
 4. **Characterize the 2.4GHz neighborhood** (optional; WiFi radio is off, would
