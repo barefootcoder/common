@@ -207,6 +207,73 @@ Syncthing into noticing the file, which then propagated within seconds.
   request, auto-detecting the enclosing Syncthing folder. Use this as a
   faster, name-stable replacement for the curl recipe in case #2 above.
 
+#### Case Study: Tagged Album Not Propagating, Cross-Machine (June 2026)
+
+**Problem:** `/export/music/for-tagging/Xnew/*.mp3` (a 12-track album just
+retagged in Picard) differed between Avalir (newer, smaller: the tagged
+versions) and Haven (older, larger: the pre-tag originals). Both Web GUIs
+showed `export-music` as "Up to Date".
+
+**Diagnosis: same DB-vs-disk technique as the April case, with a twist.** The
+file's authoritative cluster version (`global` AND `local` in Avalir's DB) was
+stamped `modifiedBy: <haven>` at the pre-tag size/mtime, and Haven's disk
+matched it exactly. But Avalir's *on-disk* file was the newer tagged one, which
+did NOT match Avalir's own DB record. So:
+
+- Avalir's local index was stale: its disk had drifted ahead of its own
+  database (a Picard 12-file save-burst is exactly the kind of event the
+  fs-watcher drops).
+- Both ends honestly reported "Up to Date" because "Up to Date" is a DB-vs-DB
+  comparison (local index == global index) and both indexes still held the
+  pre-tag version. **It is structurally blind to a local disk that has moved
+  ahead of its own index** -- that is the whole reason the GUI can lie here.
+
+**The twist that matters: rescan the box that MADE the change.** The fix is a
+rescan on Avalir (the box whose disk is ahead). A rescan on Haven is a no-op:
+Haven's disk already matches its DB, so the new content is not there to
+discover. General rule: force the rescan on the *authoring* machine, never the
+one waiting to receive.
+
+```bash
+# On Avalir (the authoring box) -- rescan just that subtree
+syncthing-rescan export-music for-tagging/Xnew
+```
+
+Avalir re-hashed the files, its version vector gained an Avalir entry on top of
+Haven's, and the tagged versions propagated to Haven (and the other peers)
+within seconds.
+
+**Why this kept biting, and the durable fix.** The music tagging workflow
+(`~/proj/music/bin/sunzip`) stages an album on one box, then the user tags it
+in Picard -- often on the *other* desktop. `sunzip` then resumes and runs
+`clean-picard`/`move-tagged` against its *local* copy. If the tagged files have
+not propagated back when it resumes, it operates on the untagged originals and
+blows up (`clean-picard line 363` uninit -> empty album name ->
+`move-tagged: arg must be a directory`). Two pieces close this, both
+hostname-free (so a replaced laptop/desktop needs no edits):
+
+- **`conf/ai/devtools/syncthing-rescan-all`** rescans locally, then best-effort
+  kicks every online Linux Tailscale peer in parallel (discovered from
+  `tailscale status`, failures ignored). Use it when you don't know which box
+  is sitting on the un-scanned change: a rescan is idempotent and a no-op on a
+  box that has nothing new. It delegates to `syncthing-rescan` (the single-host
+  version) on each peer. Note: `conf/ai/devtools/` is on PATH for AI agents
+  only, so from a normal shell or script invoke it by an explicit
+  `~/common/conf/ai/devtools/syncthing-rescan-all` path.
+- **A sync barrier in `sunzip`**: after the "press RETURN" tagging prompt it
+  kicks `syncthing-rescan-all`, then blocks until the staged files have
+  actually *changed on disk* vs a pre-tag snapshot and then settled. It keys off
+  the real bytes, NOT the "Up to Date" flag (which lies while an index is
+  stale), so it cannot be fooled and does not care which box did the tagging.
+
+**Lesson:** this is the April case generalized to a cross-machine workflow.
+"Up to Date" on both ends does NOT mean the files agree; it means both indexes
+agree, which says nothing about a disk that has drifted ahead of its own index.
+When that happens, rescan the *authoring* box. And note we did NOT just lower
+`rescanIntervalS` here as we did for the quin folders: `export-music` is ~27k
+files, so an on-demand subtree kick (4 files) is both cheaper and immediate,
+versus a periodic full-folder scan bounded by the interval.
+
 #### Case Study: Cluster Realignment via quin Downgrade (May 2026)
 
 **Problem:** Quin's `~/.local/bin/syncthing` auto-upgraded itself to `v2.1.0`

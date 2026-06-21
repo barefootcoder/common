@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# syncthing-rescan-all - force a Syncthing rescan on THIS box AND on every
+# reachable peer, best-effort.
+#
+# Why: a change made on one machine only propagates after THAT machine's
+# Syncthing rescans and re-hashes it.  Its fs-watcher occasionally misses a
+# burst (e.g. a Picard save of a whole album), so the change sits un-announced
+# while every node still reports "Up to Date" against the stale version.  When
+# you don't know WHICH box is sitting on the un-scanned change, kick them all:
+# a rescan is idempotent and a harmless no-op on a box that has nothing new.
+#
+# Peers are discovered from `tailscale status` (online Linux nodes), so there
+# are NO hardcoded hostnames -- a replacement laptop/desktop is picked up
+# automatically once it joins the tailnet.  Peers that are unreachable, lack
+# ssh, or don't have the folder simply fail and are ignored.
+#
+# Usage: same surface as syncthing-rescan:
+#   syncthing-rescan-all [--noaction] <folder-id> [sub-path]
+#   syncthing-rescan-all [--noaction] --path <filesystem-path>
+#
+# The local rescan is delegated to the sibling `syncthing-rescan`; the very
+# same arguments are handed to `syncthing-rescan` on each peer.  Using --path
+# is recommended: it resolves to the right folder independently on each box,
+# so no Syncthing folder-id need be known here.
+
+ME=$(basename "$0")
+self=$(readlink -f "$0")
+rescan="${self%-all}"                       # sibling syncthing-rescan (same dir)
+
+if [ ! -x "$rescan" ]
+then
+    echo "$ME: cannot find sibling syncthing-rescan at $rescan" >&2
+    exit 1
+fi
+
+noaction=
+if [ "$1" = "--noaction" ] || [ "$1" = "-n" ]
+then
+    noaction=1
+fi
+
+# 1) local rescan (authoritative for this box) -- delegate to syncthing-rescan
+echo "$ME: local ->"
+"$rescan" "$@"
+
+# 2) best-effort kick on every online Linux Tailscale peer
+command -v tailscale >/dev/null 2>&1 || exit 0
+me=$(hostname -s 2>/dev/null || hostname)
+
+# args to forward to the peer copy of syncthing-rescan: drop a leading
+# --noaction (we re-decide per peer below); the rest is <folder|--path> [sub]
+fwd=("$@")
+[ -n "$noaction" ] && fwd=("${fwd[@]:1}")
+
+while read -r ip name owner os state
+do
+    [ "$os" = linux ]      || continue      # phones etc. -- no ssh we use
+    [ "$state" = offline ] && continue      # skip offline peers
+    [ "$name" = "$me" ]    && continue      # skip self
+
+    if [ -n "$noaction" ]
+    then
+        echo "$ME: [noaction] would ssh $name: $rescan ${fwd[*]}"
+        continue
+    fi
+
+    (
+        if timeout 8 ssh -o BatchMode=yes -o ConnectTimeout=4 "$name" \
+               "$rescan" "${fwd[@]}" >/dev/null 2>&1
+        then
+            echo "$ME: $name -> kicked"
+        else
+            echo "$ME: $name -> unreachable/no-op (ignored)"
+        fi
+    ) &
+done < <(tailscale status 2>/dev/null | awk 'NF>=5 && $1 ~ /^[0-9]+\./')
+
+wait
+exit 0
