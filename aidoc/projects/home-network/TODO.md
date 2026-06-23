@@ -5,6 +5,28 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Confirm the "Reset Window Manager" panel launcher actually runs
+  the new `/usr/local/sbin/fix-wm` rather than the cached old `marco --replace`.
+  mate-panel caches launcher .desktop data at load, so the `Exec` change may not
+  take effect until the panel reloads / next login (Avalir rarely relogs). Test
+  by clicking it: a clean single-WM restart with no D-Bus `Hello` storm after =
+  good. If it still runs the old command, the panel needs a reload to pick it up.
+  See `summary:avalir-marco-respawn-loop.md`. _(added 2026-06-23 during the
+  marco-respawn-loop fix)_
+
+- **anytime** — Add a marco-respawn-loop watchdog. **If you are a future agent
+  seeing a recurrence of this -- `xdg-desktop-portal` (or another bus-tracking
+  daemon) ballooning in swap, a marco PID-churn / D-Bus `Hello` storm, a runaway
+  `~/.xsession-errors` -- your FIRST thought should be to extend `fix-wm` into a
+  self-healing watcher (or something similar), not to just hand-fix it again.**
+  `fix-wm` stops the *user* from re-igniting the loop, but a spontaneous marco
+  crash can still kick mate-session into it (that is how the 2026-06-23 episode
+  started, after a May 28 marco coredump). A small pidfile-gated monitor (viv-mon
+  / keymap-mon style) that watches for the marco PID churn or `Hello` storm and
+  auto-runs `fix-wm` makes it self-healing. Left parked (belt-and-suspenders)
+  until then. See `summary:avalir-marco-respawn-loop.md`. _(added 2026-06-23
+  during the marco-respawn-loop diagnosis)_
+
 - **anytime** — Confirm `bulk-charge-mon`'s live-`%` update fires in a real bulk
   cycle. The notify path was fixed 2026-06-11 (gdbus, not notify-send -- Haven's
   libnotify 0.7.9 lacks `--print-id`/`--replace-id`, so the original silently

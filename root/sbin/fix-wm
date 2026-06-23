@@ -1,0 +1,42 @@
+#! /bin/bash
+
+# fix-wm -- restart the MATE window manager (marco) WITHOUT igniting
+# mate-session's marco respawn loop.
+#
+# The old "Reset Window Manager" panel launcher was a bare `marco --replace`.
+# That makes the running marco lose the WM selection and exit *cleanly*
+# (status 0).  When mate-session is in an active relaunch state (e.g. after a
+# marco crash), it instantly relaunches its own marco, which then finds the
+# screen already owned by the --replace instance and exits "already has a
+# window manager" -- cleanly again -- so mate-session relaunches again, ~18
+# times a second.  That runaway (diagnosed 2026-06-23, onset ~2026-05-29 after
+# a marco crash) leaked xdg-desktop-portal to 7 GB of swap and grew
+# ~/.xsession-errors to 15 GB, because every spawn opens then drops a D-Bus
+# connection the portal tracks.
+#
+# Killing marco with a SIGNAL first makes its death *abnormal*, which trips
+# mate-session's crash-throttle so it backs off instead of fast-relaunching;
+# then we bring the WM back ourselves.  (mate-session does not reliably respawn
+# marco on its own -- that is why a manual reset launcher exists at all -- so we
+# always relaunch it here rather than trusting mate-session to.)
+
+readonly ME=${0##*/}
+
+if [[ -z $DISPLAY ]]
+then
+	echo "$ME: no \$DISPLAY -- refusing to kill the WM when I cannot relaunch it" >&2
+	exit 1
+fi
+
+pkill -x marco					# SIGTERM: stop the current WM *and* throttle mate-session
+sleep 2
+marco --replace >/dev/null 2>&1 &
+disown
+
+sleep 2							# confirm a WM actually came back; retry once if not
+if ! pgrep -x marco >/dev/null
+then
+	echo "$ME: marco did not return; retrying" >&2
+	marco --replace >/dev/null 2>&1 &
+	disown
+fi

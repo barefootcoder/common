@@ -429,6 +429,27 @@ If user asks about EC2 sandbox sync:
 
 ## Current Status
 
+- **Avalir xdg-desktop-portal 7 GB swap blowup traced to a marco respawn loop
+  (2026-06-23):** A low-memory episode showed `xdg-desktop-portal` (PID 3867,
+  ~200-day uptime) holding **~7 GB of swap** -- a process the user had never seen
+  on `topswap` in ~7 years. Root cause was NOT the portal (binary unchanged since
+  2022): a **marco respawn loop firing ~18x/sec** flooded the session D-Bus with
+  connect/disconnect churn (`NameOwnerChanged`), and the portal -- which tracks
+  every client connection -- leaked a sliver per event, compounding to ~7 GB. The
+  loop: the "Reset Window Manager" panel launcher ran a bare `marco --replace`,
+  creating an unmanaged WM that fights mate-session's managed WM slot; each
+  mate-session relaunch exits *cleanly* ("already has a window manager"), so the
+  crash-throttle never trips and it loops. Dormant for months, it ignited
+  ~2026-05-29 after a marco crash (coredump in `meta_display_set_cursor_theme`).
+  Collateral: `~/.xsession-errors` had grown to **15.4 GB** (~567 MB/day). Fixes:
+  restarted the portal (reclaimed ~7 GB swap); `pkill -x marco` to break the loop
+  (the SIGTERM trips mate-session's throttle so it backs off -- note mate-session
+  does NOT auto-respawn marco, which is why the manual launcher exists at all);
+  truncated the 15.4 GB log (~15 GB disk back). Durable fix: new **`fix-wm`**
+  (`root/sbin/fix-wm` -> `/usr/local/sbin/fix-wm`) does signal-kill-then-replace
+  so it never hands mate-session a clean exit to chase; the panel launcher and
+  `bin/dtop-gaming` both repointed at it. See
+  `summary:avalir-marco-respawn-loop.md`.
 - **Avalir trackball lag diagnosed to the 2.4GHz link (June 10-17 2026):**
   The MX Ergo trackball intermittently freezes then jumps "halfway across the
   screen." It is a Logitech **Unifying** (2.4GHz proprietary radio) device, NOT
@@ -565,6 +586,20 @@ If user asks about EC2 sandbox sync:
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
 
 ## Tools and Scripts
+
+### fix-wm
+`root/sbin/fix-wm` (deploys to `/usr/local/sbin/fix-wm` via root's
+`psync`+`makeln`, alongside the other `fix-*` scripts) -- safely restarts the
+MATE window manager (marco). It does `pkill -x marco` (SIGTERM) **first**, then
+`marco --replace`. The signal-kill is the whole point: an abnormal marco death
+trips mate-session's crash-throttle so it backs off, instead of the runaway
+~18/sec respawn loop a bare `marco --replace` triggers (which leaked
+`xdg-desktop-portal` to 7 GB swap on 2026-06-23 -- see that Current Status entry
+and `summary:avalir-marco-respawn-loop.md`). Guards on `$DISPLAY` (won't kill the
+WM if it can't relaunch it) and verifies a WM returned. The "Reset Window Manager"
+panel launcher and `bin/dtop-gaming` both call it. Note: mate-session does NOT
+reliably respawn marco on its own, so `fix-wm` always relaunches it rather than
+trusting mate-session to.
 
 ### bulk-charge-mon
 Haven-local watcher (`local/haven/bin/bulk-charge-mon`, Perl, core-only) that

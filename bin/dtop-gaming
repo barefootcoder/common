@@ -28,7 +28,7 @@ if (not $GAMING ~~ @workspaces)
 	$workspaces = '[' . join(', ', map { "'$_'" } @workspaces) . ']';
 	sh(gsettings => set => 'org.gnome.desktop.wm.preferences', 'workspace-names', shq($workspaces));
 	sh(xdotool => set_num_desktops => 5);
-	sh(marco => '--replace', '>/dev/null', '2>&1', '&');
+	sh('fix-wm');									# safe marco restart -- bare `marco --replace` here can ignite the mate-session respawn loop (see fix-wm)
 	sleep 5;
 }
 
