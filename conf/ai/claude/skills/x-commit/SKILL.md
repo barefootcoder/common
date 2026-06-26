@@ -15,12 +15,12 @@ Invoked as: `/x-commit {{ARGS}}` — or auto-invoked when a commit is needed.
 - **No args / auto-invoked**: Commit files modified during this conversation
 - **With args**: Specific files, or instructions like "amend", or both
 
-**Stage only YOUR work -- this is a shared tree.**  Several of these repos are
+**Stage only YOUR work--this is a shared tree.**  Several of these repos are
 Syncthing shares worked by multiple agents and machines at once, and even on a
 single machine the working copy routinely carries unrelated in-flight edits.  So:
 
 - Stage the specific files THIS conversation changed, **by explicit path**.
-  Never `git add -A`, `git add .`, `git add -u`, or `git commit -a` -- those
+  Never `git add -A`, `git add .`, `git add -u`, or `git commit -a`--those
   sweep up whatever else is dirty, including another agent's uncommitted work.
 - First run `git status --porcelain` and reconcile it against what you actually
   touched this session.  Dirty files you did not change are NOT yours to commit:
@@ -39,11 +39,11 @@ git rev-parse --verify HEAD >/dev/null 2>&1 || echo "BROKEN BASE"
 ```
 
 If that prints `BROKEN BASE` (or any `git` command reports `bad object HEAD`),
-**STOP -- do not commit.**  The repo is mid-sync.  Tell the user, and recover
+**STOP--do not commit.**  The repo is mid-sync.  Tell the user, and recover
 by running a rescan on the machine that *made* the missing commit so its objects
 get announced (`syncthing-rescan --path "$(git rev-parse --absolute-git-dir)"`),
 then wait for this machine to pull them.  Never `git gc` / `prune` / `repack` to
-"fix" it -- that destroys the only local copy of not-yet-synced objects.  The
+"fix" it--that destroys the only local copy of not-yet-synced objects.  The
 full runbook is in the `/x-claude-setup` reference under "Syncthing".
 
 ## Commit Message Format
@@ -84,7 +84,7 @@ A body goes between the subject and the attribution block, but only when warrant
   - Keystrokes: `Ctrl-G`, `^G`, `Meta-V`, `Esc`
   - Anything typed literally into a program or config: `:set paste`, `select count(*) from tblfoo`, `additionalDirectories`
 - Do NOT backtick generic English words that happen to also be technical concepts (e.g. stdin, cron job, pull request are fine without backticks)
-- **Keep the message ASCII**: see the global `CLAUDE.md` writing-style rule (no `…`, no space-padded dashes, straight quotes).  Beyond style, ASCII keeps the reflow's column math exact, since the wrapper counts bytes.
+- **Keep the message ASCII, with em-dashes closed up**: per the global `CLAUDE.md` writing-style rule, use no `…` and straight quotes, and write an em-dash as an unspaced `--` set tight against the words it joins.  So `old school--I'm used to`, never the space-padded `old school -- I'm used to`, and never the `—` glyph.  Beyond style, ASCII keeps the reflow's column math exact, since the wrapper counts bytes.
 
 ### AI Attribution (Last Lines)
 
@@ -122,14 +122,14 @@ is idempotent, so re-running it (e.g. on an already-reflowed message during an a
 Right after a successful commit, push the new loose objects out so other
 machines don't see `master` point at objects they lack (the same failure the
 consistency gate guards against, from the sending side).  Run this
-unconditionally -- it is a silent no-op outside a Syncthing folder:
+unconditionally--it is a silent no-op outside a Syncthing folder:
 
 ```bash
 syncthing-rescan --path "$(git rev-parse --absolute-git-dir)"
 ```
 
 `syncthing-rescan` is allowlisted and wraps the rescan POST internally, so it
-does not trip the `curl -X POST` deny rule -- do NOT call the Syncthing REST API
+does not trip the `curl -X POST` deny rule--do NOT call the Syncthing REST API
 directly.
 
 ## Amending Commits
