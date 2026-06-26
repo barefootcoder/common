@@ -21,27 +21,37 @@ function test-socket
         return 1
     fi
 
-    # ssh-add -l exit codes: 0 = has keys, 1 = no keys, 2 = can't connect, 124 = timeout
-    timeout 2 env SSH_AUTH_SOCK="$socket" /bin/ssh-add -l >/dev/null 2>&1
-    local result=$?
+    # ssh-add -l exit codes: 0 = has keys, 2 = can't connect, 124 = timeout.
+    # Exit 1 is AMBIGUOUS: ssh-add returns it both for "agent has no
+    # identities" (a working but empty agent) AND for "communication with
+    # agent failed" (a dead forwarded socket whose file still lingers in
+    # /tmp).  We must disambiguate on the message, or we accept dead sockets
+    # as working and pick the wrong one -- which silently breaks ssh-sock-reset.
+    local out result=0
+    out=$( timeout 2 env SSH_AUTH_SOCK="$socket" /bin/ssh-add -l 2>&1 ) || result=$?
 
-    if $verbose
-    then
-        case $result in
-            0)   echo "# $socket: working (has keys)" >&2
-				 ;;
-            1)   echo "# $socket: working (no keys)" >&2
-				 ;;
-            2)   echo "# $socket: connection failed" >&2
-				 ;;
-            124) echo "# $socket: timeout (likely stale)" >&2
-				 ;;
-            *)   echo "# $socket: error ($result)" >&2
-				 ;;
-        esac
-    fi
+    local ok=false
+    case $result in
+        0)   $verbose && echo "# $socket: working (has keys)" >&2
+             ok=true
+             ;;
+        1)   if [[ $out == *"no identities"* ]]
+             then
+                 $verbose && echo "# $socket: working (no keys)" >&2
+                 ok=true
+             else
+                 $verbose && echo "# $socket: dead ($out)" >&2
+             fi
+             ;;
+        2)   $verbose && echo "# $socket: connection failed" >&2
+             ;;
+        124) $verbose && echo "# $socket: timeout (likely stale)" >&2
+             ;;
+        *)   $verbose && echo "# $socket: error ($result)" >&2
+             ;;
+    esac
 
-    [[ $result -lt 2 ]]
+    $ok
 }
 
 # Find all SSH agent sockets, newest first
