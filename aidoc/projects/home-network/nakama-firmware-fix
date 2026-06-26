@@ -11,7 +11,7 @@ function nas-run
 }
 
 echo "Fixing /share/homes symlink..."
-nas-run 'set -x && test -d /share/homes || cd /share && sudo ln -s CACHEDEV1_DATA/homes homes'
+nas-run 'set -x; if [ ! -L /share/homes ]; then cd /share && sudo ln -s CACHEDEV1_DATA/homes homes; else echo "/share/homes already a symlink, leaving it"; fi'
 
 echo "Fixing passwordless sudo..."
 admin=administrators

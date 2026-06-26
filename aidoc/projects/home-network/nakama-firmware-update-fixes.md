@@ -12,6 +12,7 @@ QNAP firmware updates have a history of breaking configuration. This document tr
 
 **Symptom:**
 - SSH login fails with: `Could not chdir to home directory /share/homes/<USER>: No such file or directory`
+- **Worse manifestation (seen 2026-06-20): a total SSH key-auth lockout.** Because `~/.ssh/authorized_keys` lives *under* the now-missing home path, `sshd` cannot read it, so public-key auth is rejected and SSH falls back to password: `Permission denied (publickey,password,keyboard-interactive)`. This locks out key-based tooling AND the key path of this very fix script, so the fix must be run interactively and you enter the password **~3 times** (SSH login, then `sudo` for the symlink, then `sudo` for the sudoers fix) -- both key auth and passwordless sudo are down until the script finishes.
 - `/etc/passwd` still references `/share/homes/<USER>` but symlink is missing
 - (See `private/credentials.md` for actual username)
 
@@ -65,6 +66,32 @@ exit
 ssh -p $NAS_PORT $NAS
 sudo ls /root  # Should not prompt for password
 ```
+
+### Issue 3: The update can silently FAIL while still breaking the symlink
+**Affected:** observed 2026-06-20, updating 5.2.7 (build 20251024) toward 5.2.9.3499 (build 20260514)
+
+**Symptom:**
+- You apply the update, the NAS reboots, and the "New firmware updates are available" banner is *still there*. It is tempting to call it a stale-banner bug. It usually is not -- the update genuinely did not install.
+
+**What actually happened (2026-06-20):**
+- After the update + reboot, `getcfg System Version` still read `5.2.7` / build `20251024`, unchanged. QNAP boots the old image when the new one fails to apply, so the box reverted and the banner was accurate.
+- The failed attempt *still* wiped the `/share/homes` symlink (Issue 1) and took out key-based SSH -- so you pay the breakage without getting the upgrade.
+
+**Confirm the real version -- do not trust the banner either way:**
+```bash
+ssh -p $NAS_PORT $NAS 'getcfg System Version -f /etc/config/uLinux.conf; getcfg System "Build Number" -f /etc/config/uLinux.conf'
+```
+
+**Cause -- NOT confirmed (don't assume space).** The QTS updater (`/etc/init.d/update.sh`) does have an explicit `FW_NOFREESPACE` failure ("not enough space on the system volume to decrypt firmware image"), and `/` is tiny (84% full, ~65M free), which fits. BUT the staging-partition key (`FIRMWARE STORAGE / UPDATE_TMP_PARTITION` in `/etc/platform.conf`) is unset, and the box has ~3.8G RAM free for a tmpfs staging mount -- so a simple disk-space failure is *not* established. Get the real reason from the Web UI: **QuLog Center -> System Event Log**, around the update timestamp -- look for the firmware-update-failed entry. Only if it cites space, free `/mnt/ext` (92% full; remove unused QPKGs) and retry.
+
+**Retrying without the Web UI modal.** The login-time "update available" popup is only the Live Update *notification*, not the path to updating. Three dialog-free routes:
+- *Web UI:* dismiss the popup, then Control Panel -> System -> Firmware Update (Live Update tab to re-apply; Manual Update tab to flash a downloaded `.img`).
+- *CLI (headless):* `/sbin/qcli_firmwareupdate` -- `sudo qcli_firmwareupdate -i` (info), `-c` (check), `-u` (perform the update).
+- *Stop the popup recurring:* untick "automatically check" on that Control Panel page, or `sudo setcfg System "Enable Live Update" FALSE -f /etc/config/uLinux.conf`.
+
+Whichever route, it is the **same** update that just failed, so it will fail the same way until the root cause is found -- and expect the Issue-1 symlink breakage afterward regardless, so run `nakama-firmware-fix` once when it finishes.
+
+**Recommendation:** do not retry blindly -- each failed attempt costs the Issue-1 key-auth-lockout recovery (3 password entries). The box runs fine on 5.2.7 and Container Station / other apps install to the data volume, so defer the firmware update until the event log explains the failure.
 
 ## Post-Firmware-Update Checklist
 

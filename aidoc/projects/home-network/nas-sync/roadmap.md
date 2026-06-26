@@ -16,7 +16,8 @@ currency automatic (P3), then watch it (P5); space reclaim (P2) is a low-urgency
 quick win gated on P1 verification; Graymoor (P6/P7) is blocked until it is on
 the network.
 
-Legend: **[DONE]** **[TODO]** **[BLOCKED]** -- status as of **2026-06-19**.
+Legend: **[DONE]** **[TODO]** **[BLOCKED]** -- status as of **2026-06-25**
+(Phase 3 complete; per-step *Reading* lines below still dated 2026-06-19).
 
 ---
 
@@ -93,7 +94,7 @@ Low urgency (Haven has 519G free). **All deletes below run through
 
 ---
 
-## Phase 3 -- Nakama as a live receive-only peer  [TODO]
+## Phase 3 -- Nakama as a live receive-only peer  [DONE 2026-06-25]
 
 **Goal:** the important shares reach Nakama near-real-time (not just via manual
 `nasupdate`). Unblocked.
@@ -111,6 +112,25 @@ Low urgency (Haven has 519G free). **All deletes below run through
   installed `nasupdate` sync cron in Nakama's `/etc/config/crontab`.
 - **Reading 2026-06-19:** neither present (no Syncthing, no Container Station;
   only QPKG is MalwareRemover). Nakama is fed only by manual `nasupdate`.
+
+**[DONE 2026-06-25]** Container Station (QTS 5.2.7, App Center) plus an official
+`syncthing/syncthing:1.30.0` container is up on Nakama -- pinned to v1.30.0 to
+match the cluster's deliberate `noupgrade` pin (a `latest` would have
+reintroduced the documented v1<->v2 split). Container: `network_mode: host`,
+`PUID=0`/`PGID=0` (root, since music/camera are admin-owned and the rest
+nami-owned), `STGUIADDRESS=0.0.0.0:8384`, volumes
+`/share/CACHEDEV1_DATA`->`/shares` and `.../.syncthing`->`/var/syncthing`,
+`restart: unless-stopped`, GUI password set; joined to Haven + Avalir. All 7
+shares (music, personal, proj, rpg, work, backup, camera) are added as **Receive
+Only** at `/shares/<name>`, Ignore Permissions on, ignore patterns
+`@Recycle`/`@Recently-Snapshot`/`.@__thumb`. Each folder was reconciled from its
+months-old rsync-seed (characterize local-additions, verify-before-revert, then
+revert/delete to match the cluster); all 7 are now clean Up-to-Date receive-only
+mirrors (0 local additions, 0 errors). Full writeup:
+[reference/nakama-syncthing-mirror-setup.md](reference/nakama-syncthing-mirror-setup.md).
+Open follow-ups (B2 dedup, persistent rclone, single-source Phase-4, security
+version-purge verification, source-side `.sync-conflict` cleanup) are tracked in
+[TODO.md](TODO.md).
 
 ---
 
