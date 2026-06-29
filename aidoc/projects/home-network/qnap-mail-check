@@ -1,0 +1,273 @@
+#!/usr/bin/env perl
+
+# qnap-mail-check -- summarize NEW QNAP/Nakama emails since the last check.
+#
+# Reads the PERSONAL Gmail account (barefootcoder@gmail.com) through the
+# Haven-only `gmail-personal` CLI, drops the routine noise (the daily IronWolf
+# "IHM" disk-scan notifications and QNAP marketing blasts), and reports what is
+# actually actionable: device alerts (storage thresholds, network drops, power/
+# reboot, anything "Critical Log Alert") and QNAP company security advisories.
+#
+# A state file records the last-check time so each run only looks at what is new
+# -- no need to remember how far back to go.
+#
+# The Gmail creds live ONLY on Haven.  If this is run on another box it re-execs
+# itself on Haven over ssh, so every Gmail call happens where the creds are and
+# the secret never leaves Haven.  (See private/gmail-personal.md.)
+#
+# Usage:
+#   qnap-mail-check [--no-update] [--all] [--since DATE]
+#
+#     --no-update, -n   report but do NOT advance the stored last-check time
+#                       (safe/read-only mode; put it first for allowlisting)
+#     --all, -a         also show the suppressed noise (IHM scans, marketing)
+#     --since DATE      start from DATE instead of the stored time; DATE may be
+#                       YYYY-MM-DD, YYYY/MM/DD, or a raw epoch
+#     --help, -h        this message
+
+use 5.014;
+use warnings;
+use autodie;
+
+use Getopt::Long;
+use JSON::PP;
+use POSIX        qw(strftime);
+use Time::Local  qw(timelocal);
+use FindBin      qw($RealBin $RealScript);
+use File::Path   qw(make_path);
+
+my $CREDS = "$ENV{HOME}/.config/gmail-personal/creds";
+my $GP    = "$ENV{HOME}/local/bin/gmail-personal";
+my $STATE = "$RealBin/private/qnap-mail-last-check";
+my $HAVEN = 'haven';
+my $LOOKBACK_DEFAULT = 90 * 24 * 3600;          # first run with no state: 90 days
+
+my @orig_argv = @ARGV;                          # preserve for the Haven re-exec
+
+my %opt;
+GetOptions(\%opt, 'no-update|n', 'all|a', 'since=s', 'help|h')
+    or die "qnap-mail-check: bad options (try --help)\n";
+usage() if $opt{help};
+
+# Not on the creds box?  Re-exec on Haven (same absolute path -- synced tree).
+if (! -e $CREDS)
+{
+    exec 'ssh', $HAVEN, "$RealBin/$RealScript", @orig_argv
+        or die "qnap-mail-check: cannot re-exec on $HAVEN: $!\n";
+}
+
+my ($since, $since_src) = resolve_since();
+my $query = "{Nakama QNAP} after:$since";       # {..} = OR group, then AND after:
+
+say "QNAP/Nakama mail check";
+say "  since: " . iso($since) . "  ($since_src)";
+say "  now:   " . iso(time);
+say "  query: $query";
+say "";
+
+my @msgs = fetch_messages($query);
+
+if (!@msgs)
+{
+    say "No new QNAP/Nakama mail.";
+}
+else
+{
+    report(@msgs);
+}
+
+if ($opt{'no-update'})
+{
+    say "";
+    say "(--no-update: stored last-check time left unchanged)";
+}
+else
+{
+    write_state(time);
+}
+
+exit 0;
+
+
+# ---- subs ------------------------------------------------------------------
+
+sub usage
+{
+    # the leading comment block IS the usage text
+    open my $fh, '<', __FILE__;
+    while (<$fh>)
+    {
+        next if /^#!/;
+        last unless s/^# ?//;
+        print;
+    }
+    exit 0;
+}
+
+sub resolve_since
+{
+    if (defined $opt{since})
+    {
+        return (parse_date($opt{since}), "--since $opt{since}");
+    }
+    if (-e $STATE)
+    {
+        open my $fh, '<', $STATE;
+        while (<$fh>)
+        {
+            return ($1, "stored last-check") if /^(\d+)/;
+        }
+    }
+    return (time - $LOOKBACK_DEFAULT, "no prior state, defaulting to 90 days");
+}
+
+sub parse_date
+{
+    my ($s) = @_;
+    return $s if $s =~ /^\d{9,}$/;                       # already an epoch
+    if (my ($y, $m, $d) = $s =~ m{^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$})
+    {
+        return timelocal(0, 0, 0, $d, $m - 1, $y - 1900);
+    }
+    die "qnap-mail-check: cannot parse date '$s' (use YYYY-MM-DD or epoch)\n";
+}
+
+sub fetch_messages
+{
+    my ($q) = @_;
+    my $ids = gp_json('search', $q);
+    return () unless $ids && @$ids;
+
+    my @out;
+    for my $rec (@$ids)
+    {
+        my $m = gp_json('get', $rec->{id}) or next;
+        push @out,
+        {
+            id      => $m->{id},
+            date    => $m->{date}    // '',
+            from    => $m->{from}    // '',
+            subject => unent($m->{subject} // ''),
+            snippet => unent($m->{snippet} // ''),
+        };
+    }
+    return @out;
+}
+
+# Run the gmail-personal CLI and decode its JSON.  Single-quote the query so the
+# shell leaves the braces/spaces alone (the query never contains a single quote).
+sub gp_json
+{
+    my ($cmd, $arg) = @_;
+    my $json = `$GP $cmd '$arg' 2>/dev/null`;
+    return undef unless $json =~ /\S/;
+    my $data = eval { decode_json($json) };
+    return $data;
+}
+
+sub classify
+{
+    my ($m) = @_;
+    if ($m->{from} =~ /qnap\.com/i)
+    {
+        return $m->{subject} =~ /security advisory/i ? 'SECURITY' : 'marketing';
+    }
+    # device-originated (sent from the account to itself)
+    return 'CRITICAL' if $m->{subject} =~ /critical log alert/i;
+    return 'ihm'      if $m->{snippet} =~ /\[IHM\]/
+                      || $m->{snippet} =~ /(Started|Finished) analyzing disk/i;
+    return 'STORAGE'  if $m->{snippet} =~ /space alert threshold|Insufficient (storage )?space/i;
+    return 'NETWORK'  if $m->{snippet} =~ /disconnected|Network & Virtual Switch/i;
+    return 'POWER'    if $m->{snippet} =~ /Restarting NAS|system has started|\[Power\]/i;
+    return 'OTHER';
+}
+
+sub report
+{
+    my @msgs = @_;
+
+    my %bucket;
+    push @{ $bucket{ classify($_) } }, $_ for @msgs;
+
+    # actionable groups, in priority order, always shown
+    my @show = (
+        [ SECURITY => 'QNAP security advisories (company)' ],
+        [ CRITICAL => 'device "Critical Log Alert"'        ],
+        [ STORAGE  => 'storage threshold alerts'           ],
+        [ NETWORK  => 'network link alerts'                ],
+        [ POWER    => 'power / reboot events'              ],
+        [ OTHER    => 'other device notifications'         ],
+    );
+    # noise groups, shown only with --all
+    my @noise = (
+        [ ihm       => 'routine IHM disk-health scans' ],
+        [ marketing => 'QNAP marketing'                ],
+    );
+
+    say "Found " . scalar(@msgs) . " message(s).";
+    say "";
+
+    for my $g (@show, ($opt{all} ? @noise : ()))
+    {
+        my ($key, $label) = @$g;
+        my $items = $bucket{$key} or next;
+        printf "[%s] %s (%d):\n", $key, $label, scalar @$items;
+        for my $m (@$items)
+        {
+            printf "  %s  %s\n", fmt_date($m->{date}), $m->{subject};
+            my $snip = $m->{snippet};
+            $snip = substr($snip, 0, 110) . '...' if length $snip > 110;
+            say  "                $snip" if $snip =~ /\S/;
+        }
+        say "";
+    }
+
+    unless ($opt{all})
+    {
+        my @sup;
+        for my $g (@noise)
+        {
+            my ($key, $label) = @$g;
+            push @sup, scalar(@{ $bucket{$key} }) . " $label" if $bucket{$key};
+        }
+        say "suppressed: " . join(', ', @sup) . "  (--all to show)" if @sup;
+    }
+}
+
+sub write_state
+{
+    my ($epoch) = @_;
+    make_path("$RealBin/private") unless -d "$RealBin/private";
+    open my $fh, '>', $STATE;
+    say $fh $epoch;
+    say $fh "# last QNAP/Nakama mail check: " . iso($epoch);
+    close $fh;
+    say "";
+    say "last-check updated -> " . iso($epoch);
+}
+
+sub fmt_date
+{
+    my ($rfc) = @_;       # e.g. "Sun, 28 Jun 2026 16:51:55 +0000"
+    my %mon = qw(Jan 01 Feb 02 Mar 03 Apr 04 May 05 Jun 06
+                 Jul 07 Aug 08 Sep 09 Oct 10 Nov 11 Dec 12);
+    if (my ($d, $mname, $y) = $rfc =~ /(\d{1,2})\s+(\w{3})\s+(\d{4})/)
+    {
+        return sprintf "%s-%s-%02d", $y, ($mon{$mname} // '??'), $d;
+    }
+    return substr($rfc, 0, 16);
+}
+
+sub iso  { strftime("%Y-%m-%dT%H:%M:%S%z", localtime($_[0])) }
+
+sub unent
+{
+    my ($s) = @_;
+    $s =~ s/&amp;/&/g;
+    $s =~ s/&quot;/"/g;
+    $s =~ s/&#39;/'/g;
+    $s =~ s/&lt;/</g;
+    $s =~ s/&gt;/>/g;
+    $s =~ s/\s+/ /g;
+    return $s;
+}

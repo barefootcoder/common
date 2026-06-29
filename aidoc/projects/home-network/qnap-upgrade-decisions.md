@@ -7,8 +7,11 @@
 - Integration: Part of Tailscale network, planned for Syncthing (not implemented)
 
 ## Selected Upgrade
-QNAP TS-264-8G-US
-- 2-bay NAS
+Originally selected: QNAP TS-264-8G-US (2-bay).  **NOTE: the deployed unit is
+actually a QNAP TS-364 (3-bay)** -- the migration from the TS-264 to the TS-364
+is recorded in `summary:nakama-storage-reconfiguration.md`.  Same Celeron N5095
+platform, so the specs below apply to both; the bay count is the difference.
+- 2-bay (TS-264) / 3-bay (TS-364, deployed)
 - Intel Celeron N5095 processor
 - 8GB DDR4 RAM (expandable to 16GB)
 - Dual 2.5GbE networking

@@ -223,7 +223,7 @@ script's bare name.
   - Security configuration and user management
 
 ### Project Planning
-- **[qnap-upgrade-decisions.md](qnap-upgrade-decisions.md)**: Decision rationale and implementation plan for upgrading from Synology DS220j to QNAP TS-264-8G-US
+- **[qnap-upgrade-decisions.md](qnap-upgrade-decisions.md)**: Decision rationale and implementation plan for upgrading from Synology DS220j to a QNAP NAS (the TS-264 was *selected*, but the *deployed* unit is actually a **QNAP TS-364**, 3-bay -- see `summary:nakama-storage-reconfiguration.md`)
   - Performance requirements and migration considerations
   - Service setup priorities (Syncthing, Backblaze B2 backup)
   - Security and future expansion planning
@@ -301,6 +301,36 @@ The `private/` directory contains sensitive information that is excluded from ve
 
 - **[private/network-details.md](private/network-details.md)**: Actual IP addresses, Tailscale VPN IPs, specific firewall port configurations, hardware model numbers, and ISP details
 - **[private/credentials.md](private/credentials.md)**: System usernames, UIDs/GIDs, administrator account names, and group memberships
+- **[private/gmail-personal.md](private/gmail-personal.md)**: How to read the user's
+  PERSONAL Gmail -- see "Email access" below.
+
+## Email Access (work vs personal)
+
+Two separate accounts, two separate mechanisms -- don't confuse them:
+
+- **Work** (employer Gmail): the claude.ai **Gmail connector** (MCP
+  tool). Use it for work mail. It has NO access to the personal account.
+- **Personal** (`barefootcoder@gmail.com`): a read-only Perl CLI,
+  `local/haven/bin/gmail-personal` (`search`/`get`/`labels`, emits JSON), talking
+  straight to the Gmail REST API. The claude.ai connector canNOT reach a consumer
+  @gmail.com (403 at Google's gateway), which is why this exists. Full design +
+  rebuild notes: `private/gmail-personal.md`.
+
+**You do NOT have to run the agent on Haven to use personal mail.** The
+credentials file lives only on Haven (`~/.config/gmail-personal/creds`) and never
+leaves it, but any home box can invoke the CLI over ssh -- that is how an
+Avalir/quin session reads personal mail. Because the remote login shell is tcsh
+(quoting trap), drive it with a `bash -s` heredoc and the full path:
+
+```bash
+ssh haven bash -s <<'EOF'
+~/local/bin/gmail-personal search 'QNAP after:2026/03/28'
+EOF
+```
+
+So: running ON Haven is the most direct, but ssh-from-elsewhere is fully
+supported and is the better default (it keeps the secret pinned to Haven while
+letting any session use it).
 
 ## Historical Context (AI Session Summaries)
 
@@ -586,6 +616,24 @@ If user asks about EC2 sandbox sync:
 - **Network Stability**: Core infrastructure stable with Tailscale VPN and Eero mesh WiFi
 
 ## Tools and Scripts
+
+### qnap-mail-check
+`aidoc/projects/home-network/qnap-mail-check` (Perl, core-only) -- summarizes
+NEW QNAP/Nakama emails since the last check, so you don't re-read the whole
+backlog each time. Reads the PERSONAL Gmail account through the Haven-only
+`gmail-personal` CLI (see "Email Access" above); if run off Haven it re-execs
+itself on Haven over ssh, so the creds never leave Haven. It drops the routine
+noise (the daily IronWolf "IHM" disk-health scans and QNAP marketing) and
+surfaces the actionable buckets: company **security advisories**, device
+**Critical Log Alert**s, **storage** threshold alerts, **network** link drops,
+and **power/reboot** events. The last-check time is tracked in
+`private/qnap-mail-last-check` (gitignored, Syncthing-synced, so the pointer is
+shared across boxes). Flags: `--no-update`/`-n` (report without advancing the
+pointer -- the safe/read-only mode, put it first), `--all`/`-a` (also show the
+suppressed noise), `--since DATE` (override the start; YYYY-MM-DD or epoch),
+`--help`. Run bare (`qnap-mail-check`) for the routine "what's new" check. Could
+be wired to cron later (core-only, so plain `perl` works -- no `launch-perl`
+needed); for now it's run on demand.
 
 ### fix-wm
 `root/sbin/fix-wm` (deploys to `/usr/local/sbin/fix-wm` via root's

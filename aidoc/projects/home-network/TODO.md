@@ -5,6 +5,66 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime (SECURITY)** — Resolve Nakama's stuck QTS firmware update. The
+  2026-06-20 attempt to go 5.2.7 (build 20251024) -> 5.2.9.3499 silently FAILED
+  and the box reverted to 5.2.7 (still there as of 2026-06-28, uptime confirms the
+  Jun 20 reboot was that failed attempt). This is now SECURITY-relevant, not just
+  hygiene: the 3-month QNAP email scan (2026-06-28) found **QSA-26-10 explicitly
+  names QTS 5.2.7 as affected** (Important; 14 CVEs incl. pre-auth command
+  injection; fixed in exactly 5.2.9.3499), plus **QSA-26-17 "Dirty Frag" kernel
+  LPE** (affects all x86 models -> Nakama is x86/Celeron N5095), plus the 5.2.8
+  backlog (Apache QSA-26-04, QTS QSA-26-05, Samba QSA-26-06 -- all installed).
+  EXPOSURE checked 2026-06-28: external probe from quin shows NO direct WAN
+  exposure (all ports closed on the home public IP -- 80/443/8080/2322/445/
+  8384/22000/2376), Eero default-deny, no active DDNS, no UPnP forward. The only
+  internet path is myQNAPcloud VLINK/CloudLink (enabled, `VLINK=TRUE`), an
+  outbound relay gated by QNAP-ID login. Long-term goal IS intentional exposure,
+  which raises the pre-auth CVE stakes -- so patch BEFORE exposing. Documented next step
+  (`nakama-firmware-update-fixes.md` Issue 3): do NOT retry blindly -- read QuLog
+  Center -> System Event Log around the Jun 20 02:0x timestamp for the real failure
+  reason. Space theory is now WEAKER (user checked QuLog at the failure
+  time and found NOTHING; `/mnt/ext` is 92% full / 33.6M free but is almost
+  entirely CORE system QPKGs -- samba/apache/mariadb/notification-center/netmgr/
+  lang -- with essentially nothing removable, so "free /mnt/ext by removing unused
+  QPKGs" has little to work with; `/` is 85% / 62M free). If a later check DOES
+  cite FW_NOFREESPACE, better levers than scavenging /mnt/ext: stage to the data
+  volume (UPDATE_TMP_PARTITION is unset) or do a Manual Update (download the
+  5.2.9.3499 .img, flash via Control Panel -> Firmware Update -> Manual Update),
+  which also tends to surface a clearer error than Live Update. Expect the Issue-1 /share/homes
+  symlink + key-SSH breakage afterward -> run `nakama-firmware-fix` once it
+  finishes. SEPARATELY, App Center app updates ARE flowing (newer FileStation5.bin
+  staged Jun 26, LicenseCenter.bin May 14): update **License Center** via App Center
+  to clear the **Critical** QSA-26-35 (QuMagie part N/A -- not installed) and File
+  Station 5 for QSA-26-03. _(added 2026-06-28 during the QNAP/Nakama email scan)_
+
+- **anytime** — Decide how to handle Nakama's recurring "80%" storage alert. As of
+  2026-06-28 the data volume (DataVol1) is 2.8T total / ~558G free / 80% used, and
+  the threshold alert has re-fired Apr 4 -> Jun 20 -> Jun 28 (free space drifting
+  down slowly, not an emergency). Nakama is a SINGLE 4TB drive (md1 = 1-disk RAID1,
+  clean/healthy -- no redundancy; relies on the B2 backup), and it is also a
+  Syncthing mirror + Container Station/Docker host on that same volume, so growth
+  will continue. Options: (a) clean up (find/remove large unneeded data; check
+  Docker/Container overlay + snapshots); (b) raise the alert threshold (Control
+  Panel -> Storage & Snapshots) to stop the nag if 80% is acceptable headroom; (c)
+  expand storage (bigger drive, or add a 2nd bay -- TS-364 has 3). No urgency; the
+  new `qnap-mail-check` will resurface it if free space keeps falling. NOTE: this
+  is the DATA volume, a different filesystem from the tiny `/` + `/mnt/ext` system
+  partitions in the firmware-update item above -- freeing one does not help the
+  other. _(added 2026-06-28 during the QNAP/Nakama email scan)_
+
+- **2026-07-05** — Run the weekly QNAP/Nakama mail review: `qnap-mail-check` (on
+  Haven, or from any box -- it re-execs to Haven). Triage anything it surfaces
+  (security advisories, device Critical/storage/network/power alerts); the routine
+  IHM + marketing noise is auto-suppressed. **RECURRING -- re-arm on completion:**
+  when done, move this to Done with the completion date AND re-add a fresh copy
+  dated +7 days (`date -d '+7 days' +%F`). Interval rationale: QNAP advisories land
+  roughly every 1-2 weeks and the check is cheap, so weekly keeps detection latency
+  short without nagging. **Cadence is adjustable:** weekly/bi-weekly is fine while
+  Nakama stays non-internet-exposed (confirmed not exposed 2026-06-28); TIGHTEN it
+  once intentional exposure is turned on (the pre-auth QTS CVEs start mattering in
+  real time then). If this ever gets wired to cron, retire this recurring item.
+  _(added 2026-06-28 during the QNAP/Nakama email scan)_
+
 - **anytime** — Confirm the "Reset Window Manager" panel launcher actually runs
   the new `/usr/local/sbin/fix-wm` rather than the cached old `marco --replace`.
   mate-panel caches launcher .desktop data at load, so the `Exec` change may not
