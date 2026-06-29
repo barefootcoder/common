@@ -87,6 +87,60 @@ skill scans this file on load and surfaces due/pending items.
   until then. See `summary:avalir-marco-respawn-loop.md`. _(added 2026-06-23
   during the marco-respawn-loop diagnosis)_
 
+- **anytime** — Avalir security-patch maintenance pass (decided 2026-06-22 during
+  the SOC-audit-evidence session). `apt update` that day found **723 packages
+  upgradable, 487 from the security pocket** -- a real backlog (no
+  `unattended-upgrades`, patching has been piecemeal). NOT needed for the audit
+  itself (that wanted evidence of patches *already installed*); this is hygiene
+  the audit surfaced. User triaged the list (rest waits "for a pressing reason")
+  and asked me to rank by urgency. **Priority order below (P1 highest). Most items
+  are independent and need no reboot, so they can be knocked off one at a time;
+  only the P2 system-library set wants the coherent pass + reboot.**
+  - **[P1] Upgrade ungoogled-chromium** 145 -> 149. Most urgent single item: a
+    browser is the top endpoint attack surface, it's actively used, and it's 4
+    versions behind (likely multiple RCE-class fixes). Independent, no reboot
+    (just restart the browser).
+  - **[P1] Remove Firefox entirely** (`apt purge firefox firefox-locale-en`).
+    Near-zero-risk quick win that *reduces* attack surface: drops a 34-versions-
+    behind (118), never-used browser instead of carrying it as latent exposure.
+    Not the primary browser (Vivaldi + ungoogled-chromium are). Independent, no
+    reboot, ~2 min.
+  - **[P2] Upgrade all system/invisible packages with outstanding security
+    patches** -- the bulk of the 487 (glibc/libc6, systemd, mesa 23.0->23.2 [19
+    display-stack pkgs], xorg-core/xwayland, bluez, network-manager, ...). Highest
+    *volume* of CVE fixes = the real backlog, but most are same-upstream-version
+    Ubuntu security revisions (zero behavior change), and glibc/mesa/xorg want an
+    X-restart/reboot to fully take effect. So this is THE deliberate pass -- best
+    paired with the deferred kernel + a planned console reboot, not a quick one-off.
+    The mesa minor bump on the iGPU is the change most likely to be visible.
+  - **[P2] Upgrade ClamAV** 0.103 -> 1.4.4. 0.103.x is EOL upstream, so the engine
+    itself is unsupported -- don't keep running an outdated security tool.
+    Independent, no reboot (restarts the clamav daemon).
+  - **[P3] Upgrade git** 2.49 -> 2.54 (git-core PPA). "Always good" but already
+    recent and low exposure -- least urgent. Independent, no reboot.
+  - **[P3] Upgrade LibreOffice**. Occasional use + biggest/most disruptive change,
+    so lowest urgency despite likely security holes (low exposure if not opening
+    untrusted docs; user fine with any UI changes). DECISION at execution: plain
+    `apt upgrade` only moves two leaf packages (java-common, style-colibre)
+    7.5 -> 26.2; the coherent whole-suite 7.5 -> 26.2 jump needs `full-upgrade`-
+    style handling. Lean toward the full coherent jump (a split-version LibreOffice
+    bites later), or leave it until then.
+  - **Deliberately DEFERRED, do NOT include:** the kernel (`linux-image-oem`
+    6.1->6.8) and headers -- plain `apt upgrade` holds these back anyway, and the
+    reboot is costly on Avalir (LUKS passphrase at the console, months of uptime,
+    and a reboot would silently kill the in-flight `trackball-mon` test whose
+    2026-07-02 re-check depends on it staying alive). Also leave **vivaldi-stable**
+    alone -- the deliberately-pinned 7.9 is held back by `apt upgrade`; a
+    `full-upgrade` would move it, which we do NOT want.
+  - **Execution caveat:** even holding the kernel, glibc + mesa + xorg want an X
+    restart / reboot to fully settle, so the machine carries a latent
+    "restart recommended" state afterward until Avalir's next reboot. Best done as
+    a deliberate pass (ideally paired with the kernel + a planned console reboot),
+    not rushed. Consider also setting up `unattended-upgrades` scoped to the
+    security pocket so this backlog stops recurring (that cadence is what a SOC
+    patch-management control actually wants). _(added 2026-06-22 during the
+    SOC-audit-evidence session)_
+
 - **anytime** — Confirm `bulk-charge-mon`'s live-`%` update fires in a real bulk
   cycle. The notify path was fixed 2026-06-11 (gdbus, not notify-send -- Haven's
   libnotify 0.7.9 lacks `--print-id`/`--replace-id`, so the original silently
