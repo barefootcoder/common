@@ -308,43 +308,6 @@ skill scans this file on load and surfaces due/pending items.
   gated on acquiring the battery, so this date is a re-check, not a hard deadline).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
-- **2026-06-22** — Analyze the empirical office AC adapter swap (the next step out
-  of the 2026-06-03 ac-mode analysis). **SWAPPED IN 2026-06-15:** the DTK 90W
-  19V/4.74A 5.5x2.5mm barrel adapter (Amazon, $17; ordered 2026-06-12) replaced the
-  suspect old office barrel adapter (now labeled `spare-ac`) at the office. The DTK
-  is a generic match for `den-ac`'s spec (Chicony A16-090P1A: 90W, 19V/4.74A,
-  5.5x2.5mm barrel; Haven = Clevo NS5x/NS7xAU, standard N-series tip). den-ac is a
-  SEPARATE, known-good Chicony that lives in the den and is staying; it is the unit
-  we have a photo of (`~/docs/ai/screenshots/chicony-laptop-adapter.jpg`, Jun 11),
-  and the A16-090P1A model number + 19.0V/4.74A/90W rating were read straight off
-  that label -- so A16-090P1A IS den-ac, NOT the retired office adapter and not
-  (verified) any "Haven OEM" unit. The DTK's tip was verified by the user via
-  direct visual A/B against den-ac: identical barrel, dimple ring, inner-barrel
-  flathead slots, right-angle two-level housing. The retired office adapter (now
-  `spare-ac`) is itself a Chicony but a DIFFERENT physical unit, exact model
-  unconfirmed (user's read: possibly a bit smaller than den-ac). **Boundary mark:** `2026-06-15T19:05:18-0700 office-ac` --
-  every `office-ac` event after that timestamp is the NEW adapter. We KEPT the
-  `office-ac` label (did NOT relabel): `ac-mode report` renders one row per
-  mark-interval, so the fresh mark isolates the new adapter's data automatically
-  while the pre-June-10 office-ac intervals stay as the frozen ~18/day baseline.
-  **On/after 2026-06-22 (~1 week of normal office use on the new adapter):** run
-  `ac-mode report '2026-06-15 19:05:18'` and read the office-ac interval row(s)
-  since the boundary. office-ac falling to the ~13/day common floor = the old
-  adapter was the culprit (CONFIRMED); staying at ~18/day = old adapter exonerated,
-  points at the laptop's barrel jack / internal AC path. Note: since June 10 the
-  user had been deliberately on `office-usb`/`den-ac` (charging-discipline
-  mitigation), so the office-ac slot was cold for 5 days before this swap -- clean
-  start. **Then decide old-adapter disposition** (do NOT toss it before the verdict
-  -- it's the control): if confirmed flaky, retire it from Haven (the box already
-  has den-ac + the new office brick, so it's redundant) -- keep as a clearly-labeled
-  low-load/emergency spare, NOT for the high-draw office video-over-NoMachine
-  scenario or bulk-charging a low battery. If it's ever pressed into Haven service,
-  mark it `spare-ac` (label already added to `@LABELS` in `bin/ac-mode` 2026-06-15)
-  so its events don't contaminate the new adapter's clean office-ac data. See the "ac-mode
-  analysis (2026-06-03)" section of `summary:haven-may22-double-crash.md`. _(added
-  2026-06-03, supersedes the spent "re-run after avoidance week" item; ordered
-  2026-06-12; swapped in + analysis scheduled 2026-06-15)_
-
 - **anytime** — Validate RAPL cap is working: after the next `termstart` / boot,
   check that `viv-mon.log` shows `pkg=` values not exceeding ~27W in normal use.
   If the cap is being ignored (some BIOSes lock RAPL), we'll need a different
@@ -354,12 +317,6 @@ skill scans this file on load and surfaces due/pending items.
   run and applied the RAPL cap), consider moving the `intel-rapl:0` writes into a
   systemd unit ordered before `juno-pp` and `TLP`, so the cap is in place before
   the userspace burst. Not urgent unless another boot crash happens.
-  _(added 2026-05-23 during May 22 double-crash mitigations)_
-
-- **anytime** — Backdate the `ac-mode` log to capture the full week of historical
-  journal data: `ac-mode mark office-ac at 2026-05-15T00:00:00-0700`. Then
-  `ac-mode report` will show the consistent ~18/day rate in context. Low priority
-  (current data is accumulating from May 22 onward anyway).
   _(added 2026-05-23 during May 22 double-crash mitigations)_
 
 - **anytime** — Verify the deep-S3 + LID0-disarm suspend fix on Haven before next
@@ -442,6 +399,38 @@ skill scans this file on load and surfaces due/pending items.
   _(added 2026-05-27 during vim control-key-map investigation)_
 
 ## Done
+
+- ~~2026-06-29~~ — Analyze the empirical office AC adapter swap (DTK 90W swapped
+  in 2026-06-15, boundary mark `2026-06-15T19:05:18-0700 office-ac`). **DONE;
+  VERDICT: old office-ac adapter CONFIRMED as the source of the ~5/day excess AC
+  transitions.** Post-swap (~13.6 days, run on Haven) office-ac fell from the
+  19.9/day pre-swap baseline to **14.6/day** (200.4h, 122 ev) -- right at the
+  common floor (office-usb 13.6, den-ac 15.4) -- while the contemporaneous
+  known-good **den-ac control held unchanged** (15.3 -> 15.4/day, 117.2h, 75 ev).
+  That control rules out system-wide drift, so the drop is adapter-specific; new
+  office-ac is now indistinguishable from (slightly below) den-ac. Strength: the
+  office-ac before/after drop alone is ~2 sigma; the convincing leg is the A/B vs
+  the unchanged control. The user returned to office-ac as the primary office
+  method post-swap (office-usb unused after the boundary), so the new adapter is
+  well sampled. Corroborating (secondary): Haven up 13+ days since 2026-06-15
+  17:32 with no crash through the whole new-adapter era + heavy office-ac use --
+  longest recent crash-free stretch (crashes are multifactorial, so supportive
+  not proof). **Old-adapter disposition decided:** the old office adapter (already
+  labeled `spare-ac`, physically retired to roaming spare) is confirmed marginal
+  -> keep it as a clearly-labeled low-load / emergency spare ONLY; do NOT use it
+  for high-draw office video-over-NoMachine or to bulk-charge a low battery (the
+  Jun 10 crash loads). No need to toss it. The "hold as control" caveat is now
+  lifted. Full writeup: the "Adapter-swap verdict (2026-06-29)" section of
+  `summary:haven-may22-double-crash.md`. _(added 2026-06-03, swapped in 2026-06-15,
+  completed 2026-06-29)_
+
+- ~~2026-06-29~~ — Backdate the `ac-mode` log to capture the full week of
+  historical journal data (`ac-mode mark office-ac at 2026-05-15T00:00:00-0700`).
+  **WON'T DO -- obsolete.** Its only purpose was enriching the office-ac baseline
+  for the adapter investigation, which is now closed (verdict 2026-06-29: old
+  adapter confirmed flaky). With routine ac-mode marking retired, there is nothing
+  left to backdate for. _(added 2026-05-23 during May 22 double-crash mitigations,
+  closed won't-do 2026-06-29 alongside the adapter-swap verdict)_
 
 - ~~2026-06-18~~ — Remove the `show-desktop` duplicate-session instrumentation,
   now that the `wmctrl`-based fix has proven out. **DONE.** The fix landed

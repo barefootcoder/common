@@ -689,6 +689,17 @@ Tracks Haven's AC charging method against journalctl's `AC: Process` udev
 events, to localize the ~18 spurious AC transitions/day surfaced by the
 May 22 crash investigation.
 
+**Status (2026-06-29): routine marking RETIRED.** The investigation this tool
+existed for is closed -- the verdict is in (old office adapter confirmed flaky;
+new DTK adapter clean at the floor; see the `spare-ac` note below). You no longer
+mark every adapter switch. The tool stays for exactly one future case: **vetting
+a genuinely new/unknown adapter** (e.g. `spare-ac` pressed back into service, or a
+newly bought brick). To do that, drop a fresh mark, charge normally on it for
+~1 week, then `ac-mode report '<mark timestamp>'` and read the new unit's row
+against the den-ac control. Outside that, leave it alone: with no marking, events
+just attribute to the last label, which is harmless since nothing reads the log
+(no cron, no alert -- it was always manual).
+
 **Usage:**
 ```bash
 ac-mode <label>                 # shortcut for `ac-mode mark <label>`
@@ -704,12 +715,18 @@ Each is a distinct physical unit fixed at its location (office barrel adapter /
 office USB-C / both / den barrel adapter), except `spare-ac`: the old office
 adapter retired 2026-06-15 (a Chicony, a different unit from den-ac), kept as a
 roaming low-load spare and given its own label so any pinch-use never pollutes
-the new office-ac adapter's data.
+the new office-ac adapter's data. **The 2026-06-15 swap test reached its verdict
+2026-06-29: that old adapter is CONFIRMED flaky** -- after the swap, office-ac's
+AC-transition rate fell from 19.9/day to 14.6/day (back to the common floor)
+while the den-ac control held steady, so `spare-ac` is now a known-marginal
+low-load/emergency spare ONLY (never for high-draw office video-over-NoMachine
+or bulk-charging a low battery). See the "Adapter-swap verdict (2026-06-29)"
+section of `summary:haven-may22-double-crash.md`.
 Mode log lives at `~/local/log/ac-mode.log` (host-local, not synced).
-Run `ac-mode <label>` *immediately before* the next plug action — the
-mark defines the active mode for any AC events that follow it. No
-need to mark anything when unplugging (the unplug event correctly
-attributes to the prior mode, and no events fire during transit).
+Marking mechanics (for a vetting test per Status above): run `ac-mode <label>`
+*immediately before* the plug action -- the mark defines the active mode for any
+AC events that follow it. No need to mark anything when unplugging (the unplug
+event correctly attributes to the prior mode, and no events fire during transit).
 
 ### mdless
 Terminal markdown viewer (`bin/mdless`): thin wrapper around `mdcat`, chosen

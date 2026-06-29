@@ -331,3 +331,62 @@ swap. Replace the office AC adapter+cable, keep the `office-ac` label, use norma
 for ~1 week, re-run `ac-mode report`. office-ac falling to the ~13/day floor =
 adapter was the culprit; staying at ~18 = points at the laptop's barrel jack /
 internal AC path. Captured in TODO.md (undated, gated on buying the adapter).
+
+## Adapter-swap verdict (2026-06-29, ~13.6 days of post-swap data)
+
+The DTK 90W adapter was swapped in at the office on 2026-06-15; boundary mark
+`2026-06-15T19:05:18-0700 office-ac`. Every `office-ac` interval after that mark
+is the NEW adapter. Post-swap the user returned to office-ac as the primary office
+method (office-usb was abandoned: 0 office-usb time after the boundary; 200.4h
+office-ac vs 117.2h den-ac in the new era), so the new adapter is well sampled.
+
+Per-mode AC/profile transition rates, pre-swap baseline vs post-swap, with den-ac
+as the contemporaneous known-good control (`ac-mode report '2026-06-15 19:05:18'`
+for the post-swap rows; full report minus those rows for the pre-swap baseline):
+
+| Mode                  | pre-swap /day | post-swap /day | post-swap (hours, events) |
+|-----------------------|---------------|----------------|---------------------------|
+| office-ac             | 19.9          | **14.6**       | 200.4h, 122               |
+| den-ac (control)      | 15.3          | 15.4           | 117.2h, 75                |
+| office-usb (floor)    | 13.6          | (unused)       | --                        |
+
+Key findings:
+
+1. **office-ac dropped from 19.9 -> 14.6/day** (~27%, the ~5/day excess gone),
+   landing right at the common floor (office-usb 13.6, den-ac 15.4). It is no
+   longer the elevated outlier it was with the old adapter.
+
+2. **The den-ac control is unchanged across the swap** (15.3 -> 15.4/day). That is
+   the decisive part: it rules out a system-wide drift (journal behavior, suspend
+   cadence, etc.) as the explanation for the office-ac drop. The drop is specific
+   to what changed in the office slot -- the adapter.
+
+3. **New office-ac (14.6) is now statistically indistinguishable from (slightly
+   below) the den-ac control (15.4)** -- the office slot's ~5/day excess is
+   eliminated, not merely reduced.
+
+4. **Strength:** the office-ac before/after drop on its own is ~2 sigma (122 ev /
+   200.4h vs ~73 ev / 88h). Better than the original 1.5-1.8 sigma but not
+   overwhelming alone; the convincing leg is the A/B against the unchanged
+   contemporaneous den-ac control.
+
+**VERDICT: the old office-ac adapter is CONFIRMED as the source of the ~5/day
+excess AC transitions.** This is the TODO's pre-set "falling to the floor =
+adapter was the culprit" outcome (not the "stays at ~18 = barrel jack / internal
+AC path" outcome).
+
+**Corroborating (secondary):** the current boot has been up 13+ days (since
+2026-06-15 17:32, `journalctl --list-boots`) with no crash -- spanning the entire
+new-adapter era and heavy office-ac use, the longest crash-free stretch in the
+recent record (the Jun 4 boot ran ~6d to the Jun 10 crash; the Jun 10 boot ~5d).
+Crashes are multifactorial (the adapter is one of three stacked legs), so this
+supports rather than proves that the swap helped crash-resistance.
+
+**Old-adapter disposition (verdict now in, "hold as control" lifted):** the old
+office adapter is already labeled `spare-ac` and physically retired to roaming-spare
+status (a Chicony, a different unit from den-ac). Confirmed marginal -> keep it as
+a clearly-labeled low-load / emergency spare ONLY. Do NOT press it into the
+high-draw office video-over-NoMachine scenario or use it to bulk-charge a low
+battery (those are exactly the loads that stacked into the Jun 10 crash). No need
+to toss it: it is still fine under light load, and its `spare-ac` label keeps any
+pinch-use from contaminating the new office-ac data.
