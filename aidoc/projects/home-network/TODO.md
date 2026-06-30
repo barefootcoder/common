@@ -5,6 +5,20 @@ skill scans this file on load and surfaces due/pending items.
 
 ## Outstanding
 
+- **anytime** — Bake `fsckfix=y` into the cheops dev-sandbox provisioning so
+  rebuilt sandboxes inherit the boot-time auto-repair (it was applied by hand to
+  the current live VM on 2026-06-29, but `vagrant destroy && up` would lose it).
+  Add `fsckfix=y` to `GRUB_CMDLINE_LINUX` (+ `update-grub`) in the guest
+  provisioning under `$CHEOPSROOT` (work/cheops repo, NOT common). Rationale: the
+  initramfs root fsck (`/usr/share/initramfs-tools/scripts/functions`, checks
+  `[ "$fsckfix" = "y" ]`) then runs `-y` and auto-repairs a flagged filesystem
+  instead of dropping to the `(initramfs)` BusyBox prompt, which is exactly what
+  stranded the sandbox on 2026-06-29 (read-only root from an unclean shutdown ->
+  preen fsck bailed on a corrupted orphan-inode list). Safe for a disposable
+  sandbox (real data is on host vboxsf shares; auto-`-y` beats a box that won't
+  boot). See `summary:vagrant-sandbox-readonly-root-fsck.md`. _(added 2026-06-29
+  during the Vagrant sandbox read-only-root recovery)_
+
 - **anytime (SECURITY)** — Resolve Nakama's stuck QTS firmware update. The
   2026-06-20 attempt to go 5.2.7 (build 20251024) -> 5.2.9.3499 silently FAILED
   and the box reverted to 5.2.7 (still there as of 2026-06-28, uptime confirms the

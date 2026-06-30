@@ -61,6 +61,19 @@ function find-ssh-sockets
         | sort -rn | cut -d' ' -f2-
 }
 
+# Is the temp dir (where sshd places a forwarded agent socket) writable?
+# A read-only root makes /tmp unwritable, so sshd cannot create the socket and
+# NO agent ever appears here -- a different problem, with a different fix, than
+# a missing local agent.  Detecting it lets us say so instead of misdirecting
+# the user into a reconnect loop that cannot possibly help.
+function tmpdir-writable
+{
+    local probe
+    probe=$( mktemp "${TMPDIR:-/tmp}/.ssh-agent-find.XXXXXX" 2>/dev/null ) || return 1
+    rm -f "$probe"
+    return 0
+}
+
 
 ########
 # MAIN #
@@ -87,11 +100,32 @@ done
 # Nothing found — provide diagnostics
 if [[ ${SSH_CONNECTION:-} ]]
 then
-    echo "# WARNING: In an SSH session but no working SSH agent found" >&2
-    echo "# If you intended to use agent forwarding:" >&2
-    echo "#   1. Run on your LOCAL machine: ssh-sock-reset (or source ssh-agent-env)" >&2
-    echo "#   2. Reconnect with: ssh -A <hostname>" >&2
-    echo "# Otherwise, start a local agent with: eval \$(ssh-agent)" >&2
+    if ! tmpdir-writable
+    then
+        # Non-writable temp dir trap: sshd could not create a forwarded agent
+        # socket, so no agent will ever appear here -- a reconnect cannot help,
+        # and the generic forwarding advice below would only misdirect.  Name
+        # the actual cause from the mount options instead of guessing.
+        tmp_opts=$( findmnt -no OPTIONS --target "${TMPDIR:-/tmp}" 2>/dev/null ) || tmp_opts=
+        echo "# ERROR: ${TMPDIR:-/tmp} is NOT writable -- sshd cannot create a forwarded agent" >&2
+        echo "# socket there, so no agent appears here.  Reconnecting will NOT fix this." >&2
+        if [[ ,$tmp_opts, == *,ro,* ]]
+        then
+            echo "# CAUSE: the filesystem is mounted READ-ONLY (options: $tmp_opts)." >&2
+            echo "#        Fix: fsck the root device, then reboot.  (Vagrant dev sandbox? see the" >&2
+            echo "#        home-network aidoc 'summary:vagrant-sandbox-readonly-root-fsck.md'.)" >&2
+        else
+            echo "# CAUSE: not a read-only mount (options: ${tmp_opts:-unknown}) -- check for a" >&2
+            echo "#        full disk ('df ${TMPDIR:-/tmp}') or bad permissions on that directory." >&2
+        fi
+        echo "#   Confirm fs state: findmnt -no OPTIONS /" >&2
+    else
+        echo "# WARNING: In an SSH session but no working SSH agent found" >&2
+        echo "# If you intended to use agent forwarding:" >&2
+        echo "#   1. Run on your LOCAL machine: ssh-sock-reset (or source ssh-agent-env)" >&2
+        echo "#   2. Reconnect with: ssh -A <hostname>" >&2
+        echo "# Otherwise, start a local agent with: eval \$(ssh-agent)" >&2
+    fi
 else
     agents=$( pgrep -u $(id -u) ssh-agent ||: )
     if [[ $agents ]]
