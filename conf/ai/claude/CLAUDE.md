@@ -87,14 +87,6 @@ Common dry-run flags to put first: `--noaction`, `--dry-run`, `-n`, `--noop`, `-
   catch yourself writing something like `git -C /export/proj/common ...`
   or `git -C /home/buddy/workproj/CE ...` and that path is your cwd,
   drop the `-C <path>` part entirely.
-- **`git` is configured with `color.ui = always`**, so it emits ANSI
-  color even when its output is piped or redirected.  Naive parsing
-  breaks on the escape codes — e.g. `git status -s | grep '^M'` matches
-  nothing, because the status column is wrapped in color.  To parse git
-  output, use a color-immune format: `git status --porcelain` for
-  working-tree state, and `git diff --cached --name-only` / `--stat`
-  for staged files.  Don't pipe `git status -s` or `git diff` into
-  anchored `grep`/`awk`.
 
 ### Syncthing-shared repositories
 Several of these repos (everything under `/export/proj`, which includes

@@ -82,6 +82,13 @@ $ENV{SHELL} = '/bin/bash';
 $ENV{TERM} = 'screen-256color';
 $ENV{CLAUDE_CODE_DISABLE_TERMINAL_TITLE} = 1;
 
+# Our ~/.gitconfig sets color.ui = always, so git emits ANSI color even when
+# its output is piped, which repeatedly trips up agents that grep/awk over
+# `git status` / `git diff`.  Force color off for everything Claude spawns,
+# via GIT_CONFIG_* rather than the config file, so our own interactive git
+# (launched outside this wrapper) stays colored.
+@ENV{qw< GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 >} = (1, 'color.ui', 'false');
+
 # Clean up stale tmux sockets from previous launches.
 # Per-PID sockets accumulate as dead files when servers exit.
 my $tmux_dir = "/tmp/tmux-$>/";
